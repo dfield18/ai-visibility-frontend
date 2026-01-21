@@ -20,6 +20,7 @@ app/                    # Next.js App Router pages
 ├── layout.tsx          # Root layout with QueryClientProvider
 ├── page.tsx            # Landing page (brand input)
 ├── providers.tsx       # React Query provider setup
+├── api/validate-brand/ # Brand validation API route
 ├── configure/page.tsx  # Prompts/competitors configuration
 ├── run/[id]/page.tsx   # Real-time progress tracking
 └── results/[id]/page.tsx # Results dashboard
@@ -46,6 +47,7 @@ npm run lint    # ESLint
 ## Environment Variables
 
 - `NEXT_PUBLIC_API_URL` - Backend API URL (default: http://localhost:8000)
+- `OPENAI_API_KEY` - OpenAI API key for brand validation
 
 ## Key Patterns & Conventions
 
@@ -75,6 +77,10 @@ npm run lint    # ESLint
 
 ## API Endpoints
 
+### Internal Next.js API Routes
+- `POST /api/validate-brand` - Validates and corrects brand names using OpenAI
+
+### External Backend Endpoints
 The frontend expects these backend endpoints:
 - `POST /api/v1/suggest` - Get prompt/competitor suggestions
 - `POST /api/v1/run` - Start a new analysis run

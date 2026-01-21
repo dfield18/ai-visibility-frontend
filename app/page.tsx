@@ -2,20 +2,49 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Eye, Sparkles, Zap } from "lucide-react";
+import { Search, Eye, Sparkles, Zap, Loader2 } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 
 export default function Home() {
   const [brandInput, setBrandInput] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { setBrand, resetConfig } = useStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (brandInput.trim()) {
-      setBrand(brandInput.trim());
+    if (!brandInput.trim()) return;
+
+    setIsValidating(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/validate-brand", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brand: brandInput.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to validate brand");
+      }
+
+      if (!data.valid) {
+        setError("Please enter a valid brand name");
+        setIsValidating(false);
+        return;
+      }
+
+      // Use the corrected brand name
+      setBrand(data.correctedName || brandInput.trim());
       resetConfig();
       router.push("/configure");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+      setIsValidating(false);
     }
   };
 
@@ -70,23 +99,37 @@ export default function Home() {
 
             {/* Search Form */}
             <form onSubmit={handleSubmit} className="mb-6">
-              <div className="flex items-center bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm max-w-[27.5rem]">
+              <div className={`flex items-center bg-white border rounded-xl p-1.5 shadow-sm max-w-[27.5rem] ${error ? 'border-red-300' : 'border-gray-200'}`}>
                 <Search className="w-5 h-5 text-gray-400 ml-3" />
                 <input
                   type="text"
                   placeholder="Enter your brand name..."
                   value={brandInput}
-                  onChange={(e) => setBrandInput(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent"
+                  onChange={(e) => {
+                    setBrandInput(e.target.value);
+                    if (error) setError(null);
+                  }}
+                  disabled={isValidating}
+                  className="flex-1 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent disabled:opacity-50"
                 />
                 <button
                   type="submit"
-                  disabled={!brandInput.trim()}
-                  className="px-5 py-2 text-sm bg-[#4A7C59] text-white font-medium rounded-lg hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!brandInput.trim() || isValidating}
+                  className="px-5 py-2 text-sm bg-[#4A7C59] text-white font-medium rounded-lg hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Research
+                  {isValidating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Validating
+                    </>
+                  ) : (
+                    "Research"
+                  )}
                 </button>
               </div>
+              {error && (
+                <p className="mt-2 text-sm text-red-600">{error}</p>
+              )}
             </form>
 
             {/* Trust Text */}
