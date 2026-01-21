@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Eye, Sparkles, Zap } from "lucide-react";
+import { useStore } from "@/hooks/useStore";
 
 export default function Home() {
-  const [brand, setBrand] = useState("");
+  const [brandInput, setBrandInput] = useState("");
   const router = useRouter();
+  const { setBrand, resetConfig } = useStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (brand.trim()) {
-      localStorage.setItem("brand", brand.trim());
+    if (brandInput.trim()) {
+      setBrand(brandInput.trim());
+      resetConfig();
       router.push("/configure");
     }
   };
@@ -72,13 +75,13 @@ export default function Home() {
                 <input
                   type="text"
                   placeholder="Enter your brand name..."
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
+                  value={brandInput}
+                  onChange={(e) => setBrandInput(e.target.value)}
                   className="flex-1 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent"
                 />
                 <button
                   type="submit"
-                  disabled={!brand.trim()}
+                  disabled={!brandInput.trim()}
                   className="px-5 py-2 text-sm bg-[#4A7C59] text-white font-medium rounded-lg hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Research
