@@ -6,16 +6,10 @@ import {
   ArrowLeft,
   Plus,
   X,
-  Edit2,
   Check,
-  ChevronDown,
-  ChevronUp,
   AlertTriangle,
   Sparkles,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardTitle, CardDescription } from '@/components/ui/Card';
-import { Checkbox } from '@/components/ui/Checkbox';
 import { Spinner } from '@/components/ui/Spinner';
 import { useStore } from '@/hooks/useStore';
 import { useSuggestions, useStartRun } from '@/hooks/useApi';
@@ -32,12 +26,10 @@ const PROVIDER_INFO = {
   openai: {
     name: 'OpenAI GPT-4o',
     cost: '$0.003/call',
-    icon: '🤖',
   },
   gemini: {
     name: 'Google Gemini Flash',
     cost: '$0.00025/call',
-    icon: '✨',
   },
 };
 
@@ -70,7 +62,6 @@ export default function ConfigurePage() {
   const [newCompetitor, setNewCompetitor] = useState('');
   const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null);
   const [editingPromptValue, setEditingPromptValue] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { data: suggestions, isLoading: suggestionsLoading, error: suggestionsError } = useSuggestions(brand);
@@ -175,22 +166,22 @@ export default function ConfigurePage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 pb-32">
+    <main className="min-h-screen bg-[#FAFAF8] pb-32">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <header className="pt-6 pb-4">
+        <div className="max-w-3xl mx-auto px-6">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push('/')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Go back"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-5 h-5 text-gray-500" />
             </button>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-lg font-semibold text-gray-900">
                 Configuring analysis for{' '}
-                <span className="text-blue-600">{brand}</span>
+                <span className="text-[#4A7C59]">{brand}</span>
               </h1>
               <p className="text-sm text-gray-500">
                 Customize prompts, competitors, and AI models
@@ -200,10 +191,10 @@ export default function ConfigurePage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-3xl mx-auto px-6 space-y-6">
         {/* Error Alert */}
         {(error || suggestionsError) && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-red-800">Error</p>
@@ -215,13 +206,13 @@ export default function ConfigurePage() {
         )}
 
         {/* Prompts Section */}
-        <Card padding="md">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <CardTitle>Search Prompts</CardTitle>
-              <CardDescription>
+              <h2 className="text-base font-semibold text-gray-900">Search Prompts</h2>
+              <p className="text-sm text-gray-500">
                 These queries will be sent to AI models
-              </CardDescription>
+              </p>
             </div>
             <span className="text-sm text-gray-500">
               {selectedPromptsArray.length}/{prompts.length} selected
@@ -231,26 +222,38 @@ export default function ConfigurePage() {
           {suggestionsLoading ? (
             <div className="flex items-center justify-center py-8">
               <Spinner size="lg" />
-              <span className="ml-3 text-gray-600">Generating prompts with AI...</span>
+              <span className="ml-3 text-gray-500">Generating prompts with AI...</span>
             </div>
           ) : (
             <div className="space-y-2">
               {prompts.map((prompt, index) => (
                 <div
                   key={prompt}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg group"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 group cursor-pointer"
+                  onClick={() => {
+                    if (editingPromptIndex !== index) {
+                      togglePrompt(prompt);
+                    }
+                  }}
                 >
-                  <Checkbox
-                    checked={selectedPrompts.has(prompt)}
-                    onChange={() => togglePrompt(prompt)}
-                  />
+                  <div
+                    className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
+                      selectedPrompts.has(prompt)
+                        ? 'bg-[#5B7B5D]'
+                        : 'bg-[#E8E8E0]'
+                    }`}
+                  >
+                    {selectedPrompts.has(prompt) && (
+                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                    )}
+                  </div>
                   {editingPromptIndex === index ? (
-                    <div className="flex-1 flex items-center gap-2">
+                    <div className="flex-1 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="text"
                         value={editingPromptValue}
                         onChange={(e) => setEditingPromptValue(e.target.value)}
-                        className="flex-1 px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSavePromptEdit();
@@ -259,33 +262,31 @@ export default function ConfigurePage() {
                       />
                       <button
                         onClick={handleSavePromptEdit}
-                        className="p-1 text-green-600 hover:bg-green-50 rounded"
+                        className="p-1.5 text-[#4A7C59] hover:bg-green-50 rounded-lg"
                       >
                         <Check className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setEditingPromptIndex(null)}
-                        className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                        className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
                     <>
-                      <span className="flex-1 text-gray-700">{prompt}</span>
+                      <span className="flex-1 text-sm text-gray-700">{prompt}</span>
                       <button
-                        onClick={() => handleEditPrompt(index)}
-                        className="p-1 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditPrompt(index);
+                        }}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg hover:bg-gray-100"
                         aria-label="Edit prompt"
                       >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => removePrompt(prompt)}
-                        className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                        aria-label="Remove prompt"
-                      >
-                        <X className="w-4 h-4" />
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
                       </button>
                     </>
                   )}
@@ -301,34 +302,31 @@ export default function ConfigurePage() {
                 value={newPrompt}
                 onChange={(e) => setNewPrompt(e.target.value)}
                 placeholder="Add custom prompt..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent placeholder-gray-400"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAddPrompt();
                 }}
               />
-              <Button
-                variant="secondary"
+              <button
                 onClick={handleAddPrompt}
                 disabled={!newPrompt.trim()}
+                className="px-4 py-2.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
-                <Plus className="w-4 h-4 mr-1" />
+                <Plus className="w-4 h-4" />
                 Add
-              </Button>
+              </button>
             </div>
           )}
-          <p className="mt-2 text-xs text-gray-500">
-            Maximum 10 prompts
-          </p>
-        </Card>
+        </div>
 
         {/* Competitors Section */}
-        <Card padding="md">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <CardTitle>Competitors to Track</CardTitle>
-              <CardDescription>
+              <h2 className="text-base font-semibold text-gray-900">Competitors to Track</h2>
+              <p className="text-sm text-gray-500">
                 We&apos;ll check if these brands are mentioned in responses
-              </CardDescription>
+              </p>
             </div>
             <span className="text-sm text-gray-500">
               {selectedCompetitorsArray.length}/{competitors.length} selected
@@ -338,7 +336,7 @@ export default function ConfigurePage() {
           {suggestionsLoading ? (
             <div className="flex items-center justify-center py-8">
               <Spinner size="lg" />
-              <span className="ml-3 text-gray-600">Identifying competitors...</span>
+              <span className="ml-3 text-gray-500">Identifying competitors...</span>
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -347,25 +345,32 @@ export default function ConfigurePage() {
                   key={competitor}
                   className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors cursor-pointer ${
                     selectedCompetitors.has(competitor)
-                      ? 'bg-blue-50 border-blue-200 text-blue-700'
-                      : 'bg-gray-50 border-gray-200 text-gray-600'
+                      ? 'bg-[#E8F0E8] border-[#5B7B5D]/30 text-[#4A7C59]'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                   onClick={() => toggleCompetitor(competitor)}
                 >
-                  <Checkbox
-                    checked={selectedCompetitors.has(competitor)}
-                    onChange={() => {}}
-                  />
+                  <div
+                    className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 ${
+                      selectedCompetitors.has(competitor)
+                        ? 'bg-[#5B7B5D]'
+                        : 'bg-[#E8E8E0]'
+                    }`}
+                  >
+                    {selectedCompetitors.has(competitor) && (
+                      <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                    )}
+                  </div>
                   <span className="text-sm font-medium">{competitor}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       removeCompetitor(competitor);
                     }}
-                    className="p-0.5 hover:text-red-500"
+                    className="p-0.5 hover:text-red-500 transition-colors"
                     aria-label="Remove competitor"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ))}
@@ -379,148 +384,140 @@ export default function ConfigurePage() {
                 value={newCompetitor}
                 onChange={(e) => setNewCompetitor(e.target.value)}
                 placeholder="Add competitor..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent placeholder-gray-400"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAddCompetitor();
                 }}
               />
-              <Button
-                variant="secondary"
+              <button
                 onClick={handleAddCompetitor}
                 disabled={!newCompetitor.trim()}
+                className="px-4 py-2.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
-                <Plus className="w-4 h-4 mr-1" />
+                <Plus className="w-4 h-4" />
                 Add
-              </Button>
+              </button>
             </div>
           )}
-          <p className="mt-2 text-xs text-gray-500">
-            Maximum 10 competitors
-          </p>
-        </Card>
+        </div>
 
         {/* Providers Section */}
-        <Card padding="md">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="mb-4">
-            <CardTitle>AI Models</CardTitle>
-            <CardDescription>
+            <h2 className="text-base font-semibold text-gray-900">AI Models</h2>
+            <p className="text-sm text-gray-500">
               Select which AI models to query
-            </CardDescription>
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {Object.entries(PROVIDER_INFO).map(([key, info]) => (
               <button
                 key={key}
                 onClick={() => toggleProvider(key)}
-                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                className={`p-4 rounded-xl border-2 text-left transition-all ${
                   providers.includes(key)
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-[#5B7B5D] bg-[#E8F0E8]'
+                    : 'border-gray-200 hover:border-gray-300 bg-white'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">{info.icon}</span>
-                  <div>
-                    <p className="font-medium text-gray-900">{info.name}</p>
-                    <p className="text-sm text-gray-500">{info.cost}</p>
+                  <div
+                    className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
+                      providers.includes(key)
+                        ? 'bg-[#5B7B5D]'
+                        : 'bg-[#E8E8E0]'
+                    }`}
+                  >
+                    {providers.includes(key) && (
+                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                    )}
                   </div>
-                  <div className="ml-auto">
-                    <Checkbox checked={providers.includes(key)} onChange={() => {}} />
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">{info.name}</p>
+                    <p className="text-xs text-gray-500">{info.cost}</p>
                   </div>
                 </div>
               </button>
             ))}
           </div>
-        </Card>
+        </div>
 
         {/* Advanced Settings */}
-        <Card padding="md">
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-between"
-          >
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="mb-4">
+            <h2 className="text-base font-semibold text-gray-900">Advanced Settings</h2>
+            <p className="text-sm text-gray-500">
+              Temperature and repeat configuration
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {/* Temperatures */}
             <div>
-              <CardTitle>Advanced Settings</CardTitle>
-              <CardDescription>
-                Temperature and repeat configuration
-              </CardDescription>
-            </div>
-            {showAdvanced ? (
-              <ChevronUp className="w-5 h-5 text-gray-400" />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-gray-400" />
-            )}
-          </button>
-
-          {showAdvanced && (
-            <div className="mt-4 pt-4 border-t border-gray-200 space-y-6">
-              {/* Temperatures */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Temperatures
-                </label>
-                <p className="text-sm text-gray-500 mb-3">
-                  Higher temperatures produce more creative/varied responses. Lower temperatures are more deterministic.
-                </p>
-                <div className="flex gap-2">
-                  {[0.3, 0.7, 1.0].map((temp) => (
-                    <button
-                      key={temp}
-                      onClick={() => {
-                        if (temperatures.includes(temp)) {
-                          if (temperatures.length > 1) {
-                            setTemperatures(temperatures.filter((t) => t !== temp));
-                          }
-                        } else {
-                          setTemperatures([...temperatures, temp].sort());
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Temperatures
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Higher temperatures produce more creative responses. Lower temperatures are more deterministic.
+              </p>
+              <div className="flex gap-2">
+                {[0.3, 0.7, 1.0].map((temp) => (
+                  <button
+                    key={temp}
+                    onClick={() => {
+                      if (temperatures.includes(temp)) {
+                        if (temperatures.length > 1) {
+                          setTemperatures(temperatures.filter((t) => t !== temp));
                         }
-                      }}
-                      className={`px-4 py-2 rounded-lg border font-medium transition-colors ${
-                        temperatures.includes(temp)
-                          ? 'bg-blue-50 border-blue-500 text-blue-700'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}
-                    >
-                      {temp}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Repeats */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Repeats per configuration: {repeats}
-                </label>
-                <p className="text-sm text-gray-500 mb-3">
-                  Run each prompt/provider/temperature combination multiple times for statistical significance.
-                </p>
-                <input
-                  type="range"
-                  min={1}
-                  max={3}
-                  value={repeats}
-                  onChange={(e) => setRepeats(parseInt(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>1</span>
-                  <span>2</span>
-                  <span>3</span>
-                </div>
+                      } else {
+                        setTemperatures([...temperatures, temp].sort());
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      temperatures.includes(temp)
+                        ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {temp}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
-        </Card>
+
+            {/* Repeats */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Repeats per configuration: {repeats}
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Run each prompt/provider/temperature combination multiple times for statistical significance.
+              </p>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                value={repeats}
+                onChange={(e) => setRepeats(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#5B7B5D]"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1</span>
+                <span>2</span>
+                <span>3</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        <div className="max-w-3xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="text-sm">
-              <p className="text-gray-600">
+            <div className="text-sm text-gray-600">
+              <p>
                 <span className="font-medium">{selectedPromptsArray.length}</span> prompts{' '}
                 <span className="text-gray-400">×</span>{' '}
                 <span className="font-medium">{providers.length}</span> providers{' '}
@@ -529,28 +526,24 @@ export default function ConfigurePage() {
                 <span className="text-gray-400">×</span>{' '}
                 <span className="font-medium">{repeats}</span> repeats{' '}
                 <span className="text-gray-400">=</span>{' '}
-                <span className="font-bold text-gray-900">{totalCalls} calls</span>
+                <span className="font-semibold text-gray-900">{totalCalls} calls</span>
               </p>
               <p className="text-gray-500">
-                Estimated: {formatCurrency(estimatedCost)} &middot; {formatDuration(estimatedTime)}
+                Estimated: {formatCurrency(estimatedCost)} · {formatDuration(estimatedTime)}
               </p>
-              {totalCalls > 100 && (
-                <p className="text-yellow-600 flex items-center gap-1 mt-1">
-                  <AlertTriangle className="w-4 h-4" />
-                  Large run - consider reducing configuration
-                </p>
-              )}
             </div>
-            <Button
-              size="lg"
+            <button
               onClick={handleRunAnalysis}
               disabled={!canRun}
-              loading={startRunMutation.isPending}
-              className="bg-green-600 hover:bg-green-700 focus:ring-green-500"
+              className="px-6 py-3 bg-[#4A7C59] text-white font-medium rounded-xl hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              <Sparkles className="w-5 h-5 mr-2" />
+              {startRunMutation.isPending ? (
+                <Spinner size="sm" />
+              ) : (
+                <Sparkles className="w-5 h-5" />
+              )}
               Run Analysis ({formatCurrency(estimatedCost)})
-            </Button>
+            </button>
           </div>
         </div>
       </div>
