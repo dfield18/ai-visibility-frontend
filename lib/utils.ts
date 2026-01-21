@@ -119,6 +119,7 @@ export function calculateEstimatedCost(
   const costPerCall: Record<string, number> = {
     openai: 0.003,
     gemini: 0.00025,
+    anthropic: 0.003,
   };
 
   let totalCost = 0;

@@ -243,7 +243,7 @@ export default function ResultsPage() {
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-medium text-gray-900 text-sm">
-                      {provider === 'openai' ? 'OpenAI GPT-4o' : 'Google Gemini'}
+                      {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Anthropic Claude' : 'Google Gemini'}
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
@@ -356,6 +356,7 @@ export default function ResultsPage() {
                 <option value="all">All Providers</option>
                 <option value="openai">OpenAI</option>
                 <option value="gemini">Gemini</option>
+                <option value="anthropic">Claude</option>
               </select>
             </div>
           </div>
@@ -407,7 +408,7 @@ export default function ResultsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span className="text-sm text-gray-700">
-                          {result.provider === 'openai' ? 'GPT-4o' : 'Gemini'}
+                          {result.provider === 'openai' ? 'GPT-4o' : result.provider === 'anthropic' ? 'Claude' : 'Gemini'}
                         </span>
                       </td>
                       <td className="py-3 px-4">

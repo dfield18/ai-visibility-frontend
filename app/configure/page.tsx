@@ -31,6 +31,10 @@ const PROVIDER_INFO = {
     name: 'Google Gemini Flash',
     cost: '$0.00025/call',
   },
+  anthropic: {
+    name: 'Anthropic Claude',
+    cost: '$0.003/call',
+  },
 };
 
 export default function ConfigurePage() {
