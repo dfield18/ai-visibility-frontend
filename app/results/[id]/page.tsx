@@ -6,17 +6,14 @@ import {
   ArrowLeft,
   Download,
   Link2,
-  CheckCircle2,
-  XCircle,
+  Check,
+  X,
   ChevronDown,
   ChevronUp,
   Filter,
   Sparkles,
   AlertTriangle,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardTitle, CardDescription } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Spinner } from '@/components/ui/Spinner';
 import { useRunStatus } from '@/hooks/useApi';
 import {
@@ -24,7 +21,6 @@ import {
   formatDate,
   formatPercent,
   getRateColor,
-  getRateBgColor,
   truncate,
 } from '@/lib/utils';
 import { Result } from '@/lib/types';
@@ -121,10 +117,10 @@ export default function ResultsPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
         <div className="text-center">
           <Spinner size="lg" />
-          <p className="mt-4 text-gray-600">Loading results...</p>
+          <p className="mt-4 text-gray-500">Loading results...</p>
         </div>
       </main>
     );
@@ -132,17 +128,22 @@ export default function ResultsPage() {
 
   if (error || !runStatus) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full text-center" padding="lg">
+      <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 max-w-md w-full text-center p-8">
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-xl font-semibold text-gray-900 mb-2">
             Failed to load results
           </h1>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-500 mb-6">
             {error instanceof Error ? error.message : 'Results not found'}
           </p>
-          <Button onClick={() => router.push('/')}>Start New Analysis</Button>
-        </Card>
+          <button
+            onClick={() => router.push('/')}
+            className="px-6 py-3 bg-[#4A7C59] text-white font-medium rounded-xl hover:bg-[#3d6649] transition-colors"
+          >
+            Start New Analysis
+          </button>
+        </div>
       </main>
     );
   }
@@ -150,52 +151,68 @@ export default function ResultsPage() {
   const summary = runStatus.summary;
   const brandMentionRate = summary?.brand_mention_rate ?? 0;
 
+  // Custom rate color using green theme
+  const getMentionRateColor = (rate: number) => {
+    if (rate >= 0.7) return 'text-[#4A7C59]';
+    if (rate >= 0.4) return 'text-yellow-600';
+    return 'text-red-500';
+  };
+
+  const getMentionRateBgColor = (rate: number) => {
+    if (rate >= 0.7) return 'bg-[#5B7B5D]';
+    if (rate >= 0.4) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+
   return (
-    <main className="min-h-screen bg-gray-50 pb-8">
+    <main className="min-h-screen bg-[#FAFAF8] pb-8">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+      <header className="pt-6 pb-4">
+        <div className="max-w-5xl mx-auto px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
                 aria-label="Go back"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
+                <ArrowLeft className="w-5 h-5 text-gray-500" />
               </button>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">
+                <h1 className="text-lg font-semibold text-gray-900">
                   Results for{' '}
-                  <span className="text-blue-600">{runStatus.brand}</span>
+                  <span className="text-[#4A7C59]">{runStatus.brand}</span>
                 </h1>
                 <p className="text-sm text-gray-500">
                   {runStatus.completed_at
                     ? `Completed ${formatDate(runStatus.completed_at)}`
                     : `Started ${formatDate(runStatus.created_at)}`}
-                  {' • '}
+                  {' · '}
                   {formatCurrency(runStatus.actual_cost)}
                 </p>
               </div>
             </div>
-            <Button variant="primary" onClick={() => router.push('/')}>
-              <Sparkles className="w-4 h-4 mr-2" />
+            <button
+              onClick={() => router.push('/')}
+              className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-xl hover:bg-[#3d6649] transition-colors flex items-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
               New Analysis
-            </Button>
+            </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-6 space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card padding="md" className="text-center">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
             <p className="text-sm text-gray-500 mb-1">Brand Mention Rate</p>
-            <p className={`text-4xl font-bold ${getRateColor(brandMentionRate)}`}>
+            <p className={`text-4xl font-bold ${getMentionRateColor(brandMentionRate)}`}>
               {formatPercent(brandMentionRate)}
             </p>
-          </Card>
-          <Card padding="md" className="text-center">
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
             <p className="text-sm text-gray-500 mb-1">Total Calls</p>
             <p className="text-4xl font-bold text-gray-900">
               {runStatus.total_calls}
@@ -205,59 +222,56 @@ export default function ResultsPage() {
                 {runStatus.failed_calls} failed
               </p>
             )}
-          </Card>
-          <Card padding="md" className="text-center">
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
             <p className="text-sm text-gray-500 mb-1">Total Cost</p>
             <p className="text-4xl font-bold text-gray-900">
               {formatCurrency(runStatus.actual_cost)}
             </p>
-          </Card>
+          </div>
         </div>
 
         {/* Provider Breakdown */}
         {summary && Object.keys(summary.by_provider).length > 0 && (
-          <Card padding="md">
-            <CardTitle className="mb-4">Provider Breakdown</CardTitle>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Provider Breakdown</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {Object.entries(summary.by_provider).map(([provider, stats]) => (
                 <div
                   key={provider}
-                  className="p-4 bg-gray-50 rounded-lg"
+                  className="p-4 bg-[#FAFAF8] rounded-xl"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xl">
-                      {provider === 'openai' ? '🤖' : '✨'}
-                    </span>
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-gray-900 text-sm">
                       {provider === 'openai' ? 'OpenAI GPT-4o' : 'Google Gemini'}
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
-                      <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${getRateBgColor(stats.rate)}`}
+                          className={`h-full rounded-full transition-all ${getMentionRateBgColor(stats.rate)}`}
                           style={{ width: `${stats.rate * 100}%` }}
                         />
                       </div>
                     </div>
-                    <span className={`text-lg font-semibold ${getRateColor(stats.rate)}`}>
+                    <span className={`text-sm font-semibold ${getMentionRateColor(stats.rate)}`}>
                       {formatPercent(stats.rate)}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 mt-2">
                     {stats.mentioned}/{stats.total} mentions
                   </p>
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Competitor Analysis */}
         {summary && Object.keys(summary.competitor_mentions).length > 0 && (
-          <Card padding="md">
-            <CardTitle className="mb-4">Competitor Mentions</CardTitle>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Competitor Mentions</h2>
             <div className="space-y-3">
               {Object.entries(summary.competitor_mentions)
                 .sort((a, b) => b[1].rate - a[1].rate)
@@ -267,9 +281,9 @@ export default function ResultsPage() {
                       {competitor}
                     </span>
                     <div className="flex-1">
-                      <div className="h-6 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-5 bg-gray-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-blue-500 rounded-full transition-all flex items-center justify-end pr-2"
+                          className="h-full bg-[#5B7B5D] rounded-full transition-all flex items-center justify-end pr-2"
                           style={{ width: `${Math.max(stats.rate * 100, 10)}%` }}
                         >
                           {stats.rate > 0.15 && (
@@ -291,21 +305,21 @@ export default function ResultsPage() {
                   </div>
                 ))}
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Detailed Results */}
-        <Card padding="md">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-            <CardTitle>Detailed Results</CardTitle>
+            <h2 className="text-base font-semibold text-gray-900">Detailed Results</h2>
             <div className="flex flex-wrap items-center gap-2">
               {/* Filter by mention */}
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setFilter('all')}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     filter === 'all'
-                      ? 'bg-white shadow text-gray-900'
+                      ? 'bg-white shadow-sm text-gray-900'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
@@ -313,9 +327,9 @@ export default function ResultsPage() {
                 </button>
                 <button
                   onClick={() => setFilter('mentioned')}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     filter === 'mentioned'
-                      ? 'bg-white shadow text-gray-900'
+                      ? 'bg-white shadow-sm text-gray-900'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
@@ -323,9 +337,9 @@ export default function ResultsPage() {
                 </button>
                 <button
                   onClick={() => setFilter('not_mentioned')}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     filter === 'not_mentioned'
-                      ? 'bg-white shadow text-gray-900'
+                      ? 'bg-white shadow-sm text-gray-900'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
@@ -337,7 +351,7 @@ export default function ResultsPage() {
               <select
                 value={providerFilter}
                 onChange={(e) => setProviderFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
               >
                 <option value="all">All Providers</option>
                 <option value="openai">OpenAI</option>
@@ -356,22 +370,22 @@ export default function ResultsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Prompt
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Provider
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Brand?
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Competitors
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">
+                  <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -392,22 +406,21 @@ export default function ResultsPage() {
                         </p>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="inline-flex items-center gap-1 text-sm">
-                          {result.provider === 'openai' ? '🤖' : '✨'}
+                        <span className="text-sm text-gray-700">
                           {result.provider === 'openai' ? 'GPT-4o' : 'Gemini'}
                         </span>
                       </td>
                       <td className="py-3 px-4">
                         {result.brand_mentioned ? (
-                          <Badge variant="success" size="sm">
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
+                            <Check className="w-3 h-3" />
                             Yes
-                          </Badge>
+                          </span>
                         ) : (
-                          <Badge variant="default" size="sm">
-                            <XCircle className="w-3 h-3 mr-1" />
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
+                            <X className="w-3 h-3" />
                             No
-                          </Badge>
+                          </span>
                         )}
                       </td>
                       <td className="py-3 px-4">
@@ -432,7 +445,7 @@ export default function ResultsPage() {
                       <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => toggleExpanded(result.id)}
-                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                          className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
                         >
                           {expandedResults.has(result.id) ? (
                             <>
@@ -448,7 +461,7 @@ export default function ResultsPage() {
                     </tr>
                     {expandedResults.has(result.id) && (
                       <tr key={`${result.id}-expanded`}>
-                        <td colSpan={6} className="py-4 px-4 bg-gray-50">
+                        <td colSpan={6} className="py-4 px-4 bg-[#FAFAF8]">
                           <div className="max-h-64 overflow-y-auto">
                             <p className="text-xs text-gray-500 mb-2">
                               Full Response:
@@ -458,7 +471,7 @@ export default function ResultsPage() {
                             </p>
                             {result.tokens && (
                               <p className="text-xs text-gray-400 mt-2">
-                                {result.tokens} tokens • {formatCurrency(result.cost || 0)}
+                                {result.tokens} tokens · {formatCurrency(result.cost || 0)}
                               </p>
                             )}
                           </div>
@@ -477,25 +490,31 @@ export default function ResultsPage() {
               <p className="text-gray-500">No results match your filters</p>
             </div>
           )}
-        </Card>
+        </div>
 
         {/* Export Section */}
-        <Card padding="md">
-          <CardTitle className="mb-2">Export & Share</CardTitle>
-          <CardDescription className="mb-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h2 className="text-base font-semibold text-gray-900 mb-1">Export & Share</h2>
+          <p className="text-sm text-gray-500 mb-4">
             Download results or share a link to this page
-          </CardDescription>
+          </p>
           <div className="flex flex-wrap gap-3">
-            <Button variant="secondary" onClick={handleExportCSV}>
-              <Download className="w-4 h-4 mr-2" />
+            <button
+              onClick={handleExportCSV}
+              className="px-4 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
               Export to CSV
-            </Button>
-            <Button variant="secondary" onClick={handleCopyLink}>
-              <Link2 className="w-4 h-4 mr-2" />
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="px-4 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <Link2 className="w-4 h-4" />
               {copied ? 'Copied!' : 'Copy Share Link'}
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       </div>
     </main>
   );
