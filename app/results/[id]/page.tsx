@@ -460,7 +460,9 @@ export default function ResultsPage() {
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        {result.competitors_mentioned.length > 0 ? (
+                        {result.error ? (
+                          <span className="text-sm text-gray-400">-</span>
+                        ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
                           <span className="text-sm text-gray-700">
                             {result.competitors_mentioned.slice(0, 2).join(', ')}
                             {result.competitors_mentioned.length > 2 && (
