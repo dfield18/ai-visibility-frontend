@@ -35,6 +35,7 @@ export default function ResultsPage() {
 
   const [filter, setFilter] = useState<FilterType>('all');
   const [providerFilter, setProviderFilter] = useState<string>('all');
+  const [brandMentionsProviderFilter, setBrandMentionsProviderFilter] = useState<string>('all');
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
 
@@ -70,6 +71,55 @@ export default function ResultsPage() {
     return runStatus.results.filter(
       (r: Result) => r.provider === 'ai_overviews' && r.error
     ).length;
+  }, [runStatus]);
+
+  // Calculate brand/competitor mentions filtered by provider
+  const filteredBrandMentions = useMemo(() => {
+    if (!runStatus) return {};
+
+    // Filter results by provider if selected
+    const results = runStatus.results.filter((r: Result) => {
+      if (r.error) return false;
+      if (brandMentionsProviderFilter !== 'all' && r.provider !== brandMentionsProviderFilter) return false;
+      return true;
+    });
+
+    // Count mentions for each competitor/brand
+    const mentions: Record<string, { count: number; total: number }> = {};
+
+    for (const result of results) {
+      if (result.competitors_mentioned) {
+        for (const comp of result.competitors_mentioned) {
+          if (!mentions[comp]) {
+            mentions[comp] = { count: 0, total: 0 };
+          }
+          mentions[comp].count += 1;
+        }
+      }
+    }
+
+    // Calculate rates
+    const totalResults = results.length;
+    const mentionsWithRates: Record<string, { count: number; rate: number }> = {};
+
+    for (const [comp, data] of Object.entries(mentions)) {
+      mentionsWithRates[comp] = {
+        count: data.count,
+        rate: totalResults > 0 ? data.count / totalResults : 0,
+      };
+    }
+
+    return mentionsWithRates;
+  }, [runStatus, brandMentionsProviderFilter]);
+
+  // Get unique providers from results for the filter dropdown
+  const availableProviders = useMemo(() => {
+    if (!runStatus) return [];
+    const providers = new Set<string>();
+    runStatus.results.forEach((r: Result) => {
+      if (!r.error) providers.add(r.provider);
+    });
+    return Array.from(providers);
   }, [runStatus]);
 
   const toggleExpanded = (id: string) => {
@@ -292,11 +342,25 @@ export default function ResultsPage() {
         {/* Competitor/Brand Mentions */}
         {summary && Object.keys(summary.competitor_mentions).length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">
-              {isCategory ? 'Brand Mentions' : 'Competitor Mentions'}
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-900">
+                {isCategory ? 'Brand Mentions' : 'Competitor Mentions'}
+              </h2>
+              <select
+                value={brandMentionsProviderFilter}
+                onChange={(e) => setBrandMentionsProviderFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Providers</option>
+                {availableProviders.map((provider) => (
+                  <option key={provider} value={provider}>
+                    {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'AI Overviews' : 'Gemini'}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="space-y-3">
-              {Object.entries(summary.competitor_mentions)
+              {Object.entries(filteredBrandMentions)
                 .sort((a, b) => b[1].rate - a[1].rate)
                 .map(([competitor, stats]) => (
                   <div key={competitor} className="flex items-center gap-4">
@@ -327,6 +391,11 @@ export default function ResultsPage() {
                     </span>
                   </div>
                 ))}
+              {Object.keys(filteredBrandMentions).length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">
+                  No mentions found for this provider
+                </p>
+              )}
             </div>
           </div>
         )}
