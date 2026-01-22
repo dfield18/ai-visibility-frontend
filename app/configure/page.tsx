@@ -239,11 +239,11 @@ export default function ConfigurePage() {
               <span className="ml-3 text-gray-500">Generating prompts with AI...</span>
             </div>
           ) : (
-            <div className="space-y-2">
-              {/* Select All Checkbox */}
+            <>
+              {/* Select All Checkbox - Separate Section */}
               {prompts.length > 0 && (
                 <div
-                  className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 cursor-pointer border border-gray-200"
+                  className="flex items-center justify-between px-3 py-2 mb-3 border-b border-gray-200 cursor-pointer hover:bg-gray-50 rounded-t-lg transition-colors"
                   onClick={() => {
                     if (selectedPrompts.size === prompts.length) {
                       deselectAllPrompts();
@@ -252,26 +252,31 @@ export default function ConfigurePage() {
                     }
                   }}
                 >
-                  <div
-                    className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
-                      selectedPrompts.size === prompts.length
-                        ? 'bg-[#5B7B5D]'
-                        : selectedPrompts.size > 0
-                        ? 'bg-[#5B7B5D]/50'
-                        : 'bg-[#E8E8E0]'
-                    }`}
-                  >
-                    {selectedPrompts.size === prompts.length ? (
-                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                    ) : selectedPrompts.size > 0 ? (
-                      <div className="w-2 h-0.5 bg-white rounded" />
-                    ) : null}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors ${
+                        selectedPrompts.size === prompts.length
+                          ? 'bg-[#5B7B5D]'
+                          : selectedPrompts.size > 0
+                          ? 'bg-[#5B7B5D]/50'
+                          : 'bg-[#E8E8E0]'
+                      }`}
+                    >
+                      {selectedPrompts.size === prompts.length ? (
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      ) : selectedPrompts.size > 0 ? (
+                        <div className="w-2 h-0.5 bg-white rounded" />
+                      ) : null}
+                    </div>
+                    <span className="text-sm font-medium text-gray-600">
+                      {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
-                  </span>
                 </div>
               )}
+
+              {/* Prompts List */}
+              <div className="space-y-2">
               {prompts.map((prompt, index) => (
                 <div
                   key={prompt}
@@ -338,7 +343,8 @@ export default function ConfigurePage() {
                   )}
                 </div>
               ))}
-            </div>
+              </div>
+            </>
           )}
 
           {prompts.length < 10 && (
