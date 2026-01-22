@@ -129,7 +129,7 @@ export default function Home() {
 
             {/* Search Form */}
             <form onSubmit={handleSubmit} className="mb-6">
-              <div className={`flex items-center bg-white border rounded-xl p-1.5 shadow-sm max-w-[27.5rem] ${error ? 'border-red-300' : 'border-gray-200'}`}>
+              <div className={`flex items-center bg-white border rounded-xl p-1.5 shadow-sm w-full ${error ? 'border-red-300' : 'border-gray-200'}`}>
                 <Search className="w-5 h-5 text-gray-400 ml-3" />
                 <input
                   type="text"
