@@ -166,6 +166,7 @@ export default function ResultsPage() {
 
   const summary = runStatus.summary;
   const brandMentionRate = summary?.brand_mention_rate ?? 0;
+  const isCategory = runStatus.search_type === 'category';
 
   // Custom rate color using green theme
   const getMentionRateColor = (rate: number) => {
@@ -198,6 +199,7 @@ export default function ResultsPage() {
                 <h1 className="text-lg font-semibold text-gray-900">
                   Results for{' '}
                   <span className="text-[#4A7C59]">{runStatus.brand}</span>
+                  {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
                 </h1>
                 <p className="text-sm text-gray-500">
                   {runStatus.completed_at
@@ -221,13 +223,16 @@ export default function ResultsPage() {
 
       <div className="max-w-5xl mx-auto px-6 space-y-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
-            <p className="text-sm text-gray-500 mb-1">Brand Mention Rate</p>
-            <p className={`text-4xl font-bold ${getMentionRateColor(brandMentionRate)}`}>
-              {formatPercent(brandMentionRate)}
-            </p>
-          </div>
+        <div className={`grid grid-cols-1 ${isCategory ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4`}>
+          {/* Brand Mention Rate - only show for brand searches */}
+          {!isCategory && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
+              <p className="text-sm text-gray-500 mb-1">Brand Mention Rate</p>
+              <p className={`text-4xl font-bold ${getMentionRateColor(brandMentionRate)}`}>
+                {formatPercent(brandMentionRate)}
+              </p>
+            </div>
+          )}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
             <p className="text-sm text-gray-500 mb-1">Total Calls</p>
             <p className="text-4xl font-bold text-gray-900">
@@ -247,8 +252,8 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        {/* Provider Breakdown */}
-        {summary && Object.keys(summary.by_provider).length > 0 && (
+        {/* Provider Breakdown - only show for brand searches */}
+        {!isCategory && summary && Object.keys(summary.by_provider).length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Provider Breakdown</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -284,10 +289,12 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Competitor Analysis */}
+        {/* Competitor/Brand Mentions */}
         {summary && Object.keys(summary.competitor_mentions).length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">Competitor Mentions</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-4">
+              {isCategory ? 'Brand Mentions' : 'Competitor Mentions'}
+            </h2>
             <div className="space-y-3">
               {Object.entries(summary.competitor_mentions)
                 .sort((a, b) => b[1].rate - a[1].rate)

@@ -15,6 +15,7 @@ export interface SuggestResponse {
 export interface RunConfig {
   session_id: string;
   brand: string;
+  search_type?: SearchType;
   prompts: string[];
   competitors: string[];
   providers: string[];
@@ -76,6 +77,7 @@ export interface RunStatusResponse {
   run_id: string;
   status: RunStatus;
   brand: string;
+  search_type: SearchType;
   total_calls: number;
   completed_calls: number;
   failed_calls: number;

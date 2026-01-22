@@ -173,6 +173,7 @@ export default function ConfigurePage() {
       const result = await startRunMutation.mutateAsync({
         session_id: getSessionId(),
         brand,
+        search_type: searchType,
         prompts: selectedPromptsArray,
         competitors: selectedCompetitorsArray,
         providers,
