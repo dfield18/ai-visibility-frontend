@@ -46,8 +46,8 @@ interface VisibilityStore {
 }
 
 const DEFAULT_PROVIDERS = ['openai', 'gemini', 'anthropic', 'perplexity', 'ai_overviews'];
-const DEFAULT_TEMPERATURES = [0.3, 0.7, 1.0];
-const DEFAULT_REPEATS = 2;
+const DEFAULT_TEMPERATURES = [0.3];
+const DEFAULT_REPEATS = 1;
 
 export const useStore = create<VisibilityStore>()(
   persist(
