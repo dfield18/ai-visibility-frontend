@@ -55,6 +55,17 @@ export interface Source {
   title: string;
 }
 
+export interface GroundingSupport {
+  segment: string;
+  chunk_indices: number[];
+  confidence_scores: number[];
+}
+
+export interface GroundingMetadata {
+  supports: GroundingSupport[];
+  search_queries: string[];
+}
+
 export interface Result {
   id: string;
   prompt: string;
@@ -70,6 +81,7 @@ export interface Result {
   tokens: number | null;
   cost: number | null;
   sources: Source[] | null;
+  grounding_metadata: GroundingMetadata | null;
   created_at: string;
 }
 

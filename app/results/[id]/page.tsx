@@ -620,6 +620,38 @@ export default function ResultsPage() {
                                     </div>
                                   </div>
                                 )}
+                                {result.grounding_metadata && result.grounding_metadata.supports && result.grounding_metadata.supports.length > 0 && (
+                                  <div className="mt-4 pt-3 border-t border-gray-200">
+                                    <p className="text-xs text-gray-500 mb-2">
+                                      Grounding Confidence:
+                                    </p>
+                                    <div className="space-y-2">
+                                      {result.grounding_metadata.supports.slice(0, 5).map((support, idx) => (
+                                        <div key={idx} className="bg-white p-2 rounded-lg border border-gray-100">
+                                          <p className="text-xs text-gray-600 mb-1 line-clamp-2">
+                                            &quot;{support.segment}&quot;
+                                          </p>
+                                          <div className="flex items-center gap-2">
+                                            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                              <div
+                                                className="h-full bg-[#5B7B5D] rounded-full"
+                                                style={{ width: `${(support.confidence_scores[0] || 0) * 100}%` }}
+                                              />
+                                            </div>
+                                            <span className="text-xs text-gray-500 w-12 text-right">
+                                              {Math.round((support.confidence_scores[0] || 0) * 100)}%
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                      {result.grounding_metadata.supports.length > 5 && (
+                                        <p className="text-xs text-gray-400">
+                                          +{result.grounding_metadata.supports.length - 5} more
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                                 {result.tokens && (
                                   <p className="text-xs text-gray-400 mt-2">
                                     {result.tokens} tokens · {formatCurrency(result.cost || 0)}
