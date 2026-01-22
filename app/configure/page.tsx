@@ -35,6 +35,10 @@ const PROVIDER_INFO = {
     name: 'Anthropic Claude',
     cost: '$0.003/call',
   },
+  perplexity: {
+    name: 'Perplexity Sonar',
+    cost: '$0.001/call',
+  },
 };
 
 export default function ConfigurePage() {
