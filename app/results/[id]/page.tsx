@@ -354,7 +354,7 @@ export default function ResultsPage() {
                 <option value="all">All Providers</option>
                 {availableProviders.map((provider) => (
                   <option key={provider} value={provider}>
-                    {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'AI Overviews' : 'Gemini'}
+                    {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
                   </option>
                 ))}
               </select>
@@ -465,7 +465,7 @@ export default function ResultsPage() {
                 <option value="gemini">Gemini</option>
                 <option value="anthropic">Claude</option>
                 <option value="perplexity">Perplexity</option>
-                <option value="ai_overviews">AI Overviews</option>
+                <option value="ai_overviews">Google AI Overviews</option>
               </select>
             </div>
           </div>
@@ -517,7 +517,7 @@ export default function ResultsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span className="text-sm text-gray-700">
-                          {result.provider === 'openai' ? 'GPT-4o' : result.provider === 'anthropic' ? 'Claude' : result.provider === 'perplexity' ? 'Perplexity' : result.provider === 'ai_overviews' ? 'AI Overviews' : 'Gemini'}
+                          {result.provider === 'openai' ? 'GPT-4o' : result.provider === 'anthropic' ? 'Claude' : result.provider === 'perplexity' ? 'Perplexity' : result.provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
                         </span>
                       </td>
                       <td className="py-3 px-4">
