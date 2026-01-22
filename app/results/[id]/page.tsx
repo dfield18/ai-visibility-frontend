@@ -39,17 +39,22 @@ export default function ResultsPage() {
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
 
-  // Filter results
+  // Filter results - include AI Overview errors to show "Not Available"
   const filteredResults = useMemo(() => {
     if (!runStatus) return [];
 
     return runStatus.results.filter((result: Result) => {
-      // Filter out errored results for display
-      if (result.error) return false;
+      // Include AI Overview errors to show "Not Available" status
+      const isAiOverviewError = result.provider === 'ai_overviews' && result.error;
 
-      // Brand mention filter
-      if (filter === 'mentioned' && !result.brand_mentioned) return false;
-      if (filter === 'not_mentioned' && result.brand_mentioned) return false;
+      // Filter out other errored results for display
+      if (result.error && !isAiOverviewError) return false;
+
+      // Brand mention filter - skip for errored results
+      if (!result.error) {
+        if (filter === 'mentioned' && !result.brand_mentioned) return false;
+        if (filter === 'not_mentioned' && result.brand_mentioned) return false;
+      }
 
       // Provider filter
       if (providerFilter !== 'all' && result.provider !== providerFilter) return false;
@@ -57,6 +62,14 @@ export default function ResultsPage() {
       return true;
     });
   }, [runStatus, filter, providerFilter]);
+
+  // Count AI Overview unavailable results
+  const aiOverviewUnavailableCount = useMemo(() => {
+    if (!runStatus) return 0;
+    return runStatus.results.filter(
+      (r: Result) => r.provider === 'ai_overviews' && r.error
+    ).length;
+  }, [runStatus]);
 
   const toggleExpanded = (id: string) => {
     const newExpanded = new Set(expandedResults);
@@ -308,6 +321,21 @@ export default function ResultsPage() {
           </div>
         )}
 
+        {/* AI Overview Unavailable Notice */}
+        {aiOverviewUnavailableCount > 0 && (
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-orange-800">
+                AI Overviews Not Available for {aiOverviewUnavailableCount} {aiOverviewUnavailableCount === 1 ? 'Query' : 'Queries'}
+              </p>
+              <p className="text-sm text-orange-700 mt-1">
+                Google doesn&apos;t show AI Overviews for all search queries. These results are marked as &quot;Not Available&quot; in the table below.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Detailed Results */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -414,7 +442,12 @@ export default function ResultsPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        {result.brand_mentioned ? (
+                        {result.error ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
+                            <AlertTriangle className="w-3 h-3" />
+                            Not Available
+                          </span>
+                        ) : result.brand_mentioned ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
                             <Check className="w-3 h-3" />
                             Yes
@@ -466,16 +499,29 @@ export default function ResultsPage() {
                       <tr key={`${result.id}-expanded`}>
                         <td colSpan={6} className="py-4 px-4 bg-[#FAFAF8]">
                           <div className="max-h-64 overflow-y-auto">
-                            <p className="text-xs text-gray-500 mb-2">
-                              Full Response:
-                            </p>
-                            <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                              {result.response_text}
-                            </p>
-                            {result.tokens && (
-                              <p className="text-xs text-gray-400 mt-2">
-                                {result.tokens} tokens · {formatCurrency(result.cost || 0)}
-                              </p>
+                            {result.error ? (
+                              <>
+                                <p className="text-xs text-orange-600 mb-2">
+                                  AI Overview Not Available:
+                                </p>
+                                <p className="text-sm text-orange-700 bg-orange-50 p-3 rounded-lg">
+                                  Google did not return an AI Overview for this query. This typically happens when the query doesn&apos;t trigger an AI-generated summary in search results.
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-xs text-gray-500 mb-2">
+                                  Full Response:
+                                </p>
+                                <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                  {result.response_text}
+                                </p>
+                                {result.tokens && (
+                                  <p className="text-xs text-gray-400 mt-2">
+                                    {result.tokens} tokens · {formatCurrency(result.cost || 0)}
+                                  </p>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>
