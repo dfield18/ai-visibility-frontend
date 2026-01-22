@@ -9,6 +9,7 @@ import {
   Check,
   AlertTriangle,
   Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useStore } from '@/hooks/useStore';
@@ -77,6 +78,7 @@ export default function ConfigurePage() {
   const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null);
   const [editingPromptValue, setEditingPromptValue] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const { data: suggestions, isLoading: suggestionsLoading, error: suggestionsError } = useSuggestions(brand);
   const startRunMutation = useStartRun();
@@ -495,72 +497,84 @@ export default function ConfigurePage() {
           </div>
         </div>
 
-        {/* Advanced Settings */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-gray-900">Advanced Settings</h2>
-            <p className="text-sm text-gray-500">
-              Temperature and repeat configuration
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            {/* Temperatures */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Temperatures
-              </label>
-              <p className="text-xs text-gray-500 mb-3">
-                Higher temperatures produce more creative responses. Lower temperatures are more deterministic.
+        {/* Advanced Features Dropdown */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <button
+            onClick={() => setAdvancedOpen(!advancedOpen)}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <div className="text-left">
+              <h2 className="text-base font-semibold text-gray-900">Advanced Features</h2>
+              <p className="text-sm text-gray-500">
+                Temperature and repeat configuration
               </p>
-              <div className="flex gap-2">
-                {[0.3, 0.7, 1.0].map((temp) => (
-                  <button
-                    key={temp}
-                    onClick={() => {
-                      if (temperatures.includes(temp)) {
-                        if (temperatures.length > 1) {
-                          setTemperatures(temperatures.filter((t) => t !== temp));
+            </div>
+            <ChevronDown
+              className={`w-5 h-5 text-gray-400 transition-transform ${
+                advancedOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {advancedOpen && (
+            <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-6">
+              {/* Temperatures */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Temperatures
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Higher temperatures produce more creative responses. Lower temperatures are more deterministic.
+                </p>
+                <div className="flex gap-2">
+                  {[0.3, 0.7, 1.0].map((temp) => (
+                    <button
+                      key={temp}
+                      onClick={() => {
+                        if (temperatures.includes(temp)) {
+                          if (temperatures.length > 1) {
+                            setTemperatures(temperatures.filter((t) => t !== temp));
+                          }
+                        } else {
+                          setTemperatures([...temperatures, temp].sort());
                         }
-                      } else {
-                        setTemperatures([...temperatures, temp].sort());
-                      }
-                    }}
-                    className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                      temperatures.includes(temp)
-                        ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
-                    {temp}
-                  </button>
-                ))}
+                      }}
+                      className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                        temperatures.includes(temp)
+                          ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}
+                    >
+                      {temp}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Repeats */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Repeats per configuration: {repeats}
-              </label>
-              <p className="text-xs text-gray-500 mb-3">
-                Run each prompt/provider/temperature combination multiple times for statistical significance.
-              </p>
-              <input
-                type="range"
-                min={1}
-                max={3}
-                value={repeats}
-                onChange={(e) => setRepeats(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#5B7B5D]"
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>1</span>
-                <span>2</span>
-                <span>3</span>
+              {/* Repeats */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Repeats per configuration: {repeats}
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Run each prompt/provider/temperature combination multiple times for statistical significance.
+                </p>
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  value={repeats}
+                  onChange={(e) => setRepeats(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#5B7B5D]"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>1</span>
+                  <span>2</span>
+                  <span>3</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
