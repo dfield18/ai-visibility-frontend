@@ -2,13 +2,19 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Eye, Sparkles, Zap, Loader2 } from "lucide-react";
+import { Search, Eye, Sparkles, Zap, Loader2, X, Building2 } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
+
+interface BrandSuggestion {
+  name: string;
+  description: string;
+}
 
 export default function Home() {
   const [brandInput, setBrandInput] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<BrandSuggestion[] | null>(null);
   const router = useRouter();
   const { setBrand, resetConfig } = useStore();
 
@@ -18,6 +24,7 @@ export default function Home() {
 
     setIsValidating(true);
     setError(null);
+    setSuggestions(null);
 
     try {
       const response = await fetch("/api/validate-brand", {
@@ -38,14 +45,35 @@ export default function Home() {
         return;
       }
 
-      // Use the corrected brand name
-      setBrand(data.correctedName || brandInput.trim());
+      // Check if there are multiple suggestions
+      if (data.suggestions && data.suggestions.length > 1) {
+        setSuggestions(data.suggestions);
+        setIsValidating(false);
+        return;
+      }
+
+      // Use the corrected brand name or first suggestion
+      const brandName = data.correctedName ||
+        (data.suggestions && data.suggestions[0]?.name) ||
+        brandInput.trim();
+      setBrand(brandName);
       resetConfig();
       router.push("/configure");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setIsValidating(false);
     }
+  };
+
+  const handleSelectBrand = (brandName: string) => {
+    setBrand(brandName);
+    resetConfig();
+    setSuggestions(null);
+    router.push("/configure");
+  };
+
+  const handleCloseSuggestions = () => {
+    setSuggestions(null);
   };
 
   return (
@@ -197,6 +225,69 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Brand Suggestions Modal */}
+      {suggestions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={handleCloseSuggestions}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            {/* Close button */}
+            <button
+              onClick={handleCloseSuggestions}
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                Which brand did you mean?
+              </h2>
+              <p className="text-sm text-gray-500">
+                We found multiple brands matching &quot;{brandInput}&quot;
+              </p>
+            </div>
+
+            {/* Suggestions List */}
+            <div className="space-y-3">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSelectBrand(suggestion.name)}
+                  className="w-full p-4 text-left bg-[#FAFAF8] rounded-xl hover:bg-[#E8F0E8] transition-colors group"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center flex-shrink-0 group-hover:bg-[#E8F0E8]">
+                      <Building2 className="w-5 h-5 text-[#4A7C59]" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{suggestion.name}</p>
+                      <p className="text-sm text-gray-500">{suggestion.description}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <button
+                onClick={handleCloseSuggestions}
+                className="w-full py-2.5 text-sm text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Cancel and try a different search
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

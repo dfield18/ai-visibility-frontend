@@ -28,15 +28,32 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are a brand name validator. Given a user input, determine if it's a real brand/company name.
+          content: `You are a brand name validator and suggester. Given a user input, determine if it's a real brand/company name.
 
 Your task:
-1. If the input is a real brand but has typos, correct the spelling (e.g., "Toymota" → "Toyota", "Mcdonalds" → "McDonald's")
-2. If the input is a real brand but has incorrect capitalization, fix it (e.g., "ford" → "Ford", "NIKE" → "Nike")
-3. If the input is gibberish or clearly not a real brand, return null
+1. If the input clearly matches ONE specific well-known brand (even with typos or wrong capitalization), return that brand with corrected spelling.
+   Examples: "toymota" → Toyota, "mcdonalds" → McDonald's, "nike" → Nike
 
-Respond ONLY with a JSON object in this exact format:
-{"valid": true, "correctedName": "Brand Name"} or {"valid": false, "correctedName": null}
+2. If the input is partial or ambiguous and could refer to MULTIPLE different brands/companies, return all matching options (up to 5).
+   Examples:
+   - "spirit" → Spirit Airlines, Spirit Halloween
+   - "apple" → Apple (the one tech company, so just return Apple)
+   - "delta" → Delta Air Lines, Delta Faucet
+   - "amazon" → Amazon (the one company, so just return Amazon)
+   - "united" → United Airlines, United Healthcare, United Rentals
+
+3. If the input is gibberish or clearly not a real brand, return as invalid.
+
+Respond ONLY with a JSON object in one of these formats:
+
+For a clear single match:
+{"valid": true, "correctedName": "Brand Name", "suggestions": null}
+
+For ambiguous input with multiple possible brands:
+{"valid": true, "correctedName": null, "suggestions": [{"name": "Brand Name 1", "description": "Brief description"}, {"name": "Brand Name 2", "description": "Brief description"}]}
+
+For invalid input:
+{"valid": false, "correctedName": null, "suggestions": null}
 
 Do not include any other text or explanation.`,
         },
@@ -46,14 +63,14 @@ Do not include any other text or explanation.`,
         },
       ],
       temperature: 0,
-      max_tokens: 100,
+      max_tokens: 300,
     });
 
     const content = response.choices[0]?.message?.content?.trim();
 
     if (!content) {
       return NextResponse.json(
-        { valid: true, correctedName: brand },
+        { valid: true, correctedName: brand, suggestions: null },
         { status: 200 }
       );
     }
@@ -64,7 +81,7 @@ Do not include any other text or explanation.`,
     } catch {
       // If parsing fails, assume the brand is valid as-is
       return NextResponse.json(
-        { valid: true, correctedName: brand },
+        { valid: true, correctedName: brand, suggestions: null },
         { status: 200 }
       );
     }
