@@ -13,6 +13,7 @@ import {
   Filter,
   Sparkles,
   AlertTriangle,
+  ExternalLink,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useRunStatus } from '@/hooks/useApi';
@@ -94,6 +95,7 @@ export default function ResultsPage() {
       'Response Type',
       'Tokens',
       'Cost',
+      'Sources',
       'Response',
     ];
 
@@ -109,6 +111,7 @@ export default function ResultsPage() {
         r.response_type || '',
         r.tokens || '',
         r.cost || '',
+        `"${(r.sources || []).map(s => s.url).join(', ')}"`,
         `"${(r.response_text || '').replace(/"/g, '""')}"`,
       ]);
 
@@ -518,6 +521,29 @@ export default function ResultsPage() {
                                 <p className="text-sm text-gray-700 whitespace-pre-wrap">
                                   {result.response_text}
                                 </p>
+                                {result.sources && result.sources.length > 0 && (
+                                  <div className="mt-4 pt-3 border-t border-gray-200">
+                                    <p className="text-xs text-gray-500 mb-2">
+                                      Sources ({result.sources.length}):
+                                    </p>
+                                    <div className="space-y-1.5">
+                                      {result.sources.map((source, idx) => (
+                                        <a
+                                          key={idx}
+                                          href={source.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                        >
+                                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                          <span className="truncate">
+                                            {source.title || source.url}
+                                          </span>
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                                 {result.tokens && (
                                   <p className="text-xs text-gray-400 mt-2">
                                     {result.tokens} tokens · {formatCurrency(result.cost || 0)}

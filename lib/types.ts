@@ -46,6 +46,11 @@ export interface RunSummary {
   competitor_mentions: Record<string, CompetitorStats>;
 }
 
+export interface Source {
+  url: string;
+  title: string;
+}
+
 export interface Result {
   id: string;
   prompt: string;
@@ -60,6 +65,7 @@ export interface Result {
   response_type: string | null;
   tokens: number | null;
   cost: number | null;
+  sources: Source[] | null;
   created_at: string;
 }
 
