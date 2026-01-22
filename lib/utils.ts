@@ -121,6 +121,7 @@ export function calculateEstimatedCost(
     gemini: 0.00025,
     anthropic: 0.003,
     perplexity: 0.001,
+    ai_overviews: 0.005,
   };
 
   let totalCost = 0;

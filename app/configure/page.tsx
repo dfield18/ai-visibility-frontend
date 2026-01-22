@@ -39,6 +39,10 @@ const PROVIDER_INFO = {
     name: 'Perplexity Sonar',
     cost: '$0.001/call',
   },
+  ai_overviews: {
+    name: 'Google AI Overviews',
+    cost: '$0.005/call',
+  },
 };
 
 export default function ConfigurePage() {

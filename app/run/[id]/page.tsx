@@ -233,8 +233,8 @@ export default function RunPage() {
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-xs text-gray-500">
-                          {result.provider === 'openai' ? '🤖' : result.provider === 'anthropic' ? '🧠' : result.provider === 'perplexity' ? '🔍' : '✨'}{' '}
-                          {result.provider === 'openai' ? 'GPT-4o' : result.provider === 'anthropic' ? 'Claude' : result.provider === 'perplexity' ? 'Perplexity' : 'Gemini'}
+                          {result.provider === 'openai' ? '🤖' : result.provider === 'anthropic' ? '🧠' : result.provider === 'perplexity' ? '🔍' : result.provider === 'ai_overviews' ? '🌐' : '✨'}{' '}
+                          {result.provider === 'openai' ? 'GPT-4o' : result.provider === 'anthropic' ? 'Claude' : result.provider === 'perplexity' ? 'Perplexity' : result.provider === 'ai_overviews' ? 'AI Overviews' : 'Gemini'}
                         </span>
                         <span className="text-xs text-gray-400">•</span>
                         <span className="text-xs text-gray-500">
