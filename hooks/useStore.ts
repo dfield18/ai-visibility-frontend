@@ -13,6 +13,8 @@ interface VisibilityStore {
   selectedPrompts: Set<string>;
   setPrompts: (prompts: string[]) => void;
   togglePrompt: (prompt: string) => void;
+  selectAllPrompts: () => void;
+  deselectAllPrompts: () => void;
   addPrompt: (prompt: string) => void;
   removePrompt: (prompt: string) => void;
   updatePrompt: (oldPrompt: string, newPrompt: string) => void;
@@ -68,6 +70,14 @@ export const useStore = create<VisibilityStore>()(
           }
           return { selectedPrompts: newSelected };
         }),
+      selectAllPrompts: () =>
+        set((state) => ({
+          selectedPrompts: new Set(state.prompts),
+        })),
+      deselectAllPrompts: () =>
+        set(() => ({
+          selectedPrompts: new Set<string>(),
+        })),
       addPrompt: (prompt) =>
         set((state) => {
           if (state.prompts.includes(prompt)) return state;
