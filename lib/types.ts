@@ -1,6 +1,9 @@
+export type SearchType = 'brand' | 'category';
+
 export interface SuggestRequest {
   brand: string;
   industry?: string;
+  search_type?: SearchType;
 }
 
 export interface SuggestResponse {

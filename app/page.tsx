@@ -16,7 +16,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<BrandSuggestion[] | null>(null);
   const router = useRouter();
-  const { setBrand, resetConfig } = useStore();
+  const { setBrand, setSearchType, resetConfig } = useStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +57,7 @@ export default function Home() {
         (data.suggestions && data.suggestions[0]?.name) ||
         brandInput.trim();
       setBrand(brandName);
+      setSearchType(data.type || 'brand');
       resetConfig();
       router.push("/configure");
     } catch (err) {
@@ -67,6 +68,7 @@ export default function Home() {
 
   const handleSelectBrand = (brandName: string) => {
     setBrand(brandName);
+    setSearchType('brand'); // Suggestions are always brands
     resetConfig();
     setSuggestions(null);
     router.push("/configure");
@@ -131,7 +133,7 @@ export default function Home() {
                 <Search className="w-5 h-5 text-gray-400 ml-3" />
                 <input
                   type="text"
-                  placeholder="Enter your brand name..."
+                  placeholder="Enter a brand or category (e.g., Nike, cars, laptops)..."
                   value={brandInput}
                   onChange={(e) => {
                     setBrandInput(e.target.value);

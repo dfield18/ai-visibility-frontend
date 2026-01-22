@@ -315,7 +315,7 @@ export default function RunPage() {
             ) : (
               <button
                 onClick={() => setShowCancelConfirm(true)}
-                className="px-4 py-2 text-red-600 text-sm font-medium hover:bg-red-50 rounded-xl transition-colors inline-flex items-center gap-2"
+                className="px-4 py-2 text-gray-500 text-sm font-medium hover:bg-gray-100 rounded-xl transition-colors inline-flex items-center gap-2"
               >
                 <StopCircle className="w-4 h-4" />
                 Cancel Analysis

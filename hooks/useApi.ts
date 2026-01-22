@@ -5,12 +5,12 @@ import { api } from '@/lib/api';
 import { RunConfig, RunResponse, RunStatusResponse, CancelResponse } from '@/lib/types';
 
 /**
- * Hook to fetch suggestions for a brand.
+ * Hook to fetch suggestions for a brand or category.
  */
-export function useSuggestions(brand: string, enabled = true) {
+export function useSuggestions(brand: string, searchType: 'brand' | 'category' = 'brand', enabled = true) {
   return useQuery({
-    queryKey: ['suggestions', brand],
-    queryFn: () => api.getSuggestions(brand),
+    queryKey: ['suggestions', brand, searchType],
+    queryFn: () => api.getSuggestions(brand, searchType),
     enabled: enabled && brand.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

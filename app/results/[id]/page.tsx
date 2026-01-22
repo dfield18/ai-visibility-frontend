@@ -592,6 +592,32 @@ export default function ResultsPage() {
             </button>
           </div>
         </div>
+
+        {/* Cost Summary Footer */}
+        <div className="bg-[#FAFAF8] rounded-xl border border-gray-200 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+            <div className="flex items-center gap-6">
+              <div>
+                <span className="text-gray-500">Total Tokens: </span>
+                <span className="font-medium text-gray-900">
+                  {runStatus.results
+                    .filter((r: Result) => !r.error && r.tokens)
+                    .reduce((sum: number, r: Result) => sum + (r.tokens || 0), 0)
+                    .toLocaleString()}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-500">Total Cost: </span>
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(runStatus.actual_cost)}
+                </span>
+              </div>
+            </div>
+            <div className="text-gray-400 text-xs">
+              {runStatus.completed_calls} successful calls · {runStatus.failed_calls} failed
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   );

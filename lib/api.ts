@@ -41,8 +41,8 @@ class ApiClient {
     return response.json();
   }
 
-  async getSuggestions(brand: string, industry?: string): Promise<SuggestResponse> {
-    const body: SuggestRequest = { brand };
+  async getSuggestions(brand: string, searchType: 'brand' | 'category' = 'brand', industry?: string): Promise<SuggestResponse> {
+    const body: SuggestRequest = { brand, search_type: searchType };
     if (industry) {
       body.industry = industry;
     }

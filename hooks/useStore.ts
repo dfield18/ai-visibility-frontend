@@ -3,10 +3,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+type SearchType = 'brand' | 'category';
+
 interface VisibilityStore {
-  // Brand data
+  // Brand/Category data
   brand: string;
+  searchType: SearchType;
   setBrand: (brand: string) => void;
+  setSearchType: (type: SearchType) => void;
 
   // Configuration
   prompts: string[];
@@ -48,9 +52,11 @@ const DEFAULT_REPEATS = 2;
 export const useStore = create<VisibilityStore>()(
   persist(
     (set, get) => ({
-      // Brand
+      // Brand/Category
       brand: '',
+      searchType: 'brand' as SearchType,
       setBrand: (brand) => set({ brand }),
+      setSearchType: (searchType) => set({ searchType }),
 
       // Prompts
       prompts: [],
@@ -165,6 +171,7 @@ export const useStore = create<VisibilityStore>()(
       reset: () =>
         set({
           brand: '',
+          searchType: 'brand' as SearchType,
           prompts: [],
           selectedPrompts: new Set<string>(),
           competitors: [],
@@ -188,6 +195,7 @@ export const useStore = create<VisibilityStore>()(
       name: 'visibility-store',
       partialize: (state) => ({
         brand: state.brand,
+        searchType: state.searchType,
         prompts: state.prompts,
         selectedPrompts: Array.from(state.selectedPrompts),
         competitors: state.competitors,

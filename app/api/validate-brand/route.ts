@@ -28,34 +28,34 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are a brand name validator and suggester. Given a user input, determine if it's a real brand/company name.
+          content: `You are a brand and category validator. Given a user input, determine if it's:
+1. A real brand/company name
+2. A product category (like "cars", "shoes", "laptops", "restaurants", "software")
 
 Your task:
-1. If the input clearly matches ONE specific well-known brand (even with typos or wrong capitalization), return that brand with corrected spelling.
-   Examples: "toymota" → Toyota, "mcdonalds" → McDonald's, "nike" → Nike
+1. FIRST, determine if the input is a CATEGORY or a BRAND:
+   - Categories are general product/service types: "cars", "shoes", "laptops", "smartphones", "restaurants", "hotels", "software", "headphones", etc.
+   - Brands are specific company/product names: "Toyota", "Nike", "Apple", "McDonald's", etc.
 
-2. If the input is partial or ambiguous and could refer to MULTIPLE different brands/companies, return all matching options (up to 5).
-   Examples:
-   - "spirit" → Spirit Airlines, Spirit Halloween
-   - "apple" → Apple (the one tech company, so just return Apple)
-   - "delta" → Delta Air Lines, Delta Faucet
-   - "amazon" → Amazon (the one company, so just return Amazon)
-   - "united" → United Airlines, United Healthcare, United Rentals
+2. If it's a CATEGORY, return it normalized (e.g., "car" → "cars", "shoe" → "shoes"):
+   {"valid": true, "type": "category", "correctedName": "normalized category", "suggestions": null}
 
-3. If the input is gibberish or clearly not a real brand, return as invalid.
+3. If it's a BRAND that clearly matches ONE specific well-known brand (even with typos):
+   {"valid": true, "type": "brand", "correctedName": "Brand Name", "suggestions": null}
 
-Respond ONLY with a JSON object in one of these formats:
+4. If it's a BRAND that's ambiguous and could refer to MULTIPLE different brands/companies:
+   {"valid": true, "type": "brand", "correctedName": null, "suggestions": [{"name": "Brand Name 1", "description": "Brief description"}, {"name": "Brand Name 2", "description": "Brief description"}]}
 
-For a clear single match:
-{"valid": true, "correctedName": "Brand Name", "suggestions": null}
+5. If the input is gibberish or invalid:
+   {"valid": false, "type": null, "correctedName": null, "suggestions": null}
 
-For ambiguous input with multiple possible brands:
-{"valid": true, "correctedName": null, "suggestions": [{"name": "Brand Name 1", "description": "Brief description"}, {"name": "Brand Name 2", "description": "Brief description"}]}
+Examples:
+- "cars" → {"valid": true, "type": "category", "correctedName": "cars", "suggestions": null}
+- "shoe" → {"valid": true, "type": "category", "correctedName": "shoes", "suggestions": null}
+- "toymota" → {"valid": true, "type": "brand", "correctedName": "Toyota", "suggestions": null}
+- "spirit" → {"valid": true, "type": "brand", "correctedName": null, "suggestions": [{"name": "Spirit Airlines", "description": "..."}, {"name": "Spirit Halloween", "description": "..."}]}
 
-For invalid input:
-{"valid": false, "correctedName": null, "suggestions": null}
-
-Do not include any other text or explanation.`,
+Respond ONLY with a JSON object. Do not include any other text or explanation.`,
         },
         {
           role: 'user',

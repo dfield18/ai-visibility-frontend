@@ -50,6 +50,7 @@ export default function ConfigurePage() {
   const router = useRouter();
   const {
     brand,
+    searchType,
     prompts,
     selectedPrompts,
     setPrompts,
@@ -73,6 +74,15 @@ export default function ConfigurePage() {
     setRepeats,
   } = useStore();
 
+  // Labels based on search type
+  const isCategory = searchType === 'category';
+  const brandsLabel = isCategory ? 'Brands to Track' : 'Competitors to Track';
+  const brandsDescription = isCategory
+    ? "We'll check if these brands are mentioned in responses"
+    : "We'll check if these competitors are mentioned in responses";
+  const brandsLoadingText = isCategory ? 'Identifying brands...' : 'Identifying competitors...';
+  const addBrandPlaceholder = isCategory ? 'Add brand...' : 'Add competitor...';
+
   const [newPrompt, setNewPrompt] = useState('');
   const [newCompetitor, setNewCompetitor] = useState('');
   const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null);
@@ -80,7 +90,7 @@ export default function ConfigurePage() {
   const [error, setError] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  const { data: suggestions, isLoading: suggestionsLoading, error: suggestionsError } = useSuggestions(brand);
+  const { data: suggestions, isLoading: suggestionsLoading, error: suggestionsError } = useSuggestions(brand, searchType);
   const startRunMutation = useStartRun();
 
   // Redirect if no brand
@@ -198,9 +208,10 @@ export default function ConfigurePage() {
               <h1 className="text-lg font-semibold text-gray-900">
                 Configuring analysis for{' '}
                 <span className="text-[#4A7C59]">{brand}</span>
+                {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
               </h1>
               <p className="text-sm text-gray-500">
-                Customize prompts, competitors, and AI models
+                Customize prompts, {isCategory ? 'brands' : 'competitors'}, and AI models
               </p>
             </div>
           </div>
@@ -373,13 +384,13 @@ export default function ConfigurePage() {
           )}
         </div>
 
-        {/* Competitors Section */}
+        {/* Competitors/Brands Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Competitors to Track</h2>
+              <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
               <p className="text-sm text-gray-500">
-                We&apos;ll check if these brands are mentioned in responses
+                {brandsDescription}
               </p>
             </div>
             <span className="text-sm text-gray-500">
@@ -390,7 +401,7 @@ export default function ConfigurePage() {
           {suggestionsLoading ? (
             <div className="flex items-center justify-center py-8">
               <Spinner size="lg" />
-              <span className="ml-3 text-gray-500">Identifying competitors...</span>
+              <span className="ml-3 text-gray-500">{brandsLoadingText}</span>
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -437,7 +448,7 @@ export default function ConfigurePage() {
                 type="text"
                 value={newCompetitor}
                 onChange={(e) => setNewCompetitor(e.target.value)}
-                placeholder="Add competitor..."
+                placeholder={addBrandPlaceholder}
                 className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent placeholder-gray-400"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAddCompetitor();
