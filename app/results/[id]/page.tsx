@@ -141,6 +141,135 @@ export default function ResultsPage() {
     return Array.from(providers);
   }, [runStatus]);
 
+  // State for sources provider filter
+  const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
+
+  // Extract domain from URL
+  const getDomain = (url: string): string => {
+    try {
+      const hostname = new URL(url).hostname;
+      return hostname.replace(/^www\./, '');
+    } catch {
+      return url;
+    }
+  };
+
+  // Calculate top cited sources
+  const topCitedSources = useMemo(() => {
+    if (!runStatus) return [];
+
+    // Filter results by provider if selected
+    const results = runStatus.results.filter((r: Result) => {
+      if (r.error) return false;
+      if (sourcesProviderFilter !== 'all' && r.provider !== sourcesProviderFilter) return false;
+      return true;
+    });
+
+    // Aggregate sources by domain
+    const sourceData: Record<string, {
+      domain: string;
+      urls: Set<string>;
+      count: number;
+      providers: Set<string>;
+      titles: Set<string>;
+    }> = {};
+
+    for (const result of results) {
+      if (result.sources && result.sources.length > 0) {
+        for (const source of result.sources) {
+          if (!source.url) continue;
+          const domain = getDomain(source.url);
+          if (!sourceData[domain]) {
+            sourceData[domain] = {
+              domain,
+              urls: new Set(),
+              count: 0,
+              providers: new Set(),
+              titles: new Set(),
+            };
+          }
+          sourceData[domain].urls.add(source.url);
+          sourceData[domain].count += 1;
+          sourceData[domain].providers.add(result.provider);
+          if (source.title) {
+            sourceData[domain].titles.add(source.title);
+          }
+        }
+      }
+    }
+
+    // Convert to array and sort by count
+    return Object.values(sourceData)
+      .map(s => ({
+        domain: s.domain,
+        url: Array.from(s.urls)[0], // Use first URL for linking
+        count: s.count,
+        providers: Array.from(s.providers),
+        title: Array.from(s.titles)[0] || s.domain,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Top 10
+  }, [runStatus, sourcesProviderFilter]);
+
+  // Key influencers - sources cited by multiple providers
+  const keyInfluencers = useMemo(() => {
+    if (!runStatus) return [];
+
+    // Use all results (not filtered by provider) to find cross-provider sources
+    const results = runStatus.results.filter((r: Result) => !r.error);
+
+    // Aggregate sources by domain
+    const sourceData: Record<string, {
+      domain: string;
+      urls: Set<string>;
+      count: number;
+      providers: Set<string>;
+      titles: Set<string>;
+    }> = {};
+
+    for (const result of results) {
+      if (result.sources && result.sources.length > 0) {
+        for (const source of result.sources) {
+          if (!source.url) continue;
+          const domain = getDomain(source.url);
+          if (!sourceData[domain]) {
+            sourceData[domain] = {
+              domain,
+              urls: new Set(),
+              count: 0,
+              providers: new Set(),
+              titles: new Set(),
+            };
+          }
+          sourceData[domain].urls.add(source.url);
+          sourceData[domain].count += 1;
+          sourceData[domain].providers.add(result.provider);
+          if (source.title) {
+            sourceData[domain].titles.add(source.title);
+          }
+        }
+      }
+    }
+
+    // Filter to sources cited by 2+ providers and sort by provider count then citation count
+    return Object.values(sourceData)
+      .filter(s => s.providers.size >= 2)
+      .map(s => ({
+        domain: s.domain,
+        url: Array.from(s.urls)[0],
+        count: s.count,
+        providers: Array.from(s.providers),
+        title: Array.from(s.titles)[0] || s.domain,
+      }))
+      .sort((a, b) => {
+        if (b.providers.length !== a.providers.length) {
+          return b.providers.length - a.providers.length;
+        }
+        return b.count - a.count;
+      })
+      .slice(0, 5); // Top 5
+  }, [runStatus]);
+
   const toggleExpanded = (id: string) => {
     const newExpanded = new Set(expandedResults);
     if (newExpanded.has(id)) {
@@ -470,6 +599,104 @@ export default function ResultsPage() {
                 </p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Key Influencers - sources cited by multiple providers */}
+        {keyInfluencers.length > 0 && (
+          <div className="bg-gradient-to-r from-[#E8F0E8] to-[#F0F4F0] rounded-xl border border-[#4A7C59]/20 p-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-[#4A7C59]" />
+              <h2 className="text-base font-semibold text-gray-900">Key Influencers</h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Sources cited by multiple AI providers — these likely have outsized influence on AI recommendations.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {keyInfluencers.map((source) => (
+                <a
+                  key={source.domain}
+                  href={source.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#4A7C59] hover:shadow-sm transition-all group"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-[#4A7C59]">
+                    {source.domain}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {source.providers.length} providers · {source.count} citations
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Top Cited Sources */}
+        {topCitedSources.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Link2 className="w-5 h-5 text-[#4A7C59]" />
+                <h2 className="text-base font-semibold text-gray-900">Top Cited Sources</h2>
+              </div>
+              <select
+                value={sourcesProviderFilter}
+                onChange={(e) => setSourcesProviderFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Providers</option>
+                {availableProviders.map((provider) => (
+                  <option key={provider} value={provider}>
+                    {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              {topCitedSources.map((source, index) => (
+                <div
+                  key={source.domain}
+                  className="flex items-center gap-3 p-3 bg-[#FAFAF8] rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <span className="text-sm font-medium text-gray-400 w-6">
+                    {index + 1}.
+                  </span>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                    {source.domain}
+                  </a>
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1">
+                      {source.providers.map((provider) => (
+                        <span
+                          key={provider}
+                          className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded"
+                          title={provider === 'openai' ? 'OpenAI' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'AI Overviews' : 'Gemini'}
+                        >
+                          {provider === 'openai' ? 'GPT' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Pplx' : provider === 'ai_overviews' ? 'AIO' : 'Gem'}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-500 w-20 text-right">
+                      {source.count} {source.count === 1 ? 'citation' : 'citations'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {topCitedSources.length === 0 && (
+              <p className="text-sm text-gray-500 text-center py-4">
+                No sources found for this provider
+              </p>
+            )}
           </div>
         )}
 
