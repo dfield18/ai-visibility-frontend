@@ -423,7 +423,7 @@ export default function ResultsPage() {
 
     const headers = [
       'Prompt',
-      'Provider',
+      'LLM',
       'Model',
       'Temperature',
       'Brand Mentioned',
@@ -638,10 +638,10 @@ export default function ResultsPage() {
           )}
         </div>
 
-        {/* Provider Breakdown - only show for brand searches */}
+        {/* LLM Breakdown - only show for brand searches */}
         {!isCategory && summary && Object.keys(summary.by_provider).length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">Provider Breakdown</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-4">LLM Breakdown</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {Object.entries(summary.by_provider).map(([provider, stats]) => (
                 <div
@@ -687,7 +687,7 @@ export default function ResultsPage() {
                 onChange={(e) => setBrandMentionsProviderFilter(e.target.value)}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
               >
-                <option value="all">All Providers</option>
+                <option value="all">All LLMs</option>
                 {availableProviders.map((provider) => (
                   <option key={provider} value={provider}>
                     {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
@@ -733,7 +733,7 @@ export default function ResultsPage() {
                 })}
               {Object.keys(filteredBrandMentions).length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-4">
-                  No brand mentions found for this provider
+                  No brand mentions found for this LLM
                 </p>
               )}
             </div>
@@ -748,7 +748,7 @@ export default function ResultsPage() {
               <h2 className="text-base font-semibold text-gray-900">Key Influencers</h2>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Sources cited by multiple AI providers — these likely have outsized influence on AI recommendations.
+              Sources cited by multiple LLMs — these likely have outsized influence on AI recommendations.
             </p>
             <div className="flex flex-wrap gap-2">
               {keyInfluencers.map((source) => (
@@ -764,7 +764,7 @@ export default function ResultsPage() {
                     {source.domain}
                   </span>
                   <span className="text-xs text-gray-400">
-                    {source.providers.length} providers · {source.count} citations
+                    {source.providers.length} LLMs · {source.count} citations
                   </span>
                 </a>
               ))}
@@ -798,7 +798,7 @@ export default function ResultsPage() {
                   onChange={(e) => setSourcesProviderFilter(e.target.value)}
                   className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
                 >
-                  <option value="all">All Providers</option>
+                  <option value="all">All LLMs</option>
                   {availableProviders.map((provider) => (
                     <option key={provider} value={provider}>
                       {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
@@ -972,7 +972,7 @@ export default function ResultsPage() {
                 onChange={(e) => setProviderFilter(e.target.value)}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
               >
-                <option value="all">All Providers</option>
+                <option value="all">All LLMs</option>
                 <option value="openai">OpenAI</option>
                 <option value="gemini">Gemini</option>
                 <option value="anthropic">Claude</option>
@@ -996,7 +996,7 @@ export default function ResultsPage() {
                     Prompt
                   </th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Provider
+                    LLM
                   </th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Brand?
