@@ -141,8 +141,9 @@ export default function ResultsPage() {
     return Array.from(providers);
   }, [runStatus]);
 
-  // State for sources provider filter
+  // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
+  const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
 
   // Extract domain from URL
   const getDomain = (url: string): string => {
@@ -153,6 +154,23 @@ export default function ResultsPage() {
       return url;
     }
   };
+
+  // Get all unique brands mentioned (searched brand + competitors)
+  const availableBrands = useMemo(() => {
+    if (!runStatus) return [];
+    const brands = new Set<string>();
+    // Add searched brand
+    if (runStatus.brand) {
+      brands.add(runStatus.brand);
+    }
+    // Add all competitors mentioned
+    runStatus.results.forEach((r: Result) => {
+      if (!r.error && r.competitors_mentioned) {
+        r.competitors_mentioned.forEach((comp: string) => brands.add(comp));
+      }
+    });
+    return Array.from(brands).sort();
+  }, [runStatus]);
 
   // Calculate top cited sources
   const topCitedSources = useMemo(() => {
@@ -172,10 +190,20 @@ export default function ResultsPage() {
       count: number;
       providers: Set<string>;
       titles: Set<string>;
+      brands: Set<string>;
     }> = {};
 
     for (const result of results) {
       if (result.sources && result.sources.length > 0) {
+        // Get brands mentioned in this result
+        const resultBrands: string[] = [];
+        if (result.brand_mentioned && runStatus.brand) {
+          resultBrands.push(runStatus.brand);
+        }
+        if (result.competitors_mentioned) {
+          resultBrands.push(...result.competitors_mentioned);
+        }
+
         for (const source of result.sources) {
           if (!source.url) continue;
           const domain = getDomain(source.url);
@@ -186,6 +214,7 @@ export default function ResultsPage() {
               count: 0,
               providers: new Set(),
               titles: new Set(),
+              brands: new Set(),
             };
           }
           sourceData[domain].urls.add(source.url);
@@ -194,22 +223,35 @@ export default function ResultsPage() {
           if (source.title) {
             sourceData[domain].titles.add(source.title);
           }
+          // Track which brands were mentioned in responses citing this source
+          resultBrands.forEach(brand => sourceData[domain].brands.add(brand));
         }
       }
     }
 
-    // Convert to array and sort by count
+    // Convert to array, filter by brand if selected, and sort by count
     return Object.values(sourceData)
+      .filter(s => {
+        if (sourcesBrandFilter === 'all') return true;
+        return s.brands.has(sourcesBrandFilter);
+      })
       .map(s => ({
         domain: s.domain,
         url: Array.from(s.urls)[0], // Use first URL for linking
         count: s.count,
         providers: Array.from(s.providers),
         title: Array.from(s.titles)[0] || s.domain,
+        brands: Array.from(s.brands),
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10); // Top 10
-  }, [runStatus, sourcesProviderFilter]);
+  }, [runStatus, sourcesProviderFilter, sourcesBrandFilter]);
+
+  // Check if there are any sources at all (before filtering)
+  const hasAnySources = useMemo(() => {
+    if (!runStatus) return false;
+    return runStatus.results.some((r: Result) => !r.error && r.sources && r.sources.length > 0);
+  }, [runStatus]);
 
   // Key influencers - sources cited by multiple providers
   const keyInfluencers = useMemo(() => {
@@ -635,25 +677,39 @@ export default function ResultsPage() {
         )}
 
         {/* Top Cited Sources */}
-        {topCitedSources.length > 0 && (
+        {hasAnySources && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Link2 className="w-5 h-5 text-[#4A7C59]" />
                 <h2 className="text-base font-semibold text-gray-900">Top Cited Sources</h2>
               </div>
-              <select
-                value={sourcesProviderFilter}
-                onChange={(e) => setSourcesProviderFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-              >
-                <option value="all">All Providers</option>
-                {availableProviders.map((provider) => (
-                  <option key={provider} value={provider}>
-                    {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={sourcesBrandFilter}
+                  onChange={(e) => setSourcesBrandFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                >
+                  <option value="all">All Brands</option>
+                  {availableBrands.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}{brand === runStatus?.brand ? ' (searched)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={sourcesProviderFilter}
+                  onChange={(e) => setSourcesProviderFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                >
+                  <option value="all">All Providers</option>
+                  {availableProviders.map((provider) => (
+                    <option key={provider} value={provider}>
+                      {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="space-y-2">
               {topCitedSources.map((source, index) => (
@@ -694,7 +750,7 @@ export default function ResultsPage() {
             </div>
             {topCitedSources.length === 0 && (
               <p className="text-sm text-gray-500 text-center py-4">
-                No sources found for this provider
+                No sources found for the selected filters
               </p>
             )}
           </div>
