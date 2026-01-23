@@ -260,10 +260,10 @@ export default function ResultsPage() {
       return true;
     });
 
-    // Aggregate sources by domain, tracking per-URL citation counts
+    // Aggregate sources by domain, tracking per-URL citation counts and providers
     const sourceData: Record<string, {
       domain: string;
-      urlCounts: Map<string, { url: string; title: string; count: number }>;
+      urlCounts: Map<string, { url: string; title: string; count: number; providers: Set<string> }>;
       count: number;
       providers: Set<string>;
       brands: Set<string>;
@@ -300,15 +300,17 @@ export default function ResultsPage() {
               brands: new Set(),
             };
           }
-          // Track per-URL citation count
+          // Track per-URL citation count and providers
           const existingUrl = sourceData[domain].urlCounts.get(source.url);
           if (existingUrl) {
             existingUrl.count += 1;
+            existingUrl.providers.add(result.provider);
           } else {
             sourceData[domain].urlCounts.set(source.url, {
               url: source.url,
               title: source.title || source.url,
               count: 1,
+              providers: new Set([result.provider]),
             });
           }
           sourceData[domain].count += 1;
@@ -326,8 +328,14 @@ export default function ResultsPage() {
         return s.brands.has(sourcesBrandFilter);
       })
       .map(s => {
-        // Convert urlCounts map to array sorted by citation count
+        // Convert urlCounts map to array sorted by citation count, including providers
         const urlDetails = Array.from(s.urlCounts.values())
+          .map(u => ({
+            url: u.url,
+            title: u.title,
+            count: u.count,
+            providers: Array.from(u.providers),
+          }))
           .sort((a, b) => b.count - a.count);
         return {
           domain: s.domain,
@@ -966,7 +974,20 @@ export default function ResultsPage() {
                                   {displayTitle && displayTitle !== source.domain && (
                                     <span className="text-gray-600"> · {displayTitle}</span>
                                   )}
-                                  <span className="text-gray-400"> ({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
+                                </span>
+                                <span className="flex items-center gap-2 flex-shrink-0 ml-auto">
+                                  <span className="flex gap-1">
+                                    {urlDetail.providers.map((provider: string) => (
+                                      <span
+                                        key={provider}
+                                        className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded"
+                                        title={provider === 'openai' ? 'OpenAI' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'AI Overviews' : 'Gemini'}
+                                      >
+                                        {provider === 'openai' ? 'GPT' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Pplx' : provider === 'ai_overviews' ? 'AIO' : 'Gem'}
+                                      </span>
+                                    ))}
+                                  </span>
+                                  <span className="text-gray-400 text-xs">({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
                                 </span>
                               </a>
                             );
