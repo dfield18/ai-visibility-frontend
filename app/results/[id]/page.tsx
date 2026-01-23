@@ -159,6 +159,71 @@ export default function ResultsPage() {
     }
   };
 
+  // Extract a readable title from URL path when no title is available
+  const getReadableTitleFromUrl = (url: string): string => {
+    try {
+      const parsedUrl = new URL(url);
+      const domain = parsedUrl.hostname.replace(/^www\./, '');
+      const pathname = parsedUrl.pathname;
+
+      // Get the last meaningful segment(s) from the path
+      const segments = pathname.split('/').filter(Boolean);
+      if (segments.length === 0) return domain;
+
+      // Take the last 1-2 segments, skip common patterns
+      const meaningfulSegments = segments
+        .filter(seg => {
+          // Skip pure numeric IDs or hex strings
+          if (/^[a-f0-9]{8,}$/i.test(seg)) return false;
+          if (/^[0-9]+$/.test(seg)) return false;
+          // Skip common non-descriptive segments
+          if (['index', 'article', 'post', 'page', 'amp'].includes(seg.toLowerCase())) return false;
+          return true;
+        })
+        .slice(-2); // Take last 2 meaningful segments
+
+      if (meaningfulSegments.length === 0) return domain;
+
+      // Clean up and format the segments
+      const title = meaningfulSegments
+        .map(seg => {
+          // Remove file extensions
+          seg = seg.replace(/\.(html?|php|aspx?)$/i, '');
+          // Remove ID prefixes like "a69546581-"
+          seg = seg.replace(/^[a-z]?\d{6,}-?/i, '');
+          // Convert dashes/underscores to spaces
+          seg = seg.replace(/[-_]+/g, ' ');
+          // Clean up extra spaces
+          seg = seg.replace(/\s+/g, ' ').trim();
+          return seg;
+        })
+        .filter(Boolean)
+        .join(' - ');
+
+      return title || domain;
+    } catch {
+      return url;
+    }
+  };
+
+  // Format source display: domain + readable path title
+  const formatSourceDisplay = (url: string, title?: string): { domain: string; subtitle: string } => {
+    const domain = getDomain(url);
+
+    // If we have a good title that's not just the URL, use it
+    if (title && title !== url && !title.startsWith('http')) {
+      return { domain, subtitle: title };
+    }
+
+    // Otherwise extract from URL
+    const readableTitle = getReadableTitleFromUrl(url);
+    if (readableTitle !== domain) {
+      return { domain, subtitle: readableTitle };
+    }
+
+    return { domain, subtitle: '' };
+  };
+
   // Get all unique brands mentioned (searched brand + competitors)
   const availableBrands = useMemo(() => {
     if (!runStatus) return [];
@@ -799,18 +864,21 @@ export default function ResultsPage() {
                       <div className="px-3 pb-3 pt-1 border-t border-gray-200 ml-9">
                         <p className="text-xs text-gray-500 mb-2">{source.urlDetails.length} unique pages:</p>
                         <div className="space-y-1.5">
-                          {source.urlDetails.map((urlDetail, idx) => (
-                            <a
-                              key={idx}
-                              href={urlDetail.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                            >
-                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                              <span className="truncate">{urlDetail.title}</span>
-                            </a>
-                          ))}
+                          {source.urlDetails.map((urlDetail, idx) => {
+                            const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
+                            return (
+                              <a
+                                key={idx}
+                                href={urlDetail.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                              >
+                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">{subtitle || urlDetail.title}</span>
+                              </a>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -1039,20 +1107,24 @@ export default function ResultsPage() {
                                       Sources ({result.sources.length}):
                                     </p>
                                     <div className="space-y-1.5">
-                                      {result.sources.map((source, idx) => (
-                                        <a
-                                          key={idx}
-                                          href={source.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                                        >
-                                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                          <span className="truncate">
-                                            {source.title || source.url}
-                                          </span>
-                                        </a>
-                                      ))}
+                                      {result.sources.map((source, idx) => {
+                                        const { domain, subtitle } = formatSourceDisplay(source.url, source.title);
+                                        return (
+                                          <a
+                                            key={idx}
+                                            href={source.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                          >
+                                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate">
+                                              <span className="font-medium">{domain}</span>
+                                              {subtitle && <span className="text-gray-500"> · {subtitle}</span>}
+                                            </span>
+                                          </a>
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
