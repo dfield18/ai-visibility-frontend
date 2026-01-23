@@ -37,6 +37,7 @@ export default function ResultsPage() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [providerFilter, setProviderFilter] = useState<string>('all');
   const [brandMentionsProviderFilter, setBrandMentionsProviderFilter] = useState<string>('all');
+  const [llmBreakdownBrandFilter, setLlmBreakdownBrandFilter] = useState<string>('');
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
@@ -143,6 +144,116 @@ export default function ResultsPage() {
     });
     return Array.from(providers);
   }, [runStatus]);
+
+  // Get all brands for LLM breakdown dropdown (searched brand + competitors)
+  const llmBreakdownBrands = useMemo(() => {
+    if (!runStatus) return [];
+    const brands: string[] = [];
+    // Add searched brand first
+    if (runStatus.brand) {
+      brands.push(runStatus.brand);
+    }
+    // Add competitors that were actually mentioned
+    const mentionedCompetitors = new Set<string>();
+    runStatus.results.forEach((r: Result) => {
+      if (!r.error && r.competitors_mentioned) {
+        r.competitors_mentioned.forEach((c: string) => mentionedCompetitors.add(c));
+      }
+    });
+    // Sort competitors alphabetically and add them
+    Array.from(mentionedCompetitors).sort().forEach(c => {
+      if (!brands.includes(c)) brands.push(c);
+    });
+    return brands;
+  }, [runStatus]);
+
+  // Calculate LLM breakdown stats for selected brand
+  const llmBreakdownStats = useMemo(() => {
+    if (!runStatus) return {};
+
+    // Use the searched brand as default if no filter is set
+    const selectedBrand = llmBreakdownBrandFilter || runStatus.brand;
+    if (!selectedBrand) return {};
+
+    const results = runStatus.results.filter((r: Result) => !r.error);
+    const isSearchedBrand = selectedBrand === runStatus.brand;
+
+    // Group results by provider
+    const providerStats: Record<string, {
+      mentioned: number;
+      total: number;
+      rate: number;
+      topPosition: number;
+      ranks: number[];
+      avgRank: number | null;
+    }> = {};
+
+    for (const result of results) {
+      const provider = result.provider;
+      if (!providerStats[provider]) {
+        providerStats[provider] = {
+          mentioned: 0,
+          total: 0,
+          rate: 0,
+          topPosition: 0,
+          ranks: [],
+          avgRank: null,
+        };
+      }
+      providerStats[provider].total += 1;
+
+      // Check if brand is mentioned
+      let isMentioned = false;
+      if (isSearchedBrand) {
+        isMentioned = result.brand_mentioned === true;
+      } else {
+        isMentioned = result.competitors_mentioned?.includes(selectedBrand) || false;
+      }
+
+      if (isMentioned) {
+        providerStats[provider].mentioned += 1;
+
+        // Calculate rank by finding position in response text
+        if (result.response_text) {
+          const responseText = result.response_text.toLowerCase();
+          const brandLower = selectedBrand.toLowerCase();
+
+          // Get all brand positions in the text
+          const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+          const brandPositions: { brand: string; position: number }[] = [];
+
+          for (const brand of allBrands) {
+            const pos = responseText.indexOf(brand.toLowerCase());
+            if (pos !== -1) {
+              brandPositions.push({ brand, position: pos });
+            }
+          }
+
+          // Sort by position to get rank
+          brandPositions.sort((a, b) => a.position - b.position);
+          const rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === brandLower) + 1;
+
+          if (rank > 0) {
+            providerStats[provider].ranks.push(rank);
+            if (rank === 1) {
+              providerStats[provider].topPosition += 1;
+            }
+          }
+        }
+      }
+    }
+
+    // Calculate rates and average ranks
+    for (const provider of Object.keys(providerStats)) {
+      const stats = providerStats[provider];
+      stats.rate = stats.total > 0 ? stats.mentioned / stats.total : 0;
+      stats.avgRank = stats.ranks.length > 0
+        ? stats.ranks.reduce((a, b) => a + b, 0) / stats.ranks.length
+        : null;
+    }
+
+    return providerStats;
+  }, [runStatus, llmBreakdownBrandFilter]);
 
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
@@ -665,12 +776,25 @@ export default function ResultsPage() {
           )}
         </div>
 
-        {/* LLM Breakdown - only show for brand searches */}
-        {!isCategory && summary && Object.keys(summary.by_provider).length > 0 && (
+        {/* LLM Breakdown */}
+        {Object.keys(llmBreakdownStats).length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">LLM Breakdown</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-900">LLM Breakdown</h2>
+              <select
+                value={llmBreakdownBrandFilter || runStatus?.brand || ''}
+                onChange={(e) => setLlmBreakdownBrandFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                {llmBreakdownBrands.map((brand, index) => (
+                  <option key={brand} value={brand}>
+                    {brand}{index === 0 && runStatus?.brand === brand ? ' (searched)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.entries(summary.by_provider).map(([provider, stats]) => (
+              {Object.entries(llmBreakdownStats).map(([provider, stats]) => (
                 <div
                   key={provider}
                   className="p-4 bg-[#FAFAF8] rounded-xl"
@@ -693,9 +817,19 @@ export default function ResultsPage() {
                       {formatPercent(stats.rate)}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {stats.mentioned}/{stats.total} mentions
-                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-gray-500">
+                      {stats.mentioned}/{stats.total} mentions
+                    </p>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-gray-500">
+                        <span className="font-medium text-[#4A7C59]">{stats.topPosition}</span> top position
+                      </span>
+                      <span className="text-gray-500">
+                        avg rank: <span className="font-medium text-gray-700">{stats.avgRank !== null ? stats.avgRank.toFixed(1) : '-'}</span>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
