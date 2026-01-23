@@ -834,6 +834,10 @@ export default function ResultsPage() {
                   );
                 }
 
+                const singleUrlDetail = source.urlDetails[0];
+                const { subtitle } = formatSourceDisplay(singleUrlDetail?.url || source.url, singleUrlDetail?.title);
+                const displayTitle = subtitle || getReadableTitleFromUrl(singleUrlDetail?.url || source.url);
+
                 return (
                   <a
                     key={source.domain}
@@ -843,8 +847,11 @@ export default function ResultsPage() {
                     className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#4A7C59] hover:shadow-sm transition-all group"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
-                    <span className="text-sm font-medium text-gray-700 group-hover:text-[#4A7C59]">
-                      {source.domain}
+                    <span className="text-sm text-gray-700 group-hover:text-[#4A7C59]">
+                      <span className="font-medium">{source.domain}</span>
+                      {displayTitle && displayTitle !== source.domain && (
+                        <span className="text-gray-500 font-normal"> · {displayTitle}</span>
+                      )}
                     </span>
                     <span className="text-xs text-gray-400">
                       {source.providers.length} LLMs · {source.count} citations
@@ -925,16 +932,28 @@ export default function ResultsPage() {
                           {source.domain}
                         </div>
                       ) : (
-                        <a
-                          href={source.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-                          {source.domain}
-                        </a>
+                        (() => {
+                          const singleUrlDetail = source.urlDetails[0];
+                          const { subtitle } = formatSourceDisplay(singleUrlDetail?.url || source.url, singleUrlDetail?.title);
+                          const displayTitle = subtitle || getReadableTitleFromUrl(singleUrlDetail?.url || source.url);
+                          return (
+                            <a
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span className="truncate">
+                                <span>{source.domain}</span>
+                                {displayTitle && displayTitle !== source.domain && (
+                                  <span className="text-gray-500 font-normal"> · {displayTitle}</span>
+                                )}
+                              </span>
+                            </a>
+                          );
+                        })()
                       )}
                       <div className="flex items-center gap-3">
                         <div className="flex gap-1">
