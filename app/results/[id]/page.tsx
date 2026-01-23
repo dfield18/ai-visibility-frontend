@@ -897,15 +897,15 @@ export default function ResultsPage() {
             </div>
             <div className={`space-y-2 ${topCitedSources.length > 10 ? 'max-h-[600px] overflow-y-auto pr-2' : ''}`}>
               {topCitedSources.map((source, index) => {
-                const hasMultipleUrls = source.urlDetails.length > 1;
+                const hasMultipleCitations = source.count > 1;
                 const isExpanded = expandedSources.has(source.domain);
 
                 return (
                   <div key={source.domain} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
                     <div
-                      className={`flex items-center gap-3 p-3 ${hasMultipleUrls ? 'cursor-pointer hover:bg-gray-100' : ''} transition-colors`}
+                      className={`flex items-center gap-3 p-3 ${hasMultipleCitations ? 'cursor-pointer hover:bg-gray-100' : ''} transition-colors`}
                       onClick={() => {
-                        if (hasMultipleUrls) {
+                        if (hasMultipleCitations) {
                           const newExpanded = new Set(expandedSources);
                           if (isExpanded) {
                             newExpanded.delete(source.domain);
@@ -919,7 +919,7 @@ export default function ResultsPage() {
                       <span className="text-sm font-medium text-gray-400 w-6">
                         {index + 1}.
                       </span>
-                      {hasMultipleUrls ? (
+                      {hasMultipleCitations ? (
                         <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
                           {isExpanded ? (
                             <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" />
@@ -969,9 +969,13 @@ export default function ResultsPage() {
                         </span>
                       </div>
                     </div>
-                    {hasMultipleUrls && isExpanded && (
+                    {hasMultipleCitations && isExpanded && (
                       <div className="px-3 pb-3 pt-1 border-t border-gray-200 ml-9">
-                        <p className="text-xs text-gray-500 mb-2">{source.urlDetails.length} unique pages:</p>
+                        <p className="text-xs text-gray-500 mb-2">
+                          {source.urlDetails.length > 1
+                            ? `${source.urlDetails.length} unique pages:`
+                            : `${source.count} citations from this page:`}
+                        </p>
                         <div className="space-y-1.5">
                           {source.urlDetails.map((urlDetail, idx) => {
                             const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
@@ -990,9 +994,7 @@ export default function ResultsPage() {
                                   {displayTitle && displayTitle !== source.domain && (
                                     <span className="text-gray-600"> · {displayTitle}</span>
                                   )}
-                                  {urlDetail.count > 1 && (
-                                    <span className="text-gray-400"> ({urlDetail.count})</span>
-                                  )}
+                                  <span className="text-gray-400"> ({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
                                 </span>
                               </a>
                             );
