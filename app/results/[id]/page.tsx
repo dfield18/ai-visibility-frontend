@@ -93,16 +93,19 @@ export default function ResultsPage() {
     // Count mentions for each competitor/brand
     const mentions: Record<string, { count: number; total: number }> = {};
 
-    // Add the searched brand based on brand_mentioned field
-    const searchedBrand = runStatus.brand;
-    let brandMentionCount = 0;
-    for (const result of results) {
-      if (result.brand_mentioned) {
-        brandMentionCount += 1;
+    // Add the searched brand based on brand_mentioned field (only for brand searches, not category searches)
+    const isCategory = runStatus.search_type === 'category';
+    if (!isCategory) {
+      const searchedBrand = runStatus.brand;
+      let brandMentionCount = 0;
+      for (const result of results) {
+        if (result.brand_mentioned) {
+          brandMentionCount += 1;
+        }
       }
-    }
-    if (searchedBrand) {
-      mentions[searchedBrand] = { count: brandMentionCount, total: results.length };
+      if (searchedBrand) {
+        mentions[searchedBrand] = { count: brandMentionCount, total: results.length };
+      }
     }
 
     // Count competitor mentions
