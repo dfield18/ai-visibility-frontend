@@ -204,7 +204,15 @@ export default function ResultsPage() {
           resultBrands.push(...result.competitors_mentioned);
         }
 
-        for (const source of result.sources) {
+        // Deduplicate sources within this response by URL
+        const seenUrlsInResponse = new Set<string>();
+        const uniqueSourcesInResponse = result.sources.filter((source: { url?: string }) => {
+          if (!source.url || seenUrlsInResponse.has(source.url)) return false;
+          seenUrlsInResponse.add(source.url);
+          return true;
+        });
+
+        for (const source of uniqueSourcesInResponse) {
           if (!source.url) continue;
           const domain = getDomain(source.url);
           if (!sourceData[domain]) {
@@ -216,7 +224,7 @@ export default function ResultsPage() {
               brands: new Set(),
             };
           }
-          // Add URL with title (avoid duplicates by URL)
+          // Add URL with title (avoid duplicates by URL across all responses)
           if (!sourceData[domain].urlDetails.some(u => u.url === source.url)) {
             sourceData[domain].urlDetails.push({
               url: source.url,
@@ -274,7 +282,15 @@ export default function ResultsPage() {
 
     for (const result of results) {
       if (result.sources && result.sources.length > 0) {
-        for (const source of result.sources) {
+        // Deduplicate sources within this response by URL
+        const seenUrlsInResponse = new Set<string>();
+        const uniqueSourcesInResponse = result.sources.filter((source: { url?: string }) => {
+          if (!source.url || seenUrlsInResponse.has(source.url)) return false;
+          seenUrlsInResponse.add(source.url);
+          return true;
+        });
+
+        for (const source of uniqueSourcesInResponse) {
           if (!source.url) continue;
           const domain = getDomain(source.url);
           if (!sourceData[domain]) {
