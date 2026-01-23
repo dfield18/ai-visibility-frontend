@@ -40,6 +40,12 @@ interface VisibilityStore {
   repeats: number;
   setRepeats: (repeats: number) => void;
 
+  // Model selection
+  openaiModel: 'gpt-4o-mini' | 'gpt-4o';
+  setOpenaiModel: (model: 'gpt-4o-mini' | 'gpt-4o') => void;
+  anthropicModel: 'claude-3-haiku-20240307' | 'claude-sonnet-4-20250514';
+  setAnthropicModel: (model: 'claude-3-haiku-20240307' | 'claude-sonnet-4-20250514') => void;
+
   // Reset
   reset: () => void;
   resetConfig: () => void;
@@ -48,6 +54,8 @@ interface VisibilityStore {
 const DEFAULT_PROVIDERS = ['openai', 'gemini', 'anthropic', 'perplexity', 'ai_overviews'];
 const DEFAULT_TEMPERATURES = [0.3];
 const DEFAULT_REPEATS = 1;
+const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini' as const;
+const DEFAULT_ANTHROPIC_MODEL = 'claude-3-haiku-20240307' as const;
 
 export const useStore = create<VisibilityStore>()(
   persist(
@@ -167,6 +175,12 @@ export const useStore = create<VisibilityStore>()(
       repeats: DEFAULT_REPEATS,
       setRepeats: (repeats) => set({ repeats }),
 
+      // Model selection
+      openaiModel: DEFAULT_OPENAI_MODEL,
+      setOpenaiModel: (openaiModel) => set({ openaiModel }),
+      anthropicModel: DEFAULT_ANTHROPIC_MODEL,
+      setAnthropicModel: (anthropicModel) => set({ anthropicModel }),
+
       // Reset
       reset: () =>
         set({
@@ -179,6 +193,8 @@ export const useStore = create<VisibilityStore>()(
           providers: DEFAULT_PROVIDERS,
           temperatures: DEFAULT_TEMPERATURES,
           repeats: DEFAULT_REPEATS,
+          openaiModel: DEFAULT_OPENAI_MODEL,
+          anthropicModel: DEFAULT_ANTHROPIC_MODEL,
         }),
       resetConfig: () =>
         set({
@@ -189,6 +205,8 @@ export const useStore = create<VisibilityStore>()(
           providers: DEFAULT_PROVIDERS,
           temperatures: DEFAULT_TEMPERATURES,
           repeats: DEFAULT_REPEATS,
+          openaiModel: DEFAULT_OPENAI_MODEL,
+          anthropicModel: DEFAULT_ANTHROPIC_MODEL,
         }),
     }),
     {
@@ -203,6 +221,8 @@ export const useStore = create<VisibilityStore>()(
         providers: state.providers,
         temperatures: state.temperatures,
         repeats: state.repeats,
+        openaiModel: state.openaiModel,
+        anthropicModel: state.anthropicModel,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

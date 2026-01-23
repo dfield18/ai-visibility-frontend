@@ -111,15 +111,15 @@ export function calculateEstimatedCost(
   numProviders: number,
   numTemperatures: number,
   numRepeats: number,
-  providers: string[]
+  providers: string[],
+  openaiModel: 'gpt-4o-mini' | 'gpt-4o' = 'gpt-4o-mini',
+  anthropicModel: 'claude-3-haiku-20240307' | 'claude-sonnet-4-20250514' = 'claude-3-haiku-20240307'
 ): number {
-  const totalCalls = numPrompts * numProviders * numTemperatures * numRepeats;
-
-  // Rough cost estimates per call
+  // Cost estimates per call based on model
   const costPerCall: Record<string, number> = {
-    openai: 0.003,
+    openai: openaiModel === 'gpt-4o' ? 0.003 : 0.0003,
     gemini: 0.00025,
-    anthropic: 0.003,
+    anthropic: anthropicModel === 'claude-sonnet-4-20250514' ? 0.003 : 0.0003,
     perplexity: 0.001,
     ai_overviews: 0.005,
   };

@@ -25,8 +25,8 @@ import {
 
 const PROVIDER_INFO = {
   openai: {
-    name: 'OpenAI GPT-4o',
-    cost: '$0.003/call',
+    name: 'OpenAI ChatGPT',
+    cost: 'from $0.0003/call',
   },
   gemini: {
     name: 'Google Gemini Flash',
@@ -34,7 +34,7 @@ const PROVIDER_INFO = {
   },
   anthropic: {
     name: 'Anthropic Claude',
-    cost: '$0.003/call',
+    cost: 'from $0.0003/call',
   },
   perplexity: {
     name: 'Perplexity Sonar',
@@ -72,6 +72,10 @@ export default function ConfigurePage() {
     setTemperatures,
     repeats,
     setRepeats,
+    openaiModel,
+    setOpenaiModel,
+    anthropicModel,
+    setAnthropicModel,
   } = useStore();
 
   // Labels based on search type
@@ -126,7 +130,9 @@ export default function ConfigurePage() {
     providers.length,
     temperatures.length,
     repeats,
-    providers
+    providers,
+    openaiModel,
+    anthropicModel
   );
   const estimatedTime = estimateDuration(totalCalls);
 
@@ -179,6 +185,8 @@ export default function ConfigurePage() {
         providers,
         temperatures,
         repeats,
+        openai_model: openaiModel,
+        anthropic_model: anthropicModel,
       });
       router.push(`/run/${result.run_id}`);
     } catch (err) {
@@ -518,7 +526,7 @@ export default function ConfigurePage() {
             <div className="text-left">
               <h2 className="text-base font-semibold text-gray-900">Advanced Features</h2>
               <p className="text-sm text-gray-500">
-                Temperature and repeat configuration
+                Model selection, temperature, and repeat configuration
               </p>
             </div>
             <ChevronDown
@@ -583,6 +591,74 @@ export default function ConfigurePage() {
                   <span>1</span>
                   <span>2</span>
                   <span>3</span>
+                </div>
+              </div>
+
+              {/* OpenAI Model */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  OpenAI Model
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  GPT-4o-mini is faster and cheaper. GPT-4o is more capable but costs ~10x more.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setOpenaiModel('gpt-4o-mini')}
+                    className={`flex-1 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      openaiModel === 'gpt-4o-mini'
+                        ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    GPT-4o-mini
+                    <span className="block text-xs font-normal opacity-70">$0.0003/call</span>
+                  </button>
+                  <button
+                    onClick={() => setOpenaiModel('gpt-4o')}
+                    className={`flex-1 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      openaiModel === 'gpt-4o'
+                        ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    GPT-4o
+                    <span className="block text-xs font-normal opacity-70">$0.003/call</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Anthropic Model */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Claude Model
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Haiku is faster and cheaper. Sonnet is more capable but costs ~10x more.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAnthropicModel('claude-3-haiku-20240307')}
+                    className={`flex-1 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      anthropicModel === 'claude-3-haiku-20240307'
+                        ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    Claude Haiku
+                    <span className="block text-xs font-normal opacity-70">$0.0003/call</span>
+                  </button>
+                  <button
+                    onClick={() => setAnthropicModel('claude-sonnet-4-20250514')}
+                    className={`flex-1 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                      anthropicModel === 'claude-sonnet-4-20250514'
+                        ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    Claude Sonnet
+                    <span className="block text-xs font-normal opacity-70">$0.003/call</span>
+                  </button>
                 </div>
               </div>
             </div>
