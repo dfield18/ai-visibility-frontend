@@ -39,6 +39,7 @@ export default function ResultsPage() {
   const [brandMentionsProviderFilter, setBrandMentionsProviderFilter] = useState<string>('all');
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
+  const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -322,9 +323,27 @@ export default function ResultsPage() {
 
         {/* AI Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-[#4A7C59]" />
-            <h2 className="text-base font-semibold text-gray-900">AI Analysis</h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#4A7C59]" />
+              <h2 className="text-base font-semibold text-gray-900">AI Analysis</h2>
+            </div>
+            {aiSummary?.summary && (
+              <button
+                onClick={() => setAiSummaryExpanded(!aiSummaryExpanded)}
+                className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+              >
+                {aiSummaryExpanded ? (
+                  <>
+                    Show less <ChevronUp className="w-4 h-4" />
+                  </>
+                ) : (
+                  <>
+                    Show more <ChevronDown className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            )}
           </div>
           {isSummaryLoading ? (
             <div className="flex items-center gap-3 py-4">
@@ -332,13 +351,23 @@ export default function ResultsPage() {
               <span className="text-sm text-gray-500">Generating AI summary...</span>
             </div>
           ) : aiSummary?.summary ? (
-            <div className="text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0">
+            <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
               <ReactMarkdown>{aiSummary.summary}</ReactMarkdown>
             </div>
           ) : (
             <p className="text-sm text-gray-500 italic">
               AI summary will be available once the analysis is complete.
             </p>
+          )}
+          {aiSummary?.summary && !aiSummaryExpanded && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <button
+                onClick={() => setAiSummaryExpanded(true)}
+                className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+              >
+                Read full analysis →
+              </button>
+            </div>
           )}
         </div>
 
