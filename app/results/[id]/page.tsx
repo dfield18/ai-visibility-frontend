@@ -339,8 +339,7 @@ export default function ResultsPage() {
           brands: Array.from(s.brands),
         };
       })
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10); // Top 10
+      .sort((a, b) => b.count - a.count);
   }, [runStatus, sourcesProviderFilter, sourcesBrandFilter]);
 
   // Check if there are any sources at all (before filtering)
@@ -896,7 +895,7 @@ export default function ResultsPage() {
                 </select>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className={`space-y-2 ${topCitedSources.length > 10 ? 'max-h-[600px] overflow-y-auto pr-2' : ''}`}>
               {topCitedSources.map((source, index) => {
                 const hasMultipleUrls = source.urlDetails.length > 1;
                 const isExpanded = expandedSources.has(source.domain);
