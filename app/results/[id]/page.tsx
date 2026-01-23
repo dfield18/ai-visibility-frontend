@@ -1244,11 +1244,13 @@ export default function ResultsPage() {
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     LLM
                   </th>
+                  {!isCategory && (
+                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Brand?
+                    </th>
+                  )}
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Brand?
-                  </th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Competitors
+                    {isCategory ? 'Brands' : 'Competitors'}
                   </th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Type
@@ -1278,35 +1280,44 @@ export default function ResultsPage() {
                           {result.provider === 'openai' ? 'GPT-4o' : result.provider === 'anthropic' ? 'Claude' : result.provider === 'perplexity' ? 'Perplexity' : result.provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
-                        {result.error ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
-                            <AlertTriangle className="w-3 h-3" />
-                            Not Available
-                          </span>
-                        ) : result.brand_mentioned ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
-                            <Check className="w-3 h-3" />
-                            Yes
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
-                            <X className="w-3 h-3" />
-                            No
-                          </span>
-                        )}
-                      </td>
+                      {!isCategory && (
+                        <td className="py-3 px-4">
+                          {result.error ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
+                              <AlertTriangle className="w-3 h-3" />
+                              Not Available
+                            </span>
+                          ) : result.brand_mentioned ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
+                              <Check className="w-3 h-3" />
+                              Yes
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
+                              <X className="w-3 h-3" />
+                              No
+                            </span>
+                          )}
+                        </td>
+                      )}
                       <td className="py-3 px-4">
                         {result.error ? (
                           <span className="text-sm text-gray-400">-</span>
                         ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
                           <span className="text-sm text-gray-700">
-                            {result.competitors_mentioned.slice(0, 2).join(', ')}
-                            {result.competitors_mentioned.length > 2 && (
-                              <span className="text-gray-400">
-                                {' '}+{result.competitors_mentioned.length - 2}
-                              </span>
-                            )}
+                            {isCategory
+                              ? result.competitors_mentioned.join(', ')
+                              : (
+                                <>
+                                  {result.competitors_mentioned.slice(0, 2).join(', ')}
+                                  {result.competitors_mentioned.length > 2 && (
+                                    <span className="text-gray-400">
+                                      {' '}+{result.competitors_mentioned.length - 2}
+                                    </span>
+                                  )}
+                                </>
+                              )
+                            }
                           </span>
                         ) : (
                           <span className="text-sm text-gray-400">None</span>
@@ -1336,7 +1347,7 @@ export default function ResultsPage() {
                     </tr>
                     {expandedResults.has(result.id) && (
                       <tr key={`${result.id}-expanded`}>
-                        <td colSpan={6} className="py-4 px-4 bg-[#FAFAF8]">
+                        <td colSpan={isCategory ? 5 : 6} className="py-4 px-4 bg-[#FAFAF8]">
                           <div className="max-h-64 overflow-y-auto">
                             {result.error ? (
                               <>
