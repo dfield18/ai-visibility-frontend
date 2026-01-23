@@ -821,9 +821,7 @@ export default function ResultsPage() {
                                   {displayTitle && displayTitle !== source.domain && (
                                     <span className="text-gray-600"> · {displayTitle}</span>
                                   )}
-                                  {urlDetail.count > 1 && (
-                                    <span className="text-gray-400"> ({urlDetail.count})</span>
-                                  )}
+                                  <span className="text-gray-400"> ({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
                                 </span>
                               </a>
                             );
