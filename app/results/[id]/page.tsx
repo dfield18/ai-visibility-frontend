@@ -771,89 +771,61 @@ export default function ResultsPage() {
             </p>
             <div className="flex flex-wrap gap-2">
               {keyInfluencers.map((source) => {
-                const hasMultipleUrls = source.urlDetails.length > 1;
                 const isExpanded = expandedInfluencers.has(source.domain);
 
-                if (hasMultipleUrls) {
-                  return (
-                    <div key={source.domain} className="flex flex-col">
-                      <div
-                        onClick={() => {
-                          const newExpanded = new Set(expandedInfluencers);
-                          if (isExpanded) {
-                            newExpanded.delete(source.domain);
-                          } else {
-                            newExpanded.add(source.domain);
-                          }
-                          setExpandedInfluencers(newExpanded);
-                        }}
-                        className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#4A7C59] hover:shadow-sm transition-all cursor-pointer group"
-                      >
-                        {isExpanded ? (
-                          <ChevronUp className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
-                        ) : (
-                          <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
-                        )}
-                        <span className="text-sm font-medium text-gray-700 group-hover:text-[#4A7C59]">
-                          {source.domain}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {source.providers.length} LLMs · {source.count} citations
-                        </span>
-                      </div>
-                      {isExpanded && (
-                        <div className="mt-1 ml-2 p-2 bg-white rounded-lg border border-gray-200 space-y-1">
-                          {source.urlDetails.map((urlDetail, idx) => {
-                            const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
-                            const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
-                            return (
-                              <a
-                                key={idx}
-                                href={urlDetail.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                              >
-                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate">
-                                  <span className="font-medium">{source.domain}</span>
-                                  {displayTitle && displayTitle !== source.domain && (
-                                    <span className="text-gray-600"> · {displayTitle}</span>
-                                  )}
-                                  <span className="text-gray-400"> ({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
-                                </span>
-                              </a>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
-
-                const singleUrlDetail = source.urlDetails[0];
-                const { subtitle } = formatSourceDisplay(singleUrlDetail?.url || source.url, singleUrlDetail?.title);
-                const displayTitle = subtitle || getReadableTitleFromUrl(singleUrlDetail?.url || source.url);
-
                 return (
-                  <a
-                    key={source.domain}
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#4A7C59] hover:shadow-sm transition-all group"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
-                    <span className="text-sm text-gray-700 group-hover:text-[#4A7C59]">
-                      <span className="font-medium">{source.domain}</span>
-                      {displayTitle && displayTitle !== source.domain && (
-                        <span className="text-gray-500 font-normal"> · {displayTitle}</span>
+                  <div key={source.domain} className="flex flex-col">
+                    <div
+                      onClick={() => {
+                        const newExpanded = new Set(expandedInfluencers);
+                        if (isExpanded) {
+                          newExpanded.delete(source.domain);
+                        } else {
+                          newExpanded.add(source.domain);
+                        }
+                        setExpandedInfluencers(newExpanded);
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#4A7C59] hover:shadow-sm transition-all cursor-pointer group"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
                       )}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {source.providers.length} LLMs · {source.count} citations
-                    </span>
-                  </a>
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-[#4A7C59]">
+                        {source.domain}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {source.providers.length} LLMs · {source.count} {source.count === 1 ? 'citation' : 'citations'}
+                      </span>
+                    </div>
+                    {isExpanded && (
+                      <div className="mt-1 ml-2 p-2 bg-white rounded-lg border border-gray-200 space-y-1">
+                        {source.urlDetails.map((urlDetail, idx) => {
+                          const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
+                          const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
+                          return (
+                            <a
+                              key={idx}
+                              href={urlDetail.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                            >
+                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">
+                                <span className="font-medium">{source.domain}</span>
+                                {displayTitle && displayTitle !== source.domain && (
+                                  <span className="text-gray-600"> · {displayTitle}</span>
+                                )}
+                                <span className="text-gray-400"> ({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
+                              </span>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
