@@ -166,6 +166,14 @@ export default function ResultsPage() {
       const domain = parsedUrl.hostname.replace(/^www\./, '');
       const pathname = parsedUrl.pathname;
 
+      // Special handling for Reddit URLs - extract subreddit name
+      if (domain === 'reddit.com' || domain.endsWith('.reddit.com')) {
+        const redditMatch = pathname.match(/^\/r\/([^/]+)/);
+        if (redditMatch) {
+          return `r/${redditMatch[1]}`;
+        }
+      }
+
       // Get the last meaningful segment(s) from the path
       const segments = pathname.split('/').filter(Boolean);
       if (segments.length === 0) return domain;
