@@ -667,9 +667,19 @@ export default function ResultsPage() {
                                 <p className="text-xs text-gray-500 mb-2">
                                   Full Response:
                                 </p>
-                                <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                                  {result.response_text}
-                                </p>
+                                <div className="text-sm text-gray-700 whitespace-pre-wrap [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649]">
+                                  <ReactMarkdown
+                                    components={{
+                                      a: ({ href, children }) => (
+                                        <a href={href} target="_blank" rel="noopener noreferrer">
+                                          {children}
+                                        </a>
+                                      ),
+                                    }}
+                                  >
+                                    {result.response_text || ''}
+                                  </ReactMarkdown>
+                                </div>
                                 {result.sources && result.sources.length > 0 && (
                                   <div className="mt-4 pt-3 border-t border-gray-200">
                                     <p className="text-xs text-gray-500 mb-2">
