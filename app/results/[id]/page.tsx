@@ -16,7 +16,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
-import { useRunStatus } from '@/hooks/useApi';
+import { useRunStatus, useAISummary } from '@/hooks/useApi';
 import {
   formatCurrency,
   formatDate,
@@ -40,6 +40,10 @@ export default function ResultsPage() {
   const [copied, setCopied] = useState(false);
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
+  const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
+    runId,
+    runStatus?.status === 'complete'
+  );
 
   // Filter results - include AI Overview errors to show "Not Available"
   const filteredResults = useMemo(() => {
@@ -300,6 +304,28 @@ export default function ResultsPage() {
               {formatCurrency(runStatus.actual_cost)}
             </p>
           </div>
+        </div>
+
+        {/* AI Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-5 h-5 text-[#4A7C59]" />
+            <h2 className="text-base font-semibold text-gray-900">AI Analysis</h2>
+          </div>
+          {isSummaryLoading ? (
+            <div className="flex items-center gap-3 py-4">
+              <Spinner size="sm" />
+              <span className="text-sm text-gray-500">Generating AI summary...</span>
+            </div>
+          ) : aiSummary?.summary ? (
+            <p className="text-sm text-gray-700 leading-relaxed">
+              {aiSummary.summary}
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 italic">
+              AI summary will be available once the analysis is complete.
+            </p>
+          )}
         </div>
 
         {/* Provider Breakdown - only show for brand searches */}

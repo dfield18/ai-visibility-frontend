@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { RunConfig, RunResponse, RunStatusResponse, CancelResponse } from '@/lib/types';
+import { RunConfig, RunResponse, RunStatusResponse, CancelResponse, AISummaryResponse } from '@/lib/types';
 
 /**
  * Hook to fetch suggestions for a brand or category.
@@ -78,4 +78,17 @@ export function usePrefetchRunStatus() {
       queryFn: () => api.getRunStatus(runId),
     });
   };
+}
+
+/**
+ * Hook to fetch AI-generated summary for a run.
+ */
+export function useAISummary(runId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['ai-summary', runId],
+    queryFn: () => api.getAISummary(runId),
+    enabled: enabled && runId.length > 0,
+    staleTime: 30 * 60 * 1000, // 30 minutes - summary won't change
+    retry: 1, // Only retry once on failure
+  });
 }

@@ -115,3 +115,9 @@ export interface CancelResponse {
 export interface ApiError {
   detail: string;
 }
+
+export interface AISummaryResponse {
+  run_id: string;
+  summary: string;
+  generated_at: string;
+}

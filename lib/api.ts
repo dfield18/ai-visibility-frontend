@@ -5,6 +5,7 @@ import {
   RunResponse,
   RunStatusResponse,
   CancelResponse,
+  AISummaryResponse,
   ApiError,
 } from './types';
 
@@ -68,6 +69,10 @@ class ApiClient {
     return this.request<CancelResponse>(`/api/v1/run/${runId}/cancel`, {
       method: 'POST',
     });
+  }
+
+  async getAISummary(runId: string): Promise<AISummaryResponse> {
+    return this.request<AISummaryResponse>(`/api/v1/run/${runId}/ai-summary`);
   }
 }
 
