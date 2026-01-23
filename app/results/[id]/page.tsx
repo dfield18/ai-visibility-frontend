@@ -646,7 +646,7 @@ export default function ResultsPage() {
             </div>
           ) : aiSummary?.summary ? (
             <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
-              <ReactMarkdown>{aiSummary.summary}</ReactMarkdown>
+              <ReactMarkdown>{aiSummary.summary.replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
             </div>
           ) : (
             <p className="text-sm text-gray-500 italic">
