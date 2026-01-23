@@ -144,6 +144,7 @@ export default function ResultsPage() {
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
+  const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
 
   // Extract domain from URL
   const getDomain = (url: string): string => {
@@ -186,10 +187,9 @@ export default function ResultsPage() {
     // Aggregate sources by domain
     const sourceData: Record<string, {
       domain: string;
-      urls: Set<string>;
+      urlDetails: Array<{ url: string; title: string }>;
       count: number;
       providers: Set<string>;
-      titles: Set<string>;
       brands: Set<string>;
     }> = {};
 
@@ -210,19 +210,21 @@ export default function ResultsPage() {
           if (!sourceData[domain]) {
             sourceData[domain] = {
               domain,
-              urls: new Set(),
+              urlDetails: [],
               count: 0,
               providers: new Set(),
-              titles: new Set(),
               brands: new Set(),
             };
           }
-          sourceData[domain].urls.add(source.url);
+          // Add URL with title (avoid duplicates by URL)
+          if (!sourceData[domain].urlDetails.some(u => u.url === source.url)) {
+            sourceData[domain].urlDetails.push({
+              url: source.url,
+              title: source.title || source.url,
+            });
+          }
           sourceData[domain].count += 1;
           sourceData[domain].providers.add(result.provider);
-          if (source.title) {
-            sourceData[domain].titles.add(source.title);
-          }
           // Track which brands were mentioned in responses citing this source
           resultBrands.forEach(brand => sourceData[domain].brands.add(brand));
         }
@@ -237,10 +239,11 @@ export default function ResultsPage() {
       })
       .map(s => ({
         domain: s.domain,
-        url: Array.from(s.urls)[0], // Use first URL for linking
+        url: s.urlDetails[0]?.url || '', // Use first URL for main linking
+        urlDetails: s.urlDetails,
         count: s.count,
         providers: Array.from(s.providers),
-        title: Array.from(s.titles)[0] || s.domain,
+        title: s.urlDetails[0]?.title || s.domain,
         brands: Array.from(s.brands),
       }))
       .sort((a, b) => b.count - a.count)
@@ -712,41 +715,89 @@ export default function ResultsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              {topCitedSources.map((source, index) => (
-                <div
-                  key={source.domain}
-                  className="flex items-center gap-3 p-3 bg-[#FAFAF8] rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <span className="text-sm font-medium text-gray-400 w-6">
-                    {index + 1}.
-                  </span>
-                  <a
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-                    {source.domain}
-                  </a>
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-1">
-                      {source.providers.map((provider) => (
-                        <span
-                          key={provider}
-                          className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded"
-                          title={provider === 'openai' ? 'OpenAI' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'AI Overviews' : 'Gemini'}
+              {topCitedSources.map((source, index) => {
+                const hasMultipleUrls = source.urlDetails.length > 1;
+                const isExpanded = expandedSources.has(source.domain);
+
+                return (
+                  <div key={source.domain} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
+                    <div
+                      className={`flex items-center gap-3 p-3 ${hasMultipleUrls ? 'cursor-pointer hover:bg-gray-100' : ''} transition-colors`}
+                      onClick={() => {
+                        if (hasMultipleUrls) {
+                          const newExpanded = new Set(expandedSources);
+                          if (isExpanded) {
+                            newExpanded.delete(source.domain);
+                          } else {
+                            newExpanded.add(source.domain);
+                          }
+                          setExpandedSources(newExpanded);
+                        }
+                      }}
+                    >
+                      <span className="text-sm font-medium text-gray-400 w-6">
+                        {index + 1}.
+                      </span>
+                      {hasMultipleUrls ? (
+                        <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
+                          {isExpanded ? (
+                            <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" />
+                          ) : (
+                            <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />
+                          )}
+                          {source.domain}
+                        </div>
+                      ) : (
+                        <a
+                          href={source.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {provider === 'openai' ? 'GPT' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Pplx' : provider === 'ai_overviews' ? 'AIO' : 'Gem'}
+                          <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                          {source.domain}
+                        </a>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-1">
+                          {source.providers.map((provider) => (
+                            <span
+                              key={provider}
+                              className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded"
+                              title={provider === 'openai' ? 'OpenAI' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'AI Overviews' : 'Gemini'}
+                            >
+                              {provider === 'openai' ? 'GPT' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Pplx' : provider === 'ai_overviews' ? 'AIO' : 'Gem'}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-500 w-20 text-right">
+                          {source.count} {source.count === 1 ? 'citation' : 'citations'}
                         </span>
-                      ))}
+                      </div>
                     </div>
-                    <span className="text-sm text-gray-500 w-20 text-right">
-                      {source.count} {source.count === 1 ? 'citation' : 'citations'}
-                    </span>
+                    {hasMultipleUrls && isExpanded && (
+                      <div className="px-3 pb-3 pt-1 border-t border-gray-200 ml-9">
+                        <p className="text-xs text-gray-500 mb-2">{source.urlDetails.length} unique pages:</p>
+                        <div className="space-y-1.5">
+                          {source.urlDetails.map((urlDetail, idx) => (
+                            <a
+                              key={idx}
+                              href={urlDetail.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                            >
+                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">{urlDetail.title}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             {topCitedSources.length === 0 && (
               <p className="text-sm text-gray-500 text-center py-4">
