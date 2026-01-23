@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
 import {
   ArrowLeft,
   Download,
@@ -331,9 +332,9 @@ export default function ResultsPage() {
               <span className="text-sm text-gray-500">Generating AI summary...</span>
             </div>
           ) : aiSummary?.summary ? (
-            <p className="text-sm text-gray-700 leading-relaxed">
-              {aiSummary.summary}
-            </p>
+            <div className="text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0">
+              <ReactMarkdown>{aiSummary.summary}</ReactMarkdown>
+            </div>
           ) : (
             <p className="text-sm text-gray-500 italic">
               AI summary will be available once the analysis is complete.
