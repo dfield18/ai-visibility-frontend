@@ -252,10 +252,10 @@ export default function ResultsPage() {
       return true;
     });
 
-    // Aggregate sources by domain
+    // Aggregate sources by domain, tracking per-URL citation counts
     const sourceData: Record<string, {
       domain: string;
-      urlDetails: Array<{ url: string; title: string }>;
+      urlCounts: Map<string, { url: string; title: string; count: number }>;
       count: number;
       providers: Set<string>;
       brands: Set<string>;
@@ -286,17 +286,21 @@ export default function ResultsPage() {
           if (!sourceData[domain]) {
             sourceData[domain] = {
               domain,
-              urlDetails: [],
+              urlCounts: new Map(),
               count: 0,
               providers: new Set(),
               brands: new Set(),
             };
           }
-          // Add URL with title (avoid duplicates by URL across all responses)
-          if (!sourceData[domain].urlDetails.some(u => u.url === source.url)) {
-            sourceData[domain].urlDetails.push({
+          // Track per-URL citation count
+          const existingUrl = sourceData[domain].urlCounts.get(source.url);
+          if (existingUrl) {
+            existingUrl.count += 1;
+          } else {
+            sourceData[domain].urlCounts.set(source.url, {
               url: source.url,
               title: source.title || source.url,
+              count: 1,
             });
           }
           sourceData[domain].count += 1;
@@ -313,15 +317,20 @@ export default function ResultsPage() {
         if (sourcesBrandFilter === 'all') return true;
         return s.brands.has(sourcesBrandFilter);
       })
-      .map(s => ({
-        domain: s.domain,
-        url: s.urlDetails[0]?.url || '', // Use first URL for main linking
-        urlDetails: s.urlDetails,
-        count: s.count,
-        providers: Array.from(s.providers),
-        title: s.urlDetails[0]?.title || s.domain,
-        brands: Array.from(s.brands),
-      }))
+      .map(s => {
+        // Convert urlCounts map to array sorted by citation count
+        const urlDetails = Array.from(s.urlCounts.values())
+          .sort((a, b) => b.count - a.count);
+        return {
+          domain: s.domain,
+          url: urlDetails[0]?.url || '',
+          urlDetails,
+          count: s.count,
+          providers: Array.from(s.providers),
+          title: urlDetails[0]?.title || s.domain,
+          brands: Array.from(s.brands),
+        };
+      })
       .sort((a, b) => b.count - a.count)
       .slice(0, 10); // Top 10
   }, [runStatus, sourcesProviderFilter, sourcesBrandFilter]);
@@ -866,6 +875,7 @@ export default function ResultsPage() {
                         <div className="space-y-1.5">
                           {source.urlDetails.map((urlDetail, idx) => {
                             const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
+                            const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
                             return (
                               <a
                                 key={idx}
@@ -875,7 +885,15 @@ export default function ResultsPage() {
                                 className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
                               >
                                 <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate">{subtitle || urlDetail.title}</span>
+                                <span className="truncate">
+                                  <span className="font-medium">{source.domain}</span>
+                                  {displayTitle && displayTitle !== source.domain && (
+                                    <span className="text-gray-600"> · {displayTitle}</span>
+                                  )}
+                                  {urlDetail.count > 1 && (
+                                    <span className="text-gray-400"> ({urlDetail.count})</span>
+                                  )}
+                                </span>
                               </a>
                             );
                           })}
