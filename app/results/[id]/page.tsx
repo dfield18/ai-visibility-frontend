@@ -823,10 +823,10 @@ export default function ResultsPage() {
                     </p>
                     <div className="flex items-center gap-3 text-xs">
                       <span className="text-gray-500">
-                        <span className="font-medium text-[#4A7C59]">{stats.topPosition}</span> top position
+                        top position: <span className="font-medium text-[#4A7C59]">{stats.mentioned === 0 ? 'n/a' : stats.topPosition}</span>
                       </span>
                       <span className="text-gray-500">
-                        avg rank: <span className="font-medium text-gray-700">{stats.avgRank !== null ? stats.avgRank.toFixed(1) : '-'}</span>
+                        avg rank: <span className="font-medium text-gray-700">{stats.mentioned === 0 ? 'n/a' : (stats.avgRank !== null ? stats.avgRank.toFixed(1) : 'n/a')}</span>
                       </span>
                     </div>
                   </div>
