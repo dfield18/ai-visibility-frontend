@@ -350,19 +350,20 @@ export default function ResultsPage() {
   }, [runStatus]);
 
   // Key influencers - sources cited by multiple providers
+  const [expandedInfluencers, setExpandedInfluencers] = useState<Set<string>>(new Set());
+
   const keyInfluencers = useMemo(() => {
     if (!runStatus) return [];
 
     // Use all results (not filtered by provider) to find cross-provider sources
     const results = runStatus.results.filter((r: Result) => !r.error);
 
-    // Aggregate sources by domain
+    // Aggregate sources by domain, tracking per-URL citation counts
     const sourceData: Record<string, {
       domain: string;
-      urls: Set<string>;
+      urlCounts: Map<string, { url: string; title: string; count: number }>;
       count: number;
       providers: Set<string>;
-      titles: Set<string>;
     }> = {};
 
     for (const result of results) {
@@ -381,18 +382,24 @@ export default function ResultsPage() {
           if (!sourceData[domain]) {
             sourceData[domain] = {
               domain,
-              urls: new Set(),
+              urlCounts: new Map(),
               count: 0,
               providers: new Set(),
-              titles: new Set(),
             };
           }
-          sourceData[domain].urls.add(source.url);
+          // Track per-URL citation count
+          const existingUrl = sourceData[domain].urlCounts.get(source.url);
+          if (existingUrl) {
+            existingUrl.count += 1;
+          } else {
+            sourceData[domain].urlCounts.set(source.url, {
+              url: source.url,
+              title: source.title || source.url,
+              count: 1,
+            });
+          }
           sourceData[domain].count += 1;
           sourceData[domain].providers.add(result.provider);
-          if (source.title) {
-            sourceData[domain].titles.add(source.title);
-          }
         }
       }
     }
@@ -400,13 +407,18 @@ export default function ResultsPage() {
     // Filter to sources cited by 2+ providers and sort by provider count then citation count
     return Object.values(sourceData)
       .filter(s => s.providers.size >= 2)
-      .map(s => ({
-        domain: s.domain,
-        url: Array.from(s.urls)[0],
-        count: s.count,
-        providers: Array.from(s.providers),
-        title: Array.from(s.titles)[0] || s.domain,
-      }))
+      .map(s => {
+        const urlDetails = Array.from(s.urlCounts.values())
+          .sort((a, b) => b.count - a.count);
+        return {
+          domain: s.domain,
+          url: urlDetails[0]?.url || '',
+          urlDetails,
+          count: s.count,
+          providers: Array.from(s.providers),
+          title: urlDetails[0]?.title || s.domain,
+        };
+      })
       .sort((a, b) => {
         if (b.providers.length !== a.providers.length) {
           return b.providers.length - a.providers.length;
@@ -759,23 +771,87 @@ export default function ResultsPage() {
               Sources cited by multiple LLMs — these likely have outsized influence on AI recommendations.
             </p>
             <div className="flex flex-wrap gap-2">
-              {keyInfluencers.map((source) => (
-                <a
-                  key={source.domain}
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#4A7C59] hover:shadow-sm transition-all group"
-                >
-                  <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-[#4A7C59]">
-                    {source.domain}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {source.providers.length} LLMs · {source.count} citations
-                  </span>
-                </a>
-              ))}
+              {keyInfluencers.map((source) => {
+                const hasMultipleUrls = source.urlDetails.length > 1;
+                const isExpanded = expandedInfluencers.has(source.domain);
+
+                if (hasMultipleUrls) {
+                  return (
+                    <div key={source.domain} className="flex flex-col">
+                      <div
+                        onClick={() => {
+                          const newExpanded = new Set(expandedInfluencers);
+                          if (isExpanded) {
+                            newExpanded.delete(source.domain);
+                          } else {
+                            newExpanded.add(source.domain);
+                          }
+                          setExpandedInfluencers(newExpanded);
+                        }}
+                        className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#4A7C59] hover:shadow-sm transition-all cursor-pointer group"
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
+                        )}
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-[#4A7C59]">
+                          {source.domain}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {source.providers.length} LLMs · {source.count} citations
+                        </span>
+                      </div>
+                      {isExpanded && (
+                        <div className="mt-1 ml-2 p-2 bg-white rounded-lg border border-gray-200 space-y-1">
+                          {source.urlDetails.map((urlDetail, idx) => {
+                            const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
+                            const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
+                            return (
+                              <a
+                                key={idx}
+                                href={urlDetail.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                              >
+                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  <span className="font-medium">{source.domain}</span>
+                                  {displayTitle && displayTitle !== source.domain && (
+                                    <span className="text-gray-600"> · {displayTitle}</span>
+                                  )}
+                                  {urlDetail.count > 1 && (
+                                    <span className="text-gray-400"> ({urlDetail.count})</span>
+                                  )}
+                                </span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <a
+                    key={source.domain}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#4A7C59] hover:shadow-sm transition-all group"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-[#4A7C59]">
+                      {source.domain}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {source.providers.length} LLMs · {source.count} citations
+                    </span>
+                  </a>
+                );
+              })}
             </div>
           </div>
         )}
