@@ -91,6 +91,19 @@ export default function ResultsPage() {
     // Count mentions for each competitor/brand
     const mentions: Record<string, { count: number; total: number }> = {};
 
+    // Add the searched brand based on brand_mentioned field
+    const searchedBrand = runStatus.brand;
+    let brandMentionCount = 0;
+    for (const result of results) {
+      if (result.brand_mentioned) {
+        brandMentionCount += 1;
+      }
+    }
+    if (searchedBrand) {
+      mentions[searchedBrand] = { count: brandMentionCount, total: results.length };
+    }
+
+    // Count competitor mentions
     for (const result of results) {
       if (result.competitors_mentioned) {
         for (const comp of result.competitors_mentioned) {
@@ -365,12 +378,12 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Competitor/Brand Mentions */}
-        {summary && Object.keys(summary.competitor_mentions).length > 0 && (
+        {/* Brand Mentions */}
+        {Object.keys(filteredBrandMentions).length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-gray-900">
-                {isCategory ? 'Brand Mentions' : 'Competitor Mentions'}
+                Brand Mentions
               </h2>
               <select
                 value={brandMentionsProviderFilter}
@@ -388,38 +401,42 @@ export default function ResultsPage() {
             <div className="space-y-3">
               {Object.entries(filteredBrandMentions)
                 .sort((a, b) => b[1].rate - a[1].rate)
-                .map(([competitor, stats]) => (
-                  <div key={competitor} className="flex items-center gap-4">
-                    <span className="w-32 text-sm font-medium text-gray-700 truncate">
-                      {competitor}
-                    </span>
-                    <div className="flex-1">
-                      <div className="h-5 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[#5B7B5D] rounded-full transition-all flex items-center justify-end pr-2"
-                          style={{ width: `${Math.max(stats.rate * 100, 10)}%` }}
-                        >
-                          {stats.rate > 0.15 && (
-                            <span className="text-xs font-medium text-white">
-                              {formatPercent(stats.rate)}
-                            </span>
-                          )}
+                .map(([brandName, stats]) => {
+                  const isSearchedBrand = brandName === runStatus.brand;
+                  return (
+                    <div key={brandName} className="flex items-center gap-4">
+                      <span className={`w-32 text-sm font-medium truncate ${isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                        {brandName}
+                        {isSearchedBrand && <span className="text-xs ml-1">(searched)</span>}
+                      </span>
+                      <div className="flex-1">
+                        <div className="h-5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all flex items-center justify-end pr-2 ${isSearchedBrand ? 'bg-[#4A7C59]' : 'bg-[#5B7B5D]'}`}
+                            style={{ width: `${Math.max(stats.rate * 100, 10)}%` }}
+                          >
+                            {stats.rate > 0.15 && (
+                              <span className="text-xs font-medium text-white">
+                                {formatPercent(stats.rate)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    {stats.rate <= 0.15 && (
-                      <span className="text-sm text-gray-600 w-12 text-right">
-                        {formatPercent(stats.rate)}
+                      {stats.rate <= 0.15 && (
+                        <span className="text-sm text-gray-600 w-12 text-right">
+                          {formatPercent(stats.rate)}
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-400 w-16 text-right">
+                        ({stats.count} times)
                       </span>
-                    )}
-                    <span className="text-xs text-gray-400 w-16 text-right">
-                      ({stats.count} times)
-                    </span>
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
               {Object.keys(filteredBrandMentions).length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-4">
-                  No mentions found for this provider
+                  No brand mentions found for this provider
                 </p>
               )}
             </div>
