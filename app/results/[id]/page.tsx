@@ -146,37 +146,54 @@ export default function ResultsPage() {
   }, [runStatus]);
 
   // Get all brands for LLM breakdown dropdown (searched brand + competitors)
+  // For category searches, exclude the category and sort by mention count
   const llmBreakdownBrands = useMemo(() => {
     if (!runStatus) return [];
-    const brands: string[] = [];
-    // Add searched brand first
-    if (runStatus.brand) {
-      brands.push(runStatus.brand);
-    }
-    // Add competitors that were actually mentioned
-    const mentionedCompetitors = new Set<string>();
+    const isCategory = runStatus.search_type === 'category';
+
+    // Count mentions for each competitor/brand
+    const mentionCounts: Record<string, number> = {};
     runStatus.results.forEach((r: Result) => {
       if (!r.error && r.competitors_mentioned) {
-        r.competitors_mentioned.forEach((c: string) => mentionedCompetitors.add(c));
+        r.competitors_mentioned.forEach((c: string) => {
+          mentionCounts[c] = (mentionCounts[c] || 0) + 1;
+        });
       }
     });
-    // Sort competitors alphabetically and add them
-    Array.from(mentionedCompetitors).sort().forEach(c => {
-      if (!brands.includes(c)) brands.push(c);
-    });
-    return brands;
+
+    if (isCategory) {
+      // For category searches, only show brands (not the category), sorted by mention count
+      return Object.entries(mentionCounts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([brand]) => brand);
+    } else {
+      // For brand searches, show searched brand first, then competitors sorted by mention count
+      const brands: string[] = [];
+      if (runStatus.brand) {
+        brands.push(runStatus.brand);
+      }
+      Object.entries(mentionCounts)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([brand]) => {
+          if (!brands.includes(brand)) brands.push(brand);
+        });
+      return brands;
+    }
   }, [runStatus]);
 
   // Calculate LLM breakdown stats for selected brand
   const llmBreakdownStats = useMemo(() => {
     if (!runStatus) return {};
 
-    // Use the searched brand as default if no filter is set
-    const selectedBrand = llmBreakdownBrandFilter || runStatus.brand;
+    const isCategory = runStatus.search_type === 'category';
+    // For category searches, default to top mentioned brand; for brand searches, default to searched brand
+    const defaultBrand = isCategory ? llmBreakdownBrands[0] : runStatus.brand;
+    const selectedBrand = llmBreakdownBrandFilter || defaultBrand;
     if (!selectedBrand) return {};
 
     const results = runStatus.results.filter((r: Result) => !r.error);
-    const isSearchedBrand = selectedBrand === runStatus.brand;
+    // For category searches, the selected brand is never the "searched brand" (category)
+    const isSearchedBrand = !isCategory && selectedBrand === runStatus.brand;
 
     // Group results by provider
     const providerStats: Record<string, {
@@ -777,18 +794,18 @@ export default function ResultsPage() {
         </div>
 
         {/* LLM Breakdown */}
-        {Object.keys(llmBreakdownStats).length > 0 && (
+        {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-gray-900">LLM Breakdown</h2>
               <select
-                value={llmBreakdownBrandFilter || runStatus?.brand || ''}
+                value={llmBreakdownBrandFilter || llmBreakdownBrands[0] || ''}
                 onChange={(e) => setLlmBreakdownBrandFilter(e.target.value)}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
               >
                 {llmBreakdownBrands.map((brand, index) => (
                   <option key={brand} value={brand}>
-                    {brand}{index === 0 && runStatus?.brand === brand ? ' (searched)' : ''}
+                    {brand}{index === 0 && runStatus?.search_type !== 'category' && runStatus?.brand === brand ? ' (searched)' : ''}
                   </option>
                 ))}
               </select>
