@@ -405,14 +405,14 @@ export default function ResultsPage() {
                   const isSearchedBrand = brandName === runStatus.brand;
                   return (
                     <div key={brandName} className="flex items-center gap-4">
-                      <span className={`w-32 text-sm font-medium truncate ${isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                      <span className={`w-32 text-sm font-medium truncate ${isSearchedBrand ? 'text-blue-600' : 'text-gray-700'}`}>
                         {brandName}
                         {isSearchedBrand && <span className="text-xs ml-1">(searched)</span>}
                       </span>
                       <div className="flex-1">
                         <div className="h-5 bg-gray-100 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all flex items-center justify-end pr-2 ${isSearchedBrand ? 'bg-[#4A7C59]' : 'bg-[#5B7B5D]'}`}
+                            className={`h-full rounded-full transition-all flex items-center justify-end pr-2 ${isSearchedBrand ? 'bg-blue-500' : 'bg-[#5B7B5D]'}`}
                             style={{ width: `${Math.max(stats.rate * 100, 10)}%` }}
                           >
                             {stats.rate > 0.15 && (
