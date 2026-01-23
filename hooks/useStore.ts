@@ -43,8 +43,8 @@ interface VisibilityStore {
   // Model selection
   openaiModel: 'gpt-4o-mini' | 'gpt-4o';
   setOpenaiModel: (model: 'gpt-4o-mini' | 'gpt-4o') => void;
-  anthropicModel: 'claude-3-haiku-20240307' | 'claude-sonnet-4-20250514';
-  setAnthropicModel: (model: 'claude-3-haiku-20240307' | 'claude-sonnet-4-20250514') => void;
+  anthropicModel: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-20250514';
+  setAnthropicModel: (model: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-20250514') => void;
 
   // Reset
   reset: () => void;
@@ -55,7 +55,7 @@ const DEFAULT_PROVIDERS = ['openai', 'gemini', 'anthropic', 'perplexity', 'ai_ov
 const DEFAULT_TEMPERATURES = [0.3];
 const DEFAULT_REPEATS = 1;
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini' as const;
-const DEFAULT_ANTHROPIC_MODEL = 'claude-3-haiku-20240307' as const;
+const DEFAULT_ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001' as const;
 
 export const useStore = create<VisibilityStore>()(
   persist(

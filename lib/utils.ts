@@ -113,13 +113,13 @@ export function calculateEstimatedCost(
   numRepeats: number,
   providers: string[],
   openaiModel: 'gpt-4o-mini' | 'gpt-4o' = 'gpt-4o-mini',
-  anthropicModel: 'claude-3-haiku-20240307' | 'claude-sonnet-4-20250514' = 'claude-3-haiku-20240307'
+  anthropicModel: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-20250514' = 'claude-haiku-4-5-20251001'
 ): number {
-  // Cost estimates per call based on model
+  // Cost estimates per call based on model (includes web search costs for Claude)
   const costPerCall: Record<string, number> = {
     openai: openaiModel === 'gpt-4o' ? 0.003 : 0.0003,
     gemini: 0.00025,
-    anthropic: anthropicModel === 'claude-sonnet-4-20250514' ? 0.003 : 0.0003,
+    anthropic: anthropicModel === 'claude-sonnet-4-20250514' ? 0.035 : 0.025,  // Includes ~$0.02 web search cost
     perplexity: 0.001,
     ai_overviews: 0.005,
   };

@@ -34,7 +34,7 @@ const PROVIDER_INFO = {
   },
   anthropic: {
     name: 'Anthropic Claude',
-    cost: 'from $0.0003/call',
+    cost: 'from $0.025/call',
   },
   perplexity: {
     name: 'Perplexity Sonar',
@@ -634,19 +634,19 @@ export default function ConfigurePage() {
                   Claude Model
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Haiku is faster and cheaper. Sonnet is more capable but costs ~10x more.
+                  Haiku 4.5 is faster and cheaper. Sonnet is more capable but costs more. Both include web search for sources.
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setAnthropicModel('claude-3-haiku-20240307')}
+                    onClick={() => setAnthropicModel('claude-haiku-4-5-20251001')}
                     className={`flex-1 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                      anthropicModel === 'claude-3-haiku-20240307'
+                      anthropicModel === 'claude-haiku-4-5-20251001'
                         ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
                         : 'border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
-                    Claude Haiku
-                    <span className="block text-xs font-normal opacity-70">$0.0003/call</span>
+                    Claude Haiku 4.5
+                    <span className="block text-xs font-normal opacity-70">~$0.025/call</span>
                   </button>
                   <button
                     onClick={() => setAnthropicModel('claude-sonnet-4-20250514')}
@@ -657,7 +657,7 @@ export default function ConfigurePage() {
                     }`}
                   >
                     Claude Sonnet
-                    <span className="block text-xs font-normal opacity-70">$0.003/call</span>
+                    <span className="block text-xs font-normal opacity-70">~$0.035/call</span>
                   </button>
                 </div>
               </div>

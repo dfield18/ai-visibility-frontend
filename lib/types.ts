@@ -22,7 +22,7 @@ export interface RunConfig {
   temperatures: number[];
   repeats: number;
   openai_model?: 'gpt-4o-mini' | 'gpt-4o';
-  anthropic_model?: 'claude-3-haiku-20240307' | 'claude-sonnet-4-20250514';
+  anthropic_model?: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-20250514';
 }
 
 export interface RunResponse {
