@@ -1207,7 +1207,7 @@ export default function ResultsPage() {
   const OverviewTab = () => (
     <div className="space-y-6">
       {/* Metrics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <p className="text-xs text-gray-500 mb-1">Visibility Score</p>
           <p className={`text-2xl font-bold ${getMentionRateColor(overviewMetrics?.overallVisibility ? overviewMetrics.overallVisibility / 100 : 0)}`}>
@@ -1218,12 +1218,12 @@ export default function ResultsPage() {
           )}
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <p className="text-xs text-gray-500 mb-1">Top Position</p>
+          <p className="text-xs text-gray-500 mb-1">Brand in First Position</p>
           <p className="text-2xl font-bold text-gray-900">
             {overviewMetrics?.topPositionCount || 0}
             <span className="text-sm font-normal text-gray-400">/{overviewMetrics?.totalResponses || 0}</span>
           </p>
-          <p className="text-xs text-gray-400 mt-1">mentioned first</p>
+          <p className="text-xs text-gray-400 mt-1">responses</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <p className="text-xs text-gray-500 mb-1">Avg. Rank</p>
@@ -1231,20 +1231,6 @@ export default function ResultsPage() {
             {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
           </p>
           <p className="text-xs text-gray-400 mt-1">position when mentioned</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <p className="text-xs text-gray-500 mb-1">Unique Sources</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {overviewMetrics?.uniqueSourcesCount || 0}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">domains cited</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <p className="text-xs text-gray-500 mb-1">Total Cost</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {formatCurrency(overviewMetrics?.totalCost || 0)}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">{overviewMetrics?.totalResponses || 0} responses</p>
         </div>
       </div>
 
