@@ -46,6 +46,10 @@ interface VisibilityStore {
   anthropicModel: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-20250514';
   setAnthropicModel: (model: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-20250514') => void;
 
+  // Country/Region
+  country: string;
+  setCountry: (country: string) => void;
+
   // Reset
   reset: () => void;
   resetConfig: () => void;
@@ -56,6 +60,7 @@ const DEFAULT_TEMPERATURES = [0.3];
 const DEFAULT_REPEATS = 1;
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini' as const;
 const DEFAULT_ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001' as const;
+const DEFAULT_COUNTRY = 'us';
 
 export const useStore = create<VisibilityStore>()(
   persist(
@@ -181,6 +186,10 @@ export const useStore = create<VisibilityStore>()(
       anthropicModel: DEFAULT_ANTHROPIC_MODEL,
       setAnthropicModel: (anthropicModel) => set({ anthropicModel }),
 
+      // Country/Region
+      country: DEFAULT_COUNTRY,
+      setCountry: (country) => set({ country }),
+
       // Reset
       reset: () =>
         set({
@@ -195,6 +204,7 @@ export const useStore = create<VisibilityStore>()(
           repeats: DEFAULT_REPEATS,
           openaiModel: DEFAULT_OPENAI_MODEL,
           anthropicModel: DEFAULT_ANTHROPIC_MODEL,
+          country: DEFAULT_COUNTRY,
         }),
       resetConfig: () =>
         set({
@@ -207,6 +217,7 @@ export const useStore = create<VisibilityStore>()(
           repeats: DEFAULT_REPEATS,
           openaiModel: DEFAULT_OPENAI_MODEL,
           anthropicModel: DEFAULT_ANTHROPIC_MODEL,
+          country: DEFAULT_COUNTRY,
         }),
     }),
     {
@@ -223,6 +234,7 @@ export const useStore = create<VisibilityStore>()(
         repeats: state.repeats,
         openaiModel: state.openaiModel,
         anthropicModel: state.anthropicModel,
+        country: state.country,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

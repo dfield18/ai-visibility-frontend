@@ -76,6 +76,8 @@ export default function ConfigurePage() {
     setOpenaiModel,
     anthropicModel,
     setAnthropicModel,
+    country,
+    setCountry,
   } = useStore();
 
   // Labels based on search type
@@ -187,6 +189,7 @@ export default function ConfigurePage() {
         repeats,
         openai_model: openaiModel,
         anthropic_model: anthropicModel,
+        country,
       });
       router.push(`/run/${result.run_id}`);
     } catch (err) {
@@ -660,6 +663,37 @@ export default function ConfigurePage() {
                     <span className="block text-xs font-normal opacity-70">~$0.035/call</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Country/Region */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Country/Region
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Filter search results by country. Affects Google AI Overviews and web search results.
+                </p>
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                >
+                  <option value="us">United States</option>
+                  <option value="gb">United Kingdom</option>
+                  <option value="ca">Canada</option>
+                  <option value="au">Australia</option>
+                  <option value="de">Germany</option>
+                  <option value="fr">France</option>
+                  <option value="es">Spain</option>
+                  <option value="it">Italy</option>
+                  <option value="nl">Netherlands</option>
+                  <option value="br">Brazil</option>
+                  <option value="mx">Mexico</option>
+                  <option value="in">India</option>
+                  <option value="jp">Japan</option>
+                  <option value="kr">South Korea</option>
+                  <option value="sg">Singapore</option>
+                </select>
               </div>
             </div>
           )}
