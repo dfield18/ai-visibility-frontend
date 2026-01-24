@@ -619,6 +619,11 @@ export default function ResultsPage() {
     return { domain, subtitle: '' };
   };
 
+  // Collapse multiple blank lines into single blank line
+  const collapseBlankLines = (text: string): string => {
+    return text.replace(/\n{3,}/g, '\n\n');
+  };
+
   // Calculate top cited sources
   const topCitedSources = useMemo(() => {
     if (!runStatus) return [];
@@ -1315,9 +1320,9 @@ export default function ResultsPage() {
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
                 {!isCategory && (
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brand?</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{runStatus.brand} Mentioned</th>
                 )}
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors'}</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors Mentioned'}</th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                 <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -1406,7 +1411,7 @@ export default function ResultsPage() {
                                     ),
                                   }}
                                 >
-                                  {result.response_text || ''}
+                                  {collapseBlankLines(result.response_text || '')}
                                 </ReactMarkdown>
                               </div>
                               {result.sources && result.sources.length > 0 && (
@@ -2080,7 +2085,7 @@ export default function ResultsPage() {
                                     ),
                                   }}
                                 >
-                                  {result.response_text || ''}
+                                  {collapseBlankLines(result.response_text || '')}
                                 </ReactMarkdown>
                               </div>
                               {result.sources && result.sources.length > 0 && (
