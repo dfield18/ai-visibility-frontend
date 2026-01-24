@@ -1095,7 +1095,7 @@ export default function ResultsPage() {
                 </select>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className={`space-y-3 ${Object.keys(filteredBrandMentions).length > 10 ? 'max-h-[400px] overflow-y-auto pr-2' : ''}`}>
               {Object.entries(filteredBrandMentions)
                 .sort((a, b) => b[1].rate - a[1].rate)
                 .map(([brandName, stats]) => {
