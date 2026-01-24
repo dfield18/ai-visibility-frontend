@@ -1168,10 +1168,13 @@ export default function ResultsPage() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number, name: string) => [
-                        `${value} mentions (${shareOfVoiceData.find(d => d.name === name)?.percentage.toFixed(1)}%)`,
-                        name
-                      ]}
+                      formatter={(value, name) => {
+                        const entry = shareOfVoiceData.find(d => d.name === name);
+                        return [
+                          `${value} mentions (${entry?.percentage.toFixed(1) ?? 0}%)`,
+                          name
+                        ];
+                      }}
                       contentStyle={{
                         backgroundColor: 'white',
                         border: '1px solid #e5e7eb',
