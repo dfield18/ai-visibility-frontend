@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import {
   ArrowLeft,
   Download,
@@ -252,6 +253,99 @@ export default function ResultsPage() {
 
     return mentionsWithRates;
   }, [runStatus, brandMentionsProviderFilter, brandMentionsTrackingFilter, trackedBrands]);
+
+  // Calculate Share of Voice data for pie chart (tracked brands + "Other" for discovered)
+  const shareOfVoiceData = useMemo(() => {
+    if (!runStatus) return [];
+
+    // Get all brand mentions without the tracking filter
+    const results = runStatus.results.filter((r: Result) => {
+      if (r.error) return false;
+      if (brandMentionsProviderFilter !== 'all' && r.provider !== brandMentionsProviderFilter) return false;
+      return true;
+    });
+
+    const mentions: Record<string, { count: number; isTracked: boolean }> = {};
+    const isCategory = runStatus.search_type === 'category';
+
+    // Add searched brand (for brand searches)
+    if (!isCategory && runStatus.brand) {
+      let brandMentionCount = 0;
+      for (const result of results) {
+        if (result.brand_mentioned) {
+          brandMentionCount += 1;
+        }
+      }
+      if (brandMentionCount > 0) {
+        mentions[runStatus.brand] = { count: brandMentionCount, isTracked: true };
+      }
+    }
+
+    // Count tracked competitor mentions
+    for (const result of results) {
+      if (result.competitors_mentioned) {
+        for (const comp of result.competitors_mentioned) {
+          if (!mentions[comp]) {
+            mentions[comp] = { count: 0, isTracked: true };
+          }
+          mentions[comp].count += 1;
+        }
+      }
+    }
+
+    // Count discovered brands as "Other"
+    let otherCount = 0;
+    for (const result of results) {
+      if (result.response_text) {
+        const untrackedBrands = extractUntrackedBrands(
+          result.response_text,
+          trackedBrands,
+          runStatus.brand || ''
+        );
+        otherCount += untrackedBrands.length;
+      }
+    }
+
+    // Calculate total mentions
+    const totalMentions = Object.values(mentions).reduce((sum, m) => sum + m.count, 0) + otherCount;
+    if (totalMentions === 0) return [];
+
+    // Build pie chart data
+    const pieData: { name: string; value: number; percentage: number; color: string }[] = [];
+
+    // Colors for the pie chart
+    const colors = ['#4A7C59', '#5B8A6A', '#6C987B', '#7DA68C', '#8EB49D', '#9FC2AE', '#B0D0BF', '#C1DED0'];
+    let colorIndex = 0;
+
+    // Add tracked brands sorted by count
+    const sortedBrands = Object.entries(mentions)
+      .sort((a, b) => b[1].count - a[1].count);
+
+    for (const [brand, data] of sortedBrands) {
+      const percentage = (data.count / totalMentions) * 100;
+      const isSearchedBrand = brand === runStatus.brand;
+      pieData.push({
+        name: brand,
+        value: data.count,
+        percentage,
+        color: isSearchedBrand ? '#3B82F6' : colors[colorIndex % colors.length],
+      });
+      colorIndex++;
+    }
+
+    // Add "Other" for discovered brands if any
+    if (otherCount > 0) {
+      const percentage = (otherCount / totalMentions) * 100;
+      pieData.push({
+        name: 'Other',
+        value: otherCount,
+        percentage,
+        color: '#F97316', // Orange for discovered/other
+      });
+    }
+
+    return pieData;
+  }, [runStatus, brandMentionsProviderFilter, trackedBrands]);
 
   // Get unique providers from results for the filter dropdown
   const availableProviders = useMemo(() => {
@@ -1044,6 +1138,74 @@ export default function ResultsPage() {
                   No brand mentions found for this filter
                 </p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Share of Voice Pie Chart */}
+        {shareOfVoiceData.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-900">Share of Voice</h2>
+              <p className="text-sm text-gray-500">Tracked brands vs discovered</p>
+            </div>
+            <div className="flex flex-col lg:flex-row items-center gap-6">
+              <div className="w-full lg:w-1/2 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={shareOfVoiceData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      nameKey="name"
+                    >
+                      {shareOfVoiceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number, name: string) => [
+                        `${value} mentions (${shareOfVoiceData.find(d => d.name === name)?.percentage.toFixed(1)}%)`,
+                        name
+                      ]}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="w-full lg:w-1/2">
+                <div className="space-y-2">
+                  {shareOfVoiceData.map((entry) => (
+                    <div key={entry.name} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className={`text-sm font-medium ${entry.name === 'Other' ? 'text-orange-600' : 'text-gray-700'}`}>
+                          {entry.name}
+                          {entry.name === 'Other' && <span className="text-xs ml-1 text-orange-500">(discovered)</span>}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm text-gray-500">{entry.value} mentions</span>
+                        <span className="text-sm font-semibold text-gray-900 w-14 text-right">
+                          {entry.percentage.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}
