@@ -23,7 +23,6 @@ import {
   Globe,
   Lightbulb,
   FileBarChart,
-  Eye,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useRunStatus, useAISummary } from '@/hooks/useApi';
@@ -82,8 +81,7 @@ export default function ResultsPage() {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
-  const [showAllResultsModal, setShowAllResultsModal] = useState(false);
-
+  
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
     runId,
@@ -1123,146 +1121,6 @@ export default function ResultsPage() {
     }
   };
 
-  // All Results Modal Component
-  const AllResultsModal = () => {
-    if (!showAllResultsModal) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">All Results</h2>
-            <button
-              onClick={() => setShowAllResultsModal(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-auto p-4">
-            <table className="w-full">
-              <thead className="sticky top-0 bg-white">
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
-                  {!isCategory && (
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brand?</th>
-                  )}
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors'}</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                  <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredResults.map((result: Result) => (
-                  <>
-                    <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <p className="text-sm text-gray-900">{truncate(result.prompt, 40)}</p>
-                        <p className="text-xs text-gray-500">Temp: {result.temperature}</p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
-                      </td>
-                      {!isCategory && (
-                        <td className="py-3 px-4">
-                          {result.error ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
-                              <AlertTriangle className="w-3 h-3" />Not Available
-                            </span>
-                          ) : result.brand_mentioned ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
-                              <Check className="w-3 h-3" />Yes
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
-                              <X className="w-3 h-3" />No
-                            </span>
-                          )}
-                        </td>
-                      )}
-                      <td className="py-3 px-4">
-                        {result.error ? (
-                          <span className="text-sm text-gray-400">-</span>
-                        ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
-                          <span className="text-sm text-gray-700">
-                            {isCategory ? result.competitors_mentioned.join(', ') : (
-                              <>
-                                {result.competitors_mentioned.slice(0, 2).join(', ')}
-                                {result.competitors_mentioned.length > 2 && (
-                                  <span className="text-gray-400"> +{result.competitors_mentioned.length - 2}</span>
-                                )}
-                              </>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-400">None</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-gray-600 capitalize">{result.response_type || '-'}</span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => toggleExpanded(result.id)}
-                          className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-                        >
-                          {expandedResults.has(result.id) ? (
-                            <>Hide <ChevronUp className="w-4 h-4" /></>
-                          ) : (
-                            <>View <ChevronDown className="w-4 h-4" /></>
-                          )}
-                        </button>
-                      </td>
-                    </tr>
-                    {expandedResults.has(result.id) && (
-                      <tr key={`${result.id}-expanded`}>
-                        <td colSpan={isCategory ? 5 : 6} className="py-4 px-4 bg-[#FAFAF8]">
-                          <div className="max-h-64 overflow-y-auto">
-                            {result.error ? (
-                              <>
-                                <p className="text-xs text-orange-600 mb-2">AI Overview Not Available:</p>
-                                <p className="text-sm text-orange-700 bg-orange-50 p-3 rounded-lg">
-                                  Google did not return an AI Overview for this query.
-                                </p>
-                              </>
-                            ) : (
-                              <>
-                                <p className="text-xs text-gray-500 mb-2">Full Response:</p>
-                                <div className="text-sm text-gray-700 whitespace-pre-wrap">
-                                  <ReactMarkdown>{result.response_text || ''}</ReactMarkdown>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="p-4 border-t border-gray-200 flex justify-end gap-3">
-            <button
-              onClick={handleExportCSV}
-              className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Export to CSV
-            </button>
-            <button
-              onClick={() => setShowAllResultsModal(false)}
-              className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-xl hover:bg-[#3d6649] transition-colors"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   // Overview Tab Content
   const OverviewTab = () => (
     <div className="space-y-6">
@@ -1359,31 +1217,6 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        <button
-          onClick={() => setShowAllResultsModal(true)}
-          className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
-        >
-          <Eye className="w-4 h-4" />
-          View All Results
-        </button>
-        <button
-          onClick={handleExportCSV}
-          className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
-        >
-          <Download className="w-4 h-4" />
-          Export to CSV
-        </button>
-        <button
-          onClick={handleCopyLink}
-          className="px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
-        >
-          <Link2 className="w-4 h-4" />
-          {copied ? 'Copied!' : 'Copy Share Link'}
-        </button>
-      </div>
-
       {/* AI Summary */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -1430,52 +1263,200 @@ export default function ResultsPage() {
         )}
       </div>
 
-      {/* Share of Voice (mini) */}
-      {shareOfVoiceData.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">Share of Voice</h2>
-            <button
-              onClick={() => setActiveTab('reference')}
-              className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+      {/* All Results Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <h2 className="text-base font-semibold text-gray-900">All Results</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setFilter('all')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setFilter('mentioned')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Mentioned
+              </button>
+              <button
+                onClick={() => setFilter('not_mentioned')}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'not_mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
+              >
+                Not Mentioned
+              </button>
+            </div>
+            <select
+              value={providerFilter}
+              onChange={(e) => setProviderFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
             >
-              View details →
+              <option value="all">All LLMs</option>
+              {availableProviders.map((provider) => (
+                <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+              ))}
+            </select>
+            <button
+              onClick={handleExportCSV}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              CSV
             </button>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="w-32 h-32">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={shareOfVoiceData.slice(0, 5)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={30}
-                    outerRadius={50}
-                    paddingAngle={2}
-                    dataKey="value"
-                  >
-                    {shareOfVoiceData.slice(0, 5).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex-1 space-y-1.5">
-              {shareOfVoiceData.slice(0, 5).map((entry) => (
-                <div key={entry.name} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                    <span className="text-gray-700">{entry.name}</span>
-                  </div>
-                  <span className="font-medium text-gray-900">{entry.percentage.toFixed(1)}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
-      )}
+        <p className="text-sm text-gray-500 mb-4">
+          Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error || (r.provider === 'ai_overviews' && r.error)).length} results
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
+                {!isCategory && (
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brand?</th>
+                )}
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors'}</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredResults.map((result: Result) => (
+                <>
+                  <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <p className="text-sm text-gray-900">{truncate(result.prompt, 40)}</p>
+                      <p className="text-xs text-gray-500">Temp: {result.temperature}</p>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
+                    </td>
+                    {!isCategory && (
+                      <td className="py-3 px-4">
+                        {result.error ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
+                            <AlertTriangle className="w-3 h-3" />Not Available
+                          </span>
+                        ) : result.brand_mentioned ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
+                            <Check className="w-3 h-3" />Yes
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
+                            <X className="w-3 h-3" />No
+                          </span>
+                        )}
+                      </td>
+                    )}
+                    <td className="py-3 px-4">
+                      {result.error ? (
+                        <span className="text-sm text-gray-400">-</span>
+                      ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
+                        <span className="text-sm text-gray-700">
+                          {isCategory ? result.competitors_mentioned.join(', ') : (
+                            <>
+                              {result.competitors_mentioned.slice(0, 2).join(', ')}
+                              {result.competitors_mentioned.length > 2 && (
+                                <span className="text-gray-400"> +{result.competitors_mentioned.length - 2}</span>
+                              )}
+                            </>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-400">None</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="text-sm text-gray-600 capitalize">{result.response_type || '-'}</span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button
+                        onClick={() => toggleExpanded(result.id)}
+                        className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+                      >
+                        {expandedResults.has(result.id) ? (
+                          <>Hide <ChevronUp className="w-4 h-4" /></>
+                        ) : (
+                          <>View <ChevronDown className="w-4 h-4" /></>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                  {expandedResults.has(result.id) && (
+                    <tr key={`${result.id}-expanded`}>
+                      <td colSpan={isCategory ? 5 : 6} className="py-4 px-4 bg-[#FAFAF8]">
+                        <div className="max-h-64 overflow-y-auto">
+                          {result.error ? (
+                            <>
+                              <p className="text-xs text-orange-600 mb-2">AI Overview Not Available:</p>
+                              <p className="text-sm text-orange-700 bg-orange-50 p-3 rounded-lg">
+                                Google did not return an AI Overview for this query.
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-xs text-gray-500 mb-2">Full Response:</p>
+                              <div className="text-sm text-gray-700 whitespace-pre-wrap [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649]">
+                                <ReactMarkdown
+                                  components={{
+                                    a: ({ href, children }) => (
+                                      <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+                                    ),
+                                  }}
+                                >
+                                  {result.response_text || ''}
+                                </ReactMarkdown>
+                              </div>
+                              {result.sources && result.sources.length > 0 && (
+                                <div className="mt-4 pt-3 border-t border-gray-200">
+                                  <p className="text-xs text-gray-500 mb-2">Sources ({result.sources.length}):</p>
+                                  <div className="space-y-1.5">
+                                    {result.sources.map((source, idx) => {
+                                      const { domain, subtitle } = formatSourceDisplay(source.url, source.title);
+                                      return (
+                                        <a
+                                          key={idx}
+                                          href={source.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                        >
+                                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                          <span className="truncate">
+                                            <span className="font-medium">{domain}</span>
+                                            {subtitle && <span className="text-gray-500"> · {subtitle}</span>}
+                                          </span>
+                                        </a>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                              {result.tokens && (
+                                <p className="text-xs text-gray-400 mt-2">{result.tokens} tokens · {formatCurrency(result.cost || 0)}</p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filteredResults.length === 0 && (
+          <div className="text-center py-8">
+            <Filter className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-gray-500">No results match your filters</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 
@@ -2379,9 +2360,6 @@ export default function ResultsPage() {
           />
         )}
       </div>
-
-      {/* All Results Modal */}
-      <AllResultsModal />
     </main>
   );
 }
