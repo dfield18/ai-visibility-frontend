@@ -794,7 +794,7 @@ export default function ResultsPage() {
       .slice(0, 5);
   }, [runStatus, globallyFilteredResults]);
 
-  // Calculate visibility score data for scatter plot
+  // Calculate ranking data for scatter plot - one dot per prompt per LLM
   const scatterPlotData = useMemo(() => {
     if (!runStatus) return [];
 
@@ -804,25 +804,6 @@ export default function ResultsPage() {
 
     const results = globallyFilteredResults.filter((r: Result) => !r.error);
 
-    // Group by provider and calculate visibility score
-    const providerData: Record<string, { mentioned: number; total: number }> = {};
-
-    for (const result of results) {
-      const provider = result.provider;
-      if (!providerData[provider]) {
-        providerData[provider] = { mentioned: 0, total: 0 };
-      }
-      providerData[provider].total += 1;
-
-      const isMentioned = isCategory
-        ? result.competitors_mentioned?.includes(selectedBrand)
-        : result.brand_mentioned;
-
-      if (isMentioned) {
-        providerData[provider].mentioned += 1;
-      }
-    }
-
     const providerLabels: Record<string, string> = {
       openai: 'OpenAI',
       anthropic: 'Claude',
@@ -831,23 +812,102 @@ export default function ResultsPage() {
       ai_overviews: 'AI Overviews',
     };
 
+    // Green color palette for different LLMs
     const providerColors: Record<string, string> = {
-      openai: '#10A37F',
-      anthropic: '#D97706',
-      gemini: '#4285F4',
-      perplexity: '#1E88E5',
-      ai_overviews: '#EA4335',
+      openai: '#2D5A3D',
+      anthropic: '#4A7C59',
+      gemini: '#5B8A6A',
+      perplexity: '#6C987B',
+      ai_overviews: '#7DA68C',
     };
 
-    return Object.entries(providerData).map(([provider, data], index) => ({
-      provider,
-      label: providerLabels[provider] || provider,
-      visibilityScore: data.total > 0 ? (data.mentioned / data.total) * 100 : 0,
-      totalResponses: data.total,
-      color: providerColors[provider] || '#666',
-      x: index + 1,
-    }));
+    // Get unique providers in order
+    const providers = Array.from(new Set(results.map(r => r.provider)));
+
+    // Create one data point per result
+    const dataPoints: {
+      provider: string;
+      label: string;
+      prompt: string;
+      rank: number;
+      displayRank: number;
+      color: string;
+      isMentioned: boolean;
+    }[] = [];
+
+    for (const result of results) {
+      const provider = result.provider;
+      let rank = 0; // 0 means not mentioned
+
+      if (result.response_text) {
+        const responseText = result.response_text.toLowerCase();
+        const brandLower = selectedBrand.toLowerCase();
+
+        // Check if brand is mentioned
+        const isMentioned = isCategory
+          ? result.competitors_mentioned?.includes(selectedBrand)
+          : result.brand_mentioned;
+
+        if (isMentioned) {
+          // Get all brands and their positions
+          const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+          const brandPositions: { brand: string; position: number }[] = [];
+
+          for (const brand of allBrands) {
+            const pos = responseText.indexOf(brand.toLowerCase());
+            if (pos !== -1) {
+              brandPositions.push({ brand, position: pos });
+            }
+          }
+
+          brandPositions.sort((a, b) => a.position - b.position);
+          rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === brandLower) + 1;
+        }
+      }
+
+      dataPoints.push({
+        provider,
+        label: providerLabels[provider] || provider,
+        prompt: truncate(result.prompt, 30),
+        rank,
+        displayRank: rank === 0 ? 0 : rank, // 0 for not mentioned
+        color: providerColors[provider] || '#4A7C59',
+        isMentioned: rank > 0,
+      });
+    }
+
+    return dataPoints;
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
+
+  // Get unique providers for the legend
+  const scatterPlotProviders = useMemo(() => {
+    const providerColors: Record<string, string> = {
+      openai: '#2D5A3D',
+      anthropic: '#4A7C59',
+      gemini: '#5B8A6A',
+      perplexity: '#6C987B',
+      ai_overviews: '#7DA68C',
+    };
+    const providerLabels: Record<string, string> = {
+      openai: 'OpenAI',
+      anthropic: 'Claude',
+      gemini: 'Gemini',
+      perplexity: 'Perplexity',
+      ai_overviews: 'AI Overviews',
+    };
+    const providers = Array.from(new Set(scatterPlotData.map(d => d.provider)));
+    return providers.map(p => ({
+      provider: p,
+      label: providerLabels[p] || p,
+      color: providerColors[p] || '#4A7C59',
+    }));
+  }, [scatterPlotData]);
+
+  // Calculate max rank for Y axis
+  const maxRank = useMemo(() => {
+    const ranks = scatterPlotData.filter(d => d.rank > 0).map(d => d.rank);
+    return ranks.length > 0 ? Math.max(...ranks) : 5;
+  }, [scatterPlotData]);
 
   // Overview metrics
   const overviewMetrics = useMemo(() => {
@@ -1234,13 +1294,13 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* Scatter Plot - Visibility by LLM */}
+      {/* Scatter Plot - Brand Ranking by LLM */}
       {scatterPlotData.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-4">Visibility Score by LLM</h3>
-          <div className="h-64">
+          <h3 className="text-base font-semibold text-gray-900 mb-4">Brand Ranking by LLM</h3>
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
+              <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   type="category"
@@ -1251,36 +1311,45 @@ export default function ResultsPage() {
                 />
                 <YAxis
                   type="number"
-                  dataKey="visibilityScore"
-                  name="Visibility"
-                  domain={[0, 100]}
+                  dataKey="displayRank"
+                  name="Rank"
+                  domain={[0, maxRank + 1]}
                   tick={{ fontSize: 12, fill: '#6b7280' }}
                   axisLine={{ stroke: '#e5e7eb' }}
-                  tickFormatter={(value) => `${value}%`}
-                />
-                <ZAxis type="number" dataKey="totalResponses" range={[100, 400]} />
-                <Tooltip
-                  formatter={(value, name) => {
-                    if (name === 'Visibility') return [`${Number(value).toFixed(1)}%`, 'Visibility Score'];
-                    return [value, name];
+                  tickFormatter={(value) => {
+                    if (value === 0) return 'Not mentioned';
+                    return `#${value}`;
                   }}
-                  contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
+                  ticks={[0, ...Array.from({ length: maxRank }, (_, i) => i + 1)]}
+                  reversed
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                          <p className="text-sm font-medium text-gray-900">{data.label}</p>
+                          <p className="text-xs text-gray-500 mt-1">{data.prompt}</p>
+                          <p className="text-sm text-gray-700 mt-2">
+                            {data.rank === 0 ? 'Not mentioned' : `Rank: #${data.rank}`}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
                   }}
                 />
                 <Scatter data={scatterPlotData} fill="#4A7C59">
                   {scatterPlotData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill={entry.color} opacity={entry.isMentioned ? 1 : 0.4} />
                   ))}
                 </Scatter>
               </ScatterChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex flex-wrap gap-3 mt-4 justify-center">
-            {scatterPlotData.map((entry) => (
+          <div className="flex flex-wrap gap-4 mt-4 justify-center">
+            {scatterPlotProviders.map((entry) => (
               <div key={entry.provider} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
                 <span className="text-sm text-gray-600">{entry.label}</span>
