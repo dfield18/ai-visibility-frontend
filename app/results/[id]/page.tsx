@@ -37,6 +37,7 @@ export default function ResultsPage() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [providerFilter, setProviderFilter] = useState<string>('all');
   const [brandMentionsProviderFilter, setBrandMentionsProviderFilter] = useState<string>('all');
+  const [brandMentionsTrackingFilter, setBrandMentionsTrackingFilter] = useState<'all' | 'tracked'>('all');
   const [llmBreakdownBrandFilter, setLlmBreakdownBrandFilter] = useState<string>('');
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
@@ -80,6 +81,96 @@ export default function ResultsPage() {
     ).length;
   }, [runStatus]);
 
+  // Get the set of tracked competitors (ones that were configured for tracking)
+  const trackedBrands = useMemo(() => {
+    if (!runStatus) return new Set<string>();
+    const tracked = new Set<string>();
+    // The searched brand is always tracked
+    if (runStatus.brand) {
+      tracked.add(runStatus.brand.toLowerCase());
+    }
+    // Collect all competitors that appear in competitors_mentioned across results
+    // These are the ones that were in the original tracked list
+    runStatus.results.forEach((r: Result) => {
+      if (!r.error && r.competitors_mentioned) {
+        r.competitors_mentioned.forEach((c: string) => tracked.add(c.toLowerCase()));
+      }
+    });
+    return tracked;
+  }, [runStatus]);
+
+  // Extract potential brand names from response text that weren't tracked
+  const extractUntrackedBrands = (text: string, trackedSet: Set<string>, categoryName: string): string[] => {
+    if (!text) return [];
+
+    // Common words to exclude (not brands)
+    const excludeWords = new Set([
+      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+      'from', 'as', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had',
+      'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can',
+      'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'my', 'your',
+      'his', 'her', 'its', 'our', 'their', 'who', 'what', 'where', 'when', 'why', 'how',
+      'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such', 'no',
+      'not', 'only', 'same', 'so', 'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there',
+      'if', 'then', 'because', 'while', 'although', 'though', 'after', 'before', 'since', 'until',
+      'best', 'top', 'good', 'great', 'new', 'first', 'last', 'long', 'little', 'own', 'right',
+      'big', 'high', 'different', 'small', 'large', 'next', 'early', 'young', 'important', 'public',
+      'bad', 'same', 'able', 'popular', 'known', 'well', 'overall', 'however', 'additionally',
+      'furthermore', 'moreover', 'therefore', 'thus', 'hence', 'conclusion', 'summary', 'introduction',
+      'example', 'note', 'please', 'thank', 'thanks', 'yes', 'no', 'maybe', 'perhaps',
+      'running', 'shoes', 'shoe', 'sneakers', 'sneaker', 'boots', 'boot', 'sandals', 'sandal',
+      'laptops', 'laptop', 'computers', 'computer', 'phones', 'phone', 'tablets', 'tablet',
+      'cars', 'car', 'vehicles', 'vehicle', 'trucks', 'truck', 'suvs', 'suv',
+      'brand', 'brands', 'company', 'companies', 'product', 'products', 'model', 'models',
+      'price', 'prices', 'cost', 'costs', 'quality', 'performance', 'features', 'feature',
+      'review', 'reviews', 'rating', 'ratings', 'recommendation', 'recommendations',
+      'option', 'options', 'choice', 'choices', 'alternative', 'alternatives',
+      'pro', 'pros', 'con', 'cons', 'advantage', 'advantages', 'disadvantage', 'disadvantages',
+      'usa', 'us', 'uk', 'eu', 'asia', 'europe', 'america', 'american', 'european', 'asian',
+      'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december',
+      'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+    ]);
+
+    // Add category name variations to exclude
+    if (categoryName) {
+      const catLower = categoryName.toLowerCase();
+      excludeWords.add(catLower);
+      excludeWords.add(catLower + 's'); // plural
+      excludeWords.add(catLower.replace(/s$/, '')); // singular
+    }
+
+    // Find capitalized words/phrases that could be brand names
+    // Match: Capitalized words, possibly with numbers (e.g., "Nike", "Under Armour", "3M", "GoPro")
+    const brandPattern = /\b([A-Z][a-zA-Z0-9]*(?:\s+[A-Z][a-zA-Z0-9]*)*)\b/g;
+    const potentialBrands = new Map<string, number>();
+
+    let match;
+    while ((match = brandPattern.exec(text)) !== null) {
+      const brand = match[1];
+      const brandLower = brand.toLowerCase();
+
+      // Skip if it's a tracked brand, excluded word, or too short
+      if (trackedSet.has(brandLower)) continue;
+      if (excludeWords.has(brandLower)) continue;
+      if (brand.length < 2) continue;
+
+      // Skip if it looks like a sentence start (preceded by . or at start)
+      const prevChar = text[match.index - 2];
+      if (match.index <= 1 || prevChar === '.') {
+        // Only skip single common words at sentence starts
+        if (excludeWords.has(brandLower)) continue;
+      }
+
+      potentialBrands.set(brand, (potentialBrands.get(brand) || 0) + 1);
+    }
+
+    // Return brands mentioned at least once, sorted by frequency
+    return Array.from(potentialBrands.entries())
+      .filter(([_, count]) => count >= 1)
+      .sort((a, b) => b[1] - a[1])
+      .map(([brand]) => brand);
+  };
+
   // Calculate brand/competitor mentions filtered by provider
   const filteredBrandMentions = useMemo(() => {
     if (!runStatus) return {};
@@ -92,7 +183,7 @@ export default function ResultsPage() {
     });
 
     // Count mentions for each competitor/brand
-    const mentions: Record<string, { count: number; total: number }> = {};
+    const mentions: Record<string, { count: number; total: number; isTracked: boolean }> = {};
 
     // Add the searched brand based on brand_mentioned field (only for brand searches, not category searches)
     const isCategory = runStatus.search_type === 'category';
@@ -105,35 +196,62 @@ export default function ResultsPage() {
         }
       }
       if (searchedBrand) {
-        mentions[searchedBrand] = { count: brandMentionCount, total: results.length };
+        mentions[searchedBrand] = { count: brandMentionCount, total: results.length, isTracked: true };
       }
     }
 
-    // Count competitor mentions
+    // Count tracked competitor mentions
     for (const result of results) {
       if (result.competitors_mentioned) {
         for (const comp of result.competitors_mentioned) {
           if (!mentions[comp]) {
-            mentions[comp] = { count: 0, total: 0 };
+            mentions[comp] = { count: 0, total: 0, isTracked: true };
           }
           mentions[comp].count += 1;
         }
       }
     }
 
-    // Calculate rates
+    // Find untracked brands from response text
+    const untrackedMentions: Record<string, number> = {};
+    for (const result of results) {
+      if (result.response_text) {
+        const untrackedBrands = extractUntrackedBrands(
+          result.response_text,
+          trackedBrands,
+          runStatus.brand || ''
+        );
+        for (const brand of untrackedBrands) {
+          untrackedMentions[brand] = (untrackedMentions[brand] || 0) + 1;
+        }
+      }
+    }
+
+    // Add untracked brands to mentions (only those mentioned in at least 2 results or 10% of results)
+    const minMentions = Math.max(2, Math.floor(results.length * 0.1));
+    for (const [brand, count] of Object.entries(untrackedMentions)) {
+      if (count >= minMentions && !mentions[brand]) {
+        mentions[brand] = { count, total: 0, isTracked: false };
+      }
+    }
+
+    // Calculate rates and apply tracking filter
     const totalResults = results.length;
-    const mentionsWithRates: Record<string, { count: number; rate: number }> = {};
+    const mentionsWithRates: Record<string, { count: number; rate: number; isTracked: boolean }> = {};
 
     for (const [comp, data] of Object.entries(mentions)) {
+      // Apply tracking filter
+      if (brandMentionsTrackingFilter === 'tracked' && !data.isTracked) continue;
+
       mentionsWithRates[comp] = {
         count: data.count,
         rate: totalResults > 0 ? data.count / totalResults : 0,
+        isTracked: data.isTracked,
       };
     }
 
     return mentionsWithRates;
-  }, [runStatus, brandMentionsProviderFilter]);
+  }, [runStatus, brandMentionsProviderFilter, brandMentionsTrackingFilter, trackedBrands]);
 
   // Get unique providers from results for the filter dropdown
   const availableProviders = useMemo(() => {
@@ -860,34 +978,46 @@ export default function ResultsPage() {
               <h2 className="text-base font-semibold text-gray-900">
                 Brand Mentions
               </h2>
-              <select
-                value={brandMentionsProviderFilter}
-                onChange={(e) => setBrandMentionsProviderFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-              >
-                <option value="all">All LLMs</option>
-                {availableProviders.map((provider) => (
-                  <option key={provider} value={provider}>
-                    {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={brandMentionsTrackingFilter}
+                  onChange={(e) => setBrandMentionsTrackingFilter(e.target.value as 'all' | 'tracked')}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                >
+                  <option value="all">All Brands</option>
+                  <option value="tracked">Tracked Only</option>
+                </select>
+                <select
+                  value={brandMentionsProviderFilter}
+                  onChange={(e) => setBrandMentionsProviderFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                >
+                  <option value="all">All LLMs</option>
+                  {availableProviders.map((provider) => (
+                    <option key={provider} value={provider}>
+                      {provider === 'openai' ? 'OpenAI GPT-4o' : provider === 'anthropic' ? 'Claude' : provider === 'perplexity' ? 'Perplexity' : provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="space-y-3">
               {Object.entries(filteredBrandMentions)
                 .sort((a, b) => b[1].rate - a[1].rate)
                 .map(([brandName, stats]) => {
                   const isSearchedBrand = brandName === runStatus.brand;
+                  const isUntracked = !stats.isTracked;
                   return (
                     <div key={brandName} className="flex items-center gap-4">
-                      <span className={`w-32 text-sm font-medium truncate ${isSearchedBrand ? 'text-blue-600' : 'text-gray-700'}`}>
+                      <span className={`w-40 text-sm font-medium truncate ${isSearchedBrand ? 'text-blue-600' : isUntracked ? 'text-orange-600' : 'text-gray-700'}`}>
                         {brandName}
                         {isSearchedBrand && <span className="text-xs ml-1">(searched)</span>}
+                        {isUntracked && <span className="text-xs ml-1 text-orange-500">(discovered)</span>}
                       </span>
                       <div className="flex-1">
                         <div className="h-5 bg-gray-100 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all flex items-center justify-end pr-2 ${isSearchedBrand ? 'bg-blue-500' : 'bg-[#5B7B5D]'}`}
+                            className={`h-full rounded-full transition-all flex items-center justify-end pr-2 ${isSearchedBrand ? 'bg-blue-500' : isUntracked ? 'bg-orange-400' : 'bg-[#5B7B5D]'}`}
                             style={{ width: `${Math.max(stats.rate * 100, 10)}%` }}
                           >
                             {stats.rate > 0.15 && (
@@ -911,7 +1041,7 @@ export default function ResultsPage() {
                 })}
               {Object.keys(filteredBrandMentions).length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-4">
-                  No brand mentions found for this LLM
+                  No brand mentions found for this filter
                 </p>
               )}
             </div>
