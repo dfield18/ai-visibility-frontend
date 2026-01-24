@@ -39,6 +39,7 @@ export default function ResultsPage() {
   const [providerFilter, setProviderFilter] = useState<string>('all');
   const [brandMentionsProviderFilter, setBrandMentionsProviderFilter] = useState<string>('all');
   const [brandMentionsTrackingFilter, setBrandMentionsTrackingFilter] = useState<'all' | 'tracked'>('all');
+  const [shareOfVoiceFilter, setShareOfVoiceFilter] = useState<'all' | 'tracked'>('all');
   const [llmBreakdownBrandFilter, setLlmBreakdownBrandFilter] = useState<string>('');
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
@@ -306,8 +307,10 @@ export default function ResultsPage() {
       }
     }
 
-    // Calculate total mentions
-    const totalMentions = Object.values(mentions).reduce((sum, m) => sum + m.count, 0) + otherCount;
+    // Calculate total mentions based on filter
+    const trackedTotal = Object.values(mentions).reduce((sum, m) => sum + m.count, 0);
+    const includeOther = shareOfVoiceFilter === 'all' && otherCount > 0;
+    const totalMentions = includeOther ? trackedTotal + otherCount : trackedTotal;
     if (totalMentions === 0) return [];
 
     // Build pie chart data
@@ -333,8 +336,8 @@ export default function ResultsPage() {
       colorIndex++;
     }
 
-    // Add "Other" for discovered brands if any
-    if (otherCount > 0) {
+    // Add "Other" for discovered brands if filter is 'all'
+    if (includeOther) {
       const percentage = (otherCount / totalMentions) * 100;
       pieData.push({
         name: 'Other',
@@ -345,7 +348,7 @@ export default function ResultsPage() {
     }
 
     return pieData;
-  }, [runStatus, brandMentionsProviderFilter, trackedBrands]);
+  }, [runStatus, brandMentionsProviderFilter, trackedBrands, shareOfVoiceFilter]);
 
   // Get unique providers from results for the filter dropdown
   const availableProviders = useMemo(() => {
@@ -1147,7 +1150,14 @@ export default function ResultsPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-base font-semibold text-gray-900">Share of Voice</h2>
-              <p className="text-sm text-gray-500">Tracked brands vs discovered</p>
+              <select
+                value={shareOfVoiceFilter}
+                onChange={(e) => setShareOfVoiceFilter(e.target.value as 'all' | 'tracked')}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Brands</option>
+                <option value="tracked">Tracked Only</option>
+              </select>
             </div>
             <div className="flex flex-col lg:flex-row items-center gap-6">
               <div className="w-full lg:w-1/2 h-64">
