@@ -619,9 +619,41 @@ export default function ResultsPage() {
     return { domain, subtitle: '' };
   };
 
-  // Collapse multiple blank lines into single blank line
-  const collapseBlankLines = (text: string): string => {
-    return text.replace(/\n{3,}/g, '\n\n');
+  // Format response text for consistent display across LLMs
+  const formatResponseText = (text: string): string => {
+    if (!text) return '';
+
+    let formatted = text;
+
+    // Normalize line endings
+    formatted = formatted.replace(/\r\n/g, '\n');
+
+    // Remove excessive blank lines (3+ newlines become 2)
+    formatted = formatted.replace(/\n{3,}/g, '\n\n');
+
+    // Normalize list markers to consistent format
+    // Convert various bullet styles to standard dash
+    formatted = formatted.replace(/^[\u2022\u2023\u25E6\u2043\u2219●○◦•]\s*/gm, '- ');
+
+    // Ensure single space after list markers
+    formatted = formatted.replace(/^(-|\*|\d+\.)\s{2,}/gm, '$1 ');
+
+    // Add consistent spacing before headers (lines starting with #)
+    formatted = formatted.replace(/([^\n])\n(#{1,6}\s)/g, '$1\n\n$2');
+
+    // Ensure blank line before lists that follow prose
+    formatted = formatted.replace(/([^\n-*\d])\n([-*]\s|\d+\.\s)/g, '$1\n\n$2');
+
+    // Remove trailing whitespace from lines
+    formatted = formatted.replace(/[ \t]+$/gm, '');
+
+    // Ensure consistent spacing after list items that are followed by prose
+    formatted = formatted.replace(/([-*]\s.+)\n([A-Z])/g, '$1\n\n$2');
+
+    // Trim leading/trailing whitespace
+    formatted = formatted.trim();
+
+    return formatted;
   };
 
   // Calculate top cited sources
@@ -1403,7 +1435,7 @@ export default function ResultsPage() {
                           ) : (
                             <>
                               <p className="text-xs text-gray-500 mb-2">Full Response:</p>
-                              <div className="text-sm text-gray-700 whitespace-pre-wrap [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649]">
+                              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold">
                                 <ReactMarkdown
                                   components={{
                                     a: ({ href, children }) => (
@@ -1411,7 +1443,7 @@ export default function ResultsPage() {
                                     ),
                                   }}
                                 >
-                                  {collapseBlankLines(result.response_text || '')}
+                                  {formatResponseText(result.response_text || '')}
                                 </ReactMarkdown>
                               </div>
                               {result.sources && result.sources.length > 0 && (
@@ -2077,7 +2109,7 @@ export default function ResultsPage() {
                           ) : (
                             <>
                               <p className="text-xs text-gray-500 mb-2">Full Response:</p>
-                              <div className="text-sm text-gray-700 whitespace-pre-wrap [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649]">
+                              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold">
                                 <ReactMarkdown
                                   components={{
                                     a: ({ href, children }) => (
@@ -2085,7 +2117,7 @@ export default function ResultsPage() {
                                     ),
                                   }}
                                 >
-                                  {collapseBlankLines(result.response_text || '')}
+                                  {formatResponseText(result.response_text || '')}
                                 </ReactMarkdown>
                               </div>
                               {result.sources && result.sources.length > 0 && (
