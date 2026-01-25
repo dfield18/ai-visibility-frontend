@@ -832,6 +832,9 @@ export default function ResultsPage() {
   }, [runStatus, globallyFilteredResults]);
 
   // Calculate ranking data for scatter plot - one dot per prompt per LLM
+  // Define rank categories for Y-axis (in display order from top to bottom)
+  const rankCategories = ['1', '2', '3', '4', '5', '6-10', '10+', 'Not Listed'];
+
   const scatterPlotData = useMemo(() => {
     if (!runStatus) return [];
 
@@ -858,8 +861,13 @@ export default function ResultsPage() {
       ai_overviews: '#7DA68C',
     };
 
-    // Get unique providers in order
-    const providers = Array.from(new Set(results.map(r => r.provider)));
+    // Helper function to convert rank to category
+    const getRankCategory = (rank: number): string => {
+      if (rank === 0) return 'Not Listed';
+      if (rank <= 5) return String(rank);
+      if (rank <= 10) return '6-10';
+      return '10+';
+    };
 
     // Create one data point per result
     const dataPoints: {
@@ -867,7 +875,8 @@ export default function ResultsPage() {
       label: string;
       prompt: string;
       rank: number;
-      displayRank: number;
+      rankCategory: string;
+      rankCategoryIndex: number;
       color: string;
       isMentioned: boolean;
     }[] = [];
@@ -902,12 +911,15 @@ export default function ResultsPage() {
         }
       }
 
+      const rankCategory = getRankCategory(rank);
+
       dataPoints.push({
         provider,
         label: providerLabels[provider] || provider,
         prompt: truncate(result.prompt, 30),
         rank,
-        displayRank: rank === 0 ? 0 : rank, // 0 for not mentioned
+        rankCategory,
+        rankCategoryIndex: rankCategories.indexOf(rankCategory),
         color: providerColors[provider] || '#4A7C59',
         isMentioned: rank > 0,
       });
@@ -940,11 +952,6 @@ export default function ResultsPage() {
     }));
   }, [scatterPlotData]);
 
-  // Calculate max rank for Y axis
-  const maxRank = useMemo(() => {
-    const ranks = scatterPlotData.filter(d => d.rank > 0).map(d => d.rank);
-    return ranks.length > 0 ? Math.max(...ranks) : 5;
-  }, [scatterPlotData]);
 
   // Overview metrics
   const overviewMetrics = useMemo(() => {
@@ -1163,97 +1170,6 @@ export default function ResultsPage() {
   // Overview Tab Content
   const OverviewTab = () => (
     <div className="space-y-6">
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <p className="text-sm font-medium text-gray-600 mb-1">Visibility Score</p>
-          <p className={`text-2xl font-bold ${getMentionRateColor(overviewMetrics?.overallVisibility ? overviewMetrics.overallVisibility / 100 : 0)}`}>
-            {overviewMetrics?.overallVisibility?.toFixed(1) || 0}%
-          </p>
-          <p className="text-xs text-gray-400 mt-1">percent of prompts listing brand</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <p className="text-sm font-medium text-gray-600 mb-1">First Position</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {overviewMetrics?.topPositionCount || 0}
-            <span className="text-sm font-normal text-gray-400">/{overviewMetrics?.totalResponses || 0}</span>
-          </p>
-          <p className="text-xs text-gray-400 mt-1">responses where brand listed first</p>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <p className="text-sm font-medium text-gray-600 mb-1">Avg. Rank</p>
-          <p className="text-2xl font-bold text-gray-900">
-            {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">avg position of brand</p>
-        </div>
-      </div>
-
-      {/* Scatter Plot - Brand Ranking by LLM */}
-      {scatterPlotData.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-4">Brand Ranking by LLM</h3>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  type="category"
-                  dataKey="label"
-                  allowDuplicatedCategory={false}
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                />
-                <YAxis
-                  type="number"
-                  dataKey="displayRank"
-                  name="Rank"
-                  domain={[0, maxRank + 1]}
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                  tickFormatter={(value) => {
-                    if (value === 0) return 'Not mentioned';
-                    return `#${value}`;
-                  }}
-                  ticks={[0, ...Array.from({ length: maxRank }, (_, i) => i + 1)]}
-                  reversed
-                />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                          <p className="text-sm font-medium text-gray-900">{data.label}</p>
-                          <p className="text-xs text-gray-500 mt-1">{data.prompt}</p>
-                          <p className="text-sm text-gray-700 mt-2">
-                            {data.rank === 0 ? 'Not mentioned' : `Rank: #${data.rank}`}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Scatter data={scatterPlotData} fill="#4A7C59">
-                  {scatterPlotData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} opacity={entry.isMentioned ? 1 : 0.4} />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex flex-wrap gap-4 mt-4 justify-center">
-            {scatterPlotProviders.map((entry) => (
-              <div key={entry.provider} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                <span className="text-sm text-gray-600">{entry.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* AI Summary */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -1299,6 +1215,94 @@ export default function ResultsPage() {
           </div>
         )}
       </div>
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <p className="text-sm font-medium text-gray-600 mb-1">Visibility Score</p>
+          <p className={`text-2xl font-bold ${getMentionRateColor(overviewMetrics?.overallVisibility ? overviewMetrics.overallVisibility / 100 : 0)}`}>
+            {overviewMetrics?.overallVisibility?.toFixed(1) || 0}%
+          </p>
+          <p className="text-xs text-gray-400 mt-1">percent of prompts listing brand</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <p className="text-sm font-medium text-gray-600 mb-1">First Position</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {overviewMetrics?.topPositionCount || 0}
+            <span className="text-sm font-normal text-gray-400">/{overviewMetrics?.totalResponses || 0}</span>
+          </p>
+          <p className="text-xs text-gray-400 mt-1">responses where brand listed first</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <p className="text-sm font-medium text-gray-600 mb-1">Avg. Rank</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">avg position of brand</p>
+        </div>
+      </div>
+
+      {/* Scatter Plot - Brand Ranking by LLM */}
+      {scatterPlotData.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-base font-semibold text-gray-900 mb-4">Brand Ranking by LLM</h3>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                  type="category"
+                  dataKey="label"
+                  allowDuplicatedCategory={false}
+                  tick={{ fontSize: 12, fill: '#6b7280' }}
+                  axisLine={{ stroke: '#e5e7eb' }}
+                />
+                <YAxis
+                  type="number"
+                  dataKey="rankCategoryIndex"
+                  name="Rank"
+                  domain={[0, rankCategories.length - 1]}
+                  tick={{ fontSize: 12, fill: '#6b7280' }}
+                  axisLine={{ stroke: '#e5e7eb' }}
+                  tickFormatter={(value) => rankCategories[value] || ''}
+                  ticks={rankCategories.map((_, i) => i)}
+                  interval={0}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                          <p className="text-sm font-medium text-gray-900">{data.label}</p>
+                          <p className="text-xs text-gray-500 mt-1">{data.prompt}</p>
+                          <p className="text-sm text-gray-700 mt-2">
+                            {data.rank === 0 ? 'Not Listed' : `Rank: #${data.rank}`}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Scatter data={scatterPlotData} fill="#4A7C59">
+                  {scatterPlotData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} opacity={entry.isMentioned ? 1 : 0.4} />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap gap-4 mt-4 justify-center">
+            {scatterPlotProviders.map((entry) => (
+              <div key={entry.provider} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                <span className="text-sm text-gray-600">{entry.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* All Results Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -2185,46 +2189,48 @@ export default function ResultsPage() {
 
   return (
     <main className="min-h-screen bg-[#FAFAF8] pb-8">
-      {/* Header */}
-      <header className="pt-6 pb-4">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+      {/* Sticky Header Section */}
+      <div className="sticky top-0 z-20 bg-[#FAFAF8] shadow-sm">
+        {/* Header */}
+        <header className="pt-6 pb-4">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.push('/')}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Go back"
+                >
+                  <ArrowLeft className="w-5 h-5 text-gray-500" />
+                </button>
+                <div>
+                  <h1 className="text-lg font-semibold text-gray-900">
+                    Results for <span className="text-[#4A7C59]">{runStatus.brand}</span>
+                    {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
+                  </h1>
+                  <p className="text-sm text-gray-500">
+                    {runStatus.completed_at
+                      ? `Completed ${formatDate(runStatus.completed_at)}`
+                      : `Started ${formatDate(runStatus.created_at)}`}
+                    {' · '}
+                    {formatCurrency(runStatus.actual_cost)}
+                  </p>
+                </div>
+              </div>
               <button
                 onClick={() => router.push('/')}
-                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Go back"
+                className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-xl hover:bg-[#3d6649] transition-colors flex items-center gap-2"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-500" />
+                <Sparkles className="w-4 h-4" />
+                New Analysis
               </button>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">
-                  Results for <span className="text-[#4A7C59]">{runStatus.brand}</span>
-                  {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
-                </h1>
-                <p className="text-sm text-gray-500">
-                  {runStatus.completed_at
-                    ? `Completed ${formatDate(runStatus.completed_at)}`
-                    : `Started ${formatDate(runStatus.created_at)}`}
-                  {' · '}
-                  {formatCurrency(runStatus.actual_cost)}
-                </p>
-              </div>
             </div>
-            <button
-              onClick={() => router.push('/')}
-              className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-xl hover:bg-[#3d6649] transition-colors flex items-center gap-2"
-            >
-              <Sparkles className="w-4 h-4" />
-              New Analysis
-            </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="max-w-6xl mx-auto px-6">
-        {/* Global Filter Bar */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+        <div className="max-w-6xl mx-auto px-6 pb-4">
+          {/* Global Filter Bar */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-400" />
@@ -2279,27 +2285,30 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        {/* Tab Bar */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="flex gap-1 overflow-x-auto pb-px">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-[#4A7C59] text-[#4A7C59]'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+          {/* Tab Bar */}
+          <div className="border-b border-gray-200 bg-[#FAFAF8]">
+            <nav className="flex gap-1 overflow-x-auto pb-px">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                    activeTab === tab.id
+                      ? 'border-[#4A7C59] text-[#4A7C59]'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
+      </div>
 
-        {/* Tab Content */}
+      {/* Tab Content */}
+      <div className="max-w-6xl mx-auto px-6 pt-6">
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'reference' && <ReferenceTab />}
         {activeTab === 'competitive' && (
