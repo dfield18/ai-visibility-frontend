@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis } from 'recharts';
 import {
   ArrowLeft,
@@ -1279,7 +1280,7 @@ export default function ResultsPage() {
           </div>
         ) : aiSummary?.summary ? (
           <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
-            <ReactMarkdown>{aiSummary.summary.replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiSummary.summary.replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-sm text-gray-500 italic">
@@ -1435,11 +1436,17 @@ export default function ResultsPage() {
                           ) : (
                             <>
                               <p className="text-xs text-gray-500 mb-2">Full Response:</p>
-                              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold">
+                              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1 overflow-x-auto">
                                 <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
                                   components={{
                                     a: ({ href, children }) => (
                                       <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+                                    ),
+                                    table: ({ children }) => (
+                                      <div className="overflow-x-auto mb-3">
+                                        <table className="min-w-full">{children}</table>
+                                      </div>
                                     ),
                                   }}
                                 >
@@ -1548,7 +1555,7 @@ export default function ResultsPage() {
           </div>
         ) : aiSummary?.summary ? (
           <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
-            <ReactMarkdown>{aiSummary.summary.replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiSummary.summary.replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-sm text-gray-500 italic">
@@ -2109,11 +2116,17 @@ export default function ResultsPage() {
                           ) : (
                             <>
                               <p className="text-xs text-gray-500 mb-2">Full Response:</p>
-                              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold">
+                              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1 overflow-x-auto">
                                 <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
                                   components={{
                                     a: ({ href, children }) => (
                                       <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+                                    ),
+                                    table: ({ children }) => (
+                                      <div className="overflow-x-auto mb-3">
+                                        <table className="min-w-full">{children}</table>
+                                      </div>
                                     ),
                                   }}
                                 >
