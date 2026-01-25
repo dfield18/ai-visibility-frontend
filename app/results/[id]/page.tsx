@@ -1184,6 +1184,7 @@ export default function ResultsPage() {
       'Temperature',
       'Brand Mentioned',
       'Competitors Mentioned',
+      'Rank',
       'Response Type',
       'Tokens',
       'Cost',
@@ -1193,19 +1194,39 @@ export default function ResultsPage() {
 
     const rows = globallyFilteredResults
       .filter((r: Result) => !r.error)
-      .map((r: Result) => [
-        `"${r.prompt.replace(/"/g, '""')}"`,
-        r.provider,
-        r.model,
-        r.temperature,
-        r.brand_mentioned ? 'Yes' : 'No',
-        `"${r.competitors_mentioned.join(', ')}"`,
-        r.response_type || '',
-        r.tokens || '',
-        r.cost || '',
-        `"${(r.sources || []).map(s => s.url).join(', ')}"`,
-        `"${(r.response_text || '').replace(/"/g, '""')}"`,
-      ]);
+      .map((r: Result) => {
+        // Calculate rank for this result
+        let rank = '';
+        if (r.response_text && r.brand_mentioned) {
+          const responseText = r.response_text.toLowerCase();
+          const allBrands = [runStatus.brand, ...(r.competitors_mentioned || [])].filter(Boolean);
+          const brandPositions: { brand: string; position: number }[] = [];
+          for (const brand of allBrands) {
+            const pos = responseText.indexOf(brand.toLowerCase());
+            if (pos !== -1) {
+              brandPositions.push({ brand, position: pos });
+            }
+          }
+          brandPositions.sort((a, b) => a.position - b.position);
+          const brandRank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === runStatus.brand.toLowerCase()) + 1;
+          if (brandRank > 0) rank = String(brandRank);
+        }
+
+        return [
+          `"${r.prompt.replace(/"/g, '""')}"`,
+          r.provider,
+          r.model,
+          r.temperature,
+          r.brand_mentioned ? 'Yes' : 'No',
+          `"${r.competitors_mentioned.join(', ')}"`,
+          rank,
+          r.response_type || '',
+          r.tokens || '',
+          r.cost || '',
+          `"${(r.sources || []).map(s => s.url).join(', ')}"`,
+          `"${(r.response_text || '').replace(/"/g, '""')}"`,
+        ];
+      });
 
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -1693,6 +1714,17 @@ export default function ResultsPage() {
             <p className="text-gray-500">No results match your filters</p>
           </div>
         )}
+      </div>
+
+      {/* Export to CSV */}
+      <div className="flex justify-center pt-4">
+        <button
+          onClick={handleExportCSV}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          Export to CSV
+        </button>
       </div>
     </div>
   );
