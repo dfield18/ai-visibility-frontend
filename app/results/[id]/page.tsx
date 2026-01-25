@@ -82,6 +82,7 @@ export default function ResultsPage() {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
+  const [selectedResult, setSelectedResult] = useState<Result | null>(null);
   
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -1357,137 +1358,61 @@ export default function ResultsPage() {
                 )}
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors Mentioned'}</th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredResults.map((result: Result) => (
-                <>
-                  <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <p className="text-sm text-gray-900">{truncate(result.prompt, 40)}</p>
-                      <p className="text-xs text-gray-500">Temp: {result.temperature}</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
-                    </td>
-                    {!isCategory && (
-                      <td className="py-3 px-4">
-                        {result.error ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
-                            <AlertTriangle className="w-3 h-3" />Not Available
-                          </span>
-                        ) : result.brand_mentioned ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
-                            <Check className="w-3 h-3" />Yes
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
-                            <X className="w-3 h-3" />No
-                          </span>
-                        )}
-                      </td>
-                    )}
+                <tr
+                  key={result.id}
+                  className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setSelectedResult(result)}
+                >
+                  <td className="py-3 px-4">
+                    <p className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium">{truncate(result.prompt, 50)}</p>
+                    <p className="text-xs text-gray-500">Temp: {result.temperature}</p>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
+                  </td>
+                  {!isCategory && (
                     <td className="py-3 px-4">
                       {result.error ? (
-                        <span className="text-sm text-gray-400">-</span>
-                      ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
-                        <span className="text-sm text-gray-700">
-                          {isCategory ? result.competitors_mentioned.join(', ') : (
-                            <>
-                              {result.competitors_mentioned.slice(0, 2).join(', ')}
-                              {result.competitors_mentioned.length > 2 && (
-                                <span className="text-gray-400"> +{result.competitors_mentioned.length - 2}</span>
-                              )}
-                            </>
-                          )}
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
+                          <AlertTriangle className="w-3 h-3" />Not Available
+                        </span>
+                      ) : result.brand_mentioned ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
+                          <Check className="w-3 h-3" />Yes
                         </span>
                       ) : (
-                        <span className="text-sm text-gray-400">None</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
+                          <X className="w-3 h-3" />No
+                        </span>
                       )}
                     </td>
-                    <td className="py-3 px-4">
-                      <span className="text-sm text-gray-600 capitalize">{result.response_type || '-'}</span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => toggleExpanded(result.id)}
-                        className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-                      >
-                        {expandedResults.has(result.id) ? (
-                          <>Hide <ChevronUp className="w-4 h-4" /></>
-                        ) : (
-                          <>View <ChevronDown className="w-4 h-4" /></>
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                  {expandedResults.has(result.id) && (
-                    <tr key={`${result.id}-expanded`}>
-                      <td colSpan={isCategory ? 5 : 6} className="py-4 px-4 bg-[#FAFAF8]">
-                        <div className="max-h-64 overflow-y-auto">
-                          {result.error ? (
-                            <>
-                              <p className="text-xs text-orange-600 mb-2">AI Overview Not Available:</p>
-                              <p className="text-sm text-orange-700 bg-orange-50 p-3 rounded-lg">
-                                Google did not return an AI Overview for this query.
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-xs text-gray-500 mb-2">Full Response:</p>
-                              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1 overflow-x-auto">
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm]}
-                                  components={{
-                                    a: ({ href, children }) => (
-                                      <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
-                                    ),
-                                    table: ({ children }) => (
-                                      <div className="overflow-x-auto mb-3">
-                                        <table className="min-w-full">{children}</table>
-                                      </div>
-                                    ),
-                                  }}
-                                >
-                                  {formatResponseText(result.response_text || '')}
-                                </ReactMarkdown>
-                              </div>
-                              {result.sources && result.sources.length > 0 && (
-                                <div className="mt-4 pt-3 border-t border-gray-200">
-                                  <p className="text-xs text-gray-500 mb-2">Sources ({result.sources.length}):</p>
-                                  <div className="space-y-1.5">
-                                    {result.sources.map((source, idx) => {
-                                      const { domain, subtitle } = formatSourceDisplay(source.url, source.title);
-                                      return (
-                                        <a
-                                          key={idx}
-                                          href={source.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                                        >
-                                          <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                          <span className="truncate">
-                                            <span className="font-medium">{domain}</span>
-                                            {subtitle && <span className="text-gray-500"> · {subtitle}</span>}
-                                          </span>
-                                        </a>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-                              {result.tokens && (
-                                <p className="text-xs text-gray-400 mt-2">{result.tokens} tokens · {formatCurrency(result.cost || 0)}</p>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
                   )}
-                </>
+                  <td className="py-3 px-4">
+                    {result.error ? (
+                      <span className="text-sm text-gray-400">-</span>
+                    ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
+                      <span className="text-sm text-gray-700">
+                        {isCategory ? result.competitors_mentioned.join(', ') : (
+                          <>
+                            {result.competitors_mentioned.slice(0, 2).join(', ')}
+                            {result.competitors_mentioned.length > 2 && (
+                              <span className="text-gray-400"> +{result.competitors_mentioned.length - 2}</span>
+                            )}
+                          </>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-400">None</span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="text-sm text-gray-600 capitalize">{result.response_type || '-'}</span>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -2408,6 +2333,109 @@ export default function ResultsPage() {
           />
         )}
       </div>
+
+      {/* Result Detail Modal */}
+      {selectedResult && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedResult(null)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{getProviderLabel(selectedResult.provider)}</h2>
+                <p className="text-sm text-gray-500">Temperature: {selectedResult.temperature}</p>
+              </div>
+              <button
+                onClick={() => setSelectedResult(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-4 border-b border-gray-100 bg-gray-50">
+              <p className="text-xs text-gray-500 mb-1">Prompt</p>
+              <p className="text-sm text-gray-900">{selectedResult.prompt}</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {selectedResult.error ? (
+                <div className="text-center py-8">
+                  <AlertTriangle className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-orange-800 mb-1">AI Overview Not Available</p>
+                  <p className="text-sm text-orange-700">
+                    Google did not return an AI Overview for this query.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {!isCategory && (
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg ${selectedResult.brand_mentioned ? 'bg-[#E8F0E8] text-[#4A7C59]' : 'bg-gray-100 text-gray-600'}`}>
+                        {selectedResult.brand_mentioned ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                        {runStatus.brand} {selectedResult.brand_mentioned ? 'Mentioned' : 'Not Mentioned'}
+                      </span>
+                    )}
+                    {selectedResult.competitors_mentioned && selectedResult.competitors_mentioned.length > 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg">
+                        {selectedResult.competitors_mentioned.length} competitor{selectedResult.competitors_mentioned.length !== 1 ? 's' : ''} mentioned
+                      </span>
+                    )}
+                    {selectedResult.response_type && (
+                      <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg capitalize">
+                        {selectedResult.response_type}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a: ({ href, children }) => (
+                          <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+                        ),
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto mb-3">
+                            <table className="min-w-full">{children}</table>
+                          </div>
+                        ),
+                      }}
+                    >
+                      {formatResponseText(selectedResult.response_text || '')}
+                    </ReactMarkdown>
+                  </div>
+                  {selectedResult.sources && selectedResult.sources.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <p className="text-xs text-gray-500 mb-2">Sources ({selectedResult.sources.length})</p>
+                      <div className="space-y-1.5">
+                        {selectedResult.sources.map((source, idx) => {
+                          const { domain, subtitle } = formatSourceDisplay(source.url, source.title);
+                          return (
+                            <a
+                              key={idx}
+                              href={source.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                            >
+                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">
+                                <span className="font-medium">{domain}</span>
+                                {subtitle && <span className="text-gray-500"> · {subtitle}</span>}
+                              </span>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {selectedResult.tokens && (
+                    <p className="text-xs text-gray-400 mt-4 pt-4 border-t border-gray-100">
+                      {selectedResult.tokens} tokens · {formatCurrency(selectedResult.cost || 0)}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
