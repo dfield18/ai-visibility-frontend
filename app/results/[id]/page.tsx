@@ -833,7 +833,7 @@ export default function ResultsPage() {
 
   // Calculate ranking data for scatter plot - one dot per prompt per LLM
   // Define rank categories for Y-axis (in display order from top to bottom)
-  const rankCategories = ['1', '2', '3', '4', '5', '6-10', '10+', 'Not Listed'];
+  const rankCategories = ['Not Listed', '10+', '6-10', '5', '4', '3', '2', '1'];
 
   const scatterPlotData = useMemo(() => {
     if (!runStatus) return [];
