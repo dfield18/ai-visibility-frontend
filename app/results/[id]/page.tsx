@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis, BarChart, Bar } from 'recharts';
 import {
   ArrowLeft,
   Download,
@@ -83,7 +83,8 @@ export default function ResultsPage() {
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
-  
+  const [chartTab, setChartTab] = useState<'ranking' | 'firstPosition' | 'avgRank'>('ranking');
+
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
     runId,
@@ -952,6 +953,132 @@ export default function ResultsPage() {
     }));
   }, [scatterPlotData]);
 
+  // First Position chart data - count of times brand was listed first per LLM
+  const firstPositionChartData = useMemo(() => {
+    if (!runStatus) return [];
+
+    const isCategory = runStatus.search_type === 'category';
+    const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus.brand;
+    if (!selectedBrand) return [];
+
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+
+    const providerLabels: Record<string, string> = {
+      openai: 'OpenAI',
+      anthropic: 'Claude',
+      gemini: 'Gemini',
+      perplexity: 'Perplexity',
+      ai_overviews: 'AI Overviews',
+    };
+
+    const providerColors: Record<string, string> = {
+      openai: '#2D5A3D',
+      anthropic: '#4A7C59',
+      gemini: '#5B8A6A',
+      perplexity: '#6C987B',
+      ai_overviews: '#7DA68C',
+    };
+
+    // Group by provider
+    const providerStats: Record<string, { firstCount: number; total: number }> = {};
+
+    for (const result of results) {
+      const provider = result.provider;
+      if (!providerStats[provider]) {
+        providerStats[provider] = { firstCount: 0, total: 0 };
+      }
+      providerStats[provider].total++;
+
+      if (!result.response_text) continue;
+      const responseText = result.response_text.toLowerCase();
+      const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+
+      let firstPos = Infinity;
+      let firstBrand = '';
+      for (const brand of allBrands) {
+        const pos = responseText.indexOf(brand.toLowerCase());
+        if (pos !== -1 && pos < firstPos) {
+          firstPos = pos;
+          firstBrand = brand;
+        }
+      }
+
+      if (firstBrand.toLowerCase() === selectedBrand.toLowerCase()) {
+        providerStats[provider].firstCount++;
+      }
+    }
+
+    return Object.entries(providerStats).map(([provider, stats]) => ({
+      provider,
+      label: providerLabels[provider] || provider,
+      firstCount: stats.firstCount,
+      total: stats.total,
+      color: providerColors[provider] || '#4A7C59',
+    }));
+  }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
+
+  // Average Ranking chart data - average rank per LLM
+  const avgRankChartData = useMemo(() => {
+    if (!runStatus) return [];
+
+    const isCategory = runStatus.search_type === 'category';
+    const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus.brand;
+    if (!selectedBrand) return [];
+
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+
+    const providerLabels: Record<string, string> = {
+      openai: 'OpenAI',
+      anthropic: 'Claude',
+      gemini: 'Gemini',
+      perplexity: 'Perplexity',
+      ai_overviews: 'AI Overviews',
+    };
+
+    const providerColors: Record<string, string> = {
+      openai: '#2D5A3D',
+      anthropic: '#4A7C59',
+      gemini: '#5B8A6A',
+      perplexity: '#6C987B',
+      ai_overviews: '#7DA68C',
+    };
+
+    // Group by provider
+    const providerRanks: Record<string, number[]> = {};
+
+    for (const result of results) {
+      const provider = result.provider;
+      if (!providerRanks[provider]) {
+        providerRanks[provider] = [];
+      }
+
+      if (!result.response_text) continue;
+      const responseText = result.response_text.toLowerCase();
+      const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+
+      const brandPositions: { brand: string; position: number }[] = [];
+      for (const brand of allBrands) {
+        const pos = responseText.indexOf(brand.toLowerCase());
+        if (pos !== -1) {
+          brandPositions.push({ brand, position: pos });
+        }
+      }
+      brandPositions.sort((a, b) => a.position - b.position);
+
+      const rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === selectedBrand.toLowerCase()) + 1;
+      if (rank > 0) {
+        providerRanks[provider].push(rank);
+      }
+    }
+
+    return Object.entries(providerRanks).map(([provider, ranks]) => ({
+      provider,
+      label: providerLabels[provider] || provider,
+      avgRank: ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : 0,
+      mentionCount: ranks.length,
+      color: providerColors[provider] || '#4A7C59',
+    })).filter(d => d.mentionCount > 0);
+  }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
 
   // Overview metrics
   const overviewMetrics = useMemo(() => {
@@ -1242,65 +1369,204 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* Scatter Plot - Brand Ranking by LLM */}
+      {/* Charts Section with Tabs */}
       {scatterPlotData.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-base font-semibold text-gray-900 mb-4">Brand Ranking by LLM</h3>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis
-                  type="category"
-                  dataKey="label"
-                  allowDuplicatedCategory={false}
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                />
-                <YAxis
-                  type="number"
-                  dataKey="rankCategoryIndex"
-                  name="Rank"
-                  domain={[0, rankCategories.length - 1]}
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
-                  axisLine={{ stroke: '#e5e7eb' }}
-                  tickFormatter={(value) => rankCategories[value] || ''}
-                  ticks={rankCategories.map((_, i) => i)}
-                  interval={0}
-                />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                          <p className="text-sm font-medium text-gray-900">{data.label}</p>
-                          <p className="text-xs text-gray-500 mt-1">{data.prompt}</p>
-                          <p className="text-sm text-gray-700 mt-2">
-                            {data.rank === 0 ? 'Not Listed' : `Rank: #${data.rank}`}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Scatter data={scatterPlotData} fill="#4A7C59">
-                  {scatterPlotData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} opacity={entry.isMentioned ? 1 : 0.4} />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
+          {/* Chart Tabs */}
+          <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
+            <button
+              onClick={() => setChartTab('ranking')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                chartTab === 'ranking'
+                  ? 'border-[#4A7C59] text-[#4A7C59]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Brand Ranking
+            </button>
+            <button
+              onClick={() => setChartTab('firstPosition')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                chartTab === 'firstPosition'
+                  ? 'border-[#4A7C59] text-[#4A7C59]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              First Position
+            </button>
+            <button
+              onClick={() => setChartTab('avgRank')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                chartTab === 'avgRank'
+                  ? 'border-[#4A7C59] text-[#4A7C59]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Average Ranking
+            </button>
           </div>
-          <div className="flex flex-wrap gap-4 mt-4 justify-center">
-            {scatterPlotProviders.map((entry) => (
-              <div key={entry.provider} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                <span className="text-sm text-gray-600">{entry.label}</span>
+
+          {/* Brand Ranking Scatter Chart */}
+          {chartTab === 'ranking' && (
+            <>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      type="category"
+                      dataKey="label"
+                      allowDuplicatedCategory={false}
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="rankCategoryIndex"
+                      name="Rank"
+                      domain={[0, rankCategories.length - 1]}
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      tickFormatter={(value) => rankCategories[value] || ''}
+                      ticks={rankCategories.map((_, i) => i)}
+                      interval={0}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                              <p className="text-sm font-medium text-gray-900">{data.label}</p>
+                              <p className="text-xs text-gray-500 mt-1">{data.prompt}</p>
+                              <p className="text-sm text-gray-700 mt-2">
+                                {data.rank === 0 ? 'Not Listed' : `Rank: #${data.rank}`}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Scatter data={scatterPlotData} fill="#4A7C59">
+                      {scatterPlotData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} opacity={entry.isMentioned ? 1 : 0.4} />
+                      ))}
+                    </Scatter>
+                  </ScatterChart>
+                </ResponsiveContainer>
               </div>
-            ))}
-          </div>
+              <div className="flex flex-wrap gap-4 mt-4 justify-center">
+                {scatterPlotProviders.map((entry) => (
+                  <div key={entry.provider} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                    <span className="text-sm text-gray-600">{entry.label}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* First Position Bar Chart */}
+          {chartTab === 'firstPosition' && (
+            <>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={firstPositionChartData} margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                              <p className="text-sm font-medium text-gray-900">{data.label}</p>
+                              <p className="text-sm text-gray-700 mt-1">
+                                First Position: {data.firstCount} / {data.total}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {((data.firstCount / data.total) * 100).toFixed(1)}% of responses
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="firstCount" name="First Position">
+                      {firstPositionChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Number of times brand was listed first in each LLM's responses
+              </p>
+            </>
+          )}
+
+          {/* Average Ranking Bar Chart */}
+          {chartTab === 'avgRank' && (
+            <>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={avgRankChartData} margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      domain={[0, 'auto']}
+                      reversed
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                              <p className="text-sm font-medium text-gray-900">{data.label}</p>
+                              <p className="text-sm text-gray-700 mt-1">
+                                Average Rank: #{data.avgRank.toFixed(1)}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Based on {data.mentionCount} mentions
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar dataKey="avgRank" name="Average Rank">
+                      {avgRankChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Average position of brand when mentioned (lower is better)
+              </p>
+            </>
+          )}
         </div>
       )}
 
