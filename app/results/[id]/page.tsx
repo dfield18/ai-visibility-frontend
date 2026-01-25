@@ -1371,7 +1371,7 @@ export default function ResultsPage() {
           <p className={`text-2xl font-bold ${getMentionRateColor(overviewMetrics?.overallVisibility ? overviewMetrics.overallVisibility / 100 : 0)}`}>
             {overviewMetrics?.overallVisibility?.toFixed(1) || 0}%
           </p>
-          <p className="text-xs text-gray-400 mt-1">percent of prompts listing brand</p>
+          <p className="text-xs text-gray-400 mt-1">Percent of prompts where the brand is mentioned</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <p className="text-sm font-medium text-gray-600 mb-1">First Position</p>
@@ -1379,14 +1379,14 @@ export default function ResultsPage() {
             {overviewMetrics?.topPositionCount || 0}
             <span className="text-sm font-normal text-gray-400">/{overviewMetrics?.totalResponses || 0}</span>
           </p>
-          <p className="text-xs text-gray-400 mt-1">responses where brand listed first</p>
+          <p className="text-xs text-gray-400 mt-1">Responses where the brand is ranked first</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <p className="text-sm font-medium text-gray-600 mb-1">Avg. Rank</p>
           <p className="text-2xl font-bold text-gray-900">
             {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
           </p>
-          <p className="text-xs text-gray-400 mt-1">avg position of brand</p>
+          <p className="text-xs text-gray-400 mt-1">Average position when the brand is mentioned</p>
         </div>
       </div>
 
