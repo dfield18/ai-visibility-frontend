@@ -855,7 +855,7 @@ export default function ResultsPage() {
     anthropic: 'Claude',
     gemini: 'Gemini',
     perplexity: 'Perplexity',
-    ai_overviews: 'AI Overviews',
+    ai_overviews: 'Google AI Overviews',
   };
 
   const scatterPlotData = useMemo(() => {
@@ -1002,7 +1002,7 @@ export default function ResultsPage() {
       anthropic: 'Claude',
       gemini: 'Gemini',
       perplexity: 'Perplexity',
-      ai_overviews: 'AI Overviews',
+      ai_overviews: 'Google AI Overviews',
     };
 
     const providerColors: Record<string, string> = {
@@ -1066,7 +1066,7 @@ export default function ResultsPage() {
       anthropic: 'Claude',
       gemini: 'Gemini',
       perplexity: 'Perplexity',
-      ai_overviews: 'AI Overviews',
+      ai_overviews: 'Google AI Overviews',
     };
 
     const providerColors: Record<string, string> = {
