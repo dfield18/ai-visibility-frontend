@@ -1601,8 +1601,8 @@ export default function ResultsPage() {
           {/* Brand Ranking Chart */}
           {chartTab === 'ranking' && (
             <>
-              {/* Subtitle and view toggle */}
-              <div className="flex items-center justify-between mb-4">
+              {/* Title and view toggle */}
+              <div className="flex items-center justify-between mb-1">
                 <p className="text-sm text-gray-500">
                   Where your brand appears in AI-generated answers
                 </p>
@@ -1629,6 +1629,13 @@ export default function ResultsPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Subtitle for Range view */}
+              {rankingViewMode === 'range' && (
+                <p className="text-xs text-gray-400 mb-3">
+                  Each row shows how an AI typically ranks your brand. Dots are individual answers; the bar shows best to worst placement.
+                </p>
+              )}
 
               {/* Dots View */}
               {rankingViewMode === 'dots' && (
@@ -1742,10 +1749,6 @@ export default function ResultsPage() {
               {/* Range View */}
               {rankingViewMode === 'range' && rangeChartData.length > 0 && (
                 <div>
-                  {/* Explanatory subtitle */}
-                  <p className="text-xs text-gray-400 mb-2">
-                    Each row shows how an AI typically ranks your brand. Dots are individual answers; the bar shows best to worst placement.
-                  </p>
                   {/* Legend - above chart */}
                   <div className="flex items-center justify-center flex-wrap gap-4 mb-2">
                     <div className="flex items-center gap-2">
