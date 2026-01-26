@@ -1830,7 +1830,7 @@ export default function ResultsPage() {
                       // Chart margins matching ComposedChart margin prop
                       const margin = { top: 20, right: 30, bottom: 60, left: 120 };
                       const yAxisWidth = 110; // Matches YAxis width prop
-                      const xAxisHeight = 40; // Estimated height of X-axis with labels
+                      const xAxisHeight = 20; // Estimated height of X-axis with labels
                       const numProviders = rangeChartData.length;
 
                       // Domain is [-0.5, 10.5] - total range of 11 units
