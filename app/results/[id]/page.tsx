@@ -1650,9 +1650,9 @@ export default function ResultsPage() {
                           ? 'bg-white text-gray-900 shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
-                      title="Individual answers"
+                      title="See every individual answer"
                     >
-                      Dots
+                      All Answers
                     </button>
                     <button
                       onClick={() => setRankingViewMode('range')}
@@ -1661,32 +1661,32 @@ export default function ResultsPage() {
                           ? 'bg-white text-gray-900 shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
-                      title="Overall best → worst"
+                      title="See best to worst by AI"
                     >
-                      Range
+                      Summary
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Subtitle for Dots view */}
+              {/* Subtitle for All Answers view */}
               {rankingViewMode === 'dots' && (
                 <p className="text-xs text-gray-400 mb-3">
                   Each dot is one answer to one prompt. Lower numbers mean your brand is shown earlier.
                 </p>
               )}
 
-              {/* Subtitle for Range view */}
+              {/* Subtitle for Summary view */}
               {rankingViewMode === 'range' && (
                 <p className="text-xs text-gray-400 mb-6">
-                  Each row shows how an AI typically ranks your brand. Dots are individual answers; the bar shows best to worst placement.
+                  Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.
                 </p>
               )}
 
-              {/* Dots View */}
+              {/* All Answers View */}
               {rankingViewMode === 'dots' && (
                 <div>
-                  {/* Minimal legend for Dots view - offset to center over plot area */}
+                  {/* Minimal legend for All Answers view - offset to center over plot area */}
                   <div className="flex items-center justify-center gap-2 pl-[140px] mb-[-14px]">
                     <div className="w-2 h-2 rounded-full bg-gray-500 opacity-60" />
                     <span className="text-xs text-gray-400">Each dot = one answer</span>
@@ -1809,7 +1809,7 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              {/* Range View */}
+              {/* Summary View */}
               {rankingViewMode === 'range' && rangeChartData.length > 0 && (
                 <div>
                   {/* Legend - above chart, offset to align with X-axis label */}
