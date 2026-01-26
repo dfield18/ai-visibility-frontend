@@ -1030,6 +1030,44 @@ export default function ResultsPage() {
     });
   }, [scatterPlotData, runStatus]);
 
+  // Dots data for Range view - positioned by LLM label (Y) and rank band index (X)
+  const rangeViewDots = useMemo(() => {
+    if (!scatterPlotData.length) return [];
+
+    // Group by provider and rankBandIndex for horizontal offset
+    const positionGroups: Record<string, number[]> = {};
+    scatterPlotData.forEach((dp, idx) => {
+      const key = `${dp.provider}-${dp.rankBandIndex}`;
+      if (!positionGroups[key]) {
+        positionGroups[key] = [];
+      }
+      positionGroups[key].push(idx);
+    });
+
+    // Create dots with horizontal offset
+    const offsetStep = 0.12;
+    return scatterPlotData.map((dp, idx) => {
+      const key = `${dp.provider}-${dp.rankBandIndex}`;
+      const group = positionGroups[key];
+      let xOffset = 0;
+
+      if (group.length > 1) {
+        const indexInGroup = group.indexOf(idx);
+        const totalOffset = (group.length - 1) * offsetStep;
+        xOffset = -totalOffset / 2 + indexInGroup * offsetStep;
+      }
+
+      return {
+        label: dp.label, // For Y-axis categorical positioning
+        x: dp.rankBandIndex + xOffset, // X position with offset
+        prompt: dp.prompt,
+        rank: dp.rank,
+        isMentioned: dp.isMentioned,
+        originalResult: dp.originalResult,
+      };
+    });
+  }, [scatterPlotData]);
+
   // First Position chart data - count of times brand was listed first per LLM
   const firstPositionChartData = useMemo(() => {
     if (!runStatus) return [];
@@ -1650,7 +1688,7 @@ export default function ResultsPage() {
                 <div>
                   {/* Explanatory subtitle */}
                   <p className="text-xs text-gray-400 mb-3">
-                    Range shows best-to-worst rank across prompts; marker shows average rank.
+                    Each dot is a prompt result. Range bar shows best-to-worst; marker shows average. Double-click a dot for details.
                   </p>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -1743,9 +1781,29 @@ export default function ResultsPage() {
                           dataKey="rangeHeight"
                           stackId="range"
                           fill="#6b7280"
-                          fillOpacity={0.5}
+                          fillOpacity={0.3}
                           radius={[4, 4, 4, 4]}
                           barSize={10}
+                        />
+                        {/* Individual prompt dots */}
+                        <Scatter
+                          data={rangeViewDots}
+                          dataKey="x"
+                          fill="#6b7280"
+                          shape={(props: any) => {
+                            const { cx, cy, payload } = props;
+                            return (
+                              <circle
+                                cx={cx}
+                                cy={cy}
+                                r={5}
+                                fill="#6b7280"
+                                opacity={payload.isMentioned ? 0.7 : 0.3}
+                                style={{ cursor: 'pointer' }}
+                                onDoubleClick={() => setSelectedResult(payload.originalResult)}
+                              />
+                            );
+                          }}
                         />
                         {/* Average marker - positioned at avgBandIndex */}
                         <Scatter
@@ -1783,7 +1841,11 @@ export default function ResultsPage() {
                   {/* Legend */}
                   <div className="flex items-center justify-center gap-6 mt-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-2.5 bg-gray-500 opacity-50 rounded-full" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
+                      <span className="text-xs text-gray-500">Prompt result</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-2.5 bg-gray-500 opacity-30 rounded-full" />
                       <span className="text-xs text-gray-500">Rank range</span>
                     </div>
                     <div className="flex items-center gap-2">
