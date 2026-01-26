@@ -1550,9 +1550,8 @@ export default function ResultsPage() {
                             return (
                               <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px]">
                                 <p className="text-sm font-medium text-gray-900">LLM: {data.label}</p>
-                                <p className="text-sm text-gray-700 mt-1">Rank band: {data.rankBand}</p>
-                                <p className="text-sm text-gray-700">
-                                  Exact position: {data.rank === 0 ? 'N/A' : `#${data.rank}`}
+                                <p className="text-sm text-gray-700 mt-1">
+                                  {data.rank === 0 ? 'Not mentioned' : `Shown as result #${data.rank}`}
                                 </p>
                                 <p className="text-xs text-gray-500 mt-2 truncate" title={data.prompt}>
                                   Prompt: {data.prompt}
