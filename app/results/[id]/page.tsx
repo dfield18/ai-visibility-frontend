@@ -1974,13 +1974,13 @@ export default function ResultsPage() {
                 onClick={() => setFilter('mentioned')}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
               >
-                Mentioned
+                {runStatus.brand} Mentioned
               </button>
               <button
                 onClick={() => setFilter('not_mentioned')}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'not_mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
               >
-                Not Mentioned
+                {runStatus.brand} Not Mentioned
               </button>
             </div>
             <select
@@ -2594,13 +2594,13 @@ export default function ResultsPage() {
                 onClick={() => setFilter('mentioned')}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
               >
-                Mentioned
+                {runStatus.brand} Mentioned
               </button>
               <button
                 onClick={() => setFilter('not_mentioned')}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'not_mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
               >
-                Not Mentioned
+                {runStatus.brand} Not Mentioned
               </button>
             </div>
             <select
