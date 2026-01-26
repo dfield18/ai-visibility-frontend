@@ -1786,11 +1786,14 @@ export default function ResultsPage() {
                             const { x, y, payload } = props;
                             const label = RANGE_X_LABELS[Math.round(payload?.value ?? 0)] || '';
                             const isNotMentioned = label === 'Not shown';
+                            const isAfterTop10 = label === 'Shown after top 10';
+                            // Adjust text anchor for longer labels to prevent overlap
+                            const textAnchor = isAfterTop10 ? 'end' : isNotMentioned ? 'start' : 'middle';
                             return (
                               <text
                                 x={x}
                                 y={y + 12}
-                                textAnchor="middle"
+                                textAnchor={textAnchor}
                                 fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
                                 fontSize={11}
                                 fontStyle={isNotMentioned ? 'italic' : 'normal'}
