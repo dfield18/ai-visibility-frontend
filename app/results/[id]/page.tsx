@@ -1686,8 +1686,8 @@ export default function ResultsPage() {
               {/* Dots View */}
               {rankingViewMode === 'dots' && (
                 <div>
-                  {/* Minimal legend for Dots view */}
-                  <div className="flex items-center justify-center gap-2 mb-1">
+                  {/* Minimal legend for Dots view - offset to center over plot area */}
+                  <div className="flex items-center justify-center gap-2 pl-[40px]">
                     <div className="w-2 h-2 rounded-full bg-gray-500 opacity-60" />
                     <span className="text-xs text-gray-400">Each dot = one answer</span>
                   </div>
