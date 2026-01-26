@@ -479,7 +479,7 @@ export default function ResultsPage() {
       mentioned: number;
       total: number;
       rate: number;
-      topPosition: number;
+      topPosition: number | null;
       ranks: number[];
       avgRank: number | null;
     }> = {};
@@ -491,7 +491,7 @@ export default function ResultsPage() {
           mentioned: 0,
           total: 0,
           rate: 0,
-          topPosition: 0,
+          topPosition: null,
           ranks: [],
           avgRank: null,
         };
@@ -527,8 +527,9 @@ export default function ResultsPage() {
 
           if (rank > 0) {
             providerStats[provider].ranks.push(rank);
-            if (rank === 1) {
-              providerStats[provider].topPosition += 1;
+            // Track best (lowest) position achieved
+            if (providerStats[provider].topPosition === null || rank < providerStats[provider].topPosition) {
+              providerStats[provider].topPosition = rank;
             }
           }
         }
@@ -2095,10 +2096,10 @@ export default function ResultsPage() {
                   <p className="text-xs text-gray-500">{stats.mentioned}/{stats.total} mentions</p>
                   <div className="flex items-center gap-3 text-xs">
                     <span className="text-gray-500">
-                      top position: <span className="font-medium text-[#4A7C59]">{stats.mentioned === 0 ? 'n/a' : stats.topPosition}</span>
+                      top position: <span className="font-medium text-[#4A7C59]">{stats.mentioned === 0 || stats.topPosition === null ? 'n/a' : `#${stats.topPosition}`}</span>
                     </span>
                     <span className="text-gray-500">
-                      avg rank: <span className="font-medium text-gray-700">{stats.mentioned === 0 ? 'n/a' : (stats.avgRank !== null ? stats.avgRank.toFixed(1) : 'n/a')}</span>
+                      avg rank: <span className="font-medium text-gray-700">{stats.mentioned === 0 ? 'n/a' : (stats.avgRank !== null ? `#${stats.avgRank.toFixed(1)}` : 'n/a')}</span>
                     </span>
                   </div>
                 </div>
