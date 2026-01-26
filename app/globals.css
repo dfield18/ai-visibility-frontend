@@ -53,11 +53,23 @@ body {
 }
 
 /* Remove focus outline from Recharts elements */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface,
+.recharts-surface *,
+.recharts-wrapper:focus,
 .recharts-wrapper:focus-visible,
+.recharts-wrapper *:focus,
 .recharts-wrapper *:focus-visible,
+.recharts-surface:focus,
 .recharts-surface:focus-visible,
-.recharts-surface *:focus-visible {
-  outline: none;
+.recharts-surface *:focus,
+.recharts-surface *:focus-visible,
+.recharts-wrapper svg,
+.recharts-wrapper svg:focus,
+.recharts-wrapper svg:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* Loading animation */
