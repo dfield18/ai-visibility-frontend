@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis, BarChart, Bar, ReferenceArea, ReferenceLine, ComposedChart, Line, ErrorBar } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis, BarChart, Bar, ReferenceArea, ReferenceLine, ComposedChart, Line, ErrorBar, Customized } from 'recharts';
 import {
   ArrowLeft,
   Download,
@@ -838,6 +838,16 @@ export default function ResultsPage() {
   // Order: index 0 = best rank, index 5 = not mentioned (renders top to bottom with reversed axis)
   const RANK_BANDS = ['1 (Top)', '2–3', '4–5', '6–10', '10+', 'Not mentioned'] as const;
 
+  // Range chart X-axis labels - individual positions 1-9, then 10+, then Not mentioned
+  const RANGE_X_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10+', 'Not mentioned'] as const;
+
+  // Helper to convert rank to Range chart X position (0-10)
+  const rankToRangeX = (rank: number): number => {
+    if (rank === 0) return 10; // Not mentioned
+    if (rank >= 10) return 9; // 10+
+    return rank - 1; // 1-9 map to indices 0-8
+  };
+
   // Helper function to convert position to rank band (Fix 1)
   const positionToRankBand = (position: number | null | undefined, brandMentioned: boolean): { label: string; index: number } => {
     if (!brandMentioned || position === null || position === undefined || position === 0) {
@@ -995,9 +1005,14 @@ export default function ResultsPage() {
     return Object.values(providerStats).map((stats, index) => {
       const mentionedPoints = stats.dataPoints.filter(p => p.rank > 0);
       const allBandIndices = stats.dataPoints.map(p => p.bandIndex);
+      const allRangeX = stats.dataPoints.map(p => rankToRangeX(p.rank));
 
       const bestBandIndex = Math.min(...allBandIndices);
       const worstBandIndex = Math.max(...allBandIndices);
+
+      // For Range chart: use actual positions
+      const bestRangeX = Math.min(...allRangeX);
+      const worstRangeX = Math.max(...allRangeX);
 
       let avgBandIndex = 5; // Default to "Not mentioned"
       let avgPositionNumeric: number | null = null;
@@ -1010,8 +1025,8 @@ export default function ResultsPage() {
         avgBandLabel = avgBand.label;
       }
 
-      // For stacked bar: rangeHeight needs +1 to show at least one band width
-      const rangeHeight = worstBandIndex - bestBandIndex + 1;
+      // For Range chart stacked bar: rangeHeight spans from best to worst
+      const rangeHeight = worstRangeX - bestRangeX + 1;
 
       return {
         provider: stats.provider,
@@ -1019,13 +1034,15 @@ export default function ResultsPage() {
         yIndex: index, // Numeric Y position for alignment
         bestBandIndex,
         worstBandIndex,
+        bestRangeX,
+        worstRangeX,
         avgBandIndex,
         avgBandLabel,
         avgPositionNumeric,
         promptsAnalyzed: stats.dataPoints.length,
         mentions: mentionedPoints.length,
-        // For bar chart rendering - rangeStart positions the invisible spacer
-        rangeStart: bestBandIndex,
+        // For Range bar chart rendering - rangeStart positions the invisible spacer
+        rangeStart: bestRangeX,
         rangeHeight,
       };
     });
@@ -1036,24 +1053,26 @@ export default function ResultsPage() {
     return rangeChartData.map(d => d.provider);
   }, [rangeChartData]);
 
-  // Dots data for Range view - uses numeric Y positioning to align with bars
+  // Dots data for Range view - uses actual rank positions (1-9, 10+, Not mentioned)
   const rangeViewDots = useMemo(() => {
     if (!scatterPlotData.length || !rangeProviderOrder.length) return [];
 
-    // Group by provider and rankBandIndex for horizontal offset
+    // Group by provider and actual rank position for horizontal offset
     const positionGroups: Record<string, number[]> = {};
     scatterPlotData.forEach((dp, idx) => {
-      const key = `${dp.provider}-${dp.rankBandIndex}`;
+      const rangeX = rankToRangeX(dp.rank);
+      const key = `${dp.provider}-${rangeX}`;
       if (!positionGroups[key]) {
         positionGroups[key] = [];
       }
       positionGroups[key].push(idx);
     });
 
-    // Create dots with horizontal offset and numeric Y position
-    const offsetStep = 0.12;
+    // Create dots with horizontal offset and provider label for Y positioning
+    const offsetStep = 0.08;
     return scatterPlotData.map((dp, idx) => {
-      const key = `${dp.provider}-${dp.rankBandIndex}`;
+      const rangeX = rankToRangeX(dp.rank);
+      const key = `${dp.provider}-${rangeX}`;
       const group = positionGroups[key];
       let xOffset = 0;
 
@@ -1068,8 +1087,9 @@ export default function ResultsPage() {
 
       return {
         label: dp.label,
-        y: yIndex, // Numeric Y position (named 'y' for Scatter default mapping)
-        x: dp.rankBandIndex + xOffset, // X position with offset
+        provider: dp.provider,
+        yIndex, // Numeric Y index for positioning
+        x: rangeX + xOffset, // X position using actual rank with offset
         prompt: dp.prompt,
         rank: dp.rank,
         isMentioned: dp.isMentioned,
@@ -1710,15 +1730,20 @@ export default function ResultsPage() {
                         layout="vertical"
                         margin={{ top: 20, right: 30, bottom: 60, left: 120 }}
                       >
-                        {/* De-emphasized background bands */}
-                        <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.25} />
-                        <ReferenceArea x1={0.5} x2={1.5} fill="#fef08a" fillOpacity={0.15} />
-                        <ReferenceArea x1={1.5} x2={2.5} fill="#fef08a" fillOpacity={0.12} />
-                        <ReferenceArea x1={2.5} x2={3.5} fill="#fed7aa" fillOpacity={0.15} />
-                        <ReferenceArea x1={3.5} x2={4.5} fill="#fecaca" fillOpacity={0.15} />
-                        <ReferenceArea x1={4.5} x2={5.5} fill="#f3f4f6" fillOpacity={0.4} />
-                        {/* Divider line before "Not mentioned" band */}
-                        <ReferenceLine x={4.5} stroke="#d1d5db" strokeWidth={1} />
+                        {/* Background color bands - green for top ranks, yellow for mid, red for low, gray for not mentioned */}
+                        <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.4} /> {/* 1 */}
+                        <ReferenceArea x1={0.5} x2={1.5} fill="#bbf7d0" fillOpacity={0.3} /> {/* 2 */}
+                        <ReferenceArea x1={1.5} x2={2.5} fill="#bbf7d0" fillOpacity={0.2} /> {/* 3 */}
+                        <ReferenceArea x1={2.5} x2={3.5} fill="#fef08a" fillOpacity={0.2} /> {/* 4 */}
+                        <ReferenceArea x1={3.5} x2={4.5} fill="#fef08a" fillOpacity={0.15} /> {/* 5 */}
+                        <ReferenceArea x1={4.5} x2={5.5} fill="#fed7aa" fillOpacity={0.2} /> {/* 6 */}
+                        <ReferenceArea x1={5.5} x2={6.5} fill="#fed7aa" fillOpacity={0.15} /> {/* 7 */}
+                        <ReferenceArea x1={6.5} x2={7.5} fill="#fecaca" fillOpacity={0.15} /> {/* 8 */}
+                        <ReferenceArea x1={7.5} x2={8.5} fill="#fecaca" fillOpacity={0.2} /> {/* 9 */}
+                        <ReferenceArea x1={8.5} x2={9.5} fill="#fecaca" fillOpacity={0.25} /> {/* 10+ */}
+                        <ReferenceArea x1={9.5} x2={10.5} fill="#f3f4f6" fillOpacity={0.5} /> {/* Not mentioned */}
+                        {/* Divider line before "Not mentioned" */}
+                        <ReferenceLine x={9.5} stroke="#d1d5db" strokeWidth={1} />
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} vertical={true} />
                         <YAxis
                           type="category"
@@ -1730,10 +1755,10 @@ export default function ResultsPage() {
                         />
                         <XAxis
                           type="number"
-                          domain={[-0.5, RANK_BANDS.length - 0.5]}
+                          domain={[-0.5, RANGE_X_LABELS.length - 0.5]}
                           tick={(props: any) => {
                             const { x, y, payload } = props;
-                            const label = RANK_BANDS[Math.round(payload?.value ?? 0)] || '';
+                            const label = RANGE_X_LABELS[Math.round(payload?.value ?? 0)] || '';
                             const isNotMentioned = label === 'Not mentioned';
                             return (
                               <text
@@ -1750,7 +1775,7 @@ export default function ResultsPage() {
                           }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
-                          ticks={RANK_BANDS.map((_, i) => i)}
+                          ticks={RANGE_X_LABELS.map((_, i) => i)}
                           interval={0}
                         />
                         <Tooltip
@@ -1762,10 +1787,10 @@ export default function ResultsPage() {
                                   <p className="text-sm font-semibold text-gray-900">LLM: {data.label}</p>
                                   <div className="mt-2 space-y-1">
                                     <p className="text-sm text-gray-700">
-                                      <span className="text-gray-500">Best rank:</span> {RANK_BANDS[data.bestBandIndex]}
+                                      <span className="text-gray-500">Best rank:</span> {RANGE_X_LABELS[data.bestRangeX]}
                                     </p>
                                     <p className="text-sm text-gray-700">
-                                      <span className="text-gray-500">Worst rank:</span> {RANK_BANDS[data.worstBandIndex]}
+                                      <span className="text-gray-500">Worst rank:</span> {RANGE_X_LABELS[data.worstRangeX]}
                                     </p>
                                     <p className="text-sm text-gray-700">
                                       <span className="text-gray-500">Avg rank:</span> {data.avgBandLabel}
@@ -1789,50 +1814,67 @@ export default function ResultsPage() {
                           }}
                         />
                         {/* Range bar: invisible spacer + visible range */}
-                        <Bar dataKey="rangeStart" stackId="range" fill="transparent" barSize={16} />
+                        <Bar dataKey="rangeStart" stackId="range" fill="transparent" barSize={20} />
                         <Bar
                           dataKey="rangeHeight"
                           stackId="range"
                           fill="#6b7280"
-                          fillOpacity={0.4}
+                          fillOpacity={0.3}
                           radius={[4, 4, 4, 4]}
-                          barSize={16}
+                          barSize={20}
+                        />
+                        {/* Render dots for each prompt result using Customized */}
+                        <Customized
+                          component={(props: any) => {
+                            const { xAxisMap, yAxisMap, offset } = props;
+                            if (!xAxisMap || !yAxisMap) return null;
+
+                            const xAxis = Object.values(xAxisMap)[0] as any;
+                            const yAxis = Object.values(yAxisMap)[0] as any;
+                            if (!xAxis || !yAxis) return null;
+
+                            return (
+                              <g>
+                                {rangeViewDots.map((dot, idx) => {
+                                  // Calculate X position using xAxis scale
+                                  const xScale = xAxis.scale;
+                                  const cx = xScale ? xScale(dot.x) : 0;
+
+                                  // Calculate Y position using yAxis scale (categorical)
+                                  const yScale = yAxis.scale;
+                                  const bandWidth = yScale?.bandwidth ? yScale.bandwidth() : 40;
+                                  const cy = yScale ? yScale(dot.label) + bandWidth / 2 : 0;
+
+                                  if (!cx || !cy) return null;
+
+                                  return (
+                                    <circle
+                                      key={`range-dot-${idx}`}
+                                      cx={cx}
+                                      cy={cy}
+                                      r={5}
+                                      fill="#374151"
+                                      opacity={dot.isMentioned ? 0.8 : 0.3}
+                                      style={{ cursor: 'pointer' }}
+                                      onDoubleClick={() => setSelectedResult(dot.originalResult)}
+                                    />
+                                  );
+                                })}
+                              </g>
+                            );
+                          }}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
-                  {/* Individual dots rendered separately below the chart */}
-                  <div className="mt-4">
-                    <p className="text-xs text-gray-500 mb-2">Individual prompt results:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {rangeChartData.map((provider) => (
-                        <div key={provider.provider} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
-                          <span className="text-xs font-medium text-gray-700">{provider.label}:</span>
-                          <div className="flex gap-1">
-                            {rangeViewDots
-                              .filter(dot => dot.label === provider.label)
-                              .map((dot, idx) => (
-                                <button
-                                  key={idx}
-                                  className="w-3 h-3 rounded-full bg-gray-500 hover:bg-gray-700 transition-colors"
-                                  style={{ opacity: dot.isMentioned ? 0.7 : 0.3 }}
-                                  title={`${dot.prompt}\nRank: ${dot.rank > 0 ? dot.rank : 'Not mentioned'}`}
-                                  onDoubleClick={() => setSelectedResult(dot.originalResult)}
-                                />
-                              ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                   {/* Legend */}
                   <div className="flex items-center justify-center gap-6 mt-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
-                      <span className="text-xs text-gray-500">Prompt result (double-click for details)</span>
+                      <div className="w-2.5 h-2.5 rounded-full bg-gray-700 opacity-80" />
+                      <span className="text-xs text-gray-500">Prompt result</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-3 bg-gray-500 opacity-40 rounded" />
+                      <div className="w-8 h-4 bg-gray-500 opacity-30 rounded" />
                       <span className="text-xs text-gray-500">Rank range (best to worst)</span>
                     </div>
                   </div>
