@@ -1823,57 +1823,31 @@ export default function ResultsPage() {
                           radius={[4, 4, 4, 4]}
                           barSize={20}
                         />
-                        {/* Render dots for each prompt result using Customized */}
-                        <Customized
-                          component={(props: any) => {
-                            const { formattedGraphicalItems, xAxisMap, yAxisMap, offset } = props;
-
-                            // Try to get bar items to find Y positions
-                            const barItems = formattedGraphicalItems?.filter((item: any) => item.type?.displayName === 'Bar') || [];
-
-                            // Get axis info
-                            const xAxis = xAxisMap ? Object.values(xAxisMap)[0] as any : null;
-                            const yAxis = yAxisMap ? Object.values(yAxisMap)[0] as any : null;
-
-                            if (!xAxis?.scale) return null;
-
-                            const xScale = xAxis.scale;
-                            const chartLeft = offset?.left || 120;
-                            const chartTop = offset?.top || 20;
-                            const chartHeight = offset?.height || 200;
-                            const numProviders = rangeChartData.length;
-                            const bandHeight = numProviders > 0 ? chartHeight / numProviders : 50;
-
+                        {/* Render individual dots using Scatter */}
+                        <Scatter
+                          data={rangeViewDots.map(dot => ({
+                            x: dot.x,
+                            y: dot.label, // Use label as Y value to match categorical axis
+                            isMentioned: dot.isMentioned,
+                            originalResult: dot.originalResult,
+                            prompt: dot.prompt,
+                            rank: dot.rank,
+                          }))}
+                          shape={(props: any) => {
+                            const { cx, cy, payload } = props;
+                            if (cx === undefined || cy === undefined) return null;
                             return (
-                              <g className="range-chart-dots">
-                                {rangeViewDots.map((dot, idx) => {
-                                  // Calculate X position using xAxis scale
-                                  const cx = xScale(dot.x);
-                                  if (cx === undefined || cx === null) return null;
-
-                                  // Calculate Y position based on provider index
-                                  const providerIndex = dot.yIndex;
-                                  if (providerIndex < 0) return null;
-
-                                  // Center dot vertically within the band
-                                  const cy = chartTop + (providerIndex * bandHeight) + (bandHeight / 2);
-
-                                  return (
-                                    <circle
-                                      key={`range-dot-${idx}`}
-                                      cx={cx}
-                                      cy={cy}
-                                      r={6}
-                                      fill="#1f2937"
-                                      opacity={dot.isMentioned ? 0.9 : 0.4}
-                                      stroke="#fff"
-                                      strokeWidth={1.5}
-                                      style={{ cursor: 'pointer' }}
-                                      onDoubleClick={() => setSelectedResult(dot.originalResult)}
-                                    />
-                                  );
-                                })}
-                              </g>
+                              <circle
+                                cx={cx}
+                                cy={cy}
+                                r={6}
+                                fill="#1f2937"
+                                opacity={payload?.isMentioned ? 0.9 : 0.4}
+                                stroke="#fff"
+                                strokeWidth={1.5}
+                                style={{ cursor: 'pointer' }}
+                                onDoubleClick={() => payload?.originalResult && setSelectedResult(payload.originalResult)}
+                              />
                             );
                           }}
                         />
