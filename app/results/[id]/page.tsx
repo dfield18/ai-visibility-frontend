@@ -1743,11 +1743,11 @@ export default function ResultsPage() {
               {rankingViewMode === 'range' && rangeChartData.length > 0 && (
                 <div>
                   {/* Explanatory subtitle */}
-                  <p className="text-xs text-gray-400 mb-3">
+                  <p className="text-xs text-gray-400 mb-2">
                     Each row shows how an AI typically ranks your brand. Dots are individual answers; the bar shows best to worst placement.
                   </p>
                   {/* Legend - above chart */}
-                  <div className="flex items-center justify-center flex-wrap gap-4 mb-4">
+                  <div className="flex items-center justify-center flex-wrap gap-4 mb-2">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
                       <span className="text-xs text-gray-500">Individual answer</span>
@@ -1788,7 +1788,7 @@ export default function ResultsPage() {
                       <ComposedChart
                         data={rangeChartData}
                         layout="vertical"
-                        margin={{ top: 20, right: 30, bottom: 60, left: 120 }}
+                        margin={{ top: 20, right: 30, bottom: 50, left: 120 }}
                       >
                         {/* Background color bands - green for top ranks, yellow for mid, red for low, gray for not mentioned */}
                         <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.4} /> {/* 1 */}
@@ -1858,7 +1858,7 @@ export default function ResultsPage() {
                           label={{
                             value: 'Position in the AI answer (lower = shown earlier)',
                             position: 'bottom',
-                            offset: 35,
+                            offset: 20,
                             style: { fontSize: 11, fill: '#9ca3af' }
                           }}
                         />
@@ -1924,7 +1924,7 @@ export default function ResultsPage() {
                     {/* Dots overlay - positioned absolutely over the chart plotting area */}
                     {rangeViewDots.length > 0 && (() => {
                       // Chart margins matching ComposedChart margin prop
-                      const margin = { top: 20, right: 30, bottom: 60, left: 120 };
+                      const margin = { top: 20, right: 30, bottom: 50, left: 120 };
                       const yAxisWidth = 110; // Matches YAxis width prop
                       const xAxisHeight = 30; // Estimated height of X-axis with labels
                       const numProviders = rangeChartData.length;
