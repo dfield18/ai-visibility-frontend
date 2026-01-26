@@ -69,6 +69,8 @@ export interface GroundingMetadata {
   search_queries: string[];
 }
 
+export type BrandSentiment = 'strong_endorsement' | 'neutral_mention' | 'conditional' | 'negative_comparison' | 'not_mentioned';
+
 export interface Result {
   id: string;
   prompt: string;
@@ -85,6 +87,8 @@ export interface Result {
   cost: number | null;
   sources: Source[] | null;
   grounding_metadata: GroundingMetadata | null;
+  brand_sentiment: BrandSentiment | null;
+  competitor_sentiments: Record<string, BrandSentiment> | null;
   created_at: string;
 }
 

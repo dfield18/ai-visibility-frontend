@@ -85,6 +85,7 @@ export default function ResultsPage() {
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
   const [chartTab, setChartTab] = useState<'allAnswers' | 'performanceRange' | 'shareOfVoice'>('allAnswers');
+  const [showSentimentColors, setShowSentimentColors] = useState(false);
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -936,6 +937,7 @@ export default function ResultsPage() {
       xIndex: number;
       xIndexWithOffset: number;
       isMentioned: boolean;
+      sentiment: string | null;
       originalResult: Result;
     }[] = [];
 
@@ -982,6 +984,7 @@ export default function ResultsPage() {
         xIndex,
         xIndexWithOffset: xIndex, // Will be adjusted below
         isMentioned: rank > 0,
+        sentiment: result.brand_sentiment || null,
         originalResult: result,
       });
     }
@@ -1161,6 +1164,7 @@ export default function ResultsPage() {
         prompt: dp.prompt,
         rank: dp.rank,
         isMentioned: dp.isMentioned,
+        sentiment: dp.sentiment,
         originalResult: dp.originalResult,
       };
     });
@@ -1549,7 +1553,24 @@ export default function ResultsPage() {
           {/* All Answers Chart */}
           {chartTab === 'allAnswers' && (
             <>
-              <p className="text-sm text-gray-500 mb-1">Where your brand shows up in individual AI answers</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm text-gray-500">Where your brand shows up in individual AI answers</p>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs text-gray-500">Show sentiment</span>
+                  <button
+                    onClick={() => setShowSentimentColors(!showSentimentColors)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                      showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                        showSentimentColors ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </label>
+              </div>
               <p className="text-xs text-gray-400 mb-3">
                 Each dot is one answer to one prompt. Lower numbers mean your brand is shown earlier.
               </p>
@@ -1589,10 +1610,33 @@ export default function ResultsPage() {
               })()}
 
               <div>
-                  {/* Minimal legend for All Answers view - offset to center over plot area */}
-                  <div className="flex items-center justify-center gap-2 pl-[140px] mb-[-14px]">
-                    <div className="w-2 h-2 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-400">Each dot = one answer</span>
+                  {/* Legend for All Answers view - shows sentiment when toggle is on */}
+                  <div className="flex items-center justify-center gap-4 pl-[140px] mb-[-14px]">
+                    {showSentimentColors ? (
+                      <>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                          <span className="text-xs text-gray-500">Strong</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                          <span className="text-xs text-gray-500">Neutral</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                          <span className="text-xs text-gray-500">Conditional</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                          <span className="text-xs text-gray-500">Negative</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-2 h-2 rounded-full bg-gray-500 opacity-60" />
+                        <span className="text-xs text-gray-400">Each dot = one answer</span>
+                      </>
+                    )}
                   </div>
                   <div className="h-72 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
@@ -1680,6 +1724,19 @@ export default function ResultsPage() {
                                       ? 'Shown as: #1 (Top result)'
                                       : `Shown as: #${data.rank}`}
                                 </p>
+                                {showSentimentColors && data.sentiment && data.sentiment !== 'not_mentioned' && (
+                                  <p className={`text-xs mt-1 ${
+                                    data.sentiment === 'strong_endorsement' ? 'text-green-600' :
+                                    data.sentiment === 'neutral_mention' ? 'text-gray-600' :
+                                    data.sentiment === 'conditional' ? 'text-orange-500' :
+                                    data.sentiment === 'negative_comparison' ? 'text-red-500' : ''
+                                  }`}>
+                                    {data.sentiment === 'strong_endorsement' ? 'Strong Endorsement' :
+                                     data.sentiment === 'neutral_mention' ? 'Neutral Mention' :
+                                     data.sentiment === 'conditional' ? 'Conditional/Caveated' :
+                                     data.sentiment === 'negative_comparison' ? 'Negative Comparison' : ''}
+                                  </p>
+                                )}
                                 <p className="text-xs text-gray-500 mt-2" title={data.prompt}>
                                   {truncatedPrompt}
                                 </p>
@@ -1694,13 +1751,42 @@ export default function ResultsPage() {
                         fill="#6b7280"
                         shape={(props: any) => {
                           const { cx, cy, payload } = props;
+                          // Sentiment colors: green=strong, gray=neutral, orange=conditional, red=negative
+                          let fillColor = '#6b7280'; // default gray
+                          let opacity = payload.isMentioned ? 0.6 : 0.25;
+
+                          if (showSentimentColors && payload.sentiment) {
+                            switch (payload.sentiment) {
+                              case 'strong_endorsement':
+                                fillColor = '#22c55e'; // green-500
+                                opacity = 0.8;
+                                break;
+                              case 'neutral_mention':
+                                fillColor = '#6b7280'; // gray-500
+                                opacity = 0.6;
+                                break;
+                              case 'conditional':
+                                fillColor = '#fb923c'; // orange-400
+                                opacity = 0.8;
+                                break;
+                              case 'negative_comparison':
+                                fillColor = '#f87171'; // red-400
+                                opacity = 0.8;
+                                break;
+                              case 'not_mentioned':
+                                fillColor = '#d1d5db'; // gray-300
+                                opacity = 0.4;
+                                break;
+                            }
+                          }
+
                           return (
                             <circle
                               cx={cx}
                               cy={cy}
                               r={5}
-                              fill="#6b7280"
-                              opacity={payload.isMentioned ? 0.6 : 0.25}
+                              fill={fillColor}
+                              opacity={opacity}
                               style={{ cursor: 'pointer' }}
                               onDoubleClick={() => setSelectedResult(payload.originalResult)}
                             />
@@ -1717,7 +1803,24 @@ export default function ResultsPage() {
           {/* Performance Range Chart */}
           {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
             <>
-              <p className="text-sm text-gray-500 mb-1">Where your brand appears in AI-generated answers</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-sm text-gray-500">Where your brand appears in AI-generated answers</p>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs text-gray-500">Show sentiment</span>
+                  <button
+                    onClick={() => setShowSentimentColors(!showSentimentColors)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                      showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                        showSentimentColors ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </label>
+              </div>
               <p className="text-xs text-gray-400 mb-3">
                 Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.
               </p>
@@ -1771,10 +1874,33 @@ export default function ResultsPage() {
                 <div>
                   {/* Legend - above chart, offset to align with X-axis label */}
                   <div className="flex items-center justify-center flex-wrap gap-4 pl-[60px]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
-                      <span className="text-xs text-gray-500">Individual answer</span>
-                    </div>
+                    {showSentimentColors ? (
+                      <>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                          <span className="text-xs text-gray-500">Strong</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                          <span className="text-xs text-gray-500">Neutral</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                          <span className="text-xs text-gray-500">Conditional</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                          <span className="text-xs text-gray-500">Negative</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
+                          <span className="text-xs text-gray-500">Individual answer</span>
+                        </div>
+                      </>
+                    )}
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-3 bg-gray-500 opacity-30 rounded" />
                       <span className="text-xs text-gray-500">Best–worst range</span>
@@ -2002,8 +2128,16 @@ export default function ResultsPage() {
                                 <div
                                   className="w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
                                   style={{
-                                    backgroundColor: '#6b7280',
-                                    opacity: dot.isMentioned ? 0.7 : 0.3,
+                                    backgroundColor: showSentimentColors && dot.sentiment
+                                      ? dot.sentiment === 'strong_endorsement' ? '#22c55e'
+                                        : dot.sentiment === 'neutral_mention' ? '#6b7280'
+                                        : dot.sentiment === 'conditional' ? '#fb923c'
+                                        : dot.sentiment === 'negative_comparison' ? '#f87171'
+                                        : '#d1d5db'
+                                      : '#6b7280',
+                                    opacity: showSentimentColors && dot.sentiment
+                                      ? (dot.sentiment === 'not_mentioned' ? 0.4 : 0.8)
+                                      : (dot.isMentioned ? 0.7 : 0.3),
                                   }}
                                   onDoubleClick={() => setSelectedResult(dot.originalResult)}
                                 />
@@ -2016,6 +2150,19 @@ export default function ResultsPage() {
                                       <p className="text-sm text-gray-700">
                                         {dot.rank === 0 ? 'Not shown' : `Shown as result #${dot.rank}`}
                                       </p>
+                                      {showSentimentColors && dot.sentiment && dot.sentiment !== 'not_mentioned' && (
+                                        <p className={`text-xs mt-1 ${
+                                          dot.sentiment === 'strong_endorsement' ? 'text-green-600' :
+                                          dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
+                                          dot.sentiment === 'conditional' ? 'text-orange-500' :
+                                          dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
+                                        }`}>
+                                          {dot.sentiment === 'strong_endorsement' ? 'Strong Endorsement' :
+                                           dot.sentiment === 'neutral_mention' ? 'Neutral Mention' :
+                                           dot.sentiment === 'conditional' ? 'Conditional/Caveated' :
+                                           dot.sentiment === 'negative_comparison' ? 'Negative Comparison' : ''}
+                                        </p>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -3124,6 +3271,488 @@ export default function ResultsPage() {
     </div>
   );
 
+  // Sentiment Tab Content
+  const SentimentTab = () => {
+    // Helper function to get sentiment label
+    const getSentimentLabel = (sentiment: string | null | undefined) => {
+      switch (sentiment) {
+        case 'strong_endorsement': return 'Strong Endorsement';
+        case 'neutral_mention': return 'Neutral Mention';
+        case 'conditional': return 'Conditional/Caveated';
+        case 'negative_comparison': return 'Negative Comparison';
+        case 'not_mentioned': return 'Not Mentioned';
+        default: return 'Unknown';
+      }
+    };
+
+    // Helper function to get sentiment color
+    const getSentimentColor = (sentiment: string | null | undefined) => {
+      switch (sentiment) {
+        case 'strong_endorsement': return 'bg-green-100 text-green-800 border-green-200';
+        case 'neutral_mention': return 'bg-blue-100 text-blue-800 border-blue-200';
+        case 'conditional': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        case 'negative_comparison': return 'bg-red-100 text-red-800 border-red-200';
+        case 'not_mentioned': return 'bg-gray-100 text-gray-600 border-gray-200';
+        default: return 'bg-gray-100 text-gray-600 border-gray-200';
+      }
+    };
+
+    // Helper function to get sentiment bar color
+    const getSentimentBarColor = (sentiment: string) => {
+      switch (sentiment) {
+        case 'strong_endorsement': return '#22c55e';
+        case 'neutral_mention': return '#3b82f6';
+        case 'conditional': return '#eab308';
+        case 'negative_comparison': return '#ef4444';
+        case 'not_mentioned': return '#9ca3af';
+        default: return '#9ca3af';
+      }
+    };
+
+    // Calculate brand sentiment distribution
+    const brandSentimentData = useMemo(() => {
+      const sentimentCounts: Record<string, number> = {
+        strong_endorsement: 0,
+        neutral_mention: 0,
+        conditional: 0,
+        negative_comparison: 0,
+        not_mentioned: 0,
+      };
+
+      globallyFilteredResults
+        .filter((r: Result) => !r.error)
+        .forEach((r: Result) => {
+          const sentiment = r.brand_sentiment || 'not_mentioned';
+          if (sentimentCounts[sentiment] !== undefined) {
+            sentimentCounts[sentiment]++;
+          }
+        });
+
+      const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0);
+
+      return Object.entries(sentimentCounts)
+        .map(([sentiment, count]) => ({
+          sentiment,
+          label: getSentimentLabel(sentiment),
+          count,
+          percentage: total > 0 ? (count / total) * 100 : 0,
+          color: getSentimentBarColor(sentiment),
+        }))
+        .filter(d => d.count > 0);
+    }, [globallyFilteredResults]);
+
+    // Calculate sentiment by provider
+    const sentimentByProvider = useMemo(() => {
+      const providerData: Record<string, Record<string, number>> = {};
+
+      globallyFilteredResults
+        .filter((r: Result) => !r.error)
+        .forEach((r: Result) => {
+          if (!providerData[r.provider]) {
+            providerData[r.provider] = {
+              strong_endorsement: 0,
+              neutral_mention: 0,
+              conditional: 0,
+              negative_comparison: 0,
+              not_mentioned: 0,
+            };
+          }
+          const sentiment = r.brand_sentiment || 'not_mentioned';
+          if (providerData[r.provider][sentiment] !== undefined) {
+            providerData[r.provider][sentiment]++;
+          }
+        });
+
+      return Object.entries(providerData).map(([provider, counts]) => {
+        const total = Object.values(counts).reduce((a, b) => a + b, 0);
+        return {
+          provider,
+          label: getProviderLabel(provider),
+          ...counts,
+          total,
+          strongRate: total > 0 ? (counts.strong_endorsement / total) * 100 : 0,
+        };
+      }).sort((a, b) => b.strongRate - a.strongRate);
+    }, [globallyFilteredResults]);
+
+    // Calculate competitor sentiment comparison
+    const competitorSentimentData = useMemo(() => {
+      const competitorData: Record<string, Record<string, number>> = {};
+      const trackedComps = trackedBrands;
+
+      globallyFilteredResults
+        .filter((r: Result) => !r.error && r.competitor_sentiments)
+        .forEach((r: Result) => {
+          if (r.competitor_sentiments) {
+            Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
+              if (!trackedComps.has(comp)) return;
+              if (!competitorData[comp]) {
+                competitorData[comp] = {
+                  strong_endorsement: 0,
+                  neutral_mention: 0,
+                  conditional: 0,
+                  negative_comparison: 0,
+                  not_mentioned: 0,
+                };
+              }
+              if (competitorData[comp][sentiment] !== undefined) {
+                competitorData[comp][sentiment]++;
+              }
+            });
+          }
+        });
+
+      return Object.entries(competitorData)
+        .map(([competitor, counts]) => {
+          const total = Object.values(counts).reduce((a, b) => a + b, 0);
+          const mentionedTotal = total - counts.not_mentioned;
+          return {
+            competitor,
+            ...counts,
+            total,
+            mentionedTotal,
+            strongRate: total > 0 ? (counts.strong_endorsement / total) * 100 : 0,
+            positiveRate: mentionedTotal > 0 ? (counts.strong_endorsement / mentionedTotal) * 100 : 0,
+          };
+        })
+        .sort((a, b) => b.strongRate - a.strongRate);
+    }, [globallyFilteredResults, trackedBrands]);
+
+    // Check if we have any sentiment data
+    const hasSentimentData = globallyFilteredResults.some(
+      (r: Result) => !r.error && r.brand_sentiment
+    );
+
+    if (!hasSentimentData) {
+      return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <MessageSquare className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Sentiment Data Available</h3>
+          <p className="text-gray-500 max-w-md mx-auto">
+            Sentiment classification will be available for new runs. Run a new visibility check to see how AI models describe and frame your brand.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Brand Sentiment Overview */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">How AI Describes {runStatus?.brand}</h3>
+          <p className="text-sm text-gray-500 mb-6">Sentiment classification of how AI models mention your brand</p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Sentiment Distribution */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-4">Overall Sentiment Distribution</h4>
+              <div className="space-y-3">
+                {brandSentimentData.map((d) => (
+                  <div key={d.sentiment} className="flex items-center gap-3">
+                    <div className="w-32 text-sm text-gray-600">{d.label}</div>
+                    <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${d.percentage}%`,
+                          backgroundColor: d.color,
+                        }}
+                      />
+                    </div>
+                    <div className="w-20 text-right">
+                      <span className="text-sm font-medium text-gray-900">{d.count}</span>
+                      <span className="text-xs text-gray-500 ml-1">({d.percentage.toFixed(0)}%)</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Key Insights */}
+            <div className="bg-[#FAFAF8] rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-700 mb-3">Key Insight</h4>
+              {(() => {
+                const total = brandSentimentData.reduce((sum, d) => sum + d.count, 0);
+                const strongCount = brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0;
+                const neutralCount = brandSentimentData.find(d => d.sentiment === 'neutral_mention')?.count || 0;
+                const conditionalCount = brandSentimentData.find(d => d.sentiment === 'conditional')?.count || 0;
+                const negativeCount = brandSentimentData.find(d => d.sentiment === 'negative_comparison')?.count || 0;
+                const notMentionedCount = brandSentimentData.find(d => d.sentiment === 'not_mentioned')?.count || 0;
+
+                const strongRate = total > 0 ? (strongCount / total) * 100 : 0;
+                const positiveRate = total > 0 ? ((strongCount + neutralCount) / total) * 100 : 0;
+                const mentionRate = total > 0 ? ((total - notMentionedCount) / total) * 100 : 0;
+
+                let insight = '';
+                if (strongRate >= 50) {
+                  insight = `${runStatus?.brand} receives strong endorsements in ${strongRate.toFixed(0)}% of AI responses, indicating excellent brand positioning in AI recommendations.`;
+                } else if (positiveRate >= 70) {
+                  insight = `${runStatus?.brand} is mentioned positively or neutrally in ${positiveRate.toFixed(0)}% of responses where it appears, suggesting solid brand perception.`;
+                } else if (conditionalCount > strongCount) {
+                  insight = `AI models often mention ${runStatus?.brand} with caveats or conditions. Consider strengthening your unique value proposition to earn stronger endorsements.`;
+                } else if (negativeCount > 0 && negativeCount >= strongCount) {
+                  insight = `${runStatus?.brand} appears in negative comparisons ${negativeCount} time${negativeCount !== 1 ? 's' : ''}. Review competitor positioning and brand messaging.`;
+                } else if (notMentionedCount > total * 0.5) {
+                  insight = `${runStatus?.brand} is not mentioned in ${((notMentionedCount / total) * 100).toFixed(0)}% of responses. Focus on increasing AI visibility through content optimization.`;
+                } else {
+                  insight = `${runStatus?.brand} has mixed sentiment across AI responses. Strong endorsement rate is ${strongRate.toFixed(0)}% with ${mentionRate.toFixed(0)}% overall mention rate.`;
+                }
+
+                return <p className="text-sm text-gray-600">{insight}</p>;
+              })()}
+            </div>
+          </div>
+        </div>
+
+        {/* Sentiment by Provider */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Sentiment by AI Provider</h3>
+          <p className="text-sm text-gray-500 mb-6">How different AI models describe your brand</p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-green-600">Strong</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-blue-600">Neutral</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-yellow-600">Conditional</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-red-600">Negative</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Not Mentioned</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Endorsement Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sentimentByProvider.map((row) => (
+                  <tr key={row.provider} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <span className="text-sm font-medium text-gray-900">{row.label}</span>
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {row.strong_endorsement > 0 && (
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-sm font-medium rounded-lg">
+                          {row.strong_endorsement}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {row.neutral_mention > 0 && (
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-lg">
+                          {row.neutral_mention}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {row.conditional > 0 && (
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-lg">
+                          {row.conditional}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {row.negative_comparison > 0 && (
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-800 text-sm font-medium rounded-lg">
+                          {row.negative_comparison}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {row.not_mentioned > 0 && (
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg">
+                          {row.not_mentioned}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-right py-3 px-4">
+                      <span className={`text-sm font-medium ${row.strongRate >= 50 ? 'text-green-600' : row.strongRate >= 25 ? 'text-blue-600' : 'text-gray-600'}`}>
+                        {row.strongRate.toFixed(0)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Competitor Sentiment Comparison */}
+        {competitorSentimentData.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Competitor Sentiment Comparison</h3>
+            <p className="text-sm text-gray-500 mb-6">How AI models describe competitors in the same responses</p>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-green-600">Strong</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-blue-600">Neutral</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-yellow-600">Conditional</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-red-600">Negative</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Endorsement Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Add the brand first for comparison */}
+                  <tr className="border-b border-gray-200 bg-[#E8F0E8]/30">
+                    <td className="py-3 px-4">
+                      <span className="text-sm font-medium text-[#4A7C59]">{runStatus?.brand} (Your Brand)</span>
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0 > 0 && (
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-sm font-medium rounded-lg">
+                          {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {brandSentimentData.find(d => d.sentiment === 'neutral_mention')?.count || 0 > 0 && (
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-lg">
+                          {brandSentimentData.find(d => d.sentiment === 'neutral_mention')?.count || 0}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {brandSentimentData.find(d => d.sentiment === 'conditional')?.count || 0 > 0 && (
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-lg">
+                          {brandSentimentData.find(d => d.sentiment === 'conditional')?.count || 0}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center py-3 px-2">
+                      {brandSentimentData.find(d => d.sentiment === 'negative_comparison')?.count || 0 > 0 && (
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-800 text-sm font-medium rounded-lg">
+                          {brandSentimentData.find(d => d.sentiment === 'negative_comparison')?.count || 0}
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-right py-3 px-4">
+                      <span className="text-sm font-medium text-[#4A7C59]">
+                        {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.percentage.toFixed(0) || 0}%
+                      </span>
+                    </td>
+                  </tr>
+                  {competitorSentimentData.map((row) => (
+                    <tr key={row.competitor} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <span className="text-sm font-medium text-gray-900">{row.competitor}</span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        {row.strong_endorsement > 0 && (
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-sm font-medium rounded-lg">
+                            {row.strong_endorsement}
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        {row.neutral_mention > 0 && (
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-lg">
+                            {row.neutral_mention}
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        {row.conditional > 0 && (
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-lg">
+                            {row.conditional}
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        {row.negative_comparison > 0 && (
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-800 text-sm font-medium rounded-lg">
+                            {row.negative_comparison}
+                          </span>
+                        )}
+                      </td>
+                      <td className="text-right py-3 px-4">
+                        <span className={`text-sm font-medium ${row.strongRate >= 50 ? 'text-green-600' : row.strongRate >= 25 ? 'text-blue-600' : 'text-gray-600'}`}>
+                          {row.strongRate.toFixed(0)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Individual Results with Sentiment */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
+          <p className="text-sm text-gray-500 mb-6">Detailed sentiment for each AI response</p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Prompt</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Brand Sentiment</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor Sentiments</th>
+                </tr>
+              </thead>
+              <tbody>
+                {globallyFilteredResults
+                  .filter((r: Result) => !r.error && r.brand_sentiment)
+                  .slice(0, 20)
+                  .map((result: Result) => (
+                    <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <p className="text-sm text-gray-900 max-w-xs truncate" title={result.prompt}>
+                          {truncate(result.prompt, 50)}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg border ${getSentimentColor(result.brand_sentiment)}`}>
+                          {getSentimentLabel(result.brand_sentiment)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap gap-1.5">
+                          {result.competitor_sentiments && Object.entries(result.competitor_sentiments)
+                            .filter(([_, sentiment]) => sentiment !== 'not_mentioned')
+                            .slice(0, 3)
+                            .map(([comp, sentiment]) => (
+                              <span
+                                key={comp}
+                                className={`inline-flex items-center px-2 py-0.5 text-xs rounded border ${getSentimentColor(sentiment)}`}
+                                title={`${comp}: ${getSentimentLabel(sentiment)}`}
+                              >
+                                {truncate(comp, 12)}
+                              </span>
+                            ))}
+                          {result.competitor_sentiments &&
+                            Object.values(result.competitor_sentiments).filter(s => s !== 'not_mentioned').length > 3 && (
+                            <span className="text-xs text-gray-400">
+                              +{Object.values(result.competitor_sentiments).filter(s => s !== 'not_mentioned').length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+
+          {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length > 20 && (
+            <p className="text-sm text-gray-500 mt-4 text-center">
+              Showing 20 of {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // Placeholder Tab Content
   const PlaceholderTab = ({ title, description }: { title: string; description: string }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
@@ -3265,12 +3894,7 @@ export default function ResultsPage() {
             description="Compare your brand's visibility against competitors across different LLMs. Coming soon."
           />
         )}
-        {activeTab === 'sentiment' && (
-          <PlaceholderTab
-            title="Sentiment & Framing"
-            description="Analyze how LLMs describe and frame your brand in their responses. Coming soon."
-          />
-        )}
+        {activeTab === 'sentiment' && <SentimentTab />}
         {activeTab === 'sources' && (
           <PlaceholderTab
             title="Sources Deep Dive"
@@ -3337,6 +3961,21 @@ export default function ResultsPage() {
                     {selectedResult.response_type && (
                       <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg capitalize">
                         {selectedResult.response_type}
+                      </span>
+                    )}
+                    {selectedResult.brand_sentiment && selectedResult.brand_sentiment !== 'not_mentioned' && (
+                      <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
+                        selectedResult.brand_sentiment === 'strong_endorsement' ? 'bg-green-100 text-green-800' :
+                        selectedResult.brand_sentiment === 'neutral_mention' ? 'bg-blue-100 text-blue-800' :
+                        selectedResult.brand_sentiment === 'conditional' ? 'bg-yellow-100 text-yellow-800' :
+                        selectedResult.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {selectedResult.brand_sentiment === 'strong_endorsement' ? 'Strong Endorsement' :
+                         selectedResult.brand_sentiment === 'neutral_mention' ? 'Neutral Mention' :
+                         selectedResult.brand_sentiment === 'conditional' ? 'Conditional' :
+                         selectedResult.brand_sentiment === 'negative_comparison' ? 'Negative Comparison' :
+                         'Unknown'}
                       </span>
                     )}
                   </div>
