@@ -1025,6 +1025,27 @@ export default function ResultsPage() {
         avgBandLabel = avgBand.label;
       }
 
+      // Calculate average ranking (not mentioned = 11)
+      const ranksWithNotMentionedAs11 = stats.dataPoints.map(p => p.rank === 0 ? 11 : p.rank);
+      const avgRanking = ranksWithNotMentionedAs11.reduce((sum, r) => sum + r, 0) / ranksWithNotMentionedAs11.length;
+
+      // Calculate median ranking (not mentioned = 11)
+      const sortedRanks = [...ranksWithNotMentionedAs11].sort((a, b) => a - b);
+      const mid = Math.floor(sortedRanks.length / 2);
+      const medianRanking = sortedRanks.length % 2 !== 0
+        ? sortedRanks[mid]
+        : (sortedRanks[mid - 1] + sortedRanks[mid]) / 2;
+
+      // Convert average/median ranking to X position
+      // rank 1-9 -> position 0-8, rank 10 -> position 9, rank 11 -> position 10
+      const rankToXPosition = (rank: number): number => {
+        if (rank <= 9) return rank - 1;
+        if (rank <= 10) return 9;
+        return 10;
+      };
+      const avgRankingX = rankToXPosition(avgRanking);
+      const medianRankingX = rankToXPosition(medianRanking);
+
       // For Range chart stacked bar: rangeHeight spans from best to worst
       // Use small minimum (0.2) for visibility when all dots are at the same position
       const rangeHeight = Math.max(0.2, worstRangeX - bestRangeX);
@@ -1040,6 +1061,10 @@ export default function ResultsPage() {
         avgBandIndex,
         avgBandLabel,
         avgPositionNumeric,
+        avgRanking,
+        avgRankingX,
+        medianRanking,
+        medianRankingX,
         promptsAnalyzed: stats.dataPoints.length,
         mentions: mentionedPoints.length,
         // For Range bar chart rendering - rangeStart positions the invisible spacer
@@ -1858,6 +1883,7 @@ export default function ResultsPage() {
                             height: plotHeight,
                           }}
                         >
+                          {/* Render dots for each prompt result */}
                           {rangeViewDots.map((dot, idx) => {
                             if (dot.yIndex < 0) return null;
 
@@ -1903,19 +1929,104 @@ export default function ResultsPage() {
                               </div>
                             );
                           })}
+
+                          {/* Render average and median markers for each provider */}
+                          {rangeChartData.map((data, idx) => {
+                            const yPercent = ((idx + 0.5) / numProviders) * 100;
+                            const avgXPercent = ((data.avgRankingX - domainMin) / domainRange) * 100;
+                            const medianXPercent = ((data.medianRankingX - domainMin) / domainRange) * 100;
+
+                            return (
+                              <React.Fragment key={`markers-${idx}`}>
+                                {/* Average marker - blue triangle */}
+                                <div
+                                  className="absolute pointer-events-auto group"
+                                  style={{
+                                    left: `${avgXPercent}%`,
+                                    top: `${yPercent}%`,
+                                    transform: 'translate(-50%, -50%)',
+                                  }}
+                                >
+                                  <div
+                                    className="w-0 h-0 cursor-pointer hover:scale-125 transition-transform"
+                                    style={{
+                                      borderLeft: '5px solid transparent',
+                                      borderRight: '5px solid transparent',
+                                      borderBottom: '8px solid #3b82f6',
+                                    }}
+                                  />
+                                  {/* Tooltip */}
+                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
+                                    <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg whitespace-nowrap">
+                                      <p className="text-xs font-medium text-blue-600">
+                                        Avg: {data.avgRanking.toFixed(1)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Median marker - orange diamond */}
+                                <div
+                                  className="absolute pointer-events-auto group"
+                                  style={{
+                                    left: `${medianXPercent}%`,
+                                    top: `${yPercent}%`,
+                                    transform: 'translate(-50%, -50%)',
+                                  }}
+                                >
+                                  <div
+                                    className="w-2.5 h-2.5 cursor-pointer hover:scale-125 transition-transform"
+                                    style={{
+                                      backgroundColor: '#f97316',
+                                      transform: 'rotate(45deg)',
+                                    }}
+                                  />
+                                  {/* Tooltip */}
+                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
+                                    <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg whitespace-nowrap">
+                                      <p className="text-xs font-medium text-orange-600">
+                                        Median: {data.medianRanking.toFixed(1)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </React.Fragment>
+                            );
+                          })}
                         </div>
                       );
                     })()}
                   </div>
                   {/* Legend */}
-                  <div className="flex items-center justify-center gap-6 mt-4">
+                  <div className="flex items-center justify-center flex-wrap gap-4 mt-4">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
                       <span className="text-xs text-gray-500">Prompt result</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-4 bg-gray-500 opacity-30 rounded" />
-                      <span className="text-xs text-gray-500">Rank range (best to worst)</span>
+                      <div className="w-8 h-3 bg-gray-500 opacity-30 rounded" />
+                      <span className="text-xs text-gray-500">Rank range</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-0 h-0"
+                        style={{
+                          borderLeft: '4px solid transparent',
+                          borderRight: '4px solid transparent',
+                          borderBottom: '6px solid #3b82f6',
+                        }}
+                      />
+                      <span className="text-xs text-gray-500">Average</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-2 h-2"
+                        style={{
+                          backgroundColor: '#f97316',
+                          transform: 'rotate(45deg)',
+                        }}
+                      />
+                      <span className="text-xs text-gray-500">Median</span>
                     </div>
                   </div>
                 </div>
