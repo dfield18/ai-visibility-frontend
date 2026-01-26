@@ -1574,13 +1574,12 @@ export default function ResultsPage() {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
                             return (
-                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px]">
-                                <p className="text-sm font-medium text-gray-900">LLM: {data.label}</p>
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[200px] max-w-[280px]">
+                                <p className="text-sm font-semibold text-gray-900" title={data.prompt}>
+                                  {data.prompt} <span className="font-normal text-gray-500">({data.label})</span>
+                                </p>
                                 <p className="text-sm text-gray-700 mt-1">
                                   {data.rank === 0 ? 'Not mentioned' : `Shown as result #${data.rank}`}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-2 truncate" title={data.prompt}>
-                                  Prompt: {data.prompt}
                                 </p>
                               </div>
                             );
