@@ -836,10 +836,10 @@ export default function ResultsPage() {
   // Calculate ranking data for scatter plot - one dot per prompt per LLM
   // Centralized rank band constant - used for Y-axis, band rendering, tooltip mapping
   // Order: index 0 = best rank, index 5 = not mentioned (renders top to bottom with reversed axis)
-  const RANK_BANDS = ['1 (Top)', '2–3', '4–5', '6–10', 'Shown after 10', 'Not shown'] as const;
+  const RANK_BANDS = ['1 (Top)', '2–3', '4–5', '6–10', 'Shown after top 10', 'Not shown'] as const;
 
-  // Range chart X-axis labels - individual positions 1-9, then Shown after 10, then Not shown
-  const RANGE_X_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Shown after 10', 'Not shown'] as const;
+  // Range chart X-axis labels - individual positions 1-9, then Shown after top 10, then Not shown
+  const RANGE_X_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Shown after top 10', 'Not shown'] as const;
 
   // Helper to convert rank to Range chart X position (0-10)
   const rankToRangeX = (rank: number): number => {
@@ -857,7 +857,7 @@ export default function ResultsPage() {
     if (position >= 2 && position <= 3) return { label: '2–3', index: 1 };
     if (position >= 4 && position <= 5) return { label: '4–5', index: 2 };
     if (position >= 6 && position <= 10) return { label: '6–10', index: 3 };
-    return { label: 'Shown after 10', index: 4 };
+    return { label: 'Shown after top 10', index: 4 };
   };
 
   const providerLabels: Record<string, string> = {
@@ -1604,7 +1604,7 @@ export default function ResultsPage() {
               {/* Subtitle and view toggle */}
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-gray-500">
-                  Where your brand appears across AI answers
+                  Where your brand appears in AI-generated answers
                 </p>
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                   <button
@@ -1744,7 +1744,7 @@ export default function ResultsPage() {
                 <div>
                   {/* Explanatory subtitle */}
                   <p className="text-xs text-gray-400 mb-3">
-                    Each dot is a prompt result. Range bar shows best-to-worst. Double-click a dot for details.
+                    Each row shows how an AI typically ranks your brand. Dots are individual answers; the bar shows best to worst placement.
                   </p>
                   <div
                     className="relative [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
@@ -1803,6 +1803,12 @@ export default function ResultsPage() {
                           tickLine={false}
                           ticks={RANGE_X_LABELS.map((_, i) => i)}
                           interval={0}
+                          label={{
+                            value: 'Position in the AI answer (lower = shown earlier)',
+                            position: 'bottom',
+                            offset: 35,
+                            style: { fontSize: 11, fill: '#9ca3af' }
+                          }}
                         />
                         <Tooltip
                           cursor={false}
@@ -2023,11 +2029,11 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-center flex-wrap gap-4 mt-4">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
-                      <span className="text-xs text-gray-500">Prompt result</span>
+                      <span className="text-xs text-gray-500">Individual answer</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-3 bg-gray-500 opacity-30 rounded" />
-                      <span className="text-xs text-gray-500">Rank range</span>
+                      <span className="text-xs text-gray-500">Best–worst range</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div
@@ -2039,7 +2045,7 @@ export default function ResultsPage() {
                           borderBottom: '5px solid rgba(96, 165, 250, 0.7)',
                         }}
                       />
-                      <span className="text-xs text-gray-500">Average</span>
+                      <span className="text-xs text-gray-500">Average position</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div
@@ -2050,7 +2056,7 @@ export default function ResultsPage() {
                           transform: 'rotate(45deg)',
                         }}
                       />
-                      <span className="text-xs text-gray-500">Median</span>
+                      <span className="text-xs text-gray-500">Median position</span>
                     </div>
                   </div>
                 </div>
