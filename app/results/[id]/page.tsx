@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis, BarChart, Bar } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis, BarChart, Bar, ReferenceArea, ComposedChart, Line, ErrorBar } from 'recharts';
 import {
   ArrowLeft,
   Download,
@@ -84,6 +84,7 @@ export default function ResultsPage() {
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
   const [chartTab, setChartTab] = useState<'ranking' | 'firstPosition' | 'avgRank'>('ranking');
+  const [rankingViewMode, setRankingViewMode] = useState<'dots' | 'range'>('dots');
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -834,7 +835,28 @@ export default function ResultsPage() {
 
   // Calculate ranking data for scatter plot - one dot per prompt per LLM
   // Define rank categories for Y-axis (in display order from top to bottom)
-  const rankCategories = ['Not Listed', '10+', '6-10', '5', '4', '3', '2', '1'];
+  // Fix 1: New rank bands
+  const rankCategories = ['1 (Top)', '2–3', '4–5', '6–10', '10+', 'Not mentioned'];
+
+  // Helper function to convert position to rank band (Fix 1)
+  const positionToRankBand = (position: number | null | undefined, brandMentioned: boolean): { label: string; index: number } => {
+    if (!brandMentioned || position === null || position === undefined || position === 0) {
+      return { label: 'Not mentioned', index: 5 };
+    }
+    if (position === 1) return { label: '1 (Top)', index: 0 };
+    if (position >= 2 && position <= 3) return { label: '2–3', index: 1 };
+    if (position >= 4 && position <= 5) return { label: '4–5', index: 2 };
+    if (position >= 6 && position <= 10) return { label: '6–10', index: 3 };
+    return { label: '10+', index: 4 };
+  };
+
+  const providerLabels: Record<string, string> = {
+    openai: 'OpenAI',
+    anthropic: 'Claude',
+    gemini: 'Gemini',
+    perplexity: 'Perplexity',
+    ai_overviews: 'AI Overviews',
+  };
 
   const scatterPlotData = useMemo(() => {
     if (!runStatus) return [];
@@ -845,40 +867,14 @@ export default function ResultsPage() {
 
     const results = globallyFilteredResults.filter((r: Result) => !r.error);
 
-    const providerLabels: Record<string, string> = {
-      openai: 'OpenAI',
-      anthropic: 'Claude',
-      gemini: 'Gemini',
-      perplexity: 'Perplexity',
-      ai_overviews: 'AI Overviews',
-    };
-
-    // Green color palette for different LLMs
-    const providerColors: Record<string, string> = {
-      openai: '#2D5A3D',
-      anthropic: '#4A7C59',
-      gemini: '#5B8A6A',
-      perplexity: '#6C987B',
-      ai_overviews: '#7DA68C',
-    };
-
-    // Helper function to convert rank to category
-    const getRankCategory = (rank: number): string => {
-      if (rank === 0) return 'Not Listed';
-      if (rank <= 5) return String(rank);
-      if (rank <= 10) return '6-10';
-      return '10+';
-    };
-
     // Create one data point per result
     const dataPoints: {
       provider: string;
       label: string;
       prompt: string;
       rank: number;
-      rankCategory: string;
-      rankCategoryIndex: number;
-      color: string;
+      rankBand: string;
+      rankBandIndex: number;
       isMentioned: boolean;
     }[] = [];
 
@@ -912,16 +908,15 @@ export default function ResultsPage() {
         }
       }
 
-      const rankCategory = getRankCategory(rank);
+      const { label: rankBand, index: rankBandIndex } = positionToRankBand(rank, rank > 0);
 
       dataPoints.push({
         provider,
         label: providerLabels[provider] || provider,
         prompt: truncate(result.prompt, 30),
         rank,
-        rankCategory,
-        rankCategoryIndex: rankCategories.indexOf(rankCategory),
-        color: providerColors[provider] || '#4A7C59',
+        rankBand,
+        rankBandIndex,
         isMentioned: rank > 0,
       });
     }
@@ -929,29 +924,62 @@ export default function ResultsPage() {
     return dataPoints;
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
 
-  // Get unique providers for the legend
-  const scatterPlotProviders = useMemo(() => {
-    const providerColors: Record<string, string> = {
-      openai: '#2D5A3D',
-      anthropic: '#4A7C59',
-      gemini: '#5B8A6A',
-      perplexity: '#6C987B',
-      ai_overviews: '#7DA68C',
-    };
-    const providerLabels: Record<string, string> = {
-      openai: 'OpenAI',
-      anthropic: 'Claude',
-      gemini: 'Gemini',
-      perplexity: 'Perplexity',
-      ai_overviews: 'AI Overviews',
-    };
-    const providers = Array.from(new Set(scatterPlotData.map(d => d.provider)));
-    return providers.map(p => ({
-      provider: p,
-      label: providerLabels[p] || p,
-      color: providerColors[p] || '#4A7C59',
-    }));
-  }, [scatterPlotData]);
+  // Compute range stats for each LLM (Option 1)
+  const rangeChartData = useMemo(() => {
+    if (!runStatus || scatterPlotData.length === 0) return [];
+
+    // Group by provider
+    const providerStats: Record<string, {
+      provider: string;
+      label: string;
+      dataPoints: { rank: number; bandIndex: number }[];
+    }> = {};
+
+    for (const dp of scatterPlotData) {
+      if (!providerStats[dp.provider]) {
+        providerStats[dp.provider] = {
+          provider: dp.provider,
+          label: dp.label,
+          dataPoints: [],
+        };
+      }
+      providerStats[dp.provider].dataPoints.push({
+        rank: dp.rank,
+        bandIndex: dp.rankBandIndex,
+      });
+    }
+
+    return Object.values(providerStats).map(stats => {
+      const mentionedPoints = stats.dataPoints.filter(p => p.rank > 0);
+      const allBandIndices = stats.dataPoints.map(p => p.bandIndex);
+
+      const bestBandIndex = Math.min(...allBandIndices);
+      const worstBandIndex = Math.max(...allBandIndices);
+
+      let avgBandIndex = 5; // Default to "Not mentioned"
+      let avgPositionNumeric = 0;
+      if (mentionedPoints.length > 0) {
+        avgPositionNumeric = mentionedPoints.reduce((sum, p) => sum + p.rank, 0) / mentionedPoints.length;
+        const avgBand = positionToRankBand(Math.round(avgPositionNumeric), true);
+        avgBandIndex = avgBand.index;
+      }
+
+      return {
+        provider: stats.provider,
+        label: stats.label,
+        bestBandIndex,
+        worstBandIndex,
+        avgBandIndex,
+        avgPositionNumeric: mentionedPoints.length > 0 ? avgPositionNumeric : null,
+        totalPrompts: stats.dataPoints.length,
+        mentionCount: mentionedPoints.length,
+        // For bar chart rendering
+        rangeStart: bestBandIndex,
+        rangeEnd: worstBandIndex,
+        rangeHeight: worstBandIndex - bestBandIndex,
+      };
+    });
+  }, [scatterPlotData, runStatus]);
 
   // First Position chart data - count of times brand was listed first per LLM
   const firstPositionChartData = useMemo(() => {
@@ -1427,64 +1455,167 @@ export default function ResultsPage() {
             </button>
           </div>
 
-          {/* Brand Ranking Scatter Chart */}
+          {/* Brand Ranking Chart */}
           {chartTab === 'ranking' && (
             <>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis
-                      type="category"
-                      dataKey="label"
-                      allowDuplicatedCategory={false}
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                    />
-                    <YAxis
-                      type="number"
-                      dataKey="rankCategoryIndex"
-                      name="Rank"
-                      domain={[0, rankCategories.length - 1]}
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                      tickFormatter={(value) => rankCategories[value] || ''}
-                      ticks={rankCategories.map((_, i) => i)}
-                      interval={0}
-                    />
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                              <p className="text-sm font-medium text-gray-900">{data.label}</p>
-                              <p className="text-xs text-gray-500 mt-1">{data.prompt}</p>
-                              <p className="text-sm text-gray-700 mt-2">
-                                {data.rank === 0 ? 'Not Listed' : `Rank: #${data.rank}`}
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Scatter data={scatterPlotData} fill="#4A7C59">
-                      {scatterPlotData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} opacity={entry.isMentioned ? 1 : 0.4} />
-                      ))}
-                    </Scatter>
-                  </ScatterChart>
-                </ResponsiveContainer>
+              {/* Subtitle and view toggle */}
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-500">
+                  How each LLM ranks your brand across all prompts
+                </p>
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setRankingViewMode('dots')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      rankingViewMode === 'dots'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Dots
+                  </button>
+                  <button
+                    onClick={() => setRankingViewMode('range')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      rankingViewMode === 'range'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Range
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-4 mt-4 justify-center">
-                {scatterPlotProviders.map((entry) => (
-                  <div key={entry.provider} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                    <span className="text-sm text-gray-600">{entry.label}</span>
+
+              {/* Dots View */}
+              {rankingViewMode === 'dots' && (
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 100 }}>
+                      {/* Horizontal band shading */}
+                      <ReferenceArea y1={0} y2={0.5} fill="#dcfce7" fillOpacity={0.5} />
+                      <ReferenceArea y1={0.5} y2={1.5} fill="#fef9c3" fillOpacity={0.3} />
+                      <ReferenceArea y1={1.5} y2={2.5} fill="#fef9c3" fillOpacity={0.2} />
+                      <ReferenceArea y1={2.5} y2={3.5} fill="#fed7aa" fillOpacity={0.2} />
+                      <ReferenceArea y1={3.5} y2={4.5} fill="#fecaca" fillOpacity={0.2} />
+                      <ReferenceArea y1={4.5} y2={5.5} fill="#e5e7eb" fillOpacity={0.3} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={true} horizontal={false} />
+                      <XAxis
+                        type="category"
+                        dataKey="label"
+                        allowDuplicatedCategory={false}
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                      />
+                      <YAxis
+                        type="number"
+                        dataKey="rankBandIndex"
+                        name="Rank"
+                        domain={[-0.5, rankCategories.length - 0.5]}
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        tickFormatter={(value) => rankCategories[Math.round(value)] || ''}
+                        ticks={rankCategories.map((_, i) => i)}
+                        interval={0}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                                <p className="text-sm font-medium text-gray-900">{data.label}</p>
+                                <p className="text-xs text-gray-500 mt-1">{data.prompt}</p>
+                                <p className="text-sm text-gray-700 mt-2">
+                                  {data.rank === 0 ? 'Not mentioned' : `Rank: #${data.rank}`}
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Scatter data={scatterPlotData} fill="#6b7280">
+                        {scatterPlotData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill="#6b7280" opacity={entry.isMentioned ? 0.7 : 0.3} />
+                        ))}
+                      </Scatter>
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Range View */}
+              {rankingViewMode === 'range' && (
+                <div className="h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={rangeChartData} layout="vertical" margin={{ top: 20, right: 20, bottom: 40, left: 100 }}>
+                      {/* Vertical band shading (appears as horizontal stripes in vertical layout) */}
+                      <ReferenceArea x1={-0.5} x2={0.5} fill="#dcfce7" fillOpacity={0.5} />
+                      <ReferenceArea x1={0.5} x2={1.5} fill="#fef9c3" fillOpacity={0.3} />
+                      <ReferenceArea x1={1.5} x2={2.5} fill="#fef9c3" fillOpacity={0.2} />
+                      <ReferenceArea x1={2.5} x2={3.5} fill="#fed7aa" fillOpacity={0.2} />
+                      <ReferenceArea x1={3.5} x2={4.5} fill="#fecaca" fillOpacity={0.2} />
+                      <ReferenceArea x1={4.5} x2={5.5} fill="#e5e7eb" fillOpacity={0.3} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} vertical={true} />
+                      <YAxis
+                        type="category"
+                        dataKey="label"
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        width={80}
+                      />
+                      <XAxis
+                        type="number"
+                        domain={[-0.5, rankCategories.length - 0.5]}
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        tickFormatter={(value) => rankCategories[Math.round(value)] || ''}
+                        ticks={rankCategories.map((_, i) => i)}
+                        interval={0}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                                <p className="text-sm font-medium text-gray-900">{data.label}</p>
+                                <p className="text-sm text-gray-700 mt-2">
+                                  Best: {rankCategories[data.bestBandIndex]}
+                                </p>
+                                <p className="text-sm text-gray-700">
+                                  Worst: {rankCategories[data.worstBandIndex]}
+                                </p>
+                                {data.avgPositionNumeric !== null && (
+                                  <p className="text-sm text-gray-700">
+                                    Avg: #{data.avgPositionNumeric.toFixed(1)}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {data.mentionCount} / {data.totalPrompts} prompts mentioned
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      {/* Invisible bar for positioning - extends from 0 to bestBandIndex */}
+                      <Bar dataKey="bestBandIndex" stackId="range" fill="transparent" />
+                      {/* Visible range bar - extends from bestBandIndex to worstBandIndex */}
+                      <Bar dataKey="rangeHeight" stackId="range" fill="#6b7280" fillOpacity={0.4} radius={[4, 4, 4, 4]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  {/* Legend for range view */}
+                  <div className="flex items-center justify-center gap-6 mt-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-3 bg-gray-500 opacity-40 rounded" />
+                      <span className="text-xs text-gray-600">Ranking range (best to worst)</span>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </>
           )}
 
