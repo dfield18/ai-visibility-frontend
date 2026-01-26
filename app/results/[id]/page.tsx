@@ -890,6 +890,7 @@ export default function ResultsPage() {
       xIndex: number;
       xIndexWithOffset: number;
       isMentioned: boolean;
+      originalResult: Result;
     }[] = [];
 
     for (const result of results) {
@@ -935,6 +936,7 @@ export default function ResultsPage() {
         xIndex,
         xIndexWithOffset: xIndex, // Will be adjusted below
         isMentioned: rank > 0,
+        originalResult: result,
       });
     }
 
@@ -1620,11 +1622,24 @@ export default function ResultsPage() {
                           return null;
                         }}
                       />
-                      <Scatter data={scatterPlotData} fill="#6b7280">
-                        {scatterPlotData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill="#6b7280" opacity={entry.isMentioned ? 0.7 : 0.3} />
-                        ))}
-                      </Scatter>
+                      <Scatter
+                        data={scatterPlotData}
+                        fill="#6b7280"
+                        shape={(props: any) => {
+                          const { cx, cy, payload } = props;
+                          return (
+                            <circle
+                              cx={cx}
+                              cy={cy}
+                              r={6}
+                              fill="#6b7280"
+                              opacity={payload.isMentioned ? 0.7 : 0.3}
+                              style={{ cursor: 'pointer' }}
+                              onDoubleClick={() => setSelectedResult(payload.originalResult)}
+                            />
+                          );
+                        }}
+                      />
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
