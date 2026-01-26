@@ -1553,6 +1553,40 @@ export default function ResultsPage() {
                 Each dot is one answer to one prompt. Lower numbers mean your brand is shown earlier.
               </p>
 
+              {/* Key takeaway */}
+              {(() => {
+                const totalAnswers = scatterPlotData.length;
+                const mentionedCount = scatterPlotData.filter(d => d.isMentioned).length;
+                const notMentionedCount = totalAnswers - mentionedCount;
+                const topPositionCount = scatterPlotData.filter(d => d.rank === 1).length;
+                const top3Count = scatterPlotData.filter(d => d.rank >= 1 && d.rank <= 3).length;
+                const mentionRate = totalAnswers > 0 ? (mentionedCount / totalAnswers) * 100 : 0;
+                const topPositionRate = mentionedCount > 0 ? (topPositionCount / mentionedCount) * 100 : 0;
+
+                let takeaway = '';
+                if (mentionRate < 30) {
+                  takeaway = `Your brand appears in only ${mentionRate.toFixed(0)}% of AI answers—there's room to improve visibility.`;
+                } else if (topPositionRate > 50 && mentionRate > 50) {
+                  takeaway = `Strong performance: your brand is the top result in ${topPositionRate.toFixed(0)}% of answers where it appears.`;
+                } else if (topPositionCount > 0 && top3Count > mentionedCount * 0.6) {
+                  takeaway = `Your brand typically appears in the top 3 positions when mentioned.`;
+                } else if (notMentionedCount > mentionedCount) {
+                  takeaway = `Your brand is not shown in ${notMentionedCount} of ${totalAnswers} answers—consider optimizing for AI visibility.`;
+                } else if (mentionRate > 70) {
+                  takeaway = `Good visibility: your brand appears in ${mentionRate.toFixed(0)}% of AI answers.`;
+                } else {
+                  takeaway = `Your brand appears in ${mentionedCount} of ${totalAnswers} AI answers across all platforms.`;
+                }
+
+                return (
+                  <div className="bg-[#FAFAF8] rounded-lg px-3 py-2 mb-4">
+                    <p className="text-xs text-gray-600">
+                      <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
+                    </p>
+                  </div>
+                );
+              })()}
+
               <div>
                   {/* Minimal legend for All Answers view - offset to center over plot area */}
                   <div className="flex items-center justify-center gap-2 pl-[140px] mb-[-14px]">
@@ -1683,9 +1717,56 @@ export default function ResultsPage() {
           {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
             <>
               <p className="text-sm text-gray-500 mb-1">Where your brand appears in AI-generated answers</p>
-              <p className="text-xs text-gray-400 mb-6">
+              <p className="text-xs text-gray-400 mb-3">
                 Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.
               </p>
+
+              {/* Key takeaway */}
+              {(() => {
+                // Find best and worst performing LLMs (lower avgRanking = better)
+                const sortedByAvg = [...rangeChartData].sort((a, b) => a.avgRanking - b.avgRanking);
+                const bestLLM = sortedByAvg[0];
+                const worstLLM = sortedByAvg[sortedByAvg.length - 1];
+
+                // Check for consistency (small range = consistent)
+                // bestBandIndex 0 = #1, worstBandIndex 5 = Not shown
+                const avgRanges = rangeChartData.map(d => d.worstBandIndex - d.bestBandIndex);
+                const overallAvgRange = avgRanges.reduce((a, b) => a + b, 0) / avgRanges.length;
+
+                // Check if any LLM has top position as best (bestBandIndex 0 = #1)
+                const hasTopPosition = rangeChartData.some(d => d.bestBandIndex === 0);
+                const allHaveTopPosition = rangeChartData.every(d => d.bestBandIndex === 0);
+
+                // Calculate overall average
+                const overallAvg = rangeChartData.reduce((sum, d) => sum + d.avgRanking, 0) / rangeChartData.length;
+
+                let takeaway = '';
+                if (sortedByAvg.length === 1) {
+                  takeaway = `${bestLLM.label} positions your brand at #${bestLLM.avgRanking.toFixed(1)} on average.`;
+                } else if (bestLLM.avgRanking <= 2 && worstLLM.avgRanking <= 3) {
+                  takeaway = `Excellent: all AI platforms rank your brand in the top 3 on average.`;
+                } else if (bestLLM.avgRanking <= 2) {
+                  takeaway = `${bestLLM.label} ranks your brand highest (avg #${bestLLM.avgRanking.toFixed(1)}), while ${worstLLM.label} ranks lowest.`;
+                } else if (overallAvgRange < 2 && overallAvg < 5) {
+                  takeaway = `Your brand's position is fairly consistent across platforms (avg #${overallAvg.toFixed(1)}).`;
+                } else if (allHaveTopPosition) {
+                  takeaway = `Your brand reaches the #1 position on all platforms at least once.`;
+                } else if (hasTopPosition) {
+                  const topPlatforms = rangeChartData.filter(d => d.bestBandIndex === 0).map(d => d.label);
+                  takeaway = `Your brand reaches #1 on ${topPlatforms.slice(0, 2).join(' and ')}${topPlatforms.length > 2 ? ` and ${topPlatforms.length - 2} more` : ''}.`;
+                } else {
+                  takeaway = `${bestLLM.label} gives your brand the best visibility with an average position of #${bestLLM.avgRanking.toFixed(1)}.`;
+                }
+
+                return (
+                  <div className="bg-[#FAFAF8] rounded-lg px-3 py-2 mb-4">
+                    <p className="text-xs text-gray-600">
+                      <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
+                    </p>
+                  </div>
+                );
+              })()}
+
                 <div>
                   {/* Legend - above chart, offset to align with X-axis label */}
                   <div className="flex items-center justify-center flex-wrap gap-4 pl-[60px]">
