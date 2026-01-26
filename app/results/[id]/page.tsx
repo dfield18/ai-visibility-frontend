@@ -84,7 +84,7 @@ export default function ResultsPage() {
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
   const [chartTab, setChartTab] = useState<'ranking' | 'firstPosition' | 'avgRank'>('ranking');
-  const [rankingViewMode, setRankingViewMode] = useState<'dots' | 'range'>('dots');
+  const [rankingViewMode, setRankingViewMode] = useState<'dots' | 'range' | 'shareOfVoice'>('dots');
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -1645,7 +1645,9 @@ export default function ResultsPage() {
                 <p className="text-sm text-gray-500">
                   {rankingViewMode === 'dots'
                     ? 'Where your brand shows up in individual AI answers'
-                    : 'Where your brand appears in AI-generated answers'}
+                    : rankingViewMode === 'range'
+                      ? 'Where your brand appears in AI-generated answers'
+                      : 'How mentions are distributed across brands'}
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -1670,6 +1672,17 @@ export default function ResultsPage() {
                       title="See best to worst by AI"
                     >
                       Summary
+                    </button>
+                    <button
+                      onClick={() => setRankingViewMode('shareOfVoice')}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        rankingViewMode === 'shareOfVoice'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                      title="See brand mention distribution"
+                    >
+                      Share of Voice
                     </button>
                   </div>
                 </div>
@@ -2151,6 +2164,71 @@ export default function ResultsPage() {
                   </div>
                 </div>
               )}
+
+              {/* Share of Voice View */}
+              {rankingViewMode === 'shareOfVoice' && shareOfVoiceData.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-end mb-4">
+                    <select
+                      value={shareOfVoiceFilter}
+                      onChange={(e) => setShareOfVoiceFilter(e.target.value as 'all' | 'tracked')}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      <option value="tracked">Tracked Brands Only</option>
+                      <option value="all">All Brands</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col lg:flex-row items-center gap-6">
+                    <div className="w-full lg:w-1/2 h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={shareOfVoiceData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={90}
+                            paddingAngle={2}
+                            dataKey="value"
+                            nameKey="name"
+                          >
+                            {shareOfVoiceData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value, name) => {
+                              const entry = shareOfVoiceData.find(d => d.name === name);
+                              return [`${value} mentions (${entry?.percentage.toFixed(1) ?? 0}%)`, name];
+                            }}
+                            contentStyle={{
+                              backgroundColor: 'white',
+                              border: '1px solid #e5e7eb',
+                              borderRadius: '8px',
+                              padding: '8px 12px',
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div className="w-full lg:w-1/2">
+                      <div className="space-y-2">
+                        {shareOfVoiceData.map((entry) => (
+                          <div key={entry.name} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                              <span className="text-sm text-gray-700">{entry.name}</span>
+                            </div>
+                            <span className="text-sm font-medium text-gray-900">
+                              {entry.percentage.toFixed(1)}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -2309,142 +2387,6 @@ export default function ResultsPage() {
           </div>
         </div>
       )}
-
-      {/* All Results Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <h2 className="text-base font-semibold text-gray-900">All Results</h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setFilter('all')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'all' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setFilter('mentioned')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                {runStatus.brand} Mentioned
-              </button>
-              <button
-                onClick={() => setFilter('not_mentioned')}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'not_mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
-              >
-                {runStatus.brand} Not Mentioned
-              </button>
-            </div>
-            <select
-              value={providerFilter}
-              onChange={(e) => setProviderFilter(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-            >
-              <option value="all">All LLMs</option>
-              {availableProviders.map((provider) => (
-                <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-              ))}
-            </select>
-            <button
-              onClick={handleExportCSV}
-              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-            >
-              <Download className="w-3.5 h-3.5" />
-              CSV
-            </button>
-          </div>
-        </div>
-        <p className="text-sm text-gray-500 mb-4">
-          Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error || (r.provider === 'ai_overviews' && r.error)).length} results
-        </p>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
-                {!isCategory && (
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{runStatus.brand} Mentioned</th>
-                )}
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors Mentioned'}</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredResults.map((result: Result) => (
-                <tr
-                  key={result.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => setSelectedResult(result)}
-                >
-                  <td className="py-3 px-4">
-                    <p className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium">{truncate(result.prompt, 50)}</p>
-                    <p className="text-xs text-gray-500">Temp: {result.temperature}</p>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
-                  </td>
-                  {!isCategory && (
-                    <td className="py-3 px-4">
-                      {result.error ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
-                          <AlertTriangle className="w-3 h-3" />Not Available
-                        </span>
-                      ) : result.brand_mentioned ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
-                          <Check className="w-3 h-3" />Yes
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
-                          <X className="w-3 h-3" />No
-                        </span>
-                      )}
-                    </td>
-                  )}
-                  <td className="py-3 px-4">
-                    {result.error ? (
-                      <span className="text-sm text-gray-400">-</span>
-                    ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
-                      <span className="text-sm text-gray-700">
-                        {isCategory ? result.competitors_mentioned.join(', ') : (
-                          <>
-                            {result.competitors_mentioned.slice(0, 2).join(', ')}
-                            {result.competitors_mentioned.length > 2 && (
-                              <span className="text-gray-400"> +{result.competitors_mentioned.length - 2}</span>
-                            )}
-                          </>
-                        )}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-400">None</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-sm text-gray-600 capitalize">{result.response_type || '-'}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {filteredResults.length === 0 && (
-          <div className="text-center py-8">
-            <Filter className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-500">No results match your filters</p>
-          </div>
-        )}
-      </div>
-
-      {/* Export to CSV */}
-      <div className="flex justify-center pt-4">
-        <button
-          onClick={handleExportCSV}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          <Download className="w-4 h-4" />
-          Export to CSV
-        </button>
-      </div>
     </div>
   );
 
@@ -2578,76 +2520,6 @@ export default function ResultsPage() {
                   </div>
                 );
               })}
-          </div>
-        </div>
-      )}
-
-      {/* Share of Voice Pie Chart */}
-      {shareOfVoiceData.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">Share of Voice</h2>
-            <select
-              value={shareOfVoiceFilter}
-              onChange={(e) => setShareOfVoiceFilter(e.target.value as 'all' | 'tracked')}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-            >
-              <option value="all">All Brands</option>
-              <option value="tracked">Tracked Only</option>
-            </select>
-          </div>
-          <div className="flex flex-col lg:flex-row items-center gap-6">
-            <div className="w-full lg:w-1/2 h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={shareOfVoiceData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
-                    dataKey="value"
-                    nameKey="name"
-                  >
-                    {shareOfVoiceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value, name) => {
-                      const entry = shareOfVoiceData.find(d => d.name === name);
-                      return [`${value} mentions (${entry?.percentage.toFixed(1) ?? 0}%)`, name];
-                    }}
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      padding: '8px 12px',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="w-full lg:w-1/2">
-              <div className="space-y-2">
-                {shareOfVoiceData.map((entry) => (
-                  <div key={entry.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                      <span className={`text-sm font-medium ${entry.name === 'Other' ? 'text-orange-600' : 'text-gray-700'}`}>
-                        {entry.name}
-                        {entry.name === 'Other' && <span className="text-xs ml-1 text-orange-500">(discovered)</span>}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-gray-500">{entry.value} mentions</span>
-                      <span className="text-sm font-semibold text-gray-900 w-14 text-right">{entry.percentage.toFixed(1)}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       )}
