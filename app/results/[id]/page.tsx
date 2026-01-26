@@ -1825,10 +1825,11 @@ export default function ResultsPage() {
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
-                    {/* Dots overlay - positioned absolutely over the chart area */}
+                    {/* Dots overlay - positioned absolutely over the chart plotting area */}
                     {rangeViewDots.length > 0 && (() => {
                       // Chart margins matching ComposedChart margin prop
                       const margin = { top: 20, right: 30, bottom: 60, left: 120 };
+                      const yAxisWidth = 110; // Matches YAxis width prop
                       const numProviders = rangeChartData.length;
 
                       // Domain is [-0.5, 10.5] - total range of 11 units
@@ -1836,14 +1837,23 @@ export default function ResultsPage() {
                       const domainMax = RANGE_X_LABELS.length - 0.5; // 10.5
                       const domainRange = domainMax - domainMin; // 11
 
+                      // Calculate plotting area bounds
+                      // Left edge: margin.left + yAxisWidth (Y-axis is inside the chart area)
+                      const plotLeft = margin.left + yAxisWidth;
+                      // Right edge: container width - margin.right
+                      // Width: container width - plotLeft - margin.right
+                      const plotWidth = `calc(100% - ${plotLeft + margin.right}px)`;
+                      // Height: container height - margin.top - margin.bottom
+                      const plotHeight = `calc(100% - ${margin.top + margin.bottom}px)`;
+
                       return (
                         <div
                           className="absolute pointer-events-none"
                           style={{
                             top: `${margin.top}px`,
-                            left: `${margin.left}px`,
-                            width: `calc(100% - ${margin.left + margin.right}px)`,
-                            height: `calc(100% - ${margin.top + margin.bottom}px)`,
+                            left: `${plotLeft}px`,
+                            width: plotWidth,
+                            height: plotHeight,
                           }}
                         >
                           {rangeViewDots.map((dot, idx) => {
