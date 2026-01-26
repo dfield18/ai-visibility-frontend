@@ -450,8 +450,8 @@ export default function ResultsPage() {
     // Sort by percentage descending (selected brand stays in its natural position)
     chartData.sort((a, b) => b.percentage - a.percentage);
 
-    // Add "All other brands" at the end
-    if (includeOther || allOtherCount > 0) {
+    // Add "All other brands" at the end only when showing all brands
+    if (includeOther && allOtherCount > 0) {
       const percentage = (allOtherCount / totalMentions) * 100;
       chartData.push({
         name: 'All other brands',
