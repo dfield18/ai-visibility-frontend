@@ -1700,7 +1700,10 @@ export default function ResultsPage() {
                   <p className="text-xs text-gray-400 mb-3">
                     Each dot is a prompt result. Range bar shows best-to-worst; marker shows average. Double-click a dot for details.
                   </p>
-                  <div className="h-64 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
+                  <div
+                    className="[&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
+                    style={{ height: Math.max(200, rangeChartData.length * 50 + 60) }}
+                  >
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={rangeChartData}
