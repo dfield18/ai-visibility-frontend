@@ -80,6 +80,7 @@ export default function ResultsPage() {
   const [shareOfVoiceFilter, setShareOfVoiceFilter] = useState<'all' | 'tracked'>('tracked');
   const [llmBreakdownBrandFilter, setLlmBreakdownBrandFilter] = useState<string>('');
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
+  const [expandedLLMCards, setExpandedLLMCards] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
@@ -2242,37 +2243,124 @@ export default function ResultsPage() {
             </select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Object.entries(llmBreakdownStats).map(([provider, stats]) => (
-              <div key={provider} className="p-4 bg-[#FAFAF8] rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium text-gray-900 text-sm">{getProviderLabel(provider)}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${getMentionRateBgColor(stats.rate)}`}
-                        style={{ width: `${stats.rate * 100}%` }}
-                      />
+            {Object.entries(llmBreakdownStats).map(([provider, stats]) => {
+              const isExpanded = expandedLLMCards.has(provider);
+              const providerResults = globallyFilteredResults.filter(
+                (r: Result) => r.provider === provider && !r.error
+              );
+              const selectedBrand = llmBreakdownBrandFilter || llmBreakdownBrands[0] || runStatus?.brand;
+
+              return (
+                <div key={provider} className="bg-[#FAFAF8] rounded-xl overflow-hidden">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-gray-900 text-sm">{getProviderLabel(provider)}</span>
+                      <button
+                        onClick={() => {
+                          const newExpanded = new Set(expandedLLMCards);
+                          if (isExpanded) {
+                            newExpanded.delete(provider);
+                          } else {
+                            newExpanded.add(provider);
+                          }
+                          setExpandedLLMCards(newExpanded);
+                        }}
+                        className="text-xs text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-1"
+                      >
+                        {isExpanded ? (
+                          <>Hide responses <ChevronUp className="w-3 h-3" /></>
+                        ) : (
+                          <>View responses <ChevronDown className="w-3 h-3" /></>
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${getMentionRateBgColor(stats.rate)}`}
+                            style={{ width: `${stats.rate * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className={`text-sm font-semibold ${getMentionRateColor(stats.rate)}`}>
+                        {formatPercent(stats.rate)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-gray-500">{stats.mentioned}/{stats.total} mentions</p>
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="text-gray-500">
+                          top position: <span className="font-medium text-[#4A7C59]">{stats.mentioned === 0 || stats.topPosition === null ? 'n/a' : `#${stats.topPosition}`}</span>
+                        </span>
+                        <span className="text-gray-500">
+                          avg rank: <span className="font-medium text-gray-700">{stats.mentioned === 0 ? 'n/a' : (stats.avgRank !== null ? `#${stats.avgRank.toFixed(1)}` : 'n/a')}</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <span className={`text-sm font-semibold ${getMentionRateColor(stats.rate)}`}>
-                    {formatPercent(stats.rate)}
-                  </span>
+
+                  {/* Expanded responses section */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-200 bg-white p-4 max-h-64 overflow-y-auto">
+                      <p className="text-xs text-gray-500 mb-3">{providerResults.length} responses from {getProviderLabel(provider)}</p>
+                      <div className="space-y-2">
+                        {providerResults.map((result: Result) => {
+                          // Calculate position for this result
+                          let position: number | null = null;
+                          if (result.response_text && selectedBrand) {
+                            const responseText = result.response_text.toLowerCase();
+                            const allBrands = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+                            const brandPositions: { brand: string; pos: number }[] = [];
+                            for (const brand of allBrands) {
+                              const pos = responseText.indexOf(brand.toLowerCase());
+                              if (pos !== -1) {
+                                brandPositions.push({ brand, pos });
+                              }
+                            }
+                            brandPositions.sort((a, b) => a.pos - b.pos);
+                            const rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === selectedBrand.toLowerCase()) + 1;
+                            if (rank > 0) position = rank;
+                          }
+
+                          const isMentioned = isCategory
+                            ? result.competitors_mentioned?.includes(selectedBrand || '')
+                            : result.brand_mentioned;
+
+                          return (
+                            <div
+                              key={result.id}
+                              className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
+                              onClick={() => setSelectedResult(result)}
+                            >
+                              <div className="flex-1 min-w-0 mr-3">
+                                <p className="text-xs text-gray-700 truncate">{result.prompt}</p>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                {position ? (
+                                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                                    position === 1 ? 'bg-green-100 text-green-700' :
+                                    position <= 3 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    #{position}
+                                  </span>
+                                ) : isMentioned ? (
+                                  <span className="text-xs text-gray-500">Mentioned</span>
+                                ) : (
+                                  <span className="text-xs text-gray-400">Not shown</span>
+                                )}
+                                <ExternalLink className="w-3 h-3 text-gray-400" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center justify-between mt-2">
-                  <p className="text-xs text-gray-500">{stats.mentioned}/{stats.total} mentions</p>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-gray-500">
-                      top position: <span className="font-medium text-[#4A7C59]">{stats.mentioned === 0 || stats.topPosition === null ? 'n/a' : `#${stats.topPosition}`}</span>
-                    </span>
-                    <span className="text-gray-500">
-                      avg rank: <span className="font-medium text-gray-700">{stats.mentioned === 0 ? 'n/a' : (stats.avgRank !== null ? `#${stats.avgRank.toFixed(1)}` : 'n/a')}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
