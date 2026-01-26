@@ -1830,6 +1830,7 @@ export default function ResultsPage() {
                       // Chart margins matching ComposedChart margin prop
                       const margin = { top: 20, right: 30, bottom: 60, left: 120 };
                       const yAxisWidth = 110; // Matches YAxis width prop
+                      const xAxisHeight = 40; // Estimated height of X-axis with labels
                       const numProviders = rangeChartData.length;
 
                       // Domain is [-0.5, 10.5] - total range of 11 units
@@ -1840,11 +1841,11 @@ export default function ResultsPage() {
                       // Calculate plotting area bounds
                       // Left edge: margin.left + yAxisWidth (Y-axis is inside the chart area)
                       const plotLeft = margin.left + yAxisWidth;
-                      // Right edge: container width - margin.right
                       // Width: container width - plotLeft - margin.right
                       const plotWidth = `calc(100% - ${plotLeft + margin.right}px)`;
-                      // Height: container height - margin.top - margin.bottom
-                      const plotHeight = `calc(100% - ${margin.top + margin.bottom}px)`;
+                      // Height: container height - margin.top - margin.bottom - xAxisHeight
+                      // The X-axis is inside the chart area, so we need to subtract its height
+                      const plotHeight = `calc(100% - ${margin.top + margin.bottom + xAxisHeight}px)`;
 
                       return (
                         <div
