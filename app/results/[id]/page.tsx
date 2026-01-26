@@ -2223,65 +2223,13 @@ export default function ResultsPage() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <button
-                          onClick={() => toggleExpanded(result.id)}
+                          onClick={() => setSelectedResult(result)}
                           className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
                         >
-                          {expandedResults.has(result.id) ? (
-                            <>Hide <ChevronUp className="w-4 h-4" /></>
-                          ) : (
-                            <>View <ChevronDown className="w-4 h-4" /></>
-                          )}
+                          View <ExternalLink className="w-3 h-3" />
                         </button>
                       </td>
                     </tr>
-                    {expandedResults.has(result.id) && (
-                      <tr>
-                        <td colSpan={isCategory ? 5 : 6} className="py-4 px-4 bg-[#FAFAF8]">
-                          <div className="max-h-64 overflow-y-auto">
-                            {result.error ? (
-                              <>
-                                <p className="text-xs text-orange-600 mb-2">Error:</p>
-                                <p className="text-sm text-orange-700 bg-orange-50 p-3 rounded-lg">{result.error}</p>
-                              </>
-                            ) : (
-                              <>
-                                <p className="text-xs text-gray-500 mb-2">Full Response:</p>
-                                <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_p]:mb-3 [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_strong]:font-semibold">
-                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {formatResponseText(result.response_text || '')}
-                                  </ReactMarkdown>
-                                </div>
-                                {result.sources && result.sources.length > 0 && (
-                                  <div className="mt-4 pt-3 border-t border-gray-200">
-                                    <p className="text-xs text-gray-500 mb-2">Sources ({result.sources.length}):</p>
-                                    <div className="space-y-1.5">
-                                      {result.sources.map((source, idx) => {
-                                        const { domain, subtitle } = formatSourceDisplay(source.url, source.title);
-                                        return (
-                                          <a
-                                            key={idx}
-                                            href={source.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                                          >
-                                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                            <span className="truncate">
-                                              <span className="font-medium">{domain}</span>
-                                              {subtitle && <span className="text-gray-500"> · {subtitle}</span>}
-                                            </span>
-                                          </a>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
                   </React.Fragment>
                 );
               })}
