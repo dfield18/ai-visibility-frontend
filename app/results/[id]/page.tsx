@@ -1808,29 +1808,42 @@ export default function ResultsPage() {
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
+
+                              // Format position for display
+                              const formatPosition = (rangeX: number): string => {
+                                if (rangeX === 10) return 'Not shown';
+                                if (rangeX === 9) return '#10+';
+                                return `#${rangeX + 1}`;
+                              };
+
+                              // Format average (already in rank format 1-11)
+                              const formatAverage = (avg: number): string => {
+                                if (avg >= 11) return 'Not shown';
+                                if (avg >= 10) return '#10+';
+                                return `#${avg.toFixed(1)}`;
+                              };
+
+                              const bestPos = formatPosition(data.bestRangeX);
+                              const worstPos = formatPosition(data.worstRangeX);
+                              const avgPos = formatAverage(data.avgRanking);
+
+                              // Add "(some prompts)" if worst is "Not shown"
+                              const worstDisplay = data.worstRangeX === 10
+                                ? 'Not shown (some prompts)'
+                                : worstPos;
+
                               return (
                                 <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[220px]">
-                                  <p className="text-sm font-semibold text-gray-900">LLM: {data.label}</p>
-                                  <div className="mt-2 space-y-1">
+                                  <p className="text-sm font-semibold text-gray-900 mb-2">{data.label}</p>
+                                  <div className="space-y-1">
                                     <p className="text-sm text-gray-700">
-                                      <span className="text-gray-500">Best rank:</span> {RANGE_X_LABELS[data.bestRangeX]}
-                                    </p>
-                                    <p className="text-sm text-gray-700">
-                                      <span className="text-gray-500">Worst rank:</span> {RANGE_X_LABELS[data.worstRangeX]}
+                                      Best position shown: {bestPos}
                                     </p>
                                     <p className="text-sm text-gray-700">
-                                      <span className="text-gray-500">Avg rank:</span> {data.avgBandLabel}
-                                      {data.avgPositionNumeric !== null && (
-                                        <span className="text-gray-400 ml-1">({data.avgPositionNumeric.toFixed(1)})</span>
-                                      )}
+                                      Average position: {avgPos}
                                     </p>
-                                  </div>
-                                  <div className="mt-2 pt-2 border-t border-gray-100 space-y-0.5">
-                                    <p className="text-xs text-gray-500">
-                                      Prompts analyzed: {data.promptsAnalyzed}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      Mentions: {data.mentions}
+                                    <p className="text-sm text-gray-700">
+                                      Worst position shown: {worstDisplay}
                                     </p>
                                   </div>
                                 </div>
