@@ -1805,6 +1805,7 @@ export default function ResultsPage() {
                           interval={0}
                         />
                         <Tooltip
+                          cursor={false}
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
