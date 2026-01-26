@@ -1750,7 +1750,7 @@ export default function ResultsPage() {
               {rankingViewMode === 'range' && rangeChartData.length > 0 && (
                 <div>
                   {/* Legend - above chart, offset to center over plot area */}
-                  <div className="flex items-center justify-center flex-wrap gap-4 mb-1 ml-[45px]">
+                  <div className="flex items-center justify-center flex-wrap gap-4 ml-[45px]">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
                       <span className="text-xs text-gray-500">Individual answer</span>
