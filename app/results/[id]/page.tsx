@@ -1830,7 +1830,11 @@ export default function ResultsPage() {
                       // Chart margins matching ComposedChart margin prop
                       const margin = { top: 20, right: 30, bottom: 60, left: 120 };
                       const numProviders = rangeChartData.length;
-                      const numXPositions = RANGE_X_LABELS.length; // 11 positions (0-10)
+
+                      // Domain is [-0.5, 10.5] - total range of 11 units
+                      const domainMin = -0.5;
+                      const domainMax = RANGE_X_LABELS.length - 0.5; // 10.5
+                      const domainRange = domainMax - domainMin; // 11
 
                       return (
                         <div
@@ -1838,16 +1842,17 @@ export default function ResultsPage() {
                           style={{
                             top: `${margin.top}px`,
                             left: `${margin.left}px`,
-                            right: `${margin.right}px`,
-                            bottom: `${margin.bottom}px`,
+                            width: `calc(100% - ${margin.left + margin.right}px)`,
+                            height: `calc(100% - ${margin.top + margin.bottom}px)`,
                           }}
                         >
                           {rangeViewDots.map((dot, idx) => {
                             if (dot.yIndex < 0) return null;
 
-                            // X position: map dot.x (0-10 with small offset) to percentage
-                            // The chart X domain is [-0.5, 10.5], so position 0 is at (0.5/11)*100 = 4.545%
-                            const xPercent = ((dot.x + 0.5) / numXPositions) * 100;
+                            // X position: convert domain value to percentage within plotting area
+                            // dot.x is in range [0, 10] with small offsets
+                            // Map to percentage: (value - domainMin) / domainRange * 100
+                            const xPercent = ((dot.x - domainMin) / domainRange) * 100;
 
                             // Y position: center dot within provider's band
                             const yPercent = ((dot.yIndex + 0.5) / numProviders) * 100;
