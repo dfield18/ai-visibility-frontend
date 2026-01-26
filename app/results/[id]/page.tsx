@@ -1721,7 +1721,7 @@ export default function ResultsPage() {
                     Each dot is a prompt result. Range bar shows best-to-worst. Double-click a dot for details.
                   </p>
                   <div
-                    className="[&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
+                    className="relative [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
                     style={{ height: Math.max(250, rangeChartData.length * 60 + 80) }}
                   >
                     <ResponsiveContainer width="100%" height="100%">
@@ -1826,30 +1826,37 @@ export default function ResultsPage() {
                         {/* Render dots for each prompt result using Customized */}
                         <Customized
                           component={(props: any) => {
-                            const { xAxisMap, yAxisMap } = props;
-                            if (!xAxisMap || !yAxisMap) return null;
+                            const { formattedGraphicalItems, xAxisMap, yAxisMap, offset } = props;
 
-                            const xAxis = Object.values(xAxisMap)[0] as any;
-                            const yAxis = Object.values(yAxisMap)[0] as any;
-                            if (!xAxis?.scale || !yAxis?.scale) return null;
+                            // Try to get bar items to find Y positions
+                            const barItems = formattedGraphicalItems?.filter((item: any) => item.type?.displayName === 'Bar') || [];
+
+                            // Get axis info
+                            const xAxis = xAxisMap ? Object.values(xAxisMap)[0] as any : null;
+                            const yAxis = yAxisMap ? Object.values(yAxisMap)[0] as any : null;
+
+                            if (!xAxis?.scale) return null;
 
                             const xScale = xAxis.scale;
-                            const yScale = yAxis.scale;
-                            const bandWidth = yScale.bandwidth ? yScale.bandwidth() : 40;
+                            const chartLeft = offset?.left || 120;
+                            const chartTop = offset?.top || 20;
+                            const chartHeight = offset?.height || 200;
+                            const numProviders = rangeChartData.length;
+                            const bandHeight = numProviders > 0 ? chartHeight / numProviders : 50;
 
                             return (
                               <g className="range-chart-dots">
                                 {rangeViewDots.map((dot, idx) => {
                                   // Calculate X position using xAxis scale
                                   const cx = xScale(dot.x);
+                                  if (cx === undefined || cx === null) return null;
 
-                                  // Calculate Y position using yAxis scale (categorical)
-                                  // yScale returns the top of the band, add half bandwidth to center
-                                  const yPos = yScale(dot.label);
-                                  const cy = yPos !== undefined ? yPos + bandWidth / 2 : null;
+                                  // Calculate Y position based on provider index
+                                  const providerIndex = dot.yIndex;
+                                  if (providerIndex < 0) return null;
 
-                                  // Skip if we can't calculate position
-                                  if (cx === undefined || cx === null || cy === null) return null;
+                                  // Center dot vertically within the band
+                                  const cy = chartTop + (providerIndex * bandHeight) + (bandHeight / 2);
 
                                   return (
                                     <circle
@@ -1860,7 +1867,7 @@ export default function ResultsPage() {
                                       fill="#1f2937"
                                       opacity={dot.isMentioned ? 0.9 : 0.4}
                                       stroke="#fff"
-                                      strokeWidth={1}
+                                      strokeWidth={1.5}
                                       style={{ cursor: 'pointer' }}
                                       onDoubleClick={() => setSelectedResult(dot.originalResult)}
                                     />
