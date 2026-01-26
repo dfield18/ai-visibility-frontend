@@ -868,15 +868,15 @@ export default function ResultsPage() {
     ai_overviews: 'Google AI Overviews',
   };
 
-  // Get unique providers in consistent order for X-axis
+  // Get unique providers in alphabetical order by display name for X-axis
   const scatterProviderOrder = useMemo(() => {
     if (!runStatus) return [];
     const providers = new Set<string>();
     globallyFilteredResults.forEach((r: Result) => {
       if (!r.error) providers.add(r.provider);
     });
-    // Sort in a consistent order
-    const order = ['openai', 'anthropic', 'gemini', 'perplexity', 'ai_overviews'];
+    // Alphabetical order by display name: Claude, Gemini, Google AI Overviews, OpenAI, Perplexity
+    const order = ['anthropic', 'gemini', 'ai_overviews', 'openai', 'perplexity'];
     return order.filter(p => providers.has(p));
   }, [runStatus, globallyFilteredResults]);
 
@@ -1002,7 +1002,13 @@ export default function ResultsPage() {
       });
     }
 
-    return Object.values(providerStats).map((stats, index) => {
+    // Sort providers alphabetically by display label, then map to chart data
+    const alphabeticalOrder = ['anthropic', 'gemini', 'ai_overviews', 'openai', 'perplexity'];
+    const sortedProviders = Object.values(providerStats).sort((a, b) => {
+      return alphabeticalOrder.indexOf(a.provider) - alphabeticalOrder.indexOf(b.provider);
+    });
+
+    return sortedProviders.map((stats, index) => {
       const mentionedPoints = stats.dataPoints.filter(p => p.rank > 0);
       const allBandIndices = stats.dataPoints.map(p => p.bandIndex);
       const allRangeX = stats.dataPoints.map(p => rankToRangeX(p.rank));
