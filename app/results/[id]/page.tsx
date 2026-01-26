@@ -1787,13 +1787,28 @@ export default function ResultsPage() {
                             const label = RANGE_X_LABELS[Math.round(payload?.value ?? 0)] || '';
                             const isNotMentioned = label === 'Not shown';
                             const isAfterTop10 = label === 'Shown after top 10';
-                            // Adjust text anchor for longer labels to prevent overlap
-                            const textAnchor = isAfterTop10 ? 'end' : isNotMentioned ? 'start' : 'middle';
+
+                            // Split "Shown after top 10" into two lines
+                            if (isAfterTop10) {
+                              return (
+                                <text
+                                  x={x}
+                                  y={y + 8}
+                                  textAnchor="middle"
+                                  fill="#6b7280"
+                                  fontSize={11}
+                                >
+                                  <tspan x={x} dy="0">Shown after</tspan>
+                                  <tspan x={x} dy="12">top 10</tspan>
+                                </text>
+                              );
+                            }
+
                             return (
                               <text
                                 x={x}
                                 y={y + 12}
-                                textAnchor={textAnchor}
+                                textAnchor="middle"
                                 fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
                                 fontSize={11}
                                 fontStyle={isNotMentioned ? 'italic' : 'normal'}
