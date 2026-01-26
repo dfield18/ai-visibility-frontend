@@ -1936,55 +1936,65 @@ export default function ResultsPage() {
                             const avgXPercent = ((data.avgRankingX - domainMin) / domainRange) * 100;
                             const medianXPercent = ((data.medianRankingX - domainMin) / domainRange) * 100;
 
+                            // Check if average and median are at same position (within 0.5)
+                            const samePosition = Math.abs(data.avgRankingX - data.medianRankingX) < 0.5;
+                            // Offset in pixels when overlapping: average higher, median lower
+                            const avgYOffset = samePosition ? -6 : 0;
+                            const medianYOffset = samePosition ? 6 : 0;
+
                             return (
                               <React.Fragment key={`markers-${idx}`}>
-                                {/* Average marker - blue triangle */}
+                                {/* Average marker - subtle blue triangle */}
                                 <div
                                   className="absolute pointer-events-auto group"
                                   style={{
                                     left: `${avgXPercent}%`,
-                                    top: `${yPercent}%`,
+                                    top: `calc(${yPercent}% + ${avgYOffset}px)`,
                                     transform: 'translate(-50%, -50%)',
                                   }}
                                 >
                                   <div
-                                    className="w-0 h-0 cursor-pointer hover:scale-125 transition-transform"
+                                    className="cursor-pointer hover:scale-125 transition-transform"
                                     style={{
-                                      borderLeft: '5px solid transparent',
-                                      borderRight: '5px solid transparent',
-                                      borderBottom: '8px solid #3b82f6',
+                                      width: 0,
+                                      height: 0,
+                                      borderLeft: '4px solid transparent',
+                                      borderRight: '4px solid transparent',
+                                      borderBottom: '6px solid rgba(96, 165, 250, 0.7)',
                                     }}
                                   />
                                   {/* Tooltip */}
                                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
                                     <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg whitespace-nowrap">
-                                      <p className="text-xs font-medium text-blue-600">
+                                      <p className="text-xs text-gray-600">
                                         Avg: {data.avgRanking.toFixed(1)}
                                       </p>
                                     </div>
                                   </div>
                                 </div>
 
-                                {/* Median marker - orange diamond */}
+                                {/* Median marker - subtle orange diamond */}
                                 <div
                                   className="absolute pointer-events-auto group"
                                   style={{
                                     left: `${medianXPercent}%`,
-                                    top: `${yPercent}%`,
+                                    top: `calc(${yPercent}% + ${medianYOffset}px)`,
                                     transform: 'translate(-50%, -50%)',
                                   }}
                                 >
                                   <div
-                                    className="w-2.5 h-2.5 cursor-pointer hover:scale-125 transition-transform"
+                                    className="cursor-pointer hover:scale-125 transition-transform"
                                     style={{
-                                      backgroundColor: '#f97316',
+                                      width: '6px',
+                                      height: '6px',
+                                      backgroundColor: 'rgba(251, 146, 60, 0.7)',
                                       transform: 'rotate(45deg)',
                                     }}
                                   />
                                   {/* Tooltip */}
                                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
                                     <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg whitespace-nowrap">
-                                      <p className="text-xs font-medium text-orange-600">
+                                      <p className="text-xs text-gray-600">
                                         Median: {data.medianRanking.toFixed(1)}
                                       </p>
                                     </div>
@@ -2009,20 +2019,22 @@ export default function ResultsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-0 h-0"
                         style={{
-                          borderLeft: '4px solid transparent',
-                          borderRight: '4px solid transparent',
-                          borderBottom: '6px solid #3b82f6',
+                          width: 0,
+                          height: 0,
+                          borderLeft: '3px solid transparent',
+                          borderRight: '3px solid transparent',
+                          borderBottom: '5px solid rgba(96, 165, 250, 0.7)',
                         }}
                       />
                       <span className="text-xs text-gray-500">Average</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-2 h-2"
                         style={{
-                          backgroundColor: '#f97316',
+                          width: '5px',
+                          height: '5px',
+                          backgroundColor: 'rgba(251, 146, 60, 0.7)',
                           transform: 'rotate(45deg)',
                         }}
                       />
