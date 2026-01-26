@@ -1816,11 +1816,9 @@ export default function ResultsPage() {
                                 return `#${rangeX + 1}`;
                               };
 
-                              // Format average (already in rank format 1-11)
+                              // Format average as absolute number
                               const formatAverage = (avg: number): string => {
-                                if (avg >= 11) return 'Not shown';
-                                if (avg >= 10) return '#10+';
-                                return `#${avg.toFixed(1)}`;
+                                return avg.toFixed(1);
                               };
 
                               const bestPos = formatPosition(data.bestRangeX);
