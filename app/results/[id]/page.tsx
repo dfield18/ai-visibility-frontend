@@ -77,7 +77,7 @@ export default function ResultsPage() {
   const [providerFilter, setProviderFilter] = useState<string>('all');
   const [brandMentionsProviderFilter, setBrandMentionsProviderFilter] = useState<string>('all');
   const [brandMentionsTrackingFilter, setBrandMentionsTrackingFilter] = useState<'all' | 'tracked'>('all');
-  const [shareOfVoiceFilter, setShareOfVoiceFilter] = useState<'all' | 'tracked'>('all');
+  const [shareOfVoiceFilter, setShareOfVoiceFilter] = useState<'all' | 'tracked'>('tracked');
   const [llmBreakdownBrandFilter, setLlmBreakdownBrandFilter] = useState<string>('');
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
