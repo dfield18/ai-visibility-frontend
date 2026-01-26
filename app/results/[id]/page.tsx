@@ -2107,6 +2107,188 @@ export default function ResultsPage() {
           </div>
         </div>
       )}
+
+      {/* All Results Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <h2 className="text-base font-semibold text-gray-900">All Results</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={providerFilter}
+              onChange={(e) => setProviderFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+            >
+              <option value="all">All LLMs</option>
+              {availableProviders.map((p) => (
+                <option key={p} value={p}>{getProviderLabel(p)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error).length} results
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                {!isCategory && (
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Mentioned?</th>
+                )}
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors'}</th>
+                <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredResults.map((result: Result) => {
+                // Calculate position for this result
+                let position: number | null = null;
+                if (result.response_text && !result.error) {
+                  const responseText = result.response_text.toLowerCase();
+                  const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
+                  const allBrands = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+
+                  const brandPositions: { brand: string; pos: number }[] = [];
+                  for (const brand of allBrands) {
+                    const pos = responseText.indexOf(brand.toLowerCase());
+                    if (pos !== -1) {
+                      brandPositions.push({ brand, pos });
+                    }
+                  }
+                  brandPositions.sort((a, b) => a.pos - b.pos);
+
+                  const rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === (selectedBrand || '').toLowerCase()) + 1;
+                  if (rank > 0) position = rank;
+                }
+
+                return (
+                  <React.Fragment key={result.id}>
+                    <tr className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <p className="text-sm text-gray-900">{truncate(result.prompt, 50)}</p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {result.error ? (
+                          <span className="text-sm text-gray-400">-</span>
+                        ) : position ? (
+                          <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
+                            position === 1 ? 'bg-green-100 text-green-700' :
+                            position <= 3 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            #{position}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
+                            Not shown
+                          </span>
+                        )}
+                      </td>
+                      {!isCategory && (
+                        <td className="py-3 px-4">
+                          {result.error ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
+                              <AlertTriangle className="w-3 h-3" />Error
+                            </span>
+                          ) : result.brand_mentioned ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
+                              <Check className="w-3 h-3" />Yes
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
+                              <X className="w-3 h-3" />No
+                            </span>
+                          )}
+                        </td>
+                      )}
+                      <td className="py-3 px-4">
+                        {result.error ? (
+                          <span className="text-sm text-gray-400">-</span>
+                        ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
+                          <span className="text-sm text-gray-700">
+                            {result.competitors_mentioned.slice(0, 2).join(', ')}
+                            {result.competitors_mentioned.length > 2 && (
+                              <span className="text-gray-400"> +{result.competitors_mentioned.length - 2}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">None</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => toggleExpanded(result.id)}
+                          className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+                        >
+                          {expandedResults.has(result.id) ? (
+                            <>Hide <ChevronUp className="w-4 h-4" /></>
+                          ) : (
+                            <>View <ChevronDown className="w-4 h-4" /></>
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedResults.has(result.id) && (
+                      <tr>
+                        <td colSpan={isCategory ? 5 : 6} className="py-4 px-4 bg-[#FAFAF8]">
+                          <div className="max-h-64 overflow-y-auto">
+                            {result.error ? (
+                              <>
+                                <p className="text-xs text-orange-600 mb-2">Error:</p>
+                                <p className="text-sm text-orange-700 bg-orange-50 p-3 rounded-lg">{result.error}</p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-xs text-gray-500 mb-2">Full Response:</p>
+                                <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_p]:mb-3 [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_strong]:font-semibold">
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {formatResponseText(result.response_text || '')}
+                                  </ReactMarkdown>
+                                </div>
+                                {result.sources && result.sources.length > 0 && (
+                                  <div className="mt-4 pt-3 border-t border-gray-200">
+                                    <p className="text-xs text-gray-500 mb-2">Sources ({result.sources.length}):</p>
+                                    <div className="space-y-1.5">
+                                      {result.sources.map((source, idx) => {
+                                        const { domain, subtitle } = formatSourceDisplay(source.url, source.title);
+                                        return (
+                                          <a
+                                            key={idx}
+                                            href={source.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                          >
+                                            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate">
+                                              <span className="font-medium">{domain}</span>
+                                              {subtitle && <span className="text-gray-500"> · {subtitle}</span>}
+                                            </span>
+                                          </a>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 
