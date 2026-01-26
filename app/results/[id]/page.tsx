@@ -1825,43 +1825,67 @@ export default function ResultsPage() {
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
-                    {/* Dots overlay - positioned absolutely over the chart */}
-                    {rangeViewDots.length > 0 && (
-                      <div
-                        className="absolute pointer-events-none"
-                        style={{
-                          top: 20, // margin.top
-                          left: 120, // margin.left
-                          right: 30, // margin.right
-                          bottom: 60, // margin.bottom
-                        }}
-                      >
-                        {rangeViewDots.map((dot, idx) => {
-                          // Calculate X position as percentage (0-10 maps to 0-100%)
-                          const xPercent = ((dot.x + 0.5) / RANGE_X_LABELS.length) * 100;
+                    {/* Dots overlay - positioned absolutely over the chart area */}
+                    {rangeViewDots.length > 0 && (() => {
+                      // Chart margins matching ComposedChart margin prop
+                      const margin = { top: 20, right: 30, bottom: 60, left: 120 };
+                      const numProviders = rangeChartData.length;
+                      const numXPositions = RANGE_X_LABELS.length; // 11 positions (0-10)
 
-                          // Calculate Y position based on provider index
-                          const numProviders = rangeChartData.length;
-                          const yPercent = ((dot.yIndex + 0.5) / numProviders) * 100;
+                      return (
+                        <div
+                          className="absolute pointer-events-none"
+                          style={{
+                            top: `${margin.top}px`,
+                            left: `${margin.left}px`,
+                            right: `${margin.right}px`,
+                            bottom: `${margin.bottom}px`,
+                          }}
+                        >
+                          {rangeViewDots.map((dot, idx) => {
+                            if (dot.yIndex < 0) return null;
 
-                          if (dot.yIndex < 0) return null;
+                            // X position: map dot.x (0-10 with small offset) to percentage
+                            // The chart X domain is [-0.5, 10.5], so position 0 is at (0.5/11)*100 = 4.545%
+                            const xPercent = ((dot.x + 0.5) / numXPositions) * 100;
 
-                          return (
-                            <div
-                              key={`range-dot-${idx}`}
-                              className="absolute w-3 h-3 rounded-full bg-gray-800 border-2 border-white pointer-events-auto cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
-                              style={{
-                                left: `${xPercent}%`,
-                                top: `${yPercent}%`,
-                                opacity: dot.isMentioned ? 0.9 : 0.4,
-                              }}
-                              title={`${dot.prompt}\nRank: ${dot.rank > 0 ? dot.rank : 'Not shown'}`}
-                              onDoubleClick={() => setSelectedResult(dot.originalResult)}
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
+                            // Y position: center dot within provider's band
+                            const yPercent = ((dot.yIndex + 0.5) / numProviders) * 100;
+
+                            return (
+                              <div
+                                key={`range-dot-${idx}`}
+                                className="absolute pointer-events-auto group"
+                                style={{
+                                  left: `${xPercent}%`,
+                                  top: `${yPercent}%`,
+                                  transform: 'translate(-50%, -50%)',
+                                }}
+                              >
+                                {/* Dot */}
+                                <div
+                                  className="w-3 h-3 rounded-full bg-gray-800 border-2 border-white cursor-pointer hover:scale-125 transition-transform"
+                                  style={{ opacity: dot.isMentioned ? 0.9 : 0.4 }}
+                                  onDoubleClick={() => setSelectedResult(dot.originalResult)}
+                                />
+                                {/* Tooltip on hover */}
+                                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[200px] text-left">
+                                    <p className="text-sm font-semibold text-gray-900 mb-1">{dot.prompt}</p>
+                                    <p className="text-xs text-gray-500">({dot.label})</p>
+                                    <div className="mt-2 pt-2 border-t border-gray-100">
+                                      <p className="text-sm text-gray-700">
+                                        {dot.rank === 0 ? 'Not shown' : `Shown as result #${dot.rank}`}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                   {/* Legend */}
                   <div className="flex items-center justify-center gap-6 mt-4">
