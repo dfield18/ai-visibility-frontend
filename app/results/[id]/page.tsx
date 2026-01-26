@@ -1632,7 +1632,7 @@ export default function ResultsPage() {
 
               {/* Subtitle for Range view */}
               {rankingViewMode === 'range' && (
-                <p className="text-xs text-gray-400 mb-3">
+                <p className="text-xs text-gray-400 mb-6">
                   Each row shows how an AI typically ranks your brand. Dots are individual answers; the bar shows best to worst placement.
                 </p>
               )}
@@ -1749,8 +1749,8 @@ export default function ResultsPage() {
               {/* Range View */}
               {rankingViewMode === 'range' && rangeChartData.length > 0 && (
                 <div>
-                  {/* Legend - above chart */}
-                  <div className="flex items-center justify-center flex-wrap gap-4 mb-2">
+                  {/* Legend - above chart, offset to center over plot area */}
+                  <div className="flex items-center justify-center flex-wrap gap-4 mb-1 ml-[45px]">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
                       <span className="text-xs text-gray-500">Individual answer</span>
@@ -1861,7 +1861,7 @@ export default function ResultsPage() {
                           label={{
                             value: 'Position in the AI answer (lower = shown earlier)',
                             position: 'bottom',
-                            offset: 20,
+                            offset: 5,
                             style: { fontSize: 11, fill: '#9ca3af' }
                           }}
                         />
