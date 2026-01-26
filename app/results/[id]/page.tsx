@@ -1867,10 +1867,13 @@ export default function ResultsPage() {
                                   transform: 'translate(-50%, -50%)',
                                 }}
                               >
-                                {/* Dot */}
+                                {/* Dot - styled to match Dots chart */}
                                 <div
-                                  className="w-3 h-3 rounded-full bg-gray-800 border-2 border-white cursor-pointer hover:scale-125 transition-transform"
-                                  style={{ opacity: dot.isMentioned ? 0.9 : 0.4 }}
+                                  className="w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
+                                  style={{
+                                    backgroundColor: '#6b7280',
+                                    opacity: dot.isMentioned ? 0.7 : 0.3,
+                                  }}
                                   onDoubleClick={() => setSelectedResult(dot.originalResult)}
                                 />
                                 {/* Tooltip on hover */}
@@ -1895,7 +1898,7 @@ export default function ResultsPage() {
                   {/* Legend */}
                   <div className="flex items-center justify-center gap-6 mt-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-gray-700 opacity-80" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
                       <span className="text-xs text-gray-500">Prompt result</span>
                     </div>
                     <div className="flex items-center gap-2">
