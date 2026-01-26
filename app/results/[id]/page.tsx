@@ -992,7 +992,7 @@ export default function ResultsPage() {
       });
     }
 
-    return Object.values(providerStats).map(stats => {
+    return Object.values(providerStats).map((stats, index) => {
       const mentionedPoints = stats.dataPoints.filter(p => p.rank > 0);
       const allBandIndices = stats.dataPoints.map(p => p.bandIndex);
 
@@ -1016,6 +1016,7 @@ export default function ResultsPage() {
       return {
         provider: stats.provider,
         label: stats.label,
+        yIndex: index, // Numeric Y position for alignment
         bestBandIndex,
         worstBandIndex,
         avgBandIndex,
@@ -1030,9 +1031,14 @@ export default function ResultsPage() {
     });
   }, [scatterPlotData, runStatus]);
 
-  // Dots data for Range view - positioned by LLM label (Y) and rank band index (X)
+  // Get unique providers for Range view Y-axis (in consistent order)
+  const rangeProviderOrder = useMemo(() => {
+    return rangeChartData.map(d => d.provider);
+  }, [rangeChartData]);
+
+  // Dots data for Range view - uses numeric Y positioning to align with bars
   const rangeViewDots = useMemo(() => {
-    if (!scatterPlotData.length) return [];
+    if (!scatterPlotData.length || !rangeProviderOrder.length) return [];
 
     // Group by provider and rankBandIndex for horizontal offset
     const positionGroups: Record<string, number[]> = {};
@@ -1044,7 +1050,7 @@ export default function ResultsPage() {
       positionGroups[key].push(idx);
     });
 
-    // Create dots with horizontal offset
+    // Create dots with horizontal offset and numeric Y position
     const offsetStep = 0.12;
     return scatterPlotData.map((dp, idx) => {
       const key = `${dp.provider}-${dp.rankBandIndex}`;
@@ -1057,8 +1063,12 @@ export default function ResultsPage() {
         xOffset = -totalOffset / 2 + indexInGroup * offsetStep;
       }
 
+      // Get numeric Y position based on provider order
+      const yIndex = rangeProviderOrder.indexOf(dp.provider);
+
       return {
-        label: dp.label, // For Y-axis categorical positioning
+        label: dp.label,
+        y: yIndex, // Numeric Y position (named 'y' for Scatter default mapping)
         x: dp.rankBandIndex + xOffset, // X position with offset
         prompt: dp.prompt,
         rank: dp.rank,
@@ -1066,7 +1076,7 @@ export default function ResultsPage() {
         originalResult: dp.originalResult,
       };
     });
-  }, [scatterPlotData]);
+  }, [scatterPlotData, rangeProviderOrder]);
 
   // First Position chart data - count of times brand was listed first per LLM
   const firstPositionChartData = useMemo(() => {
@@ -1708,9 +1718,26 @@ export default function ResultsPage() {
                         <ReferenceLine x={4.5} stroke="#d1d5db" strokeWidth={1} />
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} vertical={true} />
                         <YAxis
-                          type="category"
-                          dataKey="label"
-                          tick={{ fontSize: 12, fill: '#374151' }}
+                          type="number"
+                          domain={[-0.5, rangeChartData.length - 0.5]}
+                          ticks={rangeChartData.map((_, i) => i)}
+                          tick={(props: any) => {
+                            const { x, y, payload } = props;
+                            const index = Math.round(payload?.value ?? 0);
+                            const label = rangeChartData[index]?.label || '';
+                            return (
+                              <text
+                                x={x - 5}
+                                y={y}
+                                textAnchor="end"
+                                fill="#374151"
+                                fontSize={12}
+                                dominantBaseline="middle"
+                              >
+                                {label}
+                              </text>
+                            );
+                          }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
                           width={80}
@@ -1785,13 +1812,14 @@ export default function ResultsPage() {
                           radius={[4, 4, 4, 4]}
                           barSize={10}
                         />
-                        {/* Individual prompt dots */}
+                        {/* Individual prompt dots - ZAxis required for vertical layout Scatter */}
+                        <ZAxis range={[40, 40]} />
                         <Scatter
                           data={rangeViewDots}
-                          dataKey="x"
                           fill="#6b7280"
                           shape={(props: any) => {
                             const { cx, cy, payload } = props;
+                            if (cx === undefined || cy === undefined) return null;
                             return (
                               <circle
                                 cx={cx}
@@ -1802,36 +1830,6 @@ export default function ResultsPage() {
                                 style={{ cursor: 'pointer' }}
                                 onDoubleClick={() => setSelectedResult(payload.originalResult)}
                               />
-                            );
-                          }}
-                        />
-                        {/* Average marker - positioned at avgBandIndex */}
-                        <Scatter
-                          dataKey="avgBandIndex"
-                          fill="#374151"
-                          shape={(props: any) => {
-                            const { cx, cy, payload } = props;
-                            // Only show marker if there are mentions
-                            if (payload.mentions === 0) return null;
-                            return (
-                              <g>
-                                {/* Outer ring for visibility */}
-                                <circle
-                                  cx={cx}
-                                  cy={cy}
-                                  r={7}
-                                  fill="white"
-                                  stroke="#374151"
-                                  strokeWidth={2}
-                                />
-                                {/* Inner filled circle */}
-                                <circle
-                                  cx={cx}
-                                  cy={cy}
-                                  r={4}
-                                  fill="#374151"
-                                />
-                              </g>
                             );
                           }}
                         />
@@ -1847,10 +1845,6 @@ export default function ResultsPage() {
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-2.5 bg-gray-500 opacity-30 rounded-full" />
                       <span className="text-xs text-gray-500">Rank range</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-gray-700 border-2 border-white shadow-sm" />
-                      <span className="text-xs text-gray-500">Average rank</span>
                     </div>
                   </div>
                 </div>
