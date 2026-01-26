@@ -1026,7 +1026,8 @@ export default function ResultsPage() {
       }
 
       // For Range chart stacked bar: rangeHeight spans from best to worst
-      const rangeHeight = worstRangeX - bestRangeX + 1;
+      // Use small minimum (0.2) for visibility when all dots are at the same position
+      const rangeHeight = Math.max(0.2, worstRangeX - bestRangeX);
 
       return {
         provider: stats.provider,
