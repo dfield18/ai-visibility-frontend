@@ -875,6 +875,7 @@ export default function ResultsPage() {
       rank: number;
       rankBand: string;
       rankBandIndex: number;
+      rankBandIndexWithOffset: number;
       isMentioned: boolean;
     }[] = [];
 
@@ -917,9 +918,34 @@ export default function ResultsPage() {
         rank,
         rankBand,
         rankBandIndex,
+        rankBandIndexWithOffset: rankBandIndex, // Will be adjusted below
         isMentioned: rank > 0,
       });
     }
+
+    // Add vertical offset for dots at the same position (same LLM + same rank band)
+    // Group by provider and rankBandIndex
+    const positionGroups: Record<string, number[]> = {};
+    dataPoints.forEach((dp, idx) => {
+      const key = `${dp.provider}-${dp.rankBandIndex}`;
+      if (!positionGroups[key]) {
+        positionGroups[key] = [];
+      }
+      positionGroups[key].push(idx);
+    });
+
+    // Apply offset to dots in groups with multiple items
+    const offsetStep = 0.15; // Vertical offset between dots
+    Object.values(positionGroups).forEach(indices => {
+      if (indices.length > 1) {
+        const totalOffset = (indices.length - 1) * offsetStep;
+        indices.forEach((idx, i) => {
+          // Center the group around the original position
+          dataPoints[idx].rankBandIndexWithOffset =
+            dataPoints[idx].rankBandIndex - totalOffset / 2 + i * offsetStep;
+        });
+      }
+    });
 
     return dataPoints;
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
@@ -1517,7 +1543,7 @@ export default function ResultsPage() {
                       />
                       <YAxis
                         type="number"
-                        dataKey="rankBandIndex"
+                        dataKey="rankBandIndexWithOffset"
                         name="Rank"
                         domain={[-0.5, RANK_BANDS.length - 0.5]}
                         reversed
