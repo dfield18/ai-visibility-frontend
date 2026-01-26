@@ -83,8 +83,7 @@ export default function ResultsPage() {
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
-  const [chartTab, setChartTab] = useState<'ranking' | 'firstPosition' | 'avgRank'>('ranking');
-  const [rankingViewMode, setRankingViewMode] = useState<'dots' | 'range' | 'shareOfVoice'>('dots');
+  const [chartTab, setChartTab] = useState<'allAnswers' | 'performanceRange' | 'shareOfVoice'>('allAnswers');
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -1130,133 +1129,6 @@ export default function ResultsPage() {
     });
   }, [scatterPlotData, rangeProviderOrder]);
 
-  // First Position chart data - count of times brand was listed first per LLM
-  const firstPositionChartData = useMemo(() => {
-    if (!runStatus) return [];
-
-    const isCategory = runStatus.search_type === 'category';
-    const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus.brand;
-    if (!selectedBrand) return [];
-
-    const results = globallyFilteredResults.filter((r: Result) => !r.error);
-
-    const providerLabels: Record<string, string> = {
-      openai: 'OpenAI',
-      anthropic: 'Claude',
-      gemini: 'Gemini',
-      perplexity: 'Perplexity',
-      ai_overviews: 'Google AI Overviews',
-    };
-
-    const providerColors: Record<string, string> = {
-      openai: '#2D5A3D',
-      anthropic: '#4A7C59',
-      gemini: '#5B8A6A',
-      perplexity: '#6C987B',
-      ai_overviews: '#7DA68C',
-    };
-
-    // Group by provider
-    const providerStats: Record<string, { firstCount: number; total: number }> = {};
-
-    for (const result of results) {
-      const provider = result.provider;
-      if (!providerStats[provider]) {
-        providerStats[provider] = { firstCount: 0, total: 0 };
-      }
-      providerStats[provider].total++;
-
-      if (!result.response_text) continue;
-      const responseText = result.response_text.toLowerCase();
-      const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
-
-      let firstPos = Infinity;
-      let firstBrand = '';
-      for (const brand of allBrands) {
-        const pos = responseText.indexOf(brand.toLowerCase());
-        if (pos !== -1 && pos < firstPos) {
-          firstPos = pos;
-          firstBrand = brand;
-        }
-      }
-
-      if (firstBrand.toLowerCase() === selectedBrand.toLowerCase()) {
-        providerStats[provider].firstCount++;
-      }
-    }
-
-    return Object.entries(providerStats).map(([provider, stats]) => ({
-      provider,
-      label: providerLabels[provider] || provider,
-      firstCount: stats.firstCount,
-      total: stats.total,
-      color: providerColors[provider] || '#4A7C59',
-    }));
-  }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
-
-  // Average Ranking chart data - average rank per LLM
-  const avgRankChartData = useMemo(() => {
-    if (!runStatus) return [];
-
-    const isCategory = runStatus.search_type === 'category';
-    const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus.brand;
-    if (!selectedBrand) return [];
-
-    const results = globallyFilteredResults.filter((r: Result) => !r.error);
-
-    const providerLabels: Record<string, string> = {
-      openai: 'OpenAI',
-      anthropic: 'Claude',
-      gemini: 'Gemini',
-      perplexity: 'Perplexity',
-      ai_overviews: 'Google AI Overviews',
-    };
-
-    const providerColors: Record<string, string> = {
-      openai: '#2D5A3D',
-      anthropic: '#4A7C59',
-      gemini: '#5B8A6A',
-      perplexity: '#6C987B',
-      ai_overviews: '#7DA68C',
-    };
-
-    // Group by provider
-    const providerRanks: Record<string, number[]> = {};
-
-    for (const result of results) {
-      const provider = result.provider;
-      if (!providerRanks[provider]) {
-        providerRanks[provider] = [];
-      }
-
-      if (!result.response_text) continue;
-      const responseText = result.response_text.toLowerCase();
-      const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
-
-      const brandPositions: { brand: string; position: number }[] = [];
-      for (const brand of allBrands) {
-        const pos = responseText.indexOf(brand.toLowerCase());
-        if (pos !== -1) {
-          brandPositions.push({ brand, position: pos });
-        }
-      }
-      brandPositions.sort((a, b) => a.position - b.position);
-
-      const rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === selectedBrand.toLowerCase()) + 1;
-      if (rank > 0) {
-        providerRanks[provider].push(rank);
-      }
-    }
-
-    return Object.entries(providerRanks).map(([provider, ranks]) => ({
-      provider,
-      label: providerLabels[provider] || provider,
-      avgRank: ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : 0,
-      mentionCount: ranks.length,
-      color: providerColors[provider] || '#4A7C59',
-    })).filter(d => d.mentionCount > 0);
-  }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
-
   // Overview metrics
   const overviewMetrics = useMemo(() => {
     if (!runStatus) return null;
@@ -1606,105 +1478,46 @@ export default function ResultsPage() {
           {/* Chart Tabs */}
           <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
             <button
-              onClick={() => setChartTab('ranking')}
+              onClick={() => setChartTab('allAnswers')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                chartTab === 'ranking'
+                chartTab === 'allAnswers'
                   ? 'border-[#4A7C59] text-[#4A7C59]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              Brand Ranking
+              All Answers
             </button>
             <button
-              onClick={() => setChartTab('firstPosition')}
+              onClick={() => setChartTab('performanceRange')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                chartTab === 'firstPosition'
+                chartTab === 'performanceRange'
                   ? 'border-[#4A7C59] text-[#4A7C59]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              First Position
+              Performance Range
             </button>
             <button
-              onClick={() => setChartTab('avgRank')}
+              onClick={() => setChartTab('shareOfVoice')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                chartTab === 'avgRank'
+                chartTab === 'shareOfVoice'
                   ? 'border-[#4A7C59] text-[#4A7C59]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              Average Ranking
+              Share of Voice
             </button>
           </div>
 
-          {/* Brand Ranking Chart */}
-          {chartTab === 'ranking' && (
+          {/* All Answers Chart */}
+          {chartTab === 'allAnswers' && (
             <>
-              {/* Title and view toggle */}
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-sm text-gray-500">
-                  {rankingViewMode === 'dots'
-                    ? 'Where your brand shows up in individual AI answers'
-                    : rankingViewMode === 'range'
-                      ? 'Where your brand appears in AI-generated answers'
-                      : 'How mentions are distributed across brands'}
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                    <button
-                      onClick={() => setRankingViewMode('dots')}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                        rankingViewMode === 'dots'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                      title="See every individual answer"
-                    >
-                      All Answers
-                    </button>
-                    <button
-                      onClick={() => setRankingViewMode('range')}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                        rankingViewMode === 'range'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                      title="See best to worst by AI"
-                    >
-                      Performance Range
-                    </button>
-                    <button
-                      onClick={() => setRankingViewMode('shareOfVoice')}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                        rankingViewMode === 'shareOfVoice'
-                          ? 'bg-white text-gray-900 shadow-sm'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                      title="See brand mention distribution"
-                    >
-                      Share of Voice
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <p className="text-sm text-gray-500 mb-1">Where your brand shows up in individual AI answers</p>
+              <p className="text-xs text-gray-400 mb-3">
+                Each dot is one answer to one prompt. Lower numbers mean your brand is shown earlier.
+              </p>
 
-              {/* Subtitle for All Answers view */}
-              {rankingViewMode === 'dots' && (
-                <p className="text-xs text-gray-400 mb-3">
-                  Each dot is one answer to one prompt. Lower numbers mean your brand is shown earlier.
-                </p>
-              )}
-
-              {/* Subtitle for Performance Range view */}
-              {rankingViewMode === 'range' && (
-                <p className="text-xs text-gray-400 mb-6">
-                  Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.
-                </p>
-              )}
-
-              {/* All Answers View */}
-              {rankingViewMode === 'dots' && (
-                <div>
+              <div>
                   {/* Minimal legend for All Answers view - offset to center over plot area */}
                   <div className="flex items-center justify-center gap-2 pl-[140px] mb-[-14px]">
                     <div className="w-2 h-2 rounded-full bg-gray-500 opacity-60" />
@@ -1826,10 +1639,16 @@ export default function ResultsPage() {
                   </ResponsiveContainer>
                   </div>
                 </div>
-              )}
+            </>
+          )}
 
-              {/* Performance Range View */}
-              {rankingViewMode === 'range' && rangeChartData.length > 0 && (
+          {/* Performance Range Chart */}
+          {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
+            <>
+              <p className="text-sm text-gray-500 mb-1">Where your brand appears in AI-generated answers</p>
+              <p className="text-xs text-gray-400 mb-6">
+                Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.
+              </p>
                 <div>
                   {/* Legend - above chart, offset to align with X-axis label */}
                   <div className="flex items-center justify-center flex-wrap gap-4 pl-[60px]">
@@ -2163,12 +1982,14 @@ export default function ResultsPage() {
                     })()}
                   </div>
                 </div>
-              )}
+            </>
+          )}
 
-              {/* Share of Voice View */}
-              {rankingViewMode === 'shareOfVoice' && shareOfVoiceData.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-end mb-4">
+          {/* Share of Voice Chart */}
+          {chartTab === 'shareOfVoice' && shareOfVoiceData.length > 0 && (
+            <>
+              <p className="text-sm text-gray-500 mb-1">How mentions are distributed across brands</p>
+              <div className="flex items-center justify-end mb-4">
                     <select
                       value={shareOfVoiceFilter}
                       onChange={(e) => setShareOfVoiceFilter(e.target.value as 'all' | 'tracked')}
@@ -2227,113 +2048,11 @@ export default function ResultsPage() {
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* First Position Bar Chart */}
-          {chartTab === 'firstPosition' && (
-            <>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={firstPositionChartData} margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                      allowDecimals={false}
-                    />
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                              <p className="text-sm font-medium text-gray-900">{data.label}</p>
-                              <p className="text-sm text-gray-700 mt-1">
-                                First Position: {data.firstCount} / {data.total}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {((data.firstCount / data.total) * 100).toFixed(1)}% of responses
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="firstCount" name="First Position">
-                      {firstPositionChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="text-xs text-gray-500 text-center mt-2">
-                Number of times brand was listed first in each LLM's responses
-              </p>
-            </>
-          )}
-
-          {/* Average Ranking Bar Chart */}
-          {chartTab === 'avgRank' && (
-            <>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={avgRankChartData} margin={{ top: 20, right: 20, bottom: 40, left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 12, fill: '#6b7280' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                      domain={[0, 'auto']}
-                      reversed
-                    />
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                              <p className="text-sm font-medium text-gray-900">{data.label}</p>
-                              <p className="text-sm text-gray-700 mt-1">
-                                Average Rank: #{data.avgRank.toFixed(1)}
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Based on {data.mentionCount} mentions
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="avgRank" name="Average Rank">
-                      {avgRankChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className="text-xs text-gray-500 text-center mt-2">
-                Average position of brand when mentioned (lower is better)
-              </p>
             </>
           )}
         </div>
       )}
+
 
       {/* LLM Breakdown */}
       {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
