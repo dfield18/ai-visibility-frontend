@@ -1826,35 +1826,41 @@ export default function ResultsPage() {
                         {/* Render dots for each prompt result using Customized */}
                         <Customized
                           component={(props: any) => {
-                            const { xAxisMap, yAxisMap, offset } = props;
+                            const { xAxisMap, yAxisMap } = props;
                             if (!xAxisMap || !yAxisMap) return null;
 
                             const xAxis = Object.values(xAxisMap)[0] as any;
                             const yAxis = Object.values(yAxisMap)[0] as any;
-                            if (!xAxis || !yAxis) return null;
+                            if (!xAxis?.scale || !yAxis?.scale) return null;
+
+                            const xScale = xAxis.scale;
+                            const yScale = yAxis.scale;
+                            const bandWidth = yScale.bandwidth ? yScale.bandwidth() : 40;
 
                             return (
-                              <g>
+                              <g className="range-chart-dots">
                                 {rangeViewDots.map((dot, idx) => {
                                   // Calculate X position using xAxis scale
-                                  const xScale = xAxis.scale;
-                                  const cx = xScale ? xScale(dot.x) : 0;
+                                  const cx = xScale(dot.x);
 
                                   // Calculate Y position using yAxis scale (categorical)
-                                  const yScale = yAxis.scale;
-                                  const bandWidth = yScale?.bandwidth ? yScale.bandwidth() : 40;
-                                  const cy = yScale ? yScale(dot.label) + bandWidth / 2 : 0;
+                                  // yScale returns the top of the band, add half bandwidth to center
+                                  const yPos = yScale(dot.label);
+                                  const cy = yPos !== undefined ? yPos + bandWidth / 2 : null;
 
-                                  if (!cx || !cy) return null;
+                                  // Skip if we can't calculate position
+                                  if (cx === undefined || cx === null || cy === null) return null;
 
                                   return (
                                     <circle
                                       key={`range-dot-${idx}`}
                                       cx={cx}
                                       cy={cy}
-                                      r={5}
-                                      fill="#374151"
-                                      opacity={dot.isMentioned ? 0.8 : 0.3}
+                                      r={6}
+                                      fill="#1f2937"
+                                      opacity={dot.isMentioned ? 0.9 : 0.4}
+                                      stroke="#fff"
+                                      strokeWidth={1}
                                       style={{ cursor: 'pointer' }}
                                       onDoubleClick={() => setSelectedResult(dot.originalResult)}
                                     />
