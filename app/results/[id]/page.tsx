@@ -1782,8 +1782,8 @@ export default function ResultsPage() {
               {/* Range View */}
               {rankingViewMode === 'range' && rangeChartData.length > 0 && (
                 <div>
-                  {/* Legend - above chart, padding matches chart margins to align with X-axis label */}
-                  <div className="flex items-center justify-center flex-wrap gap-4 pl-[120px] pr-[30px]">
+                  {/* Legend - above chart, offset to align with X-axis label */}
+                  <div className="flex items-center justify-center flex-wrap gap-4 pl-[60px]">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
                       <span className="text-xs text-gray-500">Individual answer</span>
