@@ -836,28 +836,28 @@ export default function ResultsPage() {
   // Calculate ranking data for scatter plot - one dot per prompt per LLM
   // Centralized rank band constant - used for Y-axis, band rendering, tooltip mapping
   // Order: index 0 = best rank, index 5 = not mentioned (renders top to bottom with reversed axis)
-  const RANK_BANDS = ['1 (Top)', '2–3', '4–5', '6–10', '10+', 'Not mentioned'] as const;
+  const RANK_BANDS = ['1 (Top)', '2–3', '4–5', '6–10', 'Shown after 10', 'Not shown'] as const;
 
-  // Range chart X-axis labels - individual positions 1-9, then 10+, then Not mentioned
-  const RANGE_X_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10+', 'Not mentioned'] as const;
+  // Range chart X-axis labels - individual positions 1-9, then Shown after 10, then Not shown
+  const RANGE_X_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Shown after 10', 'Not shown'] as const;
 
   // Helper to convert rank to Range chart X position (0-10)
   const rankToRangeX = (rank: number): number => {
-    if (rank === 0) return 10; // Not mentioned
-    if (rank >= 10) return 9; // 10+
+    if (rank === 0) return 10; // Not shown
+    if (rank >= 10) return 9; // Shown after 10
     return rank - 1; // 1-9 map to indices 0-8
   };
 
   // Helper function to convert position to rank band (Fix 1)
   const positionToRankBand = (position: number | null | undefined, brandMentioned: boolean): { label: string; index: number } => {
     if (!brandMentioned || position === null || position === undefined || position === 0) {
-      return { label: 'Not mentioned', index: 5 };
+      return { label: 'Not shown', index: 5 };
     }
     if (position === 1) return { label: '1 (Top)', index: 0 };
     if (position >= 2 && position <= 3) return { label: '2–3', index: 1 };
     if (position >= 4 && position <= 5) return { label: '4–5', index: 2 };
     if (position >= 6 && position <= 10) return { label: '6–10', index: 3 };
-    return { label: '10+', index: 4 };
+    return { label: 'Shown after 10', index: 4 };
   };
 
   const providerLabels: Record<string, string> = {
@@ -1014,9 +1014,9 @@ export default function ResultsPage() {
       const bestRangeX = Math.min(...allRangeX);
       const worstRangeX = Math.max(...allRangeX);
 
-      let avgBandIndex = 5; // Default to "Not mentioned"
+      let avgBandIndex = 5; // Default to "Not shown"
       let avgPositionNumeric: number | null = null;
-      let avgBandLabel = 'Not mentioned';
+      let avgBandLabel = 'Not shown';
 
       if (mentionedPoints.length > 0) {
         avgPositionNumeric = mentionedPoints.reduce((sum, p) => sum + p.rank, 0) / mentionedPoints.length;
@@ -1578,7 +1578,7 @@ export default function ResultsPage() {
               {/* Subtitle and view toggle */}
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-gray-500">
-                  How each LLM ranks your brand across all prompts
+                  Where your brand appears across AI answers
                 </p>
                 <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                   <button
@@ -1653,7 +1653,7 @@ export default function ResultsPage() {
                         tick={(props: any) => {
                           const { x, y, payload } = props;
                           const label = RANK_BANDS[Math.round(payload?.value ?? 0)] || '';
-                          const isNotMentioned = label === 'Not mentioned';
+                          const isNotMentioned = label === 'Not shown';
                           return (
                             <text
                               x={x}
@@ -1682,7 +1682,7 @@ export default function ResultsPage() {
                                   {data.prompt} <span className="font-normal text-gray-500">({data.label})</span>
                                 </p>
                                 <p className="text-sm text-gray-700 mt-1">
-                                  {data.rank === 0 ? 'Not mentioned' : `Shown as result #${data.rank}`}
+                                  {data.rank === 0 ? 'Not shown' : `Shown as result #${data.rank}`}
                                 </p>
                               </div>
                             );
@@ -1759,7 +1759,7 @@ export default function ResultsPage() {
                           tick={(props: any) => {
                             const { x, y, payload } = props;
                             const label = RANGE_X_LABELS[Math.round(payload?.value ?? 0)] || '';
-                            const isNotMentioned = label === 'Not mentioned';
+                            const isNotMentioned = label === 'Not shown';
                             return (
                               <text
                                 x={x}
