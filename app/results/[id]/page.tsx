@@ -1698,19 +1698,19 @@ export default function ResultsPage() {
                 <div>
                   {/* Explanatory subtitle */}
                   <p className="text-xs text-gray-400 mb-3">
-                    Each dot is a prompt result. Range bar shows best-to-worst; marker shows average. Double-click a dot for details.
+                    Each dot is a prompt result. Range bar shows best-to-worst. Double-click a dot for details.
                   </p>
                   <div
                     className="[&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
-                    style={{ height: Math.max(200, rangeChartData.length * 50 + 60) }}
+                    style={{ height: Math.max(250, rangeChartData.length * 60 + 80) }}
                   >
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={rangeChartData}
                         layout="vertical"
-                        margin={{ top: 10, right: 20, bottom: 40, left: 90 }}
+                        margin={{ top: 20, right: 30, bottom: 60, left: 120 }}
                       >
-                        {/* De-emphasized background bands (~50% less opacity than Dots view) */}
+                        {/* De-emphasized background bands */}
                         <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.25} />
                         <ReferenceArea x1={0.5} x2={1.5} fill="#fef08a" fillOpacity={0.15} />
                         <ReferenceArea x1={1.5} x2={2.5} fill="#fef08a" fillOpacity={0.12} />
@@ -1721,29 +1721,12 @@ export default function ResultsPage() {
                         <ReferenceLine x={4.5} stroke="#d1d5db" strokeWidth={1} />
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} vertical={true} />
                         <YAxis
-                          type="number"
-                          domain={[-0.5, rangeChartData.length - 0.5]}
-                          ticks={rangeChartData.map((_, i) => i)}
-                          tick={(props: any) => {
-                            const { x, y, payload } = props;
-                            const index = Math.round(payload?.value ?? 0);
-                            const label = rangeChartData[index]?.label || '';
-                            return (
-                              <text
-                                x={x - 5}
-                                y={y}
-                                textAnchor="end"
-                                fill="#374151"
-                                fontSize={12}
-                                dominantBaseline="middle"
-                              >
-                                {label}
-                              </text>
-                            );
-                          }}
+                          type="category"
+                          dataKey="label"
+                          tick={{ fontSize: 12, fill: '#374151' }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
-                          width={80}
+                          width={110}
                         />
                         <XAxis
                           type="number"
@@ -1806,48 +1789,51 @@ export default function ResultsPage() {
                           }}
                         />
                         {/* Range bar: invisible spacer + visible range */}
-                        <Bar dataKey="rangeStart" stackId="range" fill="transparent" barSize={10} />
+                        <Bar dataKey="rangeStart" stackId="range" fill="transparent" barSize={16} />
                         <Bar
                           dataKey="rangeHeight"
                           stackId="range"
                           fill="#6b7280"
-                          fillOpacity={0.3}
+                          fillOpacity={0.4}
                           radius={[4, 4, 4, 4]}
-                          barSize={10}
-                        />
-                        {/* Individual prompt dots - ZAxis required for vertical layout Scatter */}
-                        <ZAxis range={[40, 40]} />
-                        <Scatter
-                          data={rangeViewDots}
-                          fill="#6b7280"
-                          shape={(props: any) => {
-                            const { cx, cy, payload } = props;
-                            if (cx === undefined || cy === undefined) return null;
-                            return (
-                              <circle
-                                cx={cx}
-                                cy={cy}
-                                r={5}
-                                fill="#6b7280"
-                                opacity={payload.isMentioned ? 0.7 : 0.3}
-                                style={{ cursor: 'pointer' }}
-                                onDoubleClick={() => setSelectedResult(payload.originalResult)}
-                              />
-                            );
-                          }}
+                          barSize={16}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
+                  {/* Individual dots rendered separately below the chart */}
+                  <div className="mt-4">
+                    <p className="text-xs text-gray-500 mb-2">Individual prompt results:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {rangeChartData.map((provider) => (
+                        <div key={provider.provider} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
+                          <span className="text-xs font-medium text-gray-700">{provider.label}:</span>
+                          <div className="flex gap-1">
+                            {rangeViewDots
+                              .filter(dot => dot.label === provider.label)
+                              .map((dot, idx) => (
+                                <button
+                                  key={idx}
+                                  className="w-3 h-3 rounded-full bg-gray-500 hover:bg-gray-700 transition-colors"
+                                  style={{ opacity: dot.isMentioned ? 0.7 : 0.3 }}
+                                  title={`${dot.prompt}\nRank: ${dot.rank > 0 ? dot.rank : 'Not mentioned'}`}
+                                  onDoubleClick={() => setSelectedResult(dot.originalResult)}
+                                />
+                              ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                   {/* Legend */}
-                  <div className="flex items-center justify-center gap-6 mt-3">
+                  <div className="flex items-center justify-center gap-6 mt-4">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
-                      <span className="text-xs text-gray-500">Prompt result</span>
+                      <span className="text-xs text-gray-500">Prompt result (double-click for details)</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-2.5 bg-gray-500 opacity-30 rounded-full" />
-                      <span className="text-xs text-gray-500">Rank range</span>
+                      <div className="w-8 h-3 bg-gray-500 opacity-40 rounded" />
+                      <span className="text-xs text-gray-500">Rank range (best to worst)</span>
                     </div>
                   </div>
                 </div>
