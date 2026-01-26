@@ -836,7 +836,7 @@ export default function ResultsPage() {
   // Calculate ranking data for scatter plot - one dot per prompt per LLM
   // Centralized rank band constant - used for Y-axis, band rendering, tooltip mapping
   // Order: index 0 = best rank, index 5 = not mentioned (renders top to bottom with reversed axis)
-  const RANK_BANDS = ['1 (Top)', '2–3', '4–5', '6–10', 'Shown after top 10', 'Not shown'] as const;
+  const RANK_BANDS = ['Top result (#1)', 'Shown 2–3', 'Shown 4–5', 'Shown 6–10', 'Shown after top 10', 'Not shown'] as const;
 
   // Range chart X-axis labels - individual positions 1-9, then Shown after top 10, then Not shown
   const RANGE_X_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Shown after top 10', 'Not shown'] as const;
@@ -1637,31 +1637,44 @@ export default function ResultsPage() {
               {/* Title and view toggle */}
               <div className="flex items-center justify-between mb-1">
                 <p className="text-sm text-gray-500">
-                  Where your brand appears in AI-generated answers
+                  {rankingViewMode === 'dots'
+                    ? 'Where your brand shows up in individual AI answers'
+                    : 'Where your brand appears in AI-generated answers'}
                 </p>
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setRankingViewMode('dots')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      rankingViewMode === 'dots'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Dots
-                  </button>
-                  <button
-                    onClick={() => setRankingViewMode('range')}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      rankingViewMode === 'range'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Range
-                  </button>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setRankingViewMode('dots')}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        rankingViewMode === 'dots'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                      title="Individual answers"
+                    >
+                      Dots
+                    </button>
+                    <button
+                      onClick={() => setRankingViewMode('range')}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        rankingViewMode === 'range'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                      title="Overall best → worst"
+                    >
+                      Range
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Subtitle for Dots view */}
+              {rankingViewMode === 'dots' && (
+                <p className="text-xs text-gray-400 mb-3">
+                  Each dot is one answer to one prompt. Lower numbers mean your brand is shown earlier.
+                </p>
+              )}
 
               {/* Subtitle for Range view */}
               {rankingViewMode === 'range' && (
@@ -1672,16 +1685,22 @@ export default function ResultsPage() {
 
               {/* Dots View */}
               {rankingViewMode === 'dots' && (
-                <div className="h-72 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
+                <div>
+                  {/* Minimal legend for Dots view */}
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full bg-gray-500 opacity-60" />
+                    <span className="text-xs text-gray-400">Each dot = one answer</span>
+                  </div>
+                  <div className="h-72 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 100 }}>
-                      {/* Horizontal band shading - increased contrast, "1 (Top)" emphasized */}
-                      <ReferenceArea y1={-0.5} y2={0.5} fill="#bbf7d0" fillOpacity={0.6} />
-                      <ReferenceArea y1={0.5} y2={1.5} fill="#fef08a" fillOpacity={0.4} />
-                      <ReferenceArea y1={1.5} y2={2.5} fill="#fef08a" fillOpacity={0.3} />
-                      <ReferenceArea y1={2.5} y2={3.5} fill="#fed7aa" fillOpacity={0.35} />
-                      <ReferenceArea y1={3.5} y2={4.5} fill="#fecaca" fillOpacity={0.35} />
-                      <ReferenceArea y1={4.5} y2={5.5} fill="#e5e7eb" fillOpacity={0.4} />
+                      {/* Horizontal band shading - lighter than Range view for detail scatter feel */}
+                      <ReferenceArea y1={-0.5} y2={0.5} fill="#bbf7d0" fillOpacity={0.45} />
+                      <ReferenceArea y1={0.5} y2={1.5} fill="#fef08a" fillOpacity={0.3} />
+                      <ReferenceArea y1={1.5} y2={2.5} fill="#fef08a" fillOpacity={0.2} />
+                      <ReferenceArea y1={2.5} y2={3.5} fill="#fed7aa" fillOpacity={0.25} />
+                      <ReferenceArea y1={3.5} y2={4.5} fill="#fecaca" fillOpacity={0.25} />
+                      <ReferenceArea y1={4.5} y2={5.5} fill="#e5e7eb" fillOpacity={0.3} />
                       {/* Divider line above "Not mentioned" band */}
                       <ReferenceLine y={4.5} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 4" />
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={true} horizontal={false} />
@@ -1742,13 +1761,23 @@ export default function ResultsPage() {
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
+                            const truncatedPrompt = data.prompt.length > 70
+                              ? data.prompt.substring(0, 70) + '...'
+                              : data.prompt;
                             return (
-                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[200px] max-w-[280px]">
-                                <p className="text-sm font-semibold text-gray-900" title={data.prompt}>
-                                  {data.prompt} <span className="font-normal text-gray-500">({data.label})</span>
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px] max-w-[280px]">
+                                <p className="text-sm font-semibold text-gray-900 mb-1">
+                                  {data.label}
                                 </p>
-                                <p className="text-sm text-gray-700 mt-1">
-                                  {data.rank === 0 ? 'Not shown' : `Shown as result #${data.rank}`}
+                                <p className="text-sm text-gray-700">
+                                  {data.rank === 0
+                                    ? 'Not shown'
+                                    : data.rank === 1
+                                      ? 'Shown as: #1 (Top result)'
+                                      : `Shown as: #${data.rank}`}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-2" title={data.prompt}>
+                                  {truncatedPrompt}
                                 </p>
                               </div>
                             );
@@ -1765,9 +1794,9 @@ export default function ResultsPage() {
                             <circle
                               cx={cx}
                               cy={cy}
-                              r={6}
+                              r={5}
                               fill="#6b7280"
-                              opacity={payload.isMentioned ? 0.7 : 0.3}
+                              opacity={payload.isMentioned ? 0.6 : 0.25}
                               style={{ cursor: 'pointer' }}
                               onDoubleClick={() => setSelectedResult(payload.originalResult)}
                             />
@@ -1776,6 +1805,7 @@ export default function ResultsPage() {
                       />
                     </ScatterChart>
                   </ResponsiveContainer>
+                  </div>
                 </div>
               )}
 
