@@ -1714,7 +1714,7 @@ export default function ResultsPage() {
               )}
 
               {/* Range View */}
-              {rankingViewMode === 'range' && (
+              {rankingViewMode === 'range' && rangeChartData.length > 0 && (
                 <div>
                   {/* Explanatory subtitle */}
                   <p className="text-xs text-gray-400 mb-3">
@@ -1823,36 +1823,45 @@ export default function ResultsPage() {
                           radius={[4, 4, 4, 4]}
                           barSize={20}
                         />
-                        {/* Render individual dots using Scatter */}
-                        <Scatter
-                          data={rangeViewDots.map(dot => ({
-                            x: dot.x,
-                            y: dot.label, // Use label as Y value to match categorical axis
-                            isMentioned: dot.isMentioned,
-                            originalResult: dot.originalResult,
-                            prompt: dot.prompt,
-                            rank: dot.rank,
-                          }))}
-                          shape={(props: any) => {
-                            const { cx, cy, payload } = props;
-                            if (cx === undefined || cy === undefined) return null;
-                            return (
-                              <circle
-                                cx={cx}
-                                cy={cy}
-                                r={6}
-                                fill="#1f2937"
-                                opacity={payload?.isMentioned ? 0.9 : 0.4}
-                                stroke="#fff"
-                                strokeWidth={1.5}
-                                style={{ cursor: 'pointer' }}
-                                onDoubleClick={() => payload?.originalResult && setSelectedResult(payload.originalResult)}
-                              />
-                            );
-                          }}
-                        />
                       </ComposedChart>
                     </ResponsiveContainer>
+                    {/* Dots overlay - positioned absolutely over the chart */}
+                    {rangeViewDots.length > 0 && (
+                      <div
+                        className="absolute pointer-events-none"
+                        style={{
+                          top: 20, // margin.top
+                          left: 120, // margin.left
+                          right: 30, // margin.right
+                          bottom: 60, // margin.bottom
+                        }}
+                      >
+                        {rangeViewDots.map((dot, idx) => {
+                          // Calculate X position as percentage (0-10 maps to 0-100%)
+                          const xPercent = ((dot.x + 0.5) / RANGE_X_LABELS.length) * 100;
+
+                          // Calculate Y position based on provider index
+                          const numProviders = rangeChartData.length;
+                          const yPercent = ((dot.yIndex + 0.5) / numProviders) * 100;
+
+                          if (dot.yIndex < 0) return null;
+
+                          return (
+                            <div
+                              key={`range-dot-${idx}`}
+                              className="absolute w-3 h-3 rounded-full bg-gray-800 border-2 border-white pointer-events-auto cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
+                              style={{
+                                left: `${xPercent}%`,
+                                top: `${yPercent}%`,
+                                opacity: dot.isMentioned ? 0.9 : 0.4,
+                              }}
+                              title={`${dot.prompt}\nRank: ${dot.rank > 0 ? dot.rank : 'Not shown'}`}
+                              onDoubleClick={() => setSelectedResult(dot.originalResult)}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                   {/* Legend */}
                   <div className="flex items-center justify-center gap-6 mt-4">
