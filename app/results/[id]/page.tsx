@@ -1671,7 +1671,7 @@ export default function ResultsPage() {
                       }`}
                       title="See best to worst by AI"
                     >
-                      Summary
+                      Performance Range
                     </button>
                     <button
                       onClick={() => setRankingViewMode('shareOfVoice')}
@@ -1695,7 +1695,7 @@ export default function ResultsPage() {
                 </p>
               )}
 
-              {/* Subtitle for Summary view */}
+              {/* Subtitle for Performance Range view */}
               {rankingViewMode === 'range' && (
                 <p className="text-xs text-gray-400 mb-6">
                   Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.
@@ -1828,7 +1828,7 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              {/* Summary View */}
+              {/* Performance Range View */}
               {rankingViewMode === 'range' && rangeChartData.length > 0 && (
                 <div>
                   {/* Legend - above chart, offset to align with X-axis label */}
