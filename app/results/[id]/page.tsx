@@ -399,36 +399,71 @@ export default function ResultsPage() {
     const totalMentions = includeOther ? trackedTotal + otherCount : trackedTotal;
     if (totalMentions === 0) return [];
 
-    const pieData: { name: string; value: number; percentage: number; color: string }[] = [];
-    const colors = ['#4A7C59', '#5B8A6A', '#6C987B', '#7DA68C', '#8EB49D', '#9FC2AE', '#B0D0BF', '#C1DED0'];
-    let colorIndex = 0;
-
+    // Top-N grouping: show top 6 brands + "All other brands"
+    const TOP_N = 6;
     const sortedBrands = Object.entries(mentions)
       .sort((a, b) => b[1].count - a[1].count);
 
+    // Get the selected/searched brand
+    const selectedBrand = runStatus.brand;
+
+    // Determine which brands to show
+    let topBrands = sortedBrands.slice(0, TOP_N);
+    const topBrandNames = topBrands.map(([name]) => name);
+
+    // If searched brand is not in top N, swap it in
+    if (selectedBrand && !topBrandNames.includes(selectedBrand)) {
+      const selectedBrandEntry = sortedBrands.find(([name]) => name === selectedBrand);
+      if (selectedBrandEntry) {
+        topBrands = [...topBrands.slice(0, TOP_N - 1), selectedBrandEntry];
+      }
+    }
+
+    // Calculate "All other brands" from remaining tracked brands + untracked
+    const topBrandNamesSet = new Set(topBrands.map(([name]) => name));
+    let allOtherCount = otherCount; // Start with untracked brands count
     for (const [brand, data] of sortedBrands) {
+      if (!topBrandNamesSet.has(brand)) {
+        allOtherCount += data.count;
+      }
+    }
+
+    // Build chart data
+    const chartData: { name: string; value: number; percentage: number; color: string; isSelected: boolean; isOther: boolean }[] = [];
+    const accentColor = '#4A7C59'; // Green accent for selected brand
+    const neutralColor = '#94a3b8'; // Slate gray for other named brands
+    const otherColor = '#d1d5db'; // Light gray for "All other brands"
+
+    for (const [brand, data] of topBrands) {
       const percentage = (data.count / totalMentions) * 100;
-      const isSearchedBrand = brand === runStatus.brand;
-      pieData.push({
+      const isSelectedBrand = brand === selectedBrand;
+      chartData.push({
         name: brand,
         value: data.count,
         percentage,
-        color: isSearchedBrand ? '#3B82F6' : colors[colorIndex % colors.length],
+        color: isSelectedBrand ? accentColor : neutralColor,
+        isSelected: isSelectedBrand,
+        isOther: false,
       });
-      colorIndex++;
     }
 
-    if (includeOther) {
-      const percentage = (otherCount / totalMentions) * 100;
-      pieData.push({
-        name: 'Other',
-        value: otherCount,
+    // Sort by percentage descending (selected brand stays in its natural position)
+    chartData.sort((a, b) => b.percentage - a.percentage);
+
+    // Add "All other brands" at the end
+    if (includeOther || allOtherCount > 0) {
+      const percentage = (allOtherCount / totalMentions) * 100;
+      chartData.push({
+        name: 'All other brands',
+        value: allOtherCount,
         percentage,
-        color: '#F97316',
+        color: otherColor,
+        isSelected: false,
+        isOther: true,
       });
     }
 
-    return pieData;
+    return chartData;
   }, [runStatus, globallyFilteredResults, brandMentionsProviderFilter, trackedBrands, shareOfVoiceFilter]);
 
   // Get all brands for LLM breakdown dropdown
@@ -1990,66 +2025,118 @@ export default function ResultsPage() {
           {/* Share of Voice Chart */}
           {chartTab === 'shareOfVoice' && shareOfVoiceData.length > 0 && (
             <>
-              <p className="text-sm text-gray-500 mb-1">How mentions are distributed across brands</p>
+              {/* Title and subtitle */}
+              <div className="mb-4">
+                <p className="text-sm text-gray-500 mb-0.5">Share of voice across AI answers</p>
+                <p className="text-xs text-gray-400">Percent of all brand mentions by brand</p>
+              </div>
+
+              {/* Key takeaway */}
+              {(() => {
+                const topBrand = shareOfVoiceData.find(d => !d.isOther);
+                const otherData = shareOfVoiceData.find(d => d.isOther);
+                const topBrandsTotal = shareOfVoiceData.filter(d => !d.isOther).reduce((sum, d) => sum + d.percentage, 0);
+                const selectedBrand = runStatus?.brand;
+                const selectedData = shareOfVoiceData.find(d => d.name === selectedBrand);
+
+                let takeaway = '';
+                if (otherData && otherData.percentage > 50) {
+                  takeaway = 'Mentions are spread across many brands—no single brand dominates.';
+                } else if (topBrand && topBrand.percentage > 30) {
+                  takeaway = `${topBrand.name} leads with ${topBrand.percentage.toFixed(0)}% of all mentions.`;
+                } else if (selectedData && selectedData.percentage > 0) {
+                  const rank = shareOfVoiceData.filter(d => !d.isOther && d.percentage > selectedData.percentage).length + 1;
+                  takeaway = `${selectedBrand} has ${selectedData.percentage.toFixed(1)}% share of voice (ranked #${rank}).`;
+                } else if (topBrandsTotal > 70) {
+                  takeaway = 'The top brands capture most of the mentions.';
+                } else {
+                  takeaway = 'Brand mentions are relatively evenly distributed.';
+                }
+
+                return (
+                  <div className="bg-[#FAFAF8] rounded-lg px-3 py-2 mb-4">
+                    <p className="text-xs text-gray-600">
+                      <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
+                    </p>
+                  </div>
+                );
+              })()}
+
+              {/* Filter */}
               <div className="flex items-center justify-end mb-4">
-                    <select
-                      value={shareOfVoiceFilter}
-                      onChange={(e) => setShareOfVoiceFilter(e.target.value as 'all' | 'tracked')}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                    >
-                      <option value="tracked">Tracked Brands Only</option>
-                      <option value="all">All Brands</option>
-                    </select>
-                  </div>
-                  <div className="flex flex-col lg:flex-row items-center gap-6">
-                    <div className="w-full lg:w-1/2 h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={shareOfVoiceData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={90}
-                            paddingAngle={2}
-                            dataKey="value"
-                            nameKey="name"
-                          >
-                            {shareOfVoiceData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value, name) => {
-                              const entry = shareOfVoiceData.find(d => d.name === name);
-                              return [`${value} mentions (${entry?.percentage.toFixed(1) ?? 0}%)`, name];
-                            }}
-                            contentStyle={{
-                              backgroundColor: 'white',
-                              border: '1px solid #e5e7eb',
-                              borderRadius: '8px',
-                              padding: '8px 12px',
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="w-full lg:w-1/2">
-                      <div className="space-y-2">
-                        {shareOfVoiceData.map((entry) => (
-                          <div key={entry.name} className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                              <span className="text-sm text-gray-700">{entry.name}</span>
+                <select
+                  value={shareOfVoiceFilter}
+                  onChange={(e) => setShareOfVoiceFilter(e.target.value as 'all' | 'tracked')}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                >
+                  <option value="tracked">Tracked Brands Only</option>
+                  <option value="all">All Brands</option>
+                </select>
+              </div>
+
+              {/* Horizontal Bar Chart */}
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={shareOfVoiceData}
+                    layout="vertical"
+                    margin={{ top: 5, right: 50, bottom: 5, left: 100 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={true} vertical={false} />
+                    <XAxis
+                      type="number"
+                      domain={[0, 'auto']}
+                      tickFormatter={(value) => `${value}%`}
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      tick={{ fontSize: 12, fill: '#374151' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      width={95}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'rgba(0, 0, 0, 0.04)' }}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          const data = payload[0].payload;
+                          return (
+                            <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                              <p className="text-sm font-medium text-gray-900 mb-1">{data.name}</p>
+                              <p className="text-sm text-gray-700">
+                                Share of voice: {data.percentage.toFixed(1)}%
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {data.value} mentions
+                              </p>
                             </div>
-                            <span className="text-sm font-medium text-gray-900">
-                              {entry.percentage.toFixed(1)}%
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar
+                      dataKey="percentage"
+                      radius={[0, 4, 4, 0]}
+                      label={{
+                        position: 'right',
+                        formatter: (value) => typeof value === 'number' ? `${value.toFixed(1)}%` : '',
+                        fontSize: 11,
+                        fill: '#6b7280',
+                      }}
+                    >
+                      {shareOfVoiceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Helper text */}
+              <p className="text-xs text-gray-400 text-center mt-2">Higher % = mentioned more often</p>
             </>
           )}
         </div>
