@@ -924,7 +924,7 @@ export default function ResultsPage() {
     return dataPoints;
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
 
-  // Compute range stats for each LLM (Option 1)
+  // Compute range stats for each LLM
   const rangeChartData = useMemo(() => {
     if (!runStatus || scatterPlotData.length === 0) return [];
 
@@ -957,12 +957,18 @@ export default function ResultsPage() {
       const worstBandIndex = Math.max(...allBandIndices);
 
       let avgBandIndex = 5; // Default to "Not mentioned"
-      let avgPositionNumeric = 0;
+      let avgPositionNumeric: number | null = null;
+      let avgBandLabel = 'Not mentioned';
+
       if (mentionedPoints.length > 0) {
         avgPositionNumeric = mentionedPoints.reduce((sum, p) => sum + p.rank, 0) / mentionedPoints.length;
         const avgBand = positionToRankBand(Math.round(avgPositionNumeric), true);
         avgBandIndex = avgBand.index;
+        avgBandLabel = avgBand.label;
       }
+
+      // For stacked bar: rangeHeight needs +1 to show at least one band width
+      const rangeHeight = worstBandIndex - bestBandIndex + 1;
 
       return {
         provider: stats.provider,
@@ -970,13 +976,13 @@ export default function ResultsPage() {
         bestBandIndex,
         worstBandIndex,
         avgBandIndex,
-        avgPositionNumeric: mentionedPoints.length > 0 ? avgPositionNumeric : null,
-        totalPrompts: stats.dataPoints.length,
-        mentionCount: mentionedPoints.length,
-        // For bar chart rendering
+        avgBandLabel,
+        avgPositionNumeric,
+        promptsAnalyzed: stats.dataPoints.length,
+        mentions: mentionedPoints.length,
+        // For bar chart rendering - rangeStart positions the invisible spacer
         rangeStart: bestBandIndex,
-        rangeEnd: worstBandIndex,
-        rangeHeight: worstBandIndex - bestBandIndex,
+        rangeHeight,
       };
     });
   }, [scatterPlotData, runStatus]);
@@ -1569,86 +1575,148 @@ export default function ResultsPage() {
 
               {/* Range View */}
               {rankingViewMode === 'range' && (
-                <div className="h-72">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={rangeChartData} layout="vertical" margin={{ top: 20, right: 20, bottom: 40, left: 100 }}>
-                      {/* Vertical band shading - increased contrast, "1 (Top)" emphasized */}
-                      <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.6} />
-                      <ReferenceArea x1={0.5} x2={1.5} fill="#fef08a" fillOpacity={0.4} />
-                      <ReferenceArea x1={1.5} x2={2.5} fill="#fef08a" fillOpacity={0.3} />
-                      <ReferenceArea x1={2.5} x2={3.5} fill="#fed7aa" fillOpacity={0.35} />
-                      <ReferenceArea x1={3.5} x2={4.5} fill="#fecaca" fillOpacity={0.35} />
-                      <ReferenceArea x1={4.5} x2={5.5} fill="#e5e7eb" fillOpacity={0.4} />
-                      {/* Divider line before "Not mentioned" band */}
-                      <ReferenceLine x={4.5} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 4" />
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} vertical={true} />
-                      <YAxis
-                        type="category"
-                        dataKey="label"
-                        tick={{ fontSize: 12, fill: '#6b7280' }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                        width={80}
-                      />
-                      <XAxis
-                        type="number"
-                        domain={[-0.5, RANK_BANDS.length - 0.5]}
-                        tick={(props: any) => {
-                          const { x, y, payload } = props;
-                          const label = RANK_BANDS[Math.round(payload?.value ?? 0)] || '';
-                          const isNotMentioned = label === 'Not mentioned';
-                          return (
-                            <text
-                              x={x}
-                              y={y + 12}
-                              textAnchor="middle"
-                              fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
-                              fontSize={12}
-                              fontStyle={isNotMentioned ? 'italic' : 'normal'}
-                            >
-                              {label}
-                            </text>
-                          );
-                        }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                        ticks={RANK_BANDS.map((_, i) => i)}
-                        interval={0}
-                      />
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
+                <div>
+                  {/* Explanatory subtitle */}
+                  <p className="text-xs text-gray-400 mb-3">
+                    Range shows best-to-worst rank across prompts; marker shows average rank.
+                  </p>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart
+                        data={rangeChartData}
+                        layout="vertical"
+                        margin={{ top: 10, right: 20, bottom: 40, left: 90 }}
+                      >
+                        {/* De-emphasized background bands (~50% less opacity than Dots view) */}
+                        <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.25} />
+                        <ReferenceArea x1={0.5} x2={1.5} fill="#fef08a" fillOpacity={0.15} />
+                        <ReferenceArea x1={1.5} x2={2.5} fill="#fef08a" fillOpacity={0.12} />
+                        <ReferenceArea x1={2.5} x2={3.5} fill="#fed7aa" fillOpacity={0.15} />
+                        <ReferenceArea x1={3.5} x2={4.5} fill="#fecaca" fillOpacity={0.15} />
+                        <ReferenceArea x1={4.5} x2={5.5} fill="#f3f4f6" fillOpacity={0.4} />
+                        {/* Divider line before "Not mentioned" band */}
+                        <ReferenceLine x={4.5} stroke="#d1d5db" strokeWidth={1} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} vertical={true} />
+                        <YAxis
+                          type="category"
+                          dataKey="label"
+                          tick={{ fontSize: 12, fill: '#374151' }}
+                          axisLine={{ stroke: '#e5e7eb' }}
+                          tickLine={false}
+                          width={80}
+                        />
+                        <XAxis
+                          type="number"
+                          domain={[-0.5, RANK_BANDS.length - 0.5]}
+                          tick={(props: any) => {
+                            const { x, y, payload } = props;
+                            const label = RANK_BANDS[Math.round(payload?.value ?? 0)] || '';
+                            const isNotMentioned = label === 'Not mentioned';
                             return (
-                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[200px]">
-                                <p className="text-sm font-medium text-gray-900">LLM: {data.label}</p>
-                                <p className="text-sm text-gray-700 mt-1">
-                                  Rank band: {RANK_BANDS[data.bestBandIndex]} – {RANK_BANDS[data.worstBandIndex]}
-                                </p>
-                                <p className="text-sm text-gray-700">
-                                  Avg position: {data.avgPositionNumeric !== null ? `#${data.avgPositionNumeric.toFixed(1)}` : 'N/A'}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-2">
-                                  Prompts analyzed: {data.totalPrompts}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  Mentions: {data.mentionCount}
-                                </p>
-                              </div>
+                              <text
+                                x={x}
+                                y={y + 12}
+                                textAnchor="middle"
+                                fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
+                                fontSize={11}
+                                fontStyle={isNotMentioned ? 'italic' : 'normal'}
+                              >
+                                {label}
+                              </text>
                             );
-                          }
-                          return null;
-                        }}
-                      />
-                      {/* Invisible bar for positioning - extends from 0 to bestBandIndex */}
-                      <Bar dataKey="bestBandIndex" stackId="range" fill="transparent" />
-                      {/* Visible range bar - extends from bestBandIndex to worstBandIndex */}
-                      <Bar dataKey="rangeHeight" stackId="range" fill="#6b7280" fillOpacity={0.4} radius={[4, 4, 4, 4]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                  {/* Legend for range view */}
-                  <div className="flex items-center justify-center gap-6 mt-2">
+                          }}
+                          axisLine={{ stroke: '#e5e7eb' }}
+                          tickLine={false}
+                          ticks={RANK_BANDS.map((_, i) => i)}
+                          interval={0}
+                        />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[220px]">
+                                  <p className="text-sm font-semibold text-gray-900">LLM: {data.label}</p>
+                                  <div className="mt-2 space-y-1">
+                                    <p className="text-sm text-gray-700">
+                                      <span className="text-gray-500">Best rank:</span> {RANK_BANDS[data.bestBandIndex]}
+                                    </p>
+                                    <p className="text-sm text-gray-700">
+                                      <span className="text-gray-500">Worst rank:</span> {RANK_BANDS[data.worstBandIndex]}
+                                    </p>
+                                    <p className="text-sm text-gray-700">
+                                      <span className="text-gray-500">Avg rank:</span> {data.avgBandLabel}
+                                      {data.avgPositionNumeric !== null && (
+                                        <span className="text-gray-400 ml-1">({data.avgPositionNumeric.toFixed(1)})</span>
+                                      )}
+                                    </p>
+                                  </div>
+                                  <div className="mt-2 pt-2 border-t border-gray-100 space-y-0.5">
+                                    <p className="text-xs text-gray-500">
+                                      Prompts analyzed: {data.promptsAnalyzed}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      Mentions: {data.mentions}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        {/* Range bar: invisible spacer + visible range */}
+                        <Bar dataKey="rangeStart" stackId="range" fill="transparent" barSize={10} />
+                        <Bar
+                          dataKey="rangeHeight"
+                          stackId="range"
+                          fill="#6b7280"
+                          fillOpacity={0.5}
+                          radius={[4, 4, 4, 4]}
+                          barSize={10}
+                        />
+                        {/* Average marker - positioned at avgBandIndex */}
+                        <Scatter
+                          dataKey="avgBandIndex"
+                          fill="#374151"
+                          shape={(props: any) => {
+                            const { cx, cy, payload } = props;
+                            // Only show marker if there are mentions
+                            if (payload.mentions === 0) return null;
+                            return (
+                              <g>
+                                {/* Outer ring for visibility */}
+                                <circle
+                                  cx={cx}
+                                  cy={cy}
+                                  r={7}
+                                  fill="white"
+                                  stroke="#374151"
+                                  strokeWidth={2}
+                                />
+                                {/* Inner filled circle */}
+                                <circle
+                                  cx={cx}
+                                  cy={cy}
+                                  r={4}
+                                  fill="#374151"
+                                />
+                              </g>
+                            );
+                          }}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+                  {/* Legend */}
+                  <div className="flex items-center justify-center gap-6 mt-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-3 bg-gray-500 opacity-40 rounded" />
-                      <span className="text-xs text-gray-600">Ranking range (best to worst)</span>
+                      <div className="w-8 h-2.5 bg-gray-500 opacity-50 rounded-full" />
+                      <span className="text-xs text-gray-500">Rank range</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-gray-700 border-2 border-white shadow-sm" />
+                      <span className="text-xs text-gray-500">Average rank</span>
                     </div>
                   </div>
                 </div>
