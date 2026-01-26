@@ -2257,6 +2257,59 @@ export default function ResultsPage() {
         </div>
       )}
 
+      {/* LLM Breakdown */}
+      {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-gray-900">LLM Breakdown</h2>
+            <select
+              value={llmBreakdownBrandFilter || llmBreakdownBrands[0] || ''}
+              onChange={(e) => setLlmBreakdownBrandFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+            >
+              {llmBreakdownBrands.map((brand, index) => (
+                <option key={brand} value={brand}>
+                  {brand}{index === 0 && !isCategory && runStatus?.brand === brand ? ' (searched)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {Object.entries(llmBreakdownStats).map(([provider, stats]) => (
+              <div key={provider} className="p-4 bg-[#FAFAF8] rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="font-medium text-gray-900 text-sm">{getProviderLabel(provider)}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${getMentionRateBgColor(stats.rate)}`}
+                        style={{ width: `${stats.rate * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className={`text-sm font-semibold ${getMentionRateColor(stats.rate)}`}>
+                    {formatPercent(stats.rate)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-500">{stats.mentioned}/{stats.total} mentions</p>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-gray-500">
+                      top position: <span className="font-medium text-[#4A7C59]">{stats.mentioned === 0 ? 'n/a' : stats.topPosition}</span>
+                    </span>
+                    <span className="text-gray-500">
+                      avg rank: <span className="font-medium text-gray-700">{stats.mentioned === 0 ? 'n/a' : (stats.avgRank !== null ? stats.avgRank.toFixed(1) : 'n/a')}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* All Results Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -2466,59 +2519,6 @@ export default function ResultsPage() {
           </div>
         )}
       </div>
-
-      {/* LLM Breakdown */}
-      {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">LLM Breakdown</h2>
-            <select
-              value={llmBreakdownBrandFilter || llmBreakdownBrands[0] || ''}
-              onChange={(e) => setLlmBreakdownBrandFilter(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-            >
-              {llmBreakdownBrands.map((brand, index) => (
-                <option key={brand} value={brand}>
-                  {brand}{index === 0 && !isCategory && runStatus?.brand === brand ? ' (searched)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Object.entries(llmBreakdownStats).map(([provider, stats]) => (
-              <div key={provider} className="p-4 bg-[#FAFAF8] rounded-xl">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium text-gray-900 text-sm">{getProviderLabel(provider)}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${getMentionRateBgColor(stats.rate)}`}
-                        style={{ width: `${stats.rate * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                  <span className={`text-sm font-semibold ${getMentionRateColor(stats.rate)}`}>
-                    {formatPercent(stats.rate)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between mt-2">
-                  <p className="text-xs text-gray-500">{stats.mentioned}/{stats.total} mentions</p>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-gray-500">
-                      top position: <span className="font-medium text-[#4A7C59]">{stats.mentioned === 0 ? 'n/a' : stats.topPosition}</span>
-                    </span>
-                    <span className="text-gray-500">
-                      avg rank: <span className="font-medium text-gray-700">{stats.mentioned === 0 ? 'n/a' : (stats.avgRank !== null ? stats.avgRank.toFixed(1) : 'n/a')}</span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Brand Mentions */}
       {Object.keys(filteredBrandMentions).length > 0 && (
