@@ -2214,7 +2214,12 @@ export default function ResultsPage() {
                           <span className="text-sm text-gray-700">
                             {result.competitors_mentioned.slice(0, 2).join(', ')}
                             {result.competitors_mentioned.length > 2 && (
-                              <span className="text-gray-400"> +{result.competitors_mentioned.length - 2}</span>
+                              <span className="relative group">
+                                <span className="text-[#4A7C59] cursor-pointer hover:underline"> +{result.competitors_mentioned.length - 2}</span>
+                                <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap z-10 shadow-lg">
+                                  {result.competitors_mentioned.slice(2).join(', ')}
+                                </span>
+                              </span>
                             )}
                           </span>
                         ) : (
