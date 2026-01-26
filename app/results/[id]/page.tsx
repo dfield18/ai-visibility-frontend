@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis, BarChart, Bar, ReferenceArea, ComposedChart, Line, ErrorBar } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis, BarChart, Bar, ReferenceArea, ReferenceLine, ComposedChart, Line, ErrorBar } from 'recharts';
 import {
   ArrowLeft,
   Download,
@@ -834,9 +834,9 @@ export default function ResultsPage() {
   }, [runStatus, globallyFilteredResults]);
 
   // Calculate ranking data for scatter plot - one dot per prompt per LLM
-  // Define rank categories for Y-axis (in display order from top to bottom)
-  // Fix 1: New rank bands
-  const rankCategories = ['1 (Top)', '2–3', '4–5', '6–10', '10+', 'Not mentioned'];
+  // Centralized rank band constant - used for Y-axis, band rendering, tooltip mapping
+  // Order: index 0 = best rank, index 5 = not mentioned (renders top to bottom with reversed axis)
+  const RANK_BANDS = ['1 (Top)', '2–3', '4–5', '6–10', '10+', 'Not mentioned'] as const;
 
   // Helper function to convert position to rank band (Fix 1)
   const positionToRankBand = (position: number | null | undefined, brandMentioned: boolean): { label: string; index: number } => {
@@ -1492,13 +1492,15 @@ export default function ResultsPage() {
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 100 }}>
-                      {/* Horizontal band shading */}
-                      <ReferenceArea y1={0} y2={0.5} fill="#dcfce7" fillOpacity={0.5} />
-                      <ReferenceArea y1={0.5} y2={1.5} fill="#fef9c3" fillOpacity={0.3} />
-                      <ReferenceArea y1={1.5} y2={2.5} fill="#fef9c3" fillOpacity={0.2} />
-                      <ReferenceArea y1={2.5} y2={3.5} fill="#fed7aa" fillOpacity={0.2} />
-                      <ReferenceArea y1={3.5} y2={4.5} fill="#fecaca" fillOpacity={0.2} />
-                      <ReferenceArea y1={4.5} y2={5.5} fill="#e5e7eb" fillOpacity={0.3} />
+                      {/* Horizontal band shading - increased contrast, "1 (Top)" emphasized */}
+                      <ReferenceArea y1={-0.5} y2={0.5} fill="#bbf7d0" fillOpacity={0.6} />
+                      <ReferenceArea y1={0.5} y2={1.5} fill="#fef08a" fillOpacity={0.4} />
+                      <ReferenceArea y1={1.5} y2={2.5} fill="#fef08a" fillOpacity={0.3} />
+                      <ReferenceArea y1={2.5} y2={3.5} fill="#fed7aa" fillOpacity={0.35} />
+                      <ReferenceArea y1={3.5} y2={4.5} fill="#fecaca" fillOpacity={0.35} />
+                      <ReferenceArea y1={4.5} y2={5.5} fill="#e5e7eb" fillOpacity={0.4} />
+                      {/* Divider line above "Not mentioned" band */}
+                      <ReferenceLine y={4.5} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 4" />
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={true} horizontal={false} />
                       <XAxis
                         type="category"
@@ -1511,11 +1513,28 @@ export default function ResultsPage() {
                         type="number"
                         dataKey="rankBandIndex"
                         name="Rank"
-                        domain={[-0.5, rankCategories.length - 0.5]}
-                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        domain={[-0.5, RANK_BANDS.length - 0.5]}
+                        reversed
+                        tick={(props: any) => {
+                          const { x, y, payload } = props;
+                          const label = RANK_BANDS[Math.round(payload?.value ?? 0)] || '';
+                          const isNotMentioned = label === 'Not mentioned';
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              dy={4}
+                              textAnchor="end"
+                              fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
+                              fontSize={12}
+                              fontStyle={isNotMentioned ? 'italic' : 'normal'}
+                            >
+                              {label}
+                            </text>
+                          );
+                        }}
                         axisLine={{ stroke: '#e5e7eb' }}
-                        tickFormatter={(value) => rankCategories[Math.round(value)] || ''}
-                        ticks={rankCategories.map((_, i) => i)}
+                        ticks={RANK_BANDS.map((_, i) => i)}
                         interval={0}
                       />
                       <Tooltip
@@ -1523,11 +1542,14 @@ export default function ResultsPage() {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
                             return (
-                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                                <p className="text-sm font-medium text-gray-900">{data.label}</p>
-                                <p className="text-xs text-gray-500 mt-1">{data.prompt}</p>
-                                <p className="text-sm text-gray-700 mt-2">
-                                  {data.rank === 0 ? 'Not mentioned' : `Rank: #${data.rank}`}
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px]">
+                                <p className="text-sm font-medium text-gray-900">LLM: {data.label}</p>
+                                <p className="text-sm text-gray-700 mt-1">Rank band: {data.rankBand}</p>
+                                <p className="text-sm text-gray-700">
+                                  Exact position: {data.rank === 0 ? 'N/A' : `#${data.rank}`}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-2 truncate" title={data.prompt}>
+                                  Prompt: {data.prompt}
                                 </p>
                               </div>
                             );
@@ -1550,13 +1572,15 @@ export default function ResultsPage() {
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={rangeChartData} layout="vertical" margin={{ top: 20, right: 20, bottom: 40, left: 100 }}>
-                      {/* Vertical band shading (appears as horizontal stripes in vertical layout) */}
-                      <ReferenceArea x1={-0.5} x2={0.5} fill="#dcfce7" fillOpacity={0.5} />
-                      <ReferenceArea x1={0.5} x2={1.5} fill="#fef9c3" fillOpacity={0.3} />
-                      <ReferenceArea x1={1.5} x2={2.5} fill="#fef9c3" fillOpacity={0.2} />
-                      <ReferenceArea x1={2.5} x2={3.5} fill="#fed7aa" fillOpacity={0.2} />
-                      <ReferenceArea x1={3.5} x2={4.5} fill="#fecaca" fillOpacity={0.2} />
-                      <ReferenceArea x1={4.5} x2={5.5} fill="#e5e7eb" fillOpacity={0.3} />
+                      {/* Vertical band shading - increased contrast, "1 (Top)" emphasized */}
+                      <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.6} />
+                      <ReferenceArea x1={0.5} x2={1.5} fill="#fef08a" fillOpacity={0.4} />
+                      <ReferenceArea x1={1.5} x2={2.5} fill="#fef08a" fillOpacity={0.3} />
+                      <ReferenceArea x1={2.5} x2={3.5} fill="#fed7aa" fillOpacity={0.35} />
+                      <ReferenceArea x1={3.5} x2={4.5} fill="#fecaca" fillOpacity={0.35} />
+                      <ReferenceArea x1={4.5} x2={5.5} fill="#e5e7eb" fillOpacity={0.4} />
+                      {/* Divider line before "Not mentioned" band */}
+                      <ReferenceLine x={4.5} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 4" />
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} vertical={true} />
                       <YAxis
                         type="category"
@@ -1567,11 +1591,26 @@ export default function ResultsPage() {
                       />
                       <XAxis
                         type="number"
-                        domain={[-0.5, rankCategories.length - 0.5]}
-                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        domain={[-0.5, RANK_BANDS.length - 0.5]}
+                        tick={(props: any) => {
+                          const { x, y, payload } = props;
+                          const label = RANK_BANDS[Math.round(payload?.value ?? 0)] || '';
+                          const isNotMentioned = label === 'Not mentioned';
+                          return (
+                            <text
+                              x={x}
+                              y={y + 12}
+                              textAnchor="middle"
+                              fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
+                              fontSize={12}
+                              fontStyle={isNotMentioned ? 'italic' : 'normal'}
+                            >
+                              {label}
+                            </text>
+                          );
+                        }}
                         axisLine={{ stroke: '#e5e7eb' }}
-                        tickFormatter={(value) => rankCategories[Math.round(value)] || ''}
-                        ticks={rankCategories.map((_, i) => i)}
+                        ticks={RANK_BANDS.map((_, i) => i)}
                         interval={0}
                       />
                       <Tooltip
@@ -1579,21 +1618,19 @@ export default function ResultsPage() {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
                             return (
-                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                                <p className="text-sm font-medium text-gray-900">{data.label}</p>
-                                <p className="text-sm text-gray-700 mt-2">
-                                  Best: {rankCategories[data.bestBandIndex]}
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[200px]">
+                                <p className="text-sm font-medium text-gray-900">LLM: {data.label}</p>
+                                <p className="text-sm text-gray-700 mt-1">
+                                  Rank band: {RANK_BANDS[data.bestBandIndex]} – {RANK_BANDS[data.worstBandIndex]}
                                 </p>
                                 <p className="text-sm text-gray-700">
-                                  Worst: {rankCategories[data.worstBandIndex]}
+                                  Avg position: {data.avgPositionNumeric !== null ? `#${data.avgPositionNumeric.toFixed(1)}` : 'N/A'}
                                 </p>
-                                {data.avgPositionNumeric !== null && (
-                                  <p className="text-sm text-gray-700">
-                                    Avg: #{data.avgPositionNumeric.toFixed(1)}
-                                  </p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {data.mentionCount} / {data.totalPrompts} prompts mentioned
+                                <p className="text-xs text-gray-500 mt-2">
+                                  Prompts analyzed: {data.totalPrompts}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Mentions: {data.mentionCount}
                                 </p>
                               </div>
                             );
