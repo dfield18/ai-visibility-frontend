@@ -858,8 +858,20 @@ export default function ResultsPage() {
     ai_overviews: 'Google AI Overviews',
   };
 
-  const scatterPlotData = useMemo(() => {
+  // Get unique providers in consistent order for X-axis
+  const scatterProviderOrder = useMemo(() => {
     if (!runStatus) return [];
+    const providers = new Set<string>();
+    globallyFilteredResults.forEach((r: Result) => {
+      if (!r.error) providers.add(r.provider);
+    });
+    // Sort in a consistent order
+    const order = ['openai', 'anthropic', 'gemini', 'perplexity', 'ai_overviews'];
+    return order.filter(p => providers.has(p));
+  }, [runStatus, globallyFilteredResults]);
+
+  const scatterPlotData = useMemo(() => {
+    if (!runStatus || scatterProviderOrder.length === 0) return [];
 
     const isCategory = runStatus.search_type === 'category';
     const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus.brand;
@@ -875,7 +887,8 @@ export default function ResultsPage() {
       rank: number;
       rankBand: string;
       rankBandIndex: number;
-      rankBandIndexWithOffset: number;
+      xIndex: number;
+      xIndexWithOffset: number;
       isMentioned: boolean;
     }[] = [];
 
@@ -910,6 +923,7 @@ export default function ResultsPage() {
       }
 
       const { label: rankBand, index: rankBandIndex } = positionToRankBand(rank, rank > 0);
+      const xIndex = scatterProviderOrder.indexOf(provider);
 
       dataPoints.push({
         provider,
@@ -918,12 +932,13 @@ export default function ResultsPage() {
         rank,
         rankBand,
         rankBandIndex,
-        rankBandIndexWithOffset: rankBandIndex, // Will be adjusted below
+        xIndex,
+        xIndexWithOffset: xIndex, // Will be adjusted below
         isMentioned: rank > 0,
       });
     }
 
-    // Add vertical offset for dots at the same position (same LLM + same rank band)
+    // Add horizontal offset for dots at the same position (same LLM + same rank band)
     // Group by provider and rankBandIndex
     const positionGroups: Record<string, number[]> = {};
     dataPoints.forEach((dp, idx) => {
@@ -934,21 +949,21 @@ export default function ResultsPage() {
       positionGroups[key].push(idx);
     });
 
-    // Apply offset to dots in groups with multiple items
-    const offsetStep = 0.15; // Vertical offset between dots
+    // Apply horizontal offset to dots in groups with multiple items
+    const offsetStep = 0.08; // Horizontal offset between dots
     Object.values(positionGroups).forEach(indices => {
       if (indices.length > 1) {
         const totalOffset = (indices.length - 1) * offsetStep;
         indices.forEach((idx, i) => {
           // Center the group around the original position
-          dataPoints[idx].rankBandIndexWithOffset =
-            dataPoints[idx].rankBandIndex - totalOffset / 2 + i * offsetStep;
+          dataPoints[idx].xIndexWithOffset =
+            dataPoints[idx].xIndex - totalOffset / 2 + i * offsetStep;
         });
       }
     });
 
     return dataPoints;
-  }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
+  }, [runStatus, globallyFilteredResults, llmBreakdownBrands, scatterProviderOrder]);
 
   // Compute range stats for each LLM
   const rangeChartData = useMemo(() => {
@@ -1535,15 +1550,33 @@ export default function ResultsPage() {
                       <ReferenceLine y={4.5} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 4" />
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={true} horizontal={false} />
                       <XAxis
-                        type="category"
-                        dataKey="label"
-                        allowDuplicatedCategory={false}
-                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        type="number"
+                        dataKey="xIndexWithOffset"
+                        domain={[-0.5, scatterProviderOrder.length - 0.5]}
+                        tick={(props: any) => {
+                          const { x, y, payload } = props;
+                          const provider = scatterProviderOrder[Math.round(payload?.value ?? 0)];
+                          const label = provider ? (providerLabels[provider] || provider) : '';
+                          return (
+                            <text
+                              x={x}
+                              y={y + 12}
+                              textAnchor="middle"
+                              fill="#6b7280"
+                              fontSize={12}
+                            >
+                              {label}
+                            </text>
+                          );
+                        }}
+                        ticks={scatterProviderOrder.map((_, i) => i)}
                         axisLine={{ stroke: '#e5e7eb' }}
+                        tickLine={false}
+                        interval={0}
                       />
                       <YAxis
                         type="number"
-                        dataKey="rankBandIndexWithOffset"
+                        dataKey="rankBandIndex"
                         name="Rank"
                         domain={[-0.5, RANK_BANDS.length - 0.5]}
                         reversed
