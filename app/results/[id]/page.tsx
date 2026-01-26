@@ -1586,7 +1586,7 @@ export default function ResultsPage() {
 
               {/* Dots View */}
               {rankingViewMode === 'dots' && (
-                <div className="h-72 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none">
+                <div className="h-72 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 100 }}>
                       {/* Horizontal band shading - increased contrast, "1 (Top)" emphasized */}
@@ -1700,7 +1700,7 @@ export default function ResultsPage() {
                   <p className="text-xs text-gray-400 mb-3">
                     Each dot is a prompt result. Range bar shows best-to-worst; marker shows average. Double-click a dot for details.
                   </p>
-                  <div className="h-64 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none">
+                  <div className="h-64 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={rangeChartData}

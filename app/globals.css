@@ -52,6 +52,14 @@ body {
   outline-offset: 2px;
 }
 
+/* Remove focus outline from Recharts elements */
+.recharts-wrapper:focus-visible,
+.recharts-wrapper *:focus-visible,
+.recharts-surface:focus-visible,
+.recharts-surface *:focus-visible {
+  outline: none;
+}
+
 /* Loading animation */
 @keyframes pulse {
   0%, 100% {
