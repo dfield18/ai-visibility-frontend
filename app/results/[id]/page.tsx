@@ -1314,6 +1314,31 @@ export default function ResultsPage() {
     }
     const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
 
+    // Share of voice - what percent of all brand mentions are for this brand
+    let totalBrandMentions = 0;
+    let selectedBrandMentions = 0;
+    for (const result of results) {
+      if (!result.response_text) continue;
+      const responseText = result.response_text.toLowerCase();
+
+      // Check if selected brand is mentioned
+      if (selectedBrand && responseText.includes(selectedBrand.toLowerCase())) {
+        selectedBrandMentions++;
+        totalBrandMentions++;
+      }
+
+      // Count competitor mentions
+      const competitors = result.competitors_mentioned || [];
+      for (const competitor of competitors) {
+        if (competitor && competitor.toLowerCase() !== selectedBrand?.toLowerCase()) {
+          if (responseText.includes(competitor.toLowerCase())) {
+            totalBrandMentions++;
+          }
+        }
+      }
+    }
+    const shareOfVoice = totalBrandMentions > 0 ? (selectedBrandMentions / totalBrandMentions) * 100 : 0;
+
     // Unique sources count
     const uniqueSources = new Set<string>();
     for (const result of results) {
@@ -1326,6 +1351,7 @@ export default function ResultsPage() {
 
     return {
       overallVisibility,
+      shareOfVoice,
       topPositionCount,
       totalResponses: results.length,
       avgRank,
@@ -1536,28 +1562,35 @@ export default function ResultsPage() {
       </div>
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
           <p className="text-sm font-medium text-gray-600 mb-1">Visibility Score</p>
           <p className={`text-2xl font-bold ${getMentionRateColor(overviewMetrics?.overallVisibility ? overviewMetrics.overallVisibility / 100 : 0)}`}>
             {overviewMetrics?.overallVisibility?.toFixed(1) || 0}%
           </p>
-          <p className="text-xs text-gray-400 mt-1">Percent of prompts where the brand is mentioned</p>
+          <p className="text-xs text-gray-400 mt-1">Percent of prompts where brand is mentioned</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
+          <p className="text-sm font-medium text-gray-600 mb-1">Share of Voice</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%
+          </p>
+          <p className="text-xs text-gray-400 mt-1">Percent of brand mentions that are yours</p>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
           <p className="text-sm font-medium text-gray-600 mb-1">First Position</p>
           <p className="text-2xl font-bold text-gray-900">
             {overviewMetrics?.topPositionCount || 0}
             <span className="text-sm font-normal text-gray-400">/{overviewMetrics?.totalResponses || 0}</span>
           </p>
-          <p className="text-xs text-gray-400 mt-1">Responses where the brand is ranked first</p>
+          <p className="text-xs text-gray-400 mt-1">Responses where brand is ranked first</p>
         </div>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
           <p className="text-sm font-medium text-gray-600 mb-1">Avg. Rank</p>
           <p className="text-2xl font-bold text-gray-900">
             {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
           </p>
-          <p className="text-xs text-gray-400 mt-1">Average position when the brand is mentioned</p>
+          <p className="text-xs text-gray-400 mt-1">Average position when brand is mentioned</p>
         </div>
       </div>
 
