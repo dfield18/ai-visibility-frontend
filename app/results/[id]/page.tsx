@@ -4124,13 +4124,13 @@ export default function ResultsPage() {
                   {matchingResults.map((result) => (
                     <div
                       key={result.id}
-                      className="bg-[#FAFAF8] rounded-lg border border-gray-100"
+                      className="bg-[#FAFAF8] rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedResult(result);
+                        setHoveredSentimentBadge(null);
+                      }}
                     >
-                      <button
-                        type="button"
-                        className="w-full p-3 text-left hover:bg-gray-50 transition-colors rounded-t-lg"
-                        onClick={() => toggleExpanded(result.id)}
-                      >
+                      <div className="p-3">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-medium text-gray-700 capitalize">{result.provider}</span>
@@ -4138,91 +4138,14 @@ export default function ResultsPage() {
                             <span className="text-xs text-gray-500">{result.model}</span>
                           </div>
                           <span className="text-xs text-[#4A7C59] flex items-center gap-1 flex-shrink-0 font-medium">
-                            {expandedResults.has(result.id) ? (
-                              <>Hide <ChevronUp className="w-3 h-3" /></>
-                            ) : (
-                              <>View <ChevronDown className="w-3 h-3" /></>
-                            )}
+                            View <ExternalLink className="w-3 h-3" />
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mb-2 line-clamp-1">{result.prompt}</p>
-                        {!expandedResults.has(result.id) && (
-                          <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">
-                            {result.response_text?.substring(0, 200)}...
-                          </p>
-                        )}
-                      </button>
-                      {expandedResults.has(result.id) && (
-                        <div className="px-3 pb-3 border-t border-gray-200 bg-white rounded-b-lg">
-                          <div className="mt-3 max-h-64 overflow-y-auto">
-                            <p className="text-xs text-gray-500 mb-2">Full Response:</p>
-                            <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1 overflow-x-auto">
-                              <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                components={{
-                                  a: ({ href, children }) => (
-                                    <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{children}</a>
-                                  ),
-                                  table: ({ children }) => (
-                                    <div className="overflow-x-auto mb-3">
-                                      <table className="min-w-full">{children}</table>
-                                    </div>
-                                  ),
-                                }}
-                              >
-                                {highlightCompetitors(formatResponseText(result.response_text || ''), result.all_brands_mentioned)}
-                              </ReactMarkdown>
-                            </div>
-                          </div>
-                          {result.sources && result.sources.length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <p className="text-xs text-gray-500 mb-2">Sources ({result.sources.length}):</p>
-                              <div className="space-y-1.5">
-                                {result.sources.map((source, idx) => {
-                                  const { domain, subtitle } = formatSourceDisplay(source.url, source.title);
-                                  return (
-                                    <a
-                                      key={idx}
-                                      href={source.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                      <span className="truncate">
-                                        <span className="font-medium">{domain}</span>
-                                        {subtitle && <span className="text-gray-500"> · {subtitle}</span>}
-                                      </span>
-                                    </a>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                          {result.grounding_metadata && result.grounding_metadata.supports && result.grounding_metadata.supports.length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-gray-200">
-                              <p className="text-xs text-gray-500 mb-2">Grounding Confidence:</p>
-                              <div className="space-y-2">
-                                {result.grounding_metadata.supports.slice(0, 3).map((support, idx) => (
-                                  <div key={idx} className="bg-gray-50 p-2 rounded-lg border border-gray-100">
-                                    <p className="text-xs text-gray-600 mb-1 line-clamp-2">&quot;{support.segment}&quot;</p>
-                                    <div className="flex items-center gap-2">
-                                      <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                        <div className="h-full bg-[#5B7B5D] rounded-full" style={{ width: `${(support.confidence_scores[0] || 0) * 100}%` }} />
-                                      </div>
-                                      <span className="text-xs text-gray-500 w-10 text-right">{Math.round((support.confidence_scores[0] || 0) * 100)}%</span>
-                                    </div>
-                                  </div>
-                                ))}
-                                {result.grounding_metadata.supports.length > 3 && (
-                                  <p className="text-xs text-gray-400">+{result.grounding_metadata.supports.length - 3} more</p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                        <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">
+                          {result.response_text?.substring(0, 200)}...
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
