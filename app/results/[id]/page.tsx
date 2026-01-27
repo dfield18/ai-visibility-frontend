@@ -4086,66 +4086,63 @@ export default function ResultsPage() {
           </div>
 
           {isHovered && matchingResults.length > 0 && (
+            <div
+              data-sentiment-popup
+              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200"
+              style={{ maxHeight: '400px', minWidth: '220px', maxWidth: '300px' }}
+              onWheel={(e) => e.stopPropagation()}
+            >
               <div
-                data-sentiment-popup
-                className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-[480px] bg-white rounded-lg shadow-xl border border-gray-200"
-                style={{ maxHeight: '500px' }}
-                onWheel={(e) => {
-                  // Prevent wheel events inside popup from closing it
-                  e.stopPropagation();
-                }}
-              >
-              <div className="p-3 border-b border-gray-100">
-                <div className="text-xs font-medium text-gray-500">
-                  {count} response{count !== 1 ? 's' : ''} • Click to expand
-                </div>
-              </div>
-              <div
-                className="p-3 overflow-y-auto overscroll-contain"
-                style={{ maxHeight: '440px' }}
+                className="p-2 overflow-y-auto overscroll-contain"
+                style={{ maxHeight: '380px' }}
                 onScroll={(e) => e.stopPropagation()}
                 onWheel={(e) => {
-                  // Prevent overscroll from affecting the page
                   const target = e.currentTarget;
                   const { scrollTop, scrollHeight, clientHeight } = target;
                   const isAtTop = scrollTop === 0;
                   const isAtBottom = scrollTop + clientHeight >= scrollHeight;
-
-                  // If scrolling up at top or down at bottom, prevent page scroll
                   if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
                     e.preventDefault();
                   }
                   e.stopPropagation();
                 }}
               >
-                <div className="space-y-3">
-                  {matchingResults.map((result) => (
-                    <div
-                      key={result.id}
-                      className="bg-[#FAFAF8] rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => {
-                        setSelectedResult(result);
-                        setHoveredSentimentBadge(null);
-                      }}
-                    >
-                      <div className="p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-gray-700 capitalize">{result.provider}</span>
-                            <span className="text-xs text-gray-400">•</span>
-                            <span className="text-xs text-gray-500">{result.model}</span>
-                          </div>
-                          <span className="text-xs text-[#4A7C59] flex items-center gap-1 flex-shrink-0 font-medium">
-                            View <ExternalLink className="w-3 h-3" />
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mb-2 line-clamp-1">{result.prompt}</p>
-                        <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">
-                          {result.response_text?.substring(0, 200)}...
+                <div className="space-y-2">
+                  {matchingResults.map((result) => {
+                    const truncatedPrompt = result.prompt.length > 70
+                      ? result.prompt.substring(0, 70) + '...'
+                      : result.prompt;
+                    // Find brand position in all_brands_mentioned
+                    const brandPosition = result.all_brands_mentioned?.findIndex(
+                      b => b.toLowerCase() === runStatus?.brand.toLowerCase()
+                    );
+                    const rank = brandPosition !== undefined && brandPosition >= 0 ? brandPosition + 1 : 0;
+
+                    return (
+                      <div
+                        key={result.id}
+                        className="p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSelectedResult(result);
+                          setHoveredSentimentBadge(null);
+                        }}
+                      >
+                        <p className="text-sm font-semibold text-gray-900 mb-1" title={result.prompt}>
+                          {truncatedPrompt}
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          {rank === 0
+                            ? 'Not shown'
+                            : rank === 1
+                              ? 'Shown as: #1 (Top result)'
+                              : `Shown as: #${rank}`}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-2">
+                          {getProviderLabel(result.provider)}
                         </p>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
