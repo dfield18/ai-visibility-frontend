@@ -1731,7 +1731,7 @@ export default function ResultsPage() {
                                     data.sentiment === 'conditional' ? 'text-orange-500' :
                                     data.sentiment === 'negative_comparison' ? 'text-red-500' : ''
                                   }`}>
-                                    {data.sentiment === 'strong_endorsement' ? 'Strong Endorsement' :
+                                    {data.sentiment === 'strong_endorsement' ? 'Positive' :
                                      data.sentiment === 'neutral_mention' ? 'Neutral Mention' :
                                      data.sentiment === 'conditional' ? 'Conditional/Caveated' :
                                      data.sentiment === 'negative_comparison' ? 'Negative Comparison' : ''}
@@ -2157,7 +2157,7 @@ export default function ResultsPage() {
                                           dot.sentiment === 'conditional' ? 'text-orange-500' :
                                           dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
                                         }`}>
-                                          {dot.sentiment === 'strong_endorsement' ? 'Strong Endorsement' :
+                                          {dot.sentiment === 'strong_endorsement' ? 'Positive' :
                                            dot.sentiment === 'neutral_mention' ? 'Neutral Mention' :
                                            dot.sentiment === 'conditional' ? 'Conditional/Caveated' :
                                            dot.sentiment === 'negative_comparison' ? 'Negative Comparison' : ''}
@@ -2623,7 +2623,7 @@ export default function ResultsPage() {
                             result.brand_sentiment === 'neutral_mention' ? 'bg-gray-100 text-gray-600' :
                             'bg-gray-100 text-gray-500'
                           }`}>
-                            {result.brand_sentiment === 'strong_endorsement' ? 'Strong' :
+                            {result.brand_sentiment === 'strong_endorsement' ? 'Positive' :
                              result.brand_sentiment === 'conditional' ? 'Conditional' :
                              result.brand_sentiment === 'negative_comparison' ? 'Negative' :
                              result.brand_sentiment === 'neutral_mention' ? 'Neutral' :
@@ -3300,7 +3300,7 @@ export default function ResultsPage() {
     // Helper function to get sentiment label
     const getSentimentLabel = (sentiment: string | null | undefined) => {
       switch (sentiment) {
-        case 'strong_endorsement': return 'Strong Endorsement';
+        case 'strong_endorsement': return 'Positive';
         case 'neutral_mention': return 'Neutral Mention';
         case 'conditional': return 'Conditional/Caveated';
         case 'negative_comparison': return 'Negative Comparison';
@@ -3541,7 +3541,7 @@ export default function ResultsPage() {
                 } else if (notMentionedCount > total * 0.5) {
                   insight = `${runStatus?.brand} is not mentioned in ${((notMentionedCount / total) * 100).toFixed(0)}% of responses. Focus on increasing AI visibility through content optimization.`;
                 } else {
-                  insight = `${runStatus?.brand} has mixed sentiment across AI responses. Strong endorsement rate is ${strongRate.toFixed(0)}% with ${mentionRate.toFixed(0)}% overall mention rate.`;
+                  insight = `${runStatus?.brand} has mixed sentiment across AI responses. Positive sentiment rate is ${strongRate.toFixed(0)}% with ${mentionRate.toFixed(0)}% overall mention rate.`;
                 }
 
                 return <p className="text-sm text-gray-600">{insight}</p>;
@@ -4015,7 +4015,7 @@ export default function ResultsPage() {
                         selectedResult.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-800' :
                         'bg-gray-100 text-gray-600'
                       }`}>
-                        {selectedResult.brand_sentiment === 'strong_endorsement' ? 'Strong Endorsement' :
+                        {selectedResult.brand_sentiment === 'strong_endorsement' ? 'Positive' :
                          selectedResult.brand_sentiment === 'neutral_mention' ? 'Neutral Mention' :
                          selectedResult.brand_sentiment === 'conditional' ? 'Conditional' :
                          selectedResult.brand_sentiment === 'negative_comparison' ? 'Negative Comparison' :
