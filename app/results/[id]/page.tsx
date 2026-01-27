@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -111,20 +111,52 @@ export default function ResultsPage() {
     window.history.replaceState(null, '', newUrl);
   }, [activeTab, globalBrandFilter, globalLlmFilter, globalPromptFilter]);
 
-  // Close sentiment badge hover popup on scroll
-  useEffect(() => {
-    if (!hoveredSentimentBadge) return;
+  // Ref for the currently hovered sentiment badge element
+  const hoveredBadgeRef = useRef<HTMLDivElement | null>(null);
 
+  // Close sentiment badge hover popup on scroll using Intersection Observer
+  useEffect(() => {
+    if (!hoveredSentimentBadge || !hoveredBadgeRef.current) return;
+
+    const element = hoveredBadgeRef.current;
+
+    // Use Intersection Observer to detect when badge scrolls out of view
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry.isIntersecting) {
+          setHoveredSentimentBadge(null);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(element);
+
+    // Also listen for any scroll events as a backup
     const handleScroll = () => {
       setHoveredSentimentBadge(null);
     };
 
-    // Listen on document with capture to catch all scroll events
-    document.addEventListener('scroll', handleScroll, { capture: true, passive: true });
+    // Add scroll listener to all scrollable ancestors
+    let parent = element.parentElement;
+    const scrollableParents: Element[] = [];
+    while (parent) {
+      const style = getComputedStyle(parent);
+      if (style.overflow === 'auto' || style.overflow === 'scroll' ||
+          style.overflowY === 'auto' || style.overflowY === 'scroll') {
+        scrollableParents.push(parent);
+        parent.addEventListener('scroll', handleScroll, { passive: true });
+      }
+      parent = parent.parentElement;
+    }
+
+    // Also listen on window
     window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
-      document.removeEventListener('scroll', handleScroll, { capture: true });
+      observer.disconnect();
+      scrollableParents.forEach(p => p.removeEventListener('scroll', handleScroll));
       window.removeEventListener('scroll', handleScroll);
     };
   }, [hoveredSentimentBadge]);
@@ -4026,6 +4058,7 @@ export default function ResultsPage() {
 
       return (
         <div
+          ref={isHovered ? hoveredBadgeRef : null}
           className="relative inline-block"
           onMouseEnter={() => setHoveredSentimentBadge({ provider, sentiment })}
           onMouseLeave={() => setHoveredSentimentBadge(null)}
