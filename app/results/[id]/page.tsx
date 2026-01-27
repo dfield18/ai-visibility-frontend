@@ -4088,13 +4088,13 @@ export default function ResultsPage() {
           {isHovered && matchingResults.length > 0 && (
             <div
               data-sentiment-popup
-              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 bg-white rounded-lg shadow-xl border border-gray-200"
-              style={{ maxHeight: '400px', minWidth: '220px', maxWidth: '300px' }}
+              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-w-[280px]"
+              style={{ maxHeight: '350px' }}
               onWheel={(e) => e.stopPropagation()}
             >
               <div
-                className="p-2 overflow-y-auto overscroll-contain"
-                style={{ maxHeight: '380px' }}
+                className="overflow-y-auto overscroll-contain"
+                style={{ maxHeight: '350px' }}
                 onScroll={(e) => e.stopPropagation()}
                 onWheel={(e) => {
                   const target = e.currentTarget;
@@ -4107,43 +4107,41 @@ export default function ResultsPage() {
                   e.stopPropagation();
                 }}
               >
-                <div className="space-y-2">
-                  {matchingResults.map((result) => {
-                    const truncatedPrompt = result.prompt.length > 70
-                      ? result.prompt.substring(0, 70) + '...'
-                      : result.prompt;
-                    // Find brand position in all_brands_mentioned
-                    const brandPosition = result.all_brands_mentioned?.findIndex(
-                      b => b.toLowerCase() === runStatus?.brand.toLowerCase()
-                    );
-                    const rank = brandPosition !== undefined && brandPosition >= 0 ? brandPosition + 1 : 0;
+                {matchingResults.map((result, idx) => {
+                  const truncatedPrompt = result.prompt.length > 70
+                    ? result.prompt.substring(0, 70) + '...'
+                    : result.prompt;
+                  // Find brand position in all_brands_mentioned
+                  const brandPosition = result.all_brands_mentioned?.findIndex(
+                    b => b.toLowerCase() === runStatus?.brand.toLowerCase()
+                  );
+                  const rank = brandPosition !== undefined && brandPosition >= 0 ? brandPosition + 1 : 0;
 
-                    return (
-                      <div
-                        key={result.id}
-                        className="p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
-                        onClick={() => {
-                          setSelectedResult(result);
-                          setHoveredSentimentBadge(null);
-                        }}
-                      >
-                        <p className="text-sm font-semibold text-gray-900 mb-1" title={result.prompt}>
-                          {truncatedPrompt}
-                        </p>
-                        <p className="text-sm text-gray-700">
-                          {rank === 0
-                            ? 'Not shown'
-                            : rank === 1
-                              ? 'Shown as: #1 (Top result)'
-                              : `Shown as: #${rank}`}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-2">
-                          {getProviderLabel(result.provider)}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
+                  return (
+                    <div
+                      key={result.id}
+                      className={`p-3 hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'border-t border-gray-100' : ''}`}
+                      onClick={() => {
+                        setSelectedResult(result);
+                        setHoveredSentimentBadge(null);
+                      }}
+                    >
+                      <p className="text-sm font-semibold text-gray-900 mb-1" title={result.prompt}>
+                        {truncatedPrompt}
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        {rank === 0
+                          ? 'Not shown'
+                          : rank === 1
+                            ? 'Shown as: #1 (Top result)'
+                            : `Shown as: #${rank}`}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        {getProviderLabel(result.provider)}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
