@@ -69,7 +69,7 @@ export interface GroundingMetadata {
   search_queries: string[];
 }
 
-export type BrandSentiment = 'strong_endorsement' | 'neutral_mention' | 'conditional' | 'negative_comparison' | 'not_mentioned';
+export type BrandSentiment = 'strong_endorsement' | 'positive_endorsement' | 'neutral_mention' | 'conditional' | 'negative_comparison' | 'not_mentioned';
 
 export interface Result {
   id: string;
