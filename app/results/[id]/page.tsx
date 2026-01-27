@@ -2213,13 +2213,35 @@ export default function ResultsPage() {
                             // Y position: center dot within provider's band
                             const yPercent = ((dot.yIndex + 0.5) / numProviders) * 100;
 
+                            // Check for overlap with average/median markers for this provider
+                            const providerData = rangeChartData[dot.yIndex];
+                            const hasMultipleResponses = providerData && providerData.promptsAnalyzed > 1;
+                            const overlapThreshold = 0.3;
+                            const overlapsAvg = hasMultipleResponses && Math.abs(dot.x - providerData.avgRankingX) < overlapThreshold;
+                            const overlapsMedian = hasMultipleResponses && Math.abs(dot.x - providerData.medianRankingX) < overlapThreshold;
+                            const avgMedianSame = hasMultipleResponses && Math.abs(providerData.avgRankingX - providerData.medianRankingX) < 0.5;
+
+                            // Calculate dot Y offset based on overlaps
+                            // When overlapping: dot on top, avg in middle-top, median in middle-bottom
+                            let dotYOffset = 0;
+                            if (overlapsAvg && overlapsMedian && avgMedianSame) {
+                              // All three at same position: dot at top
+                              dotYOffset = -12;
+                            } else if (overlapsAvg) {
+                              // Overlaps just avg: dot above avg
+                              dotYOffset = -10;
+                            } else if (overlapsMedian) {
+                              // Overlaps just median: dot above median
+                              dotYOffset = -10;
+                            }
+
                             return (
                               <div
                                 key={`range-dot-${idx}`}
                                 className="absolute pointer-events-auto group"
                                 style={{
                                   left: `${xPercent}%`,
-                                  top: `${yPercent}%`,
+                                  top: `calc(${yPercent}% + ${dotYOffset}px)`,
                                   transform: 'translate(-50%, -50%)',
                                 }}
                               >
@@ -2281,11 +2303,37 @@ export default function ResultsPage() {
                             const avgXPercent = ((data.avgRankingX - domainMin) / domainRange) * 100;
                             const medianXPercent = ((data.medianRankingX - domainMin) / domainRange) * 100;
 
+                            // Check if any dots overlap with avg or median for this provider
+                            const overlapThreshold = 0.3;
+                            const dotsForProvider = rangeViewDots.filter(d => d.yIndex === idx);
+                            const dotOverlapsAvg = dotsForProvider.some(d => Math.abs(d.x - data.avgRankingX) < overlapThreshold);
+                            const dotOverlapsMedian = dotsForProvider.some(d => Math.abs(d.x - data.medianRankingX) < overlapThreshold);
+
                             // Check if average and median are at same position (within 0.5)
-                            const samePosition = Math.abs(data.avgRankingX - data.medianRankingX) < 0.5;
-                            // Offset in pixels when overlapping: average higher, median lower
-                            const avgYOffset = samePosition ? -6 : 0;
-                            const medianYOffset = samePosition ? 6 : 0;
+                            const avgMedianSame = Math.abs(data.avgRankingX - data.medianRankingX) < 0.5;
+
+                            // Calculate offsets based on all overlaps
+                            // Stack order from top: dot (-12), avg (0 or -4), median (8 or 4)
+                            let avgYOffset = 0;
+                            let medianYOffset = 0;
+
+                            if (avgMedianSame && dotOverlapsAvg) {
+                              // All three overlap: dot at -12, avg at 0, median at 8
+                              avgYOffset = 0;
+                              medianYOffset = 8;
+                            } else if (avgMedianSame) {
+                              // Just avg and median overlap (no dot): avg at -4, median at 4
+                              avgYOffset = -4;
+                              medianYOffset = 4;
+                            } else {
+                              // Avg and median are separate, check dot overlaps individually
+                              if (dotOverlapsAvg) {
+                                avgYOffset = 6; // Push avg down, dot is above
+                              }
+                              if (dotOverlapsMedian) {
+                                medianYOffset = 6; // Push median down, dot is above
+                              }
+                            }
 
                             return (
                               <React.Fragment key={`markers-${idx}`}>
