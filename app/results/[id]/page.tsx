@@ -3343,7 +3343,13 @@ export default function ResultsPage() {
 
     // Calculate sentiment by provider
     const sentimentByProvider = useMemo(() => {
-      const providerData: Record<string, Record<string, number>> = {};
+      const providerData: Record<string, {
+        strong_endorsement: number;
+        neutral_mention: number;
+        conditional: number;
+        negative_comparison: number;
+        not_mentioned: number;
+      }> = {};
 
       globallyFilteredResults
         .filter((r: Result) => !r.error)
@@ -3358,8 +3364,8 @@ export default function ResultsPage() {
             };
           }
           const sentiment = r.brand_sentiment || 'not_mentioned';
-          if (providerData[r.provider][sentiment] !== undefined) {
-            providerData[r.provider][sentiment]++;
+          if (sentiment in providerData[r.provider]) {
+            providerData[r.provider][sentiment as keyof typeof providerData[string]]++;
           }
         });
 
@@ -3368,7 +3374,11 @@ export default function ResultsPage() {
         return {
           provider,
           label: getProviderLabel(provider),
-          ...counts,
+          strong_endorsement: counts.strong_endorsement,
+          neutral_mention: counts.neutral_mention,
+          conditional: counts.conditional,
+          negative_comparison: counts.negative_comparison,
+          not_mentioned: counts.not_mentioned,
           total,
           strongRate: total > 0 ? (counts.strong_endorsement / total) * 100 : 0,
         };
@@ -3377,7 +3387,13 @@ export default function ResultsPage() {
 
     // Calculate competitor sentiment comparison
     const competitorSentimentData = useMemo(() => {
-      const competitorData: Record<string, Record<string, number>> = {};
+      const competitorData: Record<string, {
+        strong_endorsement: number;
+        neutral_mention: number;
+        conditional: number;
+        negative_comparison: number;
+        not_mentioned: number;
+      }> = {};
       const trackedComps = trackedBrands;
 
       globallyFilteredResults
@@ -3395,8 +3411,8 @@ export default function ResultsPage() {
                   not_mentioned: 0,
                 };
               }
-              if (competitorData[comp][sentiment] !== undefined) {
-                competitorData[comp][sentiment]++;
+              if (sentiment in competitorData[comp]) {
+                competitorData[comp][sentiment as keyof typeof competitorData[string]]++;
               }
             });
           }
@@ -3408,7 +3424,11 @@ export default function ResultsPage() {
           const mentionedTotal = total - counts.not_mentioned;
           return {
             competitor,
-            ...counts,
+            strong_endorsement: counts.strong_endorsement,
+            neutral_mention: counts.neutral_mention,
+            conditional: counts.conditional,
+            negative_comparison: counts.negative_comparison,
+            not_mentioned: counts.not_mentioned,
             total,
             mentionedTotal,
             strongRate: total > 0 ? (counts.strong_endorsement / total) * 100 : 0,
