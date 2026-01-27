@@ -89,6 +89,7 @@ export interface Result {
   grounding_metadata: GroundingMetadata | null;
   brand_sentiment: BrandSentiment | null;
   competitor_sentiments: Record<string, BrandSentiment> | null;
+  all_brands_mentioned: string[] | null;
   created_at: string;
 }
 

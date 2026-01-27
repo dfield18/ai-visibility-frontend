@@ -546,21 +546,16 @@ export default function ResultsPage() {
         providerStats[provider].mentioned += 1;
 
         if (result.response_text) {
-          const responseText = result.response_text.toLowerCase();
           const brandLower = selectedBrand.toLowerCase();
 
-          const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
-          const brandPositions: { brand: string; position: number }[] = [];
+          // Use all_brands_mentioned if available (includes all detected brands),
+          // otherwise fall back to tracked brands only
+          const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+            ? result.all_brands_mentioned
+            : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
-          for (const brand of allBrands) {
-            const pos = responseText.indexOf(brand.toLowerCase());
-            if (pos !== -1) {
-              brandPositions.push({ brand, position: pos });
-            }
-          }
-
-          brandPositions.sort((a, b) => a.position - b.position);
-          const rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === brandLower) + 1;
+          // Find position of selected brand in the ordered list
+          const rank = allBrands.findIndex(b => b.toLowerCase() === brandLower) + 1;
 
           if (rank > 0) {
             providerStats[provider].ranks.push(rank);
@@ -946,7 +941,6 @@ export default function ResultsPage() {
       let rank = 0; // 0 means not mentioned
 
       if (result.response_text) {
-        const responseText = result.response_text.toLowerCase();
         const brandLower = selectedBrand.toLowerCase();
 
         // Check if brand is mentioned
@@ -955,19 +949,14 @@ export default function ResultsPage() {
           : result.brand_mentioned;
 
         if (isMentioned) {
-          // Get all brands and their positions
-          const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
-          const brandPositions: { brand: string; position: number }[] = [];
+          // Use all_brands_mentioned if available (includes all detected brands),
+          // otherwise fall back to tracked brands only
+          const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+            ? result.all_brands_mentioned
+            : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
-          for (const brand of allBrands) {
-            const pos = responseText.indexOf(brand.toLowerCase());
-            if (pos !== -1) {
-              brandPositions.push({ brand, position: pos });
-            }
-          }
-
-          brandPositions.sort((a, b) => a.position - b.position);
-          rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === brandLower) + 1;
+          // Find position of selected brand in the ordered list
+          rank = allBrands.findIndex(b => b.toLowerCase() === brandLower) + 1;
         }
       }
 
@@ -1192,20 +1181,14 @@ export default function ResultsPage() {
     let topPositionCount = 0;
     for (const result of results) {
       if (!result.response_text) continue;
-      const responseText = result.response_text.toLowerCase();
-      const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
-      let firstPos = Infinity;
-      let firstBrand = '';
-      for (const brand of allBrands) {
-        const pos = responseText.indexOf(brand.toLowerCase());
-        if (pos !== -1 && pos < firstPos) {
-          firstPos = pos;
-          firstBrand = brand;
-        }
-      }
+      // Use all_brands_mentioned if available (includes all detected brands)
+      const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+        ? result.all_brands_mentioned
+        : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
-      if (selectedBrand && firstBrand.toLowerCase() === selectedBrand.toLowerCase()) {
+      // First brand in the ordered list is the top position
+      if (allBrands.length > 0 && selectedBrand && allBrands[0].toLowerCase() === selectedBrand.toLowerCase()) {
         topPositionCount++;
       }
     }
@@ -1214,20 +1197,14 @@ export default function ResultsPage() {
     const ranks: number[] = [];
     for (const result of results) {
       if (!result.response_text) continue;
-      const responseText = result.response_text.toLowerCase();
-      const allBrands = [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
-      const brandPositions: { brand: string; position: number }[] = [];
-      for (const brand of allBrands) {
-        const pos = responseText.indexOf(brand.toLowerCase());
-        if (pos !== -1) {
-          brandPositions.push({ brand, position: pos });
-        }
-      }
-      brandPositions.sort((a, b) => a.position - b.position);
+      // Use all_brands_mentioned if available (includes all detected brands)
+      const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+        ? result.all_brands_mentioned
+        : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
       if (selectedBrand) {
-        const rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === selectedBrand.toLowerCase()) + 1;
+        const rank = allBrands.findIndex(b => b.toLowerCase() === selectedBrand.toLowerCase()) + 1;
         if (rank > 0) ranks.push(rank);
       }
     }
@@ -1314,17 +1291,12 @@ export default function ResultsPage() {
         // Calculate rank for this result
         let rank = '';
         if (r.response_text && r.brand_mentioned) {
-          const responseText = r.response_text.toLowerCase();
-          const allBrands = [runStatus.brand, ...(r.competitors_mentioned || [])].filter(Boolean);
-          const brandPositions: { brand: string; position: number }[] = [];
-          for (const brand of allBrands) {
-            const pos = responseText.indexOf(brand.toLowerCase());
-            if (pos !== -1) {
-              brandPositions.push({ brand, position: pos });
-            }
-          }
-          brandPositions.sort((a, b) => a.position - b.position);
-          const brandRank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === runStatus.brand.toLowerCase()) + 1;
+          // Use all_brands_mentioned if available (includes all detected brands)
+          const allBrands = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+            ? r.all_brands_mentioned
+            : [runStatus.brand, ...(r.competitors_mentioned || [])].filter(Boolean);
+
+          const brandRank = allBrands.findIndex(b => b.toLowerCase() === runStatus.brand.toLowerCase()) + 1;
           if (brandRank > 0) rank = String(brandRank);
         }
 
@@ -2456,17 +2428,12 @@ export default function ResultsPage() {
                           // Calculate position for this result
                           let position: number | null = null;
                           if (result.response_text && selectedBrand) {
-                            const responseText = result.response_text.toLowerCase();
-                            const allBrands = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
-                            const brandPositions: { brand: string; pos: number }[] = [];
-                            for (const brand of allBrands) {
-                              const pos = responseText.indexOf(brand.toLowerCase());
-                              if (pos !== -1) {
-                                brandPositions.push({ brand, pos });
-                              }
-                            }
-                            brandPositions.sort((a, b) => a.pos - b.pos);
-                            const rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === selectedBrand.toLowerCase()) + 1;
+                            // Use all_brands_mentioned if available (includes all detected brands)
+                            const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                              ? result.all_brands_mentioned
+                              : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+
+                            const rank = allBrands.findIndex(b => b.toLowerCase() === selectedBrand.toLowerCase()) + 1;
                             if (rank > 0) position = rank;
                           }
 
@@ -2552,20 +2519,14 @@ export default function ResultsPage() {
                 // Calculate position for this result
                 let position: number | null = null;
                 if (result.response_text && !result.error) {
-                  const responseText = result.response_text.toLowerCase();
                   const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
-                  const allBrands = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
-                  const brandPositions: { brand: string; pos: number }[] = [];
-                  for (const brand of allBrands) {
-                    const pos = responseText.indexOf(brand.toLowerCase());
-                    if (pos !== -1) {
-                      brandPositions.push({ brand, pos });
-                    }
-                  }
-                  brandPositions.sort((a, b) => a.pos - b.pos);
+                  // Use all_brands_mentioned if available (includes all detected brands)
+                  const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                    ? result.all_brands_mentioned
+                    : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
-                  const rank = brandPositions.findIndex(bp => bp.brand.toLowerCase() === (selectedBrand || '').toLowerCase()) + 1;
+                  const rank = allBrands.findIndex(b => b.toLowerCase() === (selectedBrand || '').toLowerCase()) + 1;
                   if (rank > 0) position = rank;
                 }
 
