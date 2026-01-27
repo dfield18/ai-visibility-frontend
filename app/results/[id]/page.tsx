@@ -111,6 +111,17 @@ export default function ResultsPage() {
     window.history.replaceState(null, '', newUrl);
   }, [activeTab, globalBrandFilter, globalLlmFilter, globalPromptFilter]);
 
+  // Close sentiment badge hover popup on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (hoveredSentimentBadge) {
+        setHoveredSentimentBadge(null);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [hoveredSentimentBadge]);
+
   // Get unique prompts from results
   const availablePrompts = useMemo(() => {
     if (!runStatus) return [];
@@ -4018,35 +4029,80 @@ export default function ResultsPage() {
 
           {isHovered && matchingResults.length > 0 && (
             <div
-              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 p-3"
+              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 p-3"
               onMouseEnter={() => setHoveredSentimentBadge({ provider, sentiment })}
               onMouseLeave={() => setHoveredSentimentBadge(null)}
             >
               <div className="text-xs font-medium text-gray-500 mb-2">
-                {count} response{count !== 1 ? 's' : ''} • Click to view full response
+                {count} response{count !== 1 ? 's' : ''} • Click to expand
               </div>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {matchingResults.slice(0, 3).map((result, idx) => (
+              <div className="space-y-2 max-h-64 overflow-y-scroll pr-1">
+                {matchingResults.map((result) => (
                   <div
                     key={result.id}
-                    className="p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                    onClick={() => {
-                      setSelectedResult(result);
-                      setHoveredSentimentBadge(null);
-                    }}
+                    className="bg-gray-50 rounded-lg overflow-hidden"
                   >
-                    <p className="text-xs text-gray-500 mb-1 truncate">{result.prompt}</p>
-                    <p className="text-sm text-gray-700 line-clamp-2">
-                      {result.response_text?.substring(0, 150)}...
-                    </p>
+                    <div
+                      className="p-2 cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleExpanded(result.id);
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs text-gray-500 truncate flex-1">{result.prompt}</p>
+                        <span className="text-xs text-[#4A7C59] ml-2 flex items-center gap-1">
+                          {expandedResults.has(result.id) ? (
+                            <>Hide <ChevronUp className="w-3 h-3" /></>
+                          ) : (
+                            <>View <ChevronDown className="w-3 h-3" /></>
+                          )}
+                        </span>
+                      </div>
+                      {!expandedResults.has(result.id) && (
+                        <p className="text-sm text-gray-700 line-clamp-2">
+                          {result.response_text?.substring(0, 150)}...
+                        </p>
+                      )}
+                    </div>
+                    {expandedResults.has(result.id) && (
+                      <div className="px-2 pb-2 border-t border-gray-200 bg-white">
+                        <div className="max-h-48 overflow-y-auto mt-2">
+                          <p className="text-xs text-gray-500 mb-1">Full Response:</p>
+                          <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_p]:mb-2 [&_ul]:mb-2 [&_ul]:pl-4 [&_ul]:list-disc [&_ol]:mb-2 [&_ol]:pl-4 [&_ol]:list-decimal [&_li]:mb-1">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {result.response_text || ''}
+                            </ReactMarkdown>
+                          </div>
+                        </div>
+                        {result.sources && result.sources.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-gray-100">
+                            <p className="text-xs text-gray-500 mb-1">Sources ({result.sources.length}):</p>
+                            <div className="space-y-1">
+                              {result.sources.slice(0, 3).map((source, idx) => (
+                                <a
+                                  key={idx}
+                                  href={source.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs text-[#4A7C59] hover:underline truncate"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                  {source.title || source.url}
+                                </a>
+                              ))}
+                              {result.sources.length > 3 && (
+                                <p className="text-xs text-gray-400">+{result.sources.length - 3} more</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-              {matchingResults.length > 3 && (
-                <p className="text-xs text-gray-400 mt-2 text-center">
-                  +{matchingResults.length - 3} more response{matchingResults.length - 3 !== 1 ? 's' : ''}
-                </p>
-              )}
             </div>
           )}
         </div>
