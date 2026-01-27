@@ -113,13 +113,20 @@ export default function ResultsPage() {
 
   // Close sentiment badge hover popup on scroll
   useEffect(() => {
+    if (!hoveredSentimentBadge) return;
+
     const handleScroll = () => {
-      if (hoveredSentimentBadge) {
-        setHoveredSentimentBadge(null);
-      }
+      setHoveredSentimentBadge(null);
     };
-    window.addEventListener('scroll', handleScroll, true);
-    return () => window.removeEventListener('scroll', handleScroll, true);
+
+    // Listen on document with capture to catch all scroll events
+    document.addEventListener('scroll', handleScroll, { capture: true, passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      document.removeEventListener('scroll', handleScroll, { capture: true });
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [hoveredSentimentBadge]);
 
   // Get unique prompts from results
@@ -4018,90 +4025,97 @@ export default function ResultsPage() {
       const matchingResults = isHovered ? getResultsForProviderSentiment(provider, sentiment) : [];
 
       return (
-        <div className="relative inline-block">
-          <button
+        <div
+          className="relative inline-block"
+          onMouseEnter={() => setHoveredSentimentBadge({ provider, sentiment })}
+          onMouseLeave={() => setHoveredSentimentBadge(null)}
+        >
+          <div
             className={`inline-flex items-center justify-center w-8 h-8 ${bgColor} ${textColor} text-sm font-medium rounded-lg cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all`}
-            onMouseEnter={() => setHoveredSentimentBadge({ provider, sentiment })}
-            onMouseLeave={() => setHoveredSentimentBadge(null)}
           >
             {count}
-          </button>
+          </div>
 
           {isHovered && matchingResults.length > 0 && (
             <div
-              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 p-3"
-              onMouseEnter={() => setHoveredSentimentBadge({ provider, sentiment })}
-              onMouseLeave={() => setHoveredSentimentBadge(null)}
+              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200"
+              style={{ maxHeight: '400px' }}
             >
-              <div className="text-xs font-medium text-gray-500 mb-2">
-                {count} response{count !== 1 ? 's' : ''} • Click to expand
+              <div className="p-3 border-b border-gray-100">
+                <div className="text-xs font-medium text-gray-500">
+                  {count} response{count !== 1 ? 's' : ''} • Click to expand
+                </div>
               </div>
-              <div className="space-y-2 max-h-64 overflow-y-scroll pr-1">
-                {matchingResults.map((result) => (
-                  <div
-                    key={result.id}
-                    className="bg-gray-50 rounded-lg overflow-hidden"
-                  >
+              <div
+                className="p-3 overflow-y-auto"
+                style={{ maxHeight: '340px' }}
+                onScroll={(e) => e.stopPropagation()}
+              >
+                <div className="space-y-2">
+                  {matchingResults.map((result) => (
                     <div
-                      className="p-2 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleExpanded(result.id);
-                      }}
+                      key={result.id}
+                      className="bg-gray-50 rounded-lg"
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs text-gray-500 truncate flex-1">{result.prompt}</p>
-                        <span className="text-xs text-[#4A7C59] ml-2 flex items-center gap-1">
-                          {expandedResults.has(result.id) ? (
-                            <>Hide <ChevronUp className="w-3 h-3" /></>
-                          ) : (
-                            <>View <ChevronDown className="w-3 h-3" /></>
-                          )}
-                        </span>
-                      </div>
-                      {!expandedResults.has(result.id) && (
-                        <p className="text-sm text-gray-700 line-clamp-2">
-                          {result.response_text?.substring(0, 150)}...
-                        </p>
-                      )}
-                    </div>
-                    {expandedResults.has(result.id) && (
-                      <div className="px-2 pb-2 border-t border-gray-200 bg-white">
-                        <div className="max-h-48 overflow-y-auto mt-2">
-                          <p className="text-xs text-gray-500 mb-1">Full Response:</p>
-                          <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_p]:mb-2 [&_ul]:mb-2 [&_ul]:pl-4 [&_ul]:list-disc [&_ol]:mb-2 [&_ol]:pl-4 [&_ol]:list-decimal [&_li]:mb-1">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {result.response_text || ''}
-                            </ReactMarkdown>
-                          </div>
+                      <button
+                        type="button"
+                        className="w-full p-2 text-left hover:bg-gray-100 transition-colors rounded-t-lg"
+                        onClick={() => toggleExpanded(result.id)}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs text-gray-500 truncate flex-1 pr-2">{result.prompt}</p>
+                          <span className="text-xs text-[#4A7C59] flex items-center gap-1 flex-shrink-0 font-medium">
+                            {expandedResults.has(result.id) ? (
+                              <>Hide <ChevronUp className="w-3 h-3" /></>
+                            ) : (
+                              <>View <ChevronDown className="w-3 h-3" /></>
+                            )}
+                          </span>
                         </div>
-                        {result.sources && result.sources.length > 0 && (
-                          <div className="mt-2 pt-2 border-t border-gray-100">
-                            <p className="text-xs text-gray-500 mb-1">Sources ({result.sources.length}):</p>
-                            <div className="space-y-1">
-                              {result.sources.slice(0, 3).map((source, idx) => (
-                                <a
-                                  key={idx}
-                                  href={source.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-xs text-[#4A7C59] hover:underline truncate"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                  {source.title || source.url}
-                                </a>
-                              ))}
-                              {result.sources.length > 3 && (
-                                <p className="text-xs text-gray-400">+{result.sources.length - 3} more</p>
-                              )}
+                        {!expandedResults.has(result.id) && (
+                          <p className="text-sm text-gray-700 line-clamp-2">
+                            {result.response_text?.substring(0, 150)}...
+                          </p>
+                        )}
+                      </button>
+                      {expandedResults.has(result.id) && (
+                        <div className="px-2 pb-2 border-t border-gray-200 bg-white rounded-b-lg">
+                          <div className="mt-2 max-h-48 overflow-y-auto">
+                            <p className="text-xs text-gray-500 mb-1">Full Response:</p>
+                            <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_p]:mb-2 [&_ul]:mb-2 [&_ul]:pl-4 [&_ul]:list-disc [&_ol]:mb-2 [&_ol]:pl-4 [&_ol]:list-decimal [&_li]:mb-1">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {result.response_text || ''}
+                              </ReactMarkdown>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                          {result.sources && result.sources.length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-gray-100">
+                              <p className="text-xs text-gray-500 mb-1">Sources ({result.sources.length}):</p>
+                              <div className="space-y-1">
+                                {result.sources.slice(0, 3).map((source, idx) => (
+                                  <a
+                                    key={idx}
+                                    href={source.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs text-[#4A7C59] hover:underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                    <span className="truncate">{source.title || source.url}</span>
+                                  </a>
+                                ))}
+                                {result.sources.length > 3 && (
+                                  <p className="text-xs text-gray-400">+{result.sources.length - 3} more</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
