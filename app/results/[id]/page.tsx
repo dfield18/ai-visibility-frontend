@@ -119,30 +119,26 @@ export default function ResultsPage() {
       setHoveredSentimentBadge(null);
     };
 
-    // Listen for wheel events (mouse wheel, trackpad)
-    window.addEventListener('wheel', handleClose, { passive: true });
+    // Use capture phase on document to catch ALL wheel/scroll events before anything else
+    const options = { capture: true, passive: true } as AddEventListenerOptions;
 
-    // Listen for touch scroll
-    window.addEventListener('touchmove', handleClose, { passive: true });
+    document.addEventListener('wheel', handleClose, options);
+    document.addEventListener('touchmove', handleClose, options);
+    document.addEventListener('scroll', handleClose, options);
 
-    // Listen for keyboard scroll (arrow keys, page up/down, etc.)
+    // Keyboard scroll
     const handleKeydown = (e: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
         handleClose();
       }
     };
-    window.addEventListener('keydown', handleKeydown);
-
-    // Also try scroll event on document and window
-    document.addEventListener('scroll', handleClose, { capture: true, passive: true });
-    window.addEventListener('scroll', handleClose, { passive: true });
+    document.addEventListener('keydown', handleKeydown, { capture: true });
 
     return () => {
-      window.removeEventListener('wheel', handleClose);
-      window.removeEventListener('touchmove', handleClose);
-      window.removeEventListener('keydown', handleKeydown);
-      document.removeEventListener('scroll', handleClose, { capture: true });
-      window.removeEventListener('scroll', handleClose);
+      document.removeEventListener('wheel', handleClose, options);
+      document.removeEventListener('touchmove', handleClose, options);
+      document.removeEventListener('scroll', handleClose, options);
+      document.removeEventListener('keydown', handleKeydown, { capture: true });
     };
   }, [hoveredSentimentBadge]);
 
@@ -4054,10 +4050,19 @@ export default function ResultsPage() {
           </div>
 
           {isHovered && matchingResults.length > 0 && (
-            <div
-              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200"
-              style={{ maxHeight: '400px' }}
-            >
+            <>
+              {/* Invisible overlay to catch scroll/wheel events outside the popup */}
+              <div
+                className="fixed inset-0 z-40"
+                onWheel={() => setHoveredSentimentBadge(null)}
+                onScroll={() => setHoveredSentimentBadge(null)}
+                onTouchMove={() => setHoveredSentimentBadge(null)}
+              />
+              <div
+                className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200"
+                style={{ maxHeight: '400px' }}
+                onWheel={(e) => e.stopPropagation()}
+              >
               <div className="p-3 border-b border-gray-100">
                 <div className="text-xs font-medium text-gray-500">
                   {count} response{count !== 1 ? 's' : ''} • Click to expand
@@ -4135,6 +4140,7 @@ export default function ResultsPage() {
                 </div>
               </div>
             </div>
+            </>
           )}
         </div>
       );
