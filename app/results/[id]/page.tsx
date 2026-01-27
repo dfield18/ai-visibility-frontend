@@ -692,6 +692,26 @@ export default function ResultsPage() {
     return formatted;
   };
 
+  // Bold competitor names in response text
+  const highlightCompetitors = (text: string, competitors: string[] | null): string => {
+    if (!text || !competitors || competitors.length === 0) return text;
+
+    let highlighted = text;
+
+    // Sort competitors by length (longest first) to avoid partial replacements
+    const sortedCompetitors = [...competitors].sort((a, b) => b.length - a.length);
+
+    for (const competitor of sortedCompetitors) {
+      // Escape special regex characters in competitor name
+      const escaped = competitor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Match whole words only, case-insensitive, and wrap in bold markdown
+      const regex = new RegExp(`\\b(${escaped})\\b`, 'gi');
+      highlighted = highlighted.replace(regex, '**$1**');
+    }
+
+    return highlighted;
+  };
+
   // Calculate top cited sources
   const topCitedSources = useMemo(() => {
     if (!runStatus) return [];
@@ -3150,7 +3170,7 @@ export default function ResultsPage() {
                                     ),
                                   }}
                                 >
-                                  {formatResponseText(result.response_text || '')}
+                                  {highlightCompetitors(formatResponseText(result.response_text || ''), result.competitors_mentioned)}
                                 </ReactMarkdown>
                               </div>
                               {result.sources && result.sources.length > 0 && (
@@ -4046,7 +4066,7 @@ export default function ResultsPage() {
                         ),
                       }}
                     >
-                      {formatResponseText(selectedResult.response_text || '')}
+                      {highlightCompetitors(formatResponseText(selectedResult.response_text || ''), selectedResult.competitors_mentioned)}
                     </ReactMarkdown>
                   </div>
                   {selectedResult.sources && selectedResult.sources.length > 0 && (
