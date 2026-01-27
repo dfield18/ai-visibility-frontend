@@ -195,11 +195,39 @@ export default function ResultsPage() {
     const selectedBrand = runStatus.search_type === 'category'
       ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
       : runStatus.brand;
+    const brandLower = (selectedBrand || '').toLowerCase();
     const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
       ? result.all_brands_mentioned
       : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
-    const rank = allBrands.findIndex(b => b.toLowerCase() === (selectedBrand || '').toLowerCase()) + 1;
-    return rank > 0 ? rank : null;
+
+    // First try exact match
+    let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+    // If not found, try partial match (brand contains item or item contains brand)
+    if (foundIndex === -1) {
+      foundIndex = allBrands.findIndex(b =>
+        b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+      );
+    }
+
+    // If still not found but brand_mentioned is true, find position by text search
+    if (foundIndex === -1 && result.brand_mentioned && result.response_text) {
+      const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+      if (brandPos >= 0) {
+        let brandsBeforeCount = 0;
+        for (const b of allBrands) {
+          const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+          if (bPos >= 0 && bPos < brandPos) {
+            brandsBeforeCount++;
+          }
+        }
+        return brandsBeforeCount + 1;
+      }
+      // Brand is mentioned but we can't find its position - place it after all known brands
+      return allBrands.length + 1;
+    }
+
+    return foundIndex >= 0 ? foundIndex + 1 : null;
   };
 
   // Sentiment sort order (best to worst)
@@ -632,7 +660,33 @@ export default function ResultsPage() {
             : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
           // Find position of selected brand in the ordered list
-          const rank = allBrands.findIndex(b => b.toLowerCase() === brandLower) + 1;
+          // First try exact match
+          let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+          // If not found, try partial match
+          if (foundIndex === -1) {
+            foundIndex = allBrands.findIndex(b =>
+              b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+            );
+          }
+
+          // If still not found, find position by text search
+          let rank = foundIndex + 1;
+          if (foundIndex === -1) {
+            const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+            if (brandPos >= 0) {
+              let brandsBeforeCount = 0;
+              for (const b of allBrands) {
+                const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                if (bPos >= 0 && bPos < brandPos) {
+                  brandsBeforeCount++;
+                }
+              }
+              rank = brandsBeforeCount + 1;
+            } else {
+              rank = allBrands.length + 1;
+            }
+          }
 
           if (rank > 0) {
             providerStats[provider].ranks.push(rank);
@@ -1054,7 +1108,36 @@ export default function ResultsPage() {
             : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
           // Find position of selected brand in the ordered list
-          rank = allBrands.findIndex(b => b.toLowerCase() === brandLower) + 1;
+          // First try exact match
+          let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+          // If not found, try partial match (brand contains item or item contains brand)
+          if (foundIndex === -1) {
+            foundIndex = allBrands.findIndex(b =>
+              b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+            );
+          }
+
+          // If still not found but brand_mentioned is true, find position by text search
+          if (foundIndex === -1 && result.response_text) {
+            // Find the brand's position in the raw text and count how many other brands appear before it
+            const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+            if (brandPos >= 0) {
+              let brandsBeforeCount = 0;
+              for (const b of allBrands) {
+                const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                if (bPos >= 0 && bPos < brandPos) {
+                  brandsBeforeCount++;
+                }
+              }
+              rank = brandsBeforeCount + 1;
+            } else {
+              // Brand is mentioned but we can't find its position - place it after all known brands
+              rank = allBrands.length + 1;
+            }
+          } else {
+            rank = foundIndex + 1;
+          }
         }
       }
 
@@ -1303,7 +1386,31 @@ export default function ResultsPage() {
         : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
       if (selectedBrand) {
-        const rank = allBrands.findIndex(b => b.toLowerCase() === selectedBrand.toLowerCase()) + 1;
+        const brandLower = selectedBrand.toLowerCase();
+        // First try exact match
+        let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+        // If not found, try partial match
+        if (foundIndex === -1) {
+          foundIndex = allBrands.findIndex(b =>
+            b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+          );
+        }
+
+        // If still not found but brand appears in text, find position by text search
+        let rank = foundIndex + 1;
+        if (foundIndex === -1 && result.response_text.toLowerCase().includes(brandLower)) {
+          const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+          let brandsBeforeCount = 0;
+          for (const b of allBrands) {
+            const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+            if (bPos >= 0 && bPos < brandPos) {
+              brandsBeforeCount++;
+            }
+          }
+          rank = brandsBeforeCount + 1;
+        }
+
         if (rank > 0) ranks.push(rank);
       }
     }
@@ -1395,7 +1502,35 @@ export default function ResultsPage() {
             ? r.all_brands_mentioned
             : [runStatus.brand, ...(r.competitors_mentioned || [])].filter(Boolean);
 
-          const brandRank = allBrands.findIndex(b => b.toLowerCase() === runStatus.brand.toLowerCase()) + 1;
+          const brandLower = runStatus.brand.toLowerCase();
+          // First try exact match
+          let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+          // If not found, try partial match
+          if (foundIndex === -1) {
+            foundIndex = allBrands.findIndex(b =>
+              b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+            );
+          }
+
+          // If still not found, find position by text search
+          let brandRank = foundIndex + 1;
+          if (foundIndex === -1) {
+            const brandPos = r.response_text.toLowerCase().indexOf(brandLower);
+            if (brandPos >= 0) {
+              let brandsBeforeCount = 0;
+              for (const b of allBrands) {
+                const bPos = r.response_text.toLowerCase().indexOf(b.toLowerCase());
+                if (bPos >= 0 && bPos < brandPos) {
+                  brandsBeforeCount++;
+                }
+              }
+              brandRank = brandsBeforeCount + 1;
+            } else {
+              brandRank = allBrands.length + 1;
+            }
+          }
+
           if (brandRank > 0) rank = String(brandRank);
         }
 
@@ -2607,21 +2742,49 @@ export default function ResultsPage() {
                       <p className="text-xs text-gray-500 mb-3">{providerResults.length} responses from {getProviderLabel(provider)}</p>
                       <div className="space-y-2">
                         {providerResults.map((result: Result) => {
+                          const isMentioned = isCategory
+                            ? result.competitors_mentioned?.includes(selectedBrand || '')
+                            : result.brand_mentioned;
+
                           // Calculate position for this result
                           let position: number | null = null;
-                          if (result.response_text && selectedBrand) {
+                          if (result.response_text && selectedBrand && isMentioned) {
+                            const brandLower = selectedBrand.toLowerCase();
                             // Use all_brands_mentioned if available (includes all detected brands)
                             const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
                               ? result.all_brands_mentioned
                               : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
-                            const rank = allBrands.findIndex(b => b.toLowerCase() === selectedBrand.toLowerCase()) + 1;
+                            // First try exact match
+                            let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+                            // If not found, try partial match
+                            if (foundIndex === -1) {
+                              foundIndex = allBrands.findIndex(b =>
+                                b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+                              );
+                            }
+
+                            // If still not found, find position by text search
+                            let rank = foundIndex + 1;
+                            if (foundIndex === -1) {
+                              const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+                              if (brandPos >= 0) {
+                                let brandsBeforeCount = 0;
+                                for (const b of allBrands) {
+                                  const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                                  if (bPos >= 0 && bPos < brandPos) {
+                                    brandsBeforeCount++;
+                                  }
+                                }
+                                rank = brandsBeforeCount + 1;
+                              } else {
+                                rank = allBrands.length + 1;
+                              }
+                            }
+
                             if (rank > 0) position = rank;
                           }
-
-                          const isMentioned = isCategory
-                            ? result.competitors_mentioned?.includes(selectedBrand || '')
-                            : result.brand_mentioned;
 
                           return (
                             <div
@@ -2762,14 +2925,49 @@ export default function ResultsPage() {
                 let position: number | null = null;
                 if (result.response_text && !result.error) {
                   const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
+                  const brandLower = (selectedBrand || '').toLowerCase();
 
-                  // Use all_brands_mentioned if available (includes all detected brands)
-                  const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                    ? result.all_brands_mentioned
-                    : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+                  // Check if brand is mentioned
+                  const isMentioned = isCategory
+                    ? result.competitors_mentioned?.includes(selectedBrand || '')
+                    : result.brand_mentioned;
 
-                  const rank = allBrands.findIndex(b => b.toLowerCase() === (selectedBrand || '').toLowerCase()) + 1;
-                  if (rank > 0) position = rank;
+                  if (isMentioned && brandLower) {
+                    // Use all_brands_mentioned if available (includes all detected brands)
+                    const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                      ? result.all_brands_mentioned
+                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+
+                    // First try exact match
+                    let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+                    // If not found, try partial match
+                    if (foundIndex === -1) {
+                      foundIndex = allBrands.findIndex(b =>
+                        b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+                      );
+                    }
+
+                    // If still not found, find position by text search
+                    let rank = foundIndex + 1;
+                    if (foundIndex === -1) {
+                      const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+                      if (brandPos >= 0) {
+                        let brandsBeforeCount = 0;
+                        for (const b of allBrands) {
+                          const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                          if (bPos >= 0 && bPos < brandPos) {
+                            brandsBeforeCount++;
+                          }
+                        }
+                        rank = brandsBeforeCount + 1;
+                      } else {
+                        rank = allBrands.length + 1;
+                      }
+                    }
+
+                    if (rank > 0) position = rank;
+                  }
                 }
 
                 return (
