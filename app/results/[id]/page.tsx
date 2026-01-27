@@ -3963,7 +3963,7 @@ export default function ResultsPage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-1">How AI Describes {runStatus?.brand}</h3>
           <p className="text-sm text-gray-500 mb-6">Sentiment classification of how AI models mention your brand</p>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6 items-start">
             {/* Sentiment Distribution */}
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-4">Overall Sentiment Distribution</h4>
@@ -3990,8 +3990,8 @@ export default function ResultsPage() {
             </div>
 
             {/* Key Insights */}
-            <div className="bg-[#FAFAF8] rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Key Insight</h4>
+            <div className="bg-[#FAFAF8] rounded-lg p-4 self-start">
+              <h4 className="text-sm font-semibold text-gray-800 mb-2">Key Insight</h4>
               {(() => {
                 const total = brandSentimentData.reduce((sum, d) => sum + d.count, 0);
                 const strongCount = brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0;
