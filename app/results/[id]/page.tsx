@@ -1850,7 +1850,7 @@ export default function ResultsPage() {
                   </div>
                   <div className="h-72 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 100 }}>
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 50 }}>
                       {/* Horizontal band shading - lighter than Range view for detail scatter feel */}
                       <ReferenceArea y1={-0.5} y2={0.5} fill="#bbf7d0" fillOpacity={0.45} />
                       <ReferenceArea y1={0.5} y2={1.5} fill="#fef08a" fillOpacity={0.3} />
@@ -2093,7 +2093,7 @@ export default function ResultsPage() {
                     // Check if any provider has more than 1 response
                     const hasMultipleResponses = rangeChartData.some(d => d.promptsAnalyzed > 1);
                     return (
-                      <div className="flex items-center justify-center flex-wrap gap-4 pl-[60px] mb-2">
+                      <div className="flex items-center justify-center flex-wrap gap-4 pl-[10px] mb-2">
                         {!showSentimentColors && (
                           <div className="flex items-center gap-2">
                             <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
@@ -2137,7 +2137,7 @@ export default function ResultsPage() {
 
                   {/* Sentiment legend - above chart on one line, only when sentiment is on */}
                   {showSentimentColors && (
-                    <div className="flex items-center justify-center gap-3 pl-[60px] mb-2">
+                    <div className="flex items-center justify-center gap-3 pl-[10px] mb-2">
                       <span className="text-xs text-gray-500 font-medium">Sentiment:</span>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
@@ -2172,7 +2172,7 @@ export default function ResultsPage() {
                       <ComposedChart
                         data={rangeChartData}
                         layout="vertical"
-                        margin={{ top: 20, right: 30, bottom: 50, left: 100 }}
+                        margin={{ top: 20, right: 30, bottom: 50, left: 50 }}
                       >
                         {/* Background color bands - green for top ranks, yellow for mid, red for low, gray for not mentioned */}
                         <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.4} /> {/* 1 */}
@@ -2307,7 +2307,7 @@ export default function ResultsPage() {
                     {/* Dots overlay - positioned absolutely over the chart plotting area */}
                     {rangeViewDots.length > 0 && (() => {
                       // Chart margins matching ComposedChart margin prop
-                      const margin = { top: 20, right: 30, bottom: 50, left: 100 };
+                      const margin = { top: 20, right: 30, bottom: 50, left: 50 };
                       const yAxisWidth = 60; // Recharts default YAxis width when not specified
                       const xAxisHeight = 30; // Estimated height of X-axis with labels
                       const numProviders = rangeChartData.length;
@@ -2598,7 +2598,7 @@ export default function ResultsPage() {
                   <BarChart
                     data={shareOfVoiceData}
                     layout="vertical"
-                    margin={{ top: 5, right: 50, bottom: 5, left: 100 }}
+                    margin={{ top: 5, right: 50, bottom: 5, left: 50 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={true} vertical={false} />
                     <XAxis
