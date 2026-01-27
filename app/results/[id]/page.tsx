@@ -2508,7 +2508,7 @@ export default function ResultsPage() {
                                 />
                                 {/* Tooltip on hover */}
                                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
-                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[200px] max-w-[280px] text-left">
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px] max-w-[280px] text-left">
                                     <p className="text-sm font-semibold text-gray-900 mb-1">{dot.prompt.length > 70 ? dot.prompt.substring(0, 70) + '...' : dot.prompt}</p>
                                     <p className="text-sm text-gray-700">
                                       {dot.rank === 0 ? 'Not shown' : dot.rank === 1 ? 'Shown as: #1 (Top result)' : `Shown as: #${dot.rank}`}
