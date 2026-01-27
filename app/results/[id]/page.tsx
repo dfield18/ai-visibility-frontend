@@ -1092,10 +1092,10 @@ export default function ResultsPage() {
         : (sortedRanks[mid - 1] + sortedRanks[mid]) / 2;
 
       // Convert average/median ranking to X position
-      // rank 1-9 -> position 0-8, rank 10 -> position 9, rank 11 -> position 10
+      // rank 1-9 -> position 0-8, rank 10-10.99 -> position 9 ("Shown after top 10"), rank 11 -> position 10 ("Not shown")
       const rankToXPosition = (rank: number): number => {
         if (rank <= 9) return rank - 1;
-        if (rank <= 10) return 9;
+        if (rank < 11) return 9; // Anything between 10 and 11 stays in "Shown after top 10"
         return 10;
       };
       const avgRankingX = rankToXPosition(avgRanking);
