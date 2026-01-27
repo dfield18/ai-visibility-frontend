@@ -1609,7 +1609,11 @@ export default function ResultsPage() {
                       <>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                          <span className="text-xs text-gray-500">Strong</span>
+                          <span className="text-xs text-gray-500">Positive</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                          <span className="text-xs text-gray-500">Favorable</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
@@ -1877,7 +1881,11 @@ export default function ResultsPage() {
                       <>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                          <span className="text-xs text-gray-500">Strong</span>
+                          <span className="text-xs text-gray-500">Positive</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                          <span className="text-xs text-gray-500">Favorable</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
