@@ -1999,7 +1999,7 @@ export default function ResultsPage() {
                       <ComposedChart
                         data={rangeChartData}
                         layout="vertical"
-                        margin={{ top: 20, right: 30, bottom: 50, left: 120 }}
+                        margin={{ top: 20, right: 30, bottom: 50, left: 100 }}
                       >
                         {/* Background color bands - green for top ranks, yellow for mid, red for low, gray for not mentioned */}
                         <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.4} /> {/* 1 */}
@@ -2022,7 +2022,7 @@ export default function ResultsPage() {
                           tick={{ fontSize: 12, fill: '#374151' }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
-                          width={110}
+                          width={90}
                         />
                         <XAxis
                           type="number"
@@ -2135,8 +2135,8 @@ export default function ResultsPage() {
                     {/* Dots overlay - positioned absolutely over the chart plotting area */}
                     {rangeViewDots.length > 0 && (() => {
                       // Chart margins matching ComposedChart margin prop
-                      const margin = { top: 20, right: 30, bottom: 50, left: 120 };
-                      const yAxisWidth = 110; // Matches YAxis width prop
+                      const margin = { top: 20, right: 30, bottom: 50, left: 100 };
+                      const yAxisWidth = 90; // Matches YAxis width prop
                       const xAxisHeight = 30; // Estimated height of X-axis with labels
                       const numProviders = rangeChartData.length;
 
