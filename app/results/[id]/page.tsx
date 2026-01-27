@@ -1990,8 +1990,38 @@ export default function ResultsPage() {
                     </div>
                   </div>
 
-                  {/* Chart with sentiment legend on right */}
-                  <div className="flex gap-4">
+                  {/* Sentiment legend - above chart in two rows, only when sentiment is on */}
+                  {showSentimentColors && (
+                    <div className="flex flex-col items-center gap-1 pl-[60px] mb-2">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                          <span className="text-xs text-gray-500">Very Favorable</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                          <span className="text-xs text-gray-500">Favorable</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                          <span className="text-xs text-gray-500">Neutral</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                          <span className="text-xs text-gray-500">Conditional</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                          <span className="text-xs text-gray-500">Negative</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Chart container */}
+                  <div>
                     <div
                       className="relative flex-1 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
                       style={{ height: Math.max(250, rangeChartData.length * 60 + 80) }}
@@ -2315,31 +2345,6 @@ export default function ResultsPage() {
                       );
                     })()}
                     </div>
-                    {/* Sentiment legend - right side, only when sentiment is on */}
-                    {showSentimentColors && (
-                      <div className="flex flex-col justify-center gap-2 pl-2 pr-4">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80 flex-shrink-0" />
-                          <span className="text-xs text-gray-500 whitespace-nowrap">Very Favorable</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80 flex-shrink-0" />
-                          <span className="text-xs text-gray-500 whitespace-nowrap">Favorable</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60 flex-shrink-0" />
-                          <span className="text-xs text-gray-500 whitespace-nowrap">Neutral</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80 flex-shrink-0" />
-                          <span className="text-xs text-gray-500 whitespace-nowrap">Conditional</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80 flex-shrink-0" />
-                          <span className="text-xs text-gray-500 whitespace-nowrap">Negative</span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
             </>
