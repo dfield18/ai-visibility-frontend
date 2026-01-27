@@ -4239,7 +4239,7 @@ export default function ResultsPage() {
               <div className="space-y-3">
                 {brandSentimentData.map((d) => (
                   <div key={d.sentiment} className="flex items-center gap-3">
-                    <div className="w-32 text-sm text-gray-600">{d.label}</div>
+                    <div className="w-44 text-sm text-gray-600 shrink-0">{d.label}</div>
                     <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
