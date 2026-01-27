@@ -1609,7 +1609,7 @@ export default function ResultsPage() {
                       <>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                          <span className="text-xs text-gray-500">Positive</span>
+                          <span className="text-xs text-gray-500">Very Favorable</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
@@ -1729,7 +1729,7 @@ export default function ResultsPage() {
                                     data.sentiment === 'conditional' ? 'text-orange-500' :
                                     data.sentiment === 'negative_comparison' ? 'text-red-500' : ''
                                   }`}>
-                                    {data.sentiment === 'strong_endorsement' ? 'Positive' :
+                                    {data.sentiment === 'strong_endorsement' ? 'Very Favorable' :
                                      data.sentiment === 'positive_endorsement' ? 'Favorable' :
                                      data.sentiment === 'neutral_mention' ? 'Neutral Mention' :
                                      data.sentiment === 'conditional' ? 'Conditional/Caveated' :
@@ -1881,7 +1881,7 @@ export default function ResultsPage() {
                       <>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                          <span className="text-xs text-gray-500">Positive</span>
+                          <span className="text-xs text-gray-500">Very Favorable</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
@@ -2166,7 +2166,7 @@ export default function ResultsPage() {
                                           dot.sentiment === 'conditional' ? 'text-orange-500' :
                                           dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
                                         }`}>
-                                          {dot.sentiment === 'strong_endorsement' ? 'Positive' :
+                                          {dot.sentiment === 'strong_endorsement' ? 'Very Favorable' :
                                            dot.sentiment === 'positive_endorsement' ? 'Favorable' :
                                            dot.sentiment === 'neutral_mention' ? 'Neutral Mention' :
                                            dot.sentiment === 'conditional' ? 'Conditional/Caveated' :
@@ -2623,7 +2623,7 @@ export default function ResultsPage() {
                             result.brand_sentiment === 'neutral_mention' ? 'bg-gray-100 text-gray-600' :
                             'bg-gray-100 text-gray-500'
                           }`}>
-                            {result.brand_sentiment === 'strong_endorsement' ? 'Positive' :
+                            {result.brand_sentiment === 'strong_endorsement' ? 'Very Favorable' :
                              result.brand_sentiment === 'positive_endorsement' ? 'Favorable' :
                              result.brand_sentiment === 'conditional' ? 'Conditional' :
                              result.brand_sentiment === 'negative_comparison' ? 'Negative' :
@@ -3301,7 +3301,7 @@ export default function ResultsPage() {
     // Helper function to get sentiment label
     const getSentimentLabel = (sentiment: string | null | undefined) => {
       switch (sentiment) {
-        case 'strong_endorsement': return 'Positive';
+        case 'strong_endorsement': return 'Very Favorable';
         case 'positive_endorsement': return 'Favorable';
         case 'neutral_mention': return 'Neutral Mention';
         case 'conditional': return 'Conditional/Caveated';
@@ -3573,7 +3573,7 @@ export default function ResultsPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-green-600">Positive</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-green-600">Very Favorable</th>
                   <th className="text-center py-3 px-2 text-sm font-medium text-lime-600">Favorable</th>
                   <th className="text-center py-3 px-2 text-sm font-medium text-blue-600">Neutral</th>
                   <th className="text-center py-3 px-2 text-sm font-medium text-yellow-600">Conditional</th>
@@ -3653,7 +3653,7 @@ export default function ResultsPage() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-green-600">Positive</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-green-600">Very Favorable</th>
                     <th className="text-center py-3 px-2 text-sm font-medium text-lime-600">Favorable</th>
                     <th className="text-center py-3 px-2 text-sm font-medium text-blue-600">Neutral</th>
                     <th className="text-center py-3 px-2 text-sm font-medium text-yellow-600">Conditional</th>
@@ -4052,7 +4052,7 @@ export default function ResultsPage() {
                         selectedResult.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-800' :
                         'bg-gray-100 text-gray-600'
                       }`}>
-                        {selectedResult.brand_sentiment === 'strong_endorsement' ? 'Positive' :
+                        {selectedResult.brand_sentiment === 'strong_endorsement' ? 'Very Favorable' :
                          selectedResult.brand_sentiment === 'positive_endorsement' ? 'Favorable' :
                          selectedResult.brand_sentiment === 'neutral_mention' ? 'Neutral Mention' :
                          selectedResult.brand_sentiment === 'conditional' ? 'Conditional' :
