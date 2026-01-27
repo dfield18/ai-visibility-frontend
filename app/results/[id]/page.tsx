@@ -114,12 +114,14 @@ export default function ResultsPage() {
   // Close sentiment badge hover popup on scroll/wheel - track scroll position
   const lastScrollY = React.useRef(0);
   const lastScrollX = React.useRef(0);
+  const isPopupOpen = hoveredSentimentBadge !== null;
+  const popupKey = hoveredSentimentBadge ? `${hoveredSentimentBadge.provider}-${hoveredSentimentBadge.sentiment}` : null;
 
   useEffect(() => {
-    console.log('[SentimentPopup] useEffect triggered, hoveredSentimentBadge:', hoveredSentimentBadge);
+    console.log('[SentimentPopup] useEffect triggered, isPopupOpen:', isPopupOpen, 'popupKey:', popupKey);
 
-    if (!hoveredSentimentBadge) {
-      console.log('[SentimentPopup] No hovered badge, returning early');
+    if (!isPopupOpen) {
+      console.log('[SentimentPopup] Popup not open, returning early');
       return;
     }
 
@@ -148,8 +150,10 @@ export default function ResultsPage() {
 
     // Use requestAnimationFrame to check scroll position
     let rafId: number;
+    let isRunning = true;
     let frameCount = 0;
     const checkLoop = () => {
+      if (!isRunning) return;
       checkScrollPosition();
       frameCount++;
       if (frameCount % 60 === 0) {
@@ -178,10 +182,11 @@ export default function ResultsPage() {
 
     return () => {
       console.log('[SentimentPopup] Cleanup: removing listeners and RAF');
+      isRunning = false;
       cancelAnimationFrame(rafId);
       document.removeEventListener('wheel', handleWheel);
     };
-  }, [hoveredSentimentBadge]);
+  }, [isPopupOpen, popupKey]);
 
   // Get unique prompts from results
   const availablePrompts = useMemo(() => {
@@ -4078,11 +4083,25 @@ export default function ResultsPage() {
       const isHovered = hoveredSentimentBadge?.provider === provider && hoveredSentimentBadge?.sentiment === sentiment;
       const matchingResults = isHovered ? getResultsForProviderSentiment(provider, sentiment) : [];
 
+      const handleMouseEnter = useCallback(() => {
+        // Only update if the value is actually different to prevent re-renders
+        setHoveredSentimentBadge(prev => {
+          if (prev?.provider === provider && prev?.sentiment === sentiment) {
+            return prev; // Return same reference to prevent re-render
+          }
+          return { provider, sentiment };
+        });
+      }, [provider, sentiment]);
+
+      const handleMouseLeave = useCallback(() => {
+        setHoveredSentimentBadge(null);
+      }, []);
+
       return (
         <div
           className="relative inline-block"
-          onMouseEnter={() => setHoveredSentimentBadge({ provider, sentiment })}
-          onMouseLeave={() => setHoveredSentimentBadge(null)}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
           <div
             className={`inline-flex items-center justify-center w-8 h-8 ${bgColor} ${textColor} text-sm font-medium rounded-lg cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all`}
