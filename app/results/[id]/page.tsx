@@ -1180,7 +1180,8 @@ export default function ResultsPage() {
 
       // For Range chart stacked bar: rangeHeight spans from best to worst
       // Use small minimum (0.2) for visibility when all dots are at the same position
-      const rangeHeight = Math.max(0.2, worstRangeX - bestRangeX);
+      // Hide range bar entirely when there's only 1 response (no meaningful range)
+      const rangeHeight = stats.dataPoints.length === 1 ? 0 : Math.max(0.2, worstRangeX - bestRangeX);
 
       return {
         provider: stats.provider,
@@ -2236,6 +2237,9 @@ export default function ResultsPage() {
 
                           {/* Render average and median markers for each provider */}
                           {rangeChartData.map((data, idx) => {
+                            // Skip average/median markers when there's only 1 response (no meaningful stats)
+                            if (data.promptsAnalyzed === 1) return null;
+
                             const yPercent = ((idx + 0.5) / numProviders) * 100;
                             const avgXPercent = ((data.avgRankingX - domainMin) / domainRange) * 100;
                             const medianXPercent = ((data.medianRankingX - domainMin) / domainRange) * 100;
