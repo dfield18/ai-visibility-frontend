@@ -116,44 +116,68 @@ export default function ResultsPage() {
   const lastScrollX = React.useRef(0);
 
   useEffect(() => {
-    if (!hoveredSentimentBadge) return;
+    console.log('[SentimentPopup] useEffect triggered, hoveredSentimentBadge:', hoveredSentimentBadge);
+
+    if (!hoveredSentimentBadge) {
+      console.log('[SentimentPopup] No hovered badge, returning early');
+      return;
+    }
 
     // Store initial scroll position
     lastScrollY.current = window.scrollY;
     lastScrollX.current = window.scrollX;
+    console.log('[SentimentPopup] Initial scroll position:', { scrollY: lastScrollY.current, scrollX: lastScrollX.current });
 
     const handleClose = () => {
+      console.log('[SentimentPopup] handleClose called, closing popup');
       setHoveredSentimentBadge(null);
     };
 
     // Check scroll position change (works for all scroll methods)
     const checkScrollPosition = () => {
-      if (window.scrollY !== lastScrollY.current || window.scrollX !== lastScrollX.current) {
+      const currentY = window.scrollY;
+      const currentX = window.scrollX;
+      if (currentY !== lastScrollY.current || currentX !== lastScrollX.current) {
+        console.log('[SentimentPopup] Scroll position changed!', {
+          from: { y: lastScrollY.current, x: lastScrollX.current },
+          to: { y: currentY, x: currentX }
+        });
         handleClose();
       }
     };
 
     // Use requestAnimationFrame to check scroll position
     let rafId: number;
+    let frameCount = 0;
     const checkLoop = () => {
       checkScrollPosition();
-      if (hoveredSentimentBadge) {
-        rafId = requestAnimationFrame(checkLoop);
+      frameCount++;
+      if (frameCount % 60 === 0) {
+        console.log('[SentimentPopup] RAF still running, frame:', frameCount);
       }
+      rafId = requestAnimationFrame(checkLoop);
     };
     rafId = requestAnimationFrame(checkLoop);
+    console.log('[SentimentPopup] Started RAF loop');
 
     // Also listen for wheel as backup (for when scroll hasn't happened yet)
     const handleWheel = (e: WheelEvent) => {
+      console.log('[SentimentPopup] Wheel event detected, target:', e.target);
       // Check if the wheel event is outside the popup
       const popup = document.querySelector('[data-sentiment-popup]');
+      console.log('[SentimentPopup] Popup element:', popup);
       if (popup && !popup.contains(e.target as Node)) {
+        console.log('[SentimentPopup] Wheel outside popup, closing');
         handleClose();
+      } else {
+        console.log('[SentimentPopup] Wheel inside popup, not closing');
       }
     };
     document.addEventListener('wheel', handleWheel, { passive: true });
+    console.log('[SentimentPopup] Added wheel listener');
 
     return () => {
+      console.log('[SentimentPopup] Cleanup: removing listeners and RAF');
       cancelAnimationFrame(rafId);
       document.removeEventListener('wheel', handleWheel);
     };
