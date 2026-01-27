@@ -692,7 +692,7 @@ export default function ResultsPage() {
     return formatted;
   };
 
-  // Bold competitor names in response text
+  // Bold competitor names in response text (only first occurrence of each)
   const highlightCompetitors = (text: string, competitors: string[] | null): string => {
     if (!text || !competitors || competitors.length === 0) return text;
 
@@ -704,8 +704,9 @@ export default function ResultsPage() {
     for (const competitor of sortedCompetitors) {
       // Escape special regex characters in competitor name
       const escaped = competitor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // Match whole words only, case-insensitive, and wrap in bold markdown
-      const regex = new RegExp(`\\b(${escaped})\\b`, 'gi');
+      // Match whole words only, case-insensitive
+      const regex = new RegExp(`\\b(${escaped})\\b`, 'i');
+      // Only replace the first occurrence
       highlighted = highlighted.replace(regex, '**$1**');
     }
 
