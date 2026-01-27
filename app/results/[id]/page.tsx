@@ -1913,36 +1913,11 @@ export default function ResultsPage() {
                   </div>
 
                   {/* Chart with sentiment legend on right */}
-                  <div className="flex">
+                  <div className="flex gap-4">
                     <div
                       className="relative flex-1 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
                       style={{ height: Math.max(250, rangeChartData.length * 60 + 80) }}
                     >
-                      {/* Sentiment legend - right side, only when sentiment is on */}
-                      {showSentimentColors && (
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col gap-2 bg-white/80 rounded-lg p-2 z-10">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                            <span className="text-xs text-gray-500">Very Favorable</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                            <span className="text-xs text-gray-500">Favorable</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                            <span className="text-xs text-gray-500">Neutral</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                            <span className="text-xs text-gray-500">Conditional</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                            <span className="text-xs text-gray-500">Negative</span>
-                          </div>
-                        </div>
-                      )}
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={rangeChartData}
@@ -2260,6 +2235,31 @@ export default function ResultsPage() {
                       );
                     })()}
                     </div>
+                    {/* Sentiment legend - right side, only when sentiment is on */}
+                    {showSentimentColors && (
+                      <div className="flex flex-col justify-center gap-2 pl-2 pr-4">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80 flex-shrink-0" />
+                          <span className="text-xs text-gray-500 whitespace-nowrap">Very Favorable</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80 flex-shrink-0" />
+                          <span className="text-xs text-gray-500 whitespace-nowrap">Favorable</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60 flex-shrink-0" />
+                          <span className="text-xs text-gray-500 whitespace-nowrap">Neutral</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80 flex-shrink-0" />
+                          <span className="text-xs text-gray-500 whitespace-nowrap">Conditional</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80 flex-shrink-0" />
+                          <span className="text-xs text-gray-500 whitespace-nowrap">Negative</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
             </>
