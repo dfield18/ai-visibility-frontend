@@ -1896,6 +1896,24 @@ export default function ResultsPage() {
                           const { x, y, payload } = props;
                           const label = RANK_BANDS[Math.round(payload?.value ?? 0)] || '';
                           const isNotMentioned = label === 'Not shown';
+                          const isAfterTop10 = label === 'Shown after top 10';
+
+                          // Split "Shown after top 10" into two lines
+                          if (isAfterTop10) {
+                            return (
+                              <text
+                                x={x}
+                                y={y}
+                                textAnchor="end"
+                                fill="#6b7280"
+                                fontSize={12}
+                              >
+                                <tspan x={x} dy="-2">Shown after</tspan>
+                                <tspan x={x} dy="12">top 10</tspan>
+                              </text>
+                            );
+                          }
+
                           return (
                             <text
                               x={x}
