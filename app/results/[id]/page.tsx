@@ -89,7 +89,7 @@ export default function ResultsPage() {
   const [tableSortColumn, setTableSortColumn] = useState<'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('prompt');
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
-  const [sentimentProviderSourceFilter, setSentimentProviderSourceFilter] = useState<string>('all');
+  const [sentimentProviderCitationFilter, setSentimentProviderCitationFilter] = useState<string>('all');
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -3864,6 +3864,32 @@ export default function ResultsPage() {
     // Get the effective brand filter (default to searched brand)
     const effectiveSentimentBrand = sentimentProviderBrandFilter || runStatus?.brand || '';
 
+    // Helper to extract domain from URL
+    const extractDomain = (url: string): string => {
+      try {
+        const hostname = new URL(url).hostname;
+        // Remove www. prefix
+        return hostname.replace(/^www\./, '');
+      } catch {
+        return url;
+      }
+    };
+
+    // Get list of unique citation source domains for the filter dropdown
+    const citationSourceOptions = useMemo(() => {
+      const domains = new Set<string>();
+      globallyFilteredResults.forEach((r: Result) => {
+        if (!r.error && r.sources) {
+          r.sources.forEach((source) => {
+            if (source.url) {
+              domains.add(extractDomain(source.url));
+            }
+          });
+        }
+      });
+      return Array.from(domains).sort();
+    }, [globallyFilteredResults]);
+
     const sentimentByProvider = useMemo(() => {
       const providerData: Record<string, {
         strong_endorsement: number;
@@ -3879,8 +3905,14 @@ export default function ResultsPage() {
       globallyFilteredResults
         .filter((r: Result) => {
           if (r.error) return false;
-          // Filter by source/provider if not "all"
-          if (sentimentProviderSourceFilter !== 'all' && r.provider !== sentimentProviderSourceFilter) return false;
+          // Filter by citation source domain if not "all"
+          if (sentimentProviderCitationFilter !== 'all') {
+            if (!r.sources || r.sources.length === 0) return false;
+            const hasCitationFromDomain = r.sources.some(
+              (source) => source.url && extractDomain(source.url) === sentimentProviderCitationFilter
+            );
+            if (!hasCitationFromDomain) return false;
+          }
           return true;
         })
         .forEach((r: Result) => {
@@ -3925,7 +3957,7 @@ export default function ResultsPage() {
           strongRate: total > 0 ? (positiveTotal / total) * 100 : 0,
         };
       }).sort((a, b) => b.strongRate - a.strongRate);
-    }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderSourceFilter]);
+    }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderCitationFilter]);
 
     // Calculate competitor sentiment comparison
     const competitorSentimentData = useMemo(() => {
@@ -4078,13 +4110,13 @@ export default function ResultsPage() {
             <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Provider</h3>
             <div className="flex items-center gap-2">
               <select
-                value={sentimentProviderSourceFilter}
-                onChange={(e) => setSentimentProviderSourceFilter(e.target.value)}
+                value={sentimentProviderCitationFilter}
+                onChange={(e) => setSentimentProviderCitationFilter(e.target.value)}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
               >
                 <option value="all">All Sources</option>
-                {availableProviders.slice().sort().map((provider) => (
-                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                {citationSourceOptions.map((domain) => (
+                  <option key={domain} value={domain}>{domain}</option>
                 ))}
               </select>
               <select
