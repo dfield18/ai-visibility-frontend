@@ -89,6 +89,7 @@ export default function ResultsPage() {
   const [tableSortColumn, setTableSortColumn] = useState<'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('prompt');
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
+  const [sentimentProviderSourceFilter, setSentimentProviderSourceFilter] = useState<string>('all');
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -3876,7 +3877,12 @@ export default function ResultsPage() {
       const isSearchedBrand = effectiveSentimentBrand === runStatus?.brand;
 
       globallyFilteredResults
-        .filter((r: Result) => !r.error)
+        .filter((r: Result) => {
+          if (r.error) return false;
+          // Filter by source/provider if not "all"
+          if (sentimentProviderSourceFilter !== 'all' && r.provider !== sentimentProviderSourceFilter) return false;
+          return true;
+        })
         .forEach((r: Result) => {
           if (!providerData[r.provider]) {
             providerData[r.provider] = {
@@ -3919,7 +3925,7 @@ export default function ResultsPage() {
           strongRate: total > 0 ? (positiveTotal / total) * 100 : 0,
         };
       }).sort((a, b) => b.strongRate - a.strongRate);
-    }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand]);
+    }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderSourceFilter]);
 
     // Calculate competitor sentiment comparison
     const competitorSentimentData = useMemo(() => {
@@ -4070,17 +4076,29 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Provider</h3>
-            <select
-              value={sentimentProviderBrandFilter || runStatus?.brand || ''}
-              onChange={(e) => setSentimentProviderBrandFilter(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-            >
-              {sentimentProviderBrandOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <select
+                value={sentimentProviderSourceFilter}
+                onChange={(e) => setSentimentProviderSourceFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Sources</option>
+                {availableProviders.slice().sort().map((provider) => (
+                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                ))}
+              </select>
+              <select
+                value={sentimentProviderBrandFilter || runStatus?.brand || ''}
+                onChange={(e) => setSentimentProviderBrandFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                {sentimentProviderBrandOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <p className="text-sm text-gray-500 mb-6">How different AI models describe {effectiveSentimentBrand || 'your brand'}</p>
 
