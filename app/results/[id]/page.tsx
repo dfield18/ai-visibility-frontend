@@ -2210,7 +2210,39 @@ export default function ResultsPage() {
                         <YAxis
                           type="category"
                           dataKey="label"
-                          tick={{ fontSize: 12, fill: '#374151' }}
+                          tick={(props: any) => {
+                            const { x, y, payload } = props;
+                            const label = payload?.value || '';
+                            const isGoogleAI = label === 'Google AI Overviews';
+
+                            if (isGoogleAI) {
+                              return (
+                                <text
+                                  x={x}
+                                  y={y}
+                                  textAnchor="end"
+                                  fill="#374151"
+                                  fontSize={12}
+                                >
+                                  <tspan x={x} dy="-2">Google AI</tspan>
+                                  <tspan x={x} dy="14">Overviews</tspan>
+                                </text>
+                              );
+                            }
+
+                            return (
+                              <text
+                                x={x}
+                                y={y}
+                                dy={4}
+                                textAnchor="end"
+                                fill="#374151"
+                                fontSize={12}
+                              >
+                                {label}
+                              </text>
+                            );
+                          }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
                         />
