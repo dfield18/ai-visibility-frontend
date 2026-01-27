@@ -2630,8 +2630,18 @@ export default function ResultsPage() {
                 );
               })()}
 
-              {/* Filter */}
-              <div className="flex items-center justify-end mb-4">
+              {/* Filters */}
+              <div className="flex items-center justify-end gap-2 mb-4">
+                <select
+                  value={brandMentionsProviderFilter}
+                  onChange={(e) => setBrandMentionsProviderFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                >
+                  <option value="all">All LLMs</option>
+                  {availableProviders.map((provider) => (
+                    <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                  ))}
+                </select>
                 <select
                   value={shareOfVoiceFilter}
                   onChange={(e) => setShareOfVoiceFilter(e.target.value as 'all' | 'tracked')}
