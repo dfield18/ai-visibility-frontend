@@ -118,20 +118,15 @@ export default function ResultsPage() {
   const popupKey = hoveredSentimentBadge ? `${hoveredSentimentBadge.provider}-${hoveredSentimentBadge.sentiment}` : null;
 
   useEffect(() => {
-    console.log('[SentimentPopup] useEffect triggered, isPopupOpen:', isPopupOpen, 'popupKey:', popupKey);
-
     if (!isPopupOpen) {
-      console.log('[SentimentPopup] Popup not open, returning early');
       return;
     }
 
     // Store initial scroll position
     lastScrollY.current = window.scrollY;
     lastScrollX.current = window.scrollX;
-    console.log('[SentimentPopup] Initial scroll position:', { scrollY: lastScrollY.current, scrollX: lastScrollX.current });
 
     const handleClose = () => {
-      console.log('[SentimentPopup] handleClose called, closing popup');
       setHoveredSentimentBadge(null);
     };
 
@@ -140,10 +135,6 @@ export default function ResultsPage() {
       const currentY = window.scrollY;
       const currentX = window.scrollX;
       if (currentY !== lastScrollY.current || currentX !== lastScrollX.current) {
-        console.log('[SentimentPopup] Scroll position changed!', {
-          from: { y: lastScrollY.current, x: lastScrollX.current },
-          to: { y: currentY, x: currentX }
-        });
         handleClose();
       }
     };
@@ -151,37 +142,24 @@ export default function ResultsPage() {
     // Use requestAnimationFrame to check scroll position
     let rafId: number;
     let isRunning = true;
-    let frameCount = 0;
     const checkLoop = () => {
       if (!isRunning) return;
       checkScrollPosition();
-      frameCount++;
-      if (frameCount % 60 === 0) {
-        console.log('[SentimentPopup] RAF still running, frame:', frameCount);
-      }
       rafId = requestAnimationFrame(checkLoop);
     };
     rafId = requestAnimationFrame(checkLoop);
-    console.log('[SentimentPopup] Started RAF loop');
 
     // Also listen for wheel as backup (for when scroll hasn't happened yet)
     const handleWheel = (e: WheelEvent) => {
-      console.log('[SentimentPopup] Wheel event detected, target:', e.target);
       // Check if the wheel event is outside the popup
       const popup = document.querySelector('[data-sentiment-popup]');
-      console.log('[SentimentPopup] Popup element:', popup);
       if (popup && !popup.contains(e.target as Node)) {
-        console.log('[SentimentPopup] Wheel outside popup, closing');
         handleClose();
-      } else {
-        console.log('[SentimentPopup] Wheel inside popup, not closing');
       }
     };
     document.addEventListener('wheel', handleWheel, { passive: true });
-    console.log('[SentimentPopup] Added wheel listener');
 
     return () => {
-      console.log('[SentimentPopup] Cleanup: removing listeners and RAF');
       isRunning = false;
       cancelAnimationFrame(rafId);
       document.removeEventListener('wheel', handleWheel);
@@ -4114,6 +4092,10 @@ export default function ResultsPage() {
                 data-sentiment-popup
                 className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200"
                 style={{ maxHeight: '400px' }}
+                onWheel={(e) => {
+                  // Prevent wheel events inside popup from closing it
+                  e.stopPropagation();
+                }}
               >
               <div className="p-3 border-b border-gray-100">
                 <div className="text-xs font-medium text-gray-500">
@@ -4121,9 +4103,22 @@ export default function ResultsPage() {
                 </div>
               </div>
               <div
-                className="p-3 overflow-y-auto"
+                className="p-3 overflow-y-auto overscroll-contain"
                 style={{ maxHeight: '340px' }}
                 onScroll={(e) => e.stopPropagation()}
+                onWheel={(e) => {
+                  // Prevent overscroll from affecting the page
+                  const target = e.currentTarget;
+                  const { scrollTop, scrollHeight, clientHeight } = target;
+                  const isAtTop = scrollTop === 0;
+                  const isAtBottom = scrollTop + clientHeight >= scrollHeight;
+
+                  // If scrolling up at top or down at bottom, prevent page scroll
+                  if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+                    e.preventDefault();
+                  }
+                  e.stopPropagation();
+                }}
               >
                 <div className="space-y-2">
                   {matchingResults.map((result) => (
