@@ -2000,32 +2000,29 @@ export default function ResultsPage() {
                     );
                   })()}
 
-                  {/* Sentiment legend - above chart in two rows, only when sentiment is on */}
+                  {/* Sentiment legend - above chart on one line, only when sentiment is on */}
                   {showSentimentColors && (
-                    <div className="flex flex-col items-center gap-1 pl-[60px] mb-2">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                          <span className="text-xs text-gray-500">Very Favorable</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                          <span className="text-xs text-gray-500">Favorable</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                          <span className="text-xs text-gray-500">Neutral</span>
-                        </div>
+                    <div className="flex items-center justify-center gap-3 pl-[60px] mb-2">
+                      <span className="text-xs text-gray-500 font-medium">Sentiment:</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                        <span className="text-xs text-gray-500">Very Favorable</span>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                          <span className="text-xs text-gray-500">Conditional</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                          <span className="text-xs text-gray-500">Negative</span>
-                        </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                        <span className="text-xs text-gray-500">Favorable</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                        <span className="text-xs text-gray-500">Neutral</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                        <span className="text-xs text-gray-500">Conditional</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                        <span className="text-xs text-gray-500">Negative</span>
                       </div>
                     </div>
                   )}
