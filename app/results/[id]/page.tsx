@@ -2000,8 +2000,8 @@ export default function ResultsPage() {
                               : data.prompt;
                             return (
                               <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px] max-w-[280px]">
-                                <p className="text-sm font-semibold text-gray-900 mb-1">
-                                  {data.label}
+                                <p className="text-sm font-semibold text-gray-900 mb-1" title={data.prompt}>
+                                  {truncatedPrompt}
                                 </p>
                                 <p className="text-sm text-gray-700">
                                   {data.rank === 0
@@ -2025,8 +2025,8 @@ export default function ResultsPage() {
                                      data.sentiment === 'negative_comparison' ? 'Negative Comparison' : ''}
                                   </p>
                                 )}
-                                <p className="text-xs text-gray-500 mt-2" title={data.prompt}>
-                                  {truncatedPrompt}
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {data.label}
                                 </p>
                               </div>
                             );
@@ -2508,29 +2508,27 @@ export default function ResultsPage() {
                                 />
                                 {/* Tooltip on hover */}
                                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
-                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[200px] text-left">
-                                    <p className="text-sm font-semibold text-gray-900 mb-1">{dot.prompt}</p>
-                                    <p className="text-xs text-gray-500">({dot.label})</p>
-                                    <div className="mt-2 pt-2 border-t border-gray-100">
-                                      <p className="text-sm text-gray-700">
-                                        {dot.rank === 0 ? 'Not shown' : `Shown as result #${dot.rank}`}
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[200px] max-w-[280px] text-left">
+                                    <p className="text-sm font-semibold text-gray-900 mb-1">{dot.prompt.length > 70 ? dot.prompt.substring(0, 70) + '...' : dot.prompt}</p>
+                                    <p className="text-sm text-gray-700">
+                                      {dot.rank === 0 ? 'Not shown' : dot.rank === 1 ? 'Shown as: #1 (Top result)' : `Shown as: #${dot.rank}`}
+                                    </p>
+                                    {showSentimentColors && dot.sentiment && dot.sentiment !== 'not_mentioned' && (
+                                      <p className={`text-xs mt-1 ${
+                                        dot.sentiment === 'strong_endorsement' ? 'text-green-600' :
+                                        dot.sentiment === 'positive_endorsement' ? 'text-lime-600' :
+                                        dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
+                                        dot.sentiment === 'conditional' ? 'text-orange-500' :
+                                        dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
+                                      }`}>
+                                        {dot.sentiment === 'strong_endorsement' ? 'Very Favorable' :
+                                         dot.sentiment === 'positive_endorsement' ? 'Favorable' :
+                                         dot.sentiment === 'neutral_mention' ? 'Neutral Mention' :
+                                         dot.sentiment === 'conditional' ? 'Conditional/Caveated' :
+                                         dot.sentiment === 'negative_comparison' ? 'Negative Comparison' : ''}
                                       </p>
-                                      {showSentimentColors && dot.sentiment && dot.sentiment !== 'not_mentioned' && (
-                                        <p className={`text-xs mt-1 ${
-                                          dot.sentiment === 'strong_endorsement' ? 'text-green-600' :
-                                          dot.sentiment === 'positive_endorsement' ? 'text-lime-600' :
-                                          dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
-                                          dot.sentiment === 'conditional' ? 'text-orange-500' :
-                                          dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
-                                        }`}>
-                                          {dot.sentiment === 'strong_endorsement' ? 'Very Favorable' :
-                                           dot.sentiment === 'positive_endorsement' ? 'Favorable' :
-                                           dot.sentiment === 'neutral_mention' ? 'Neutral Mention' :
-                                           dot.sentiment === 'conditional' ? 'Conditional/Caveated' :
-                                           dot.sentiment === 'negative_comparison' ? 'Negative Comparison' : ''}
-                                        </p>
-                                      )}
-                                    </div>
+                                    )}
+                                    <p className="text-xs text-gray-400 mt-2">{dot.label}</p>
                                   </div>
                                 </div>
                               </div>
