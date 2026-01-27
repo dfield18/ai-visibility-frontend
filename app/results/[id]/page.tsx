@@ -86,6 +86,8 @@ export default function ResultsPage() {
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
   const [chartTab, setChartTab] = useState<'allAnswers' | 'performanceRange' | 'shareOfVoice'>('allAnswers');
   const [showSentimentColors, setShowSentimentColors] = useState(false);
+  const [tableSortColumn, setTableSortColumn] = useState<'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('prompt');
+  const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -186,6 +188,81 @@ export default function ResultsPage() {
       return true;
     });
   }, [globallyFilteredResults, filter, providerFilter, runStatus]);
+
+  // Helper to calculate position for a result
+  const getResultPosition = (result: Result): number | null => {
+    if (!result.response_text || result.error || !runStatus) return null;
+    const selectedBrand = runStatus.search_type === 'category'
+      ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
+      : runStatus.brand;
+    const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+      ? result.all_brands_mentioned
+      : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+    const rank = allBrands.findIndex(b => b.toLowerCase() === (selectedBrand || '').toLowerCase()) + 1;
+    return rank > 0 ? rank : null;
+  };
+
+  // Sentiment sort order (best to worst)
+  const sentimentOrder: Record<string, number> = {
+    'strong_endorsement': 1,
+    'positive_endorsement': 2,
+    'neutral_mention': 3,
+    'conditional': 4,
+    'negative_comparison': 5,
+    'not_mentioned': 6,
+  };
+
+  // Sort filtered results
+  const sortedResults = useMemo(() => {
+    const sorted = [...filteredResults];
+
+    sorted.sort((a, b) => {
+      let comparison = 0;
+
+      switch (tableSortColumn) {
+        case 'prompt':
+          comparison = a.prompt.localeCompare(b.prompt);
+          break;
+        case 'llm':
+          comparison = a.provider.localeCompare(b.provider);
+          break;
+        case 'position':
+          const posA = getResultPosition(a) ?? 999;
+          const posB = getResultPosition(b) ?? 999;
+          comparison = posA - posB;
+          break;
+        case 'mentioned':
+          const mentionedA = a.brand_mentioned ? 1 : 0;
+          const mentionedB = b.brand_mentioned ? 1 : 0;
+          comparison = mentionedB - mentionedA; // Yes first
+          break;
+        case 'sentiment':
+          const sentA = sentimentOrder[a.brand_sentiment || 'not_mentioned'] || 6;
+          const sentB = sentimentOrder[b.brand_sentiment || 'not_mentioned'] || 6;
+          comparison = sentA - sentB;
+          break;
+        case 'competitors':
+          const compA = a.competitors_mentioned?.length || 0;
+          const compB = b.competitors_mentioned?.length || 0;
+          comparison = compB - compA; // More competitors first
+          break;
+      }
+
+      return tableSortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [filteredResults, tableSortColumn, tableSortDirection, runStatus]);
+
+  // Handle table header click for sorting
+  const handleTableSort = (column: typeof tableSortColumn) => {
+    if (tableSortColumn === column) {
+      setTableSortDirection(tableSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setTableSortColumn(column);
+      setTableSortDirection('asc');
+    }
+  };
 
   // Count AI Overview unavailable results
   const aiOverviewUnavailableCount = useMemo(() => {
@@ -2545,19 +2622,79 @@ export default function ResultsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                <th
+                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  onClick={() => handleTableSort('prompt')}
+                >
+                  <span className="flex items-center gap-1">
+                    Prompt
+                    {tableSortColumn === 'prompt' && (
+                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </span>
+                </th>
+                <th
+                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  onClick={() => handleTableSort('llm')}
+                >
+                  <span className="flex items-center gap-1">
+                    LLM
+                    {tableSortColumn === 'llm' && (
+                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </span>
+                </th>
+                <th
+                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  onClick={() => handleTableSort('position')}
+                >
+                  <span className="flex items-center gap-1">
+                    Position
+                    {tableSortColumn === 'position' && (
+                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </span>
+                </th>
                 {!isCategory && (
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{runStatus?.brand} Mentioned</th>
+                  <th
+                    className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                    onClick={() => handleTableSort('mentioned')}
+                  >
+                    <span className="flex items-center gap-1">
+                      {runStatus?.brand} Mentioned
+                      {tableSortColumn === 'mentioned' && (
+                        <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                      )}
+                    </span>
+                  </th>
                 )}
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors'}</th>
+                <th
+                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  onClick={() => handleTableSort('sentiment')}
+                >
+                  <span className="flex items-center gap-1">
+                    Sentiment
+                    {tableSortColumn === 'sentiment' && (
+                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </span>
+                </th>
+                <th
+                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  onClick={() => handleTableSort('competitors')}
+                >
+                  <span className="flex items-center gap-1">
+                    {isCategory ? 'Brands' : 'Competitors'}
+                    {tableSortColumn === 'competitors' && (
+                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                    )}
+                  </span>
+                </th>
                 <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredResults.map((result: Result) => {
+              {sortedResults.map((result: Result) => {
                 // Calculate position for this result
                 let position: number | null = null;
                 if (result.response_text && !result.error) {
