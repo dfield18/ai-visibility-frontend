@@ -3170,7 +3170,7 @@ export default function ResultsPage() {
                                     ),
                                   }}
                                 >
-                                  {highlightCompetitors(formatResponseText(result.response_text || ''), result.competitors_mentioned)}
+                                  {highlightCompetitors(formatResponseText(result.response_text || ''), result.all_brands_mentioned)}
                                 </ReactMarkdown>
                               </div>
                               {result.sources && result.sources.length > 0 && (
@@ -4066,7 +4066,7 @@ export default function ResultsPage() {
                         ),
                       }}
                     >
-                      {highlightCompetitors(formatResponseText(selectedResult.response_text || ''), selectedResult.competitors_mentioned)}
+                      {highlightCompetitors(formatResponseText(selectedResult.response_text || ''), selectedResult.all_brands_mentioned)}
                     </ReactMarkdown>
                   </div>
                   {selectedResult.sources && selectedResult.sources.length > 0 && (
