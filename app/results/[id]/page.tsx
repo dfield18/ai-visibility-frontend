@@ -4088,7 +4088,7 @@ export default function ResultsPage() {
           {isHovered && matchingResults.length > 0 && (
             <div
               data-sentiment-popup
-              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-w-[280px]"
+              className="absolute z-50 left-full ml-2 top-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-w-[280px]"
               style={{ maxHeight: '350px' }}
               onWheel={(e) => e.stopPropagation()}
             >
