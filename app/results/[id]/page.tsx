@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -111,53 +111,38 @@ export default function ResultsPage() {
     window.history.replaceState(null, '', newUrl);
   }, [activeTab, globalBrandFilter, globalLlmFilter, globalPromptFilter]);
 
-  // Ref for the currently hovered sentiment badge element
-  const hoveredBadgeRef = useRef<HTMLDivElement | null>(null);
-
-  // Close sentiment badge hover popup on scroll using Intersection Observer
+  // Close sentiment badge hover popup on any scroll/wheel activity
   useEffect(() => {
-    if (!hoveredSentimentBadge || !hoveredBadgeRef.current) return;
+    if (!hoveredSentimentBadge) return;
 
-    const element = hoveredBadgeRef.current;
-
-    // Use Intersection Observer to detect when badge scrolls out of view
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (!entry.isIntersecting) {
-          setHoveredSentimentBadge(null);
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    observer.observe(element);
-
-    // Also listen for any scroll events as a backup
-    const handleScroll = () => {
+    const handleClose = () => {
       setHoveredSentimentBadge(null);
     };
 
-    // Add scroll listener to all scrollable ancestors
-    let parent = element.parentElement;
-    const scrollableParents: Element[] = [];
-    while (parent) {
-      const style = getComputedStyle(parent);
-      if (style.overflow === 'auto' || style.overflow === 'scroll' ||
-          style.overflowY === 'auto' || style.overflowY === 'scroll') {
-        scrollableParents.push(parent);
-        parent.addEventListener('scroll', handleScroll, { passive: true });
-      }
-      parent = parent.parentElement;
-    }
+    // Listen for wheel events (mouse wheel, trackpad)
+    window.addEventListener('wheel', handleClose, { passive: true });
 
-    // Also listen on window
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Listen for touch scroll
+    window.addEventListener('touchmove', handleClose, { passive: true });
+
+    // Listen for keyboard scroll (arrow keys, page up/down, etc.)
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeydown);
+
+    // Also try scroll event on document and window
+    document.addEventListener('scroll', handleClose, { capture: true, passive: true });
+    window.addEventListener('scroll', handleClose, { passive: true });
 
     return () => {
-      observer.disconnect();
-      scrollableParents.forEach(p => p.removeEventListener('scroll', handleScroll));
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('wheel', handleClose);
+      window.removeEventListener('touchmove', handleClose);
+      window.removeEventListener('keydown', handleKeydown);
+      document.removeEventListener('scroll', handleClose, { capture: true });
+      window.removeEventListener('scroll', handleClose);
     };
   }, [hoveredSentimentBadge]);
 
@@ -4058,7 +4043,6 @@ export default function ResultsPage() {
 
       return (
         <div
-          ref={isHovered ? hoveredBadgeRef : null}
           className="relative inline-block"
           onMouseEnter={() => setHoveredSentimentBadge({ provider, sentiment })}
           onMouseLeave={() => setHoveredSentimentBadge(null)}
