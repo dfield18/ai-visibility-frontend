@@ -2022,7 +2022,6 @@ export default function ResultsPage() {
                           tick={{ fontSize: 12, fill: '#374151' }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
-                          width={90}
                         />
                         <XAxis
                           type="number"
@@ -2136,7 +2135,7 @@ export default function ResultsPage() {
                     {rangeViewDots.length > 0 && (() => {
                       // Chart margins matching ComposedChart margin prop
                       const margin = { top: 20, right: 30, bottom: 50, left: 100 };
-                      const yAxisWidth = 90; // Matches YAxis width prop
+                      const yAxisWidth = 60; // Recharts default YAxis width when not specified
                       const xAxisHeight = 30; // Estimated height of X-axis with labels
                       const numProviders = rangeChartData.length;
 
