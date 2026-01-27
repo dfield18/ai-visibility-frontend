@@ -90,6 +90,7 @@ export default function ResultsPage() {
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
   const [sentimentProviderCitationFilter, setSentimentProviderCitationFilter] = useState<string>('all');
+  const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -3959,6 +3960,99 @@ export default function ResultsPage() {
       }).sort((a, b) => b.strongRate - a.strongRate);
     }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderCitationFilter]);
 
+    // Helper to get results for a specific provider and sentiment
+    const getResultsForProviderSentiment = (provider: string, sentiment: string): Result[] => {
+      const isSearchedBrand = effectiveSentimentBrand === runStatus?.brand;
+      return globallyFilteredResults.filter((r: Result) => {
+        if (r.error) return false;
+        if (r.provider !== provider) return false;
+
+        // Apply citation filter if set
+        if (sentimentProviderCitationFilter !== 'all') {
+          if (!r.sources || r.sources.length === 0) return false;
+          const hasCitationFromDomain = r.sources.some(
+            (source) => source.url && extractDomain(source.url) === sentimentProviderCitationFilter
+          );
+          if (!hasCitationFromDomain) return false;
+        }
+
+        // Check sentiment match
+        let resultSentiment: string;
+        if (isSearchedBrand) {
+          resultSentiment = r.brand_sentiment || 'not_mentioned';
+        } else {
+          resultSentiment = r.competitor_sentiments?.[effectiveSentimentBrand] || 'not_mentioned';
+        }
+        return resultSentiment === sentiment;
+      });
+    };
+
+    // Sentiment badge with hover preview component
+    const SentimentBadgeWithPreview = ({
+      provider,
+      sentiment,
+      count,
+      bgColor,
+      textColor
+    }: {
+      provider: string;
+      sentiment: string;
+      count: number;
+      bgColor: string;
+      textColor: string;
+    }) => {
+      if (count === 0) return null;
+
+      const isHovered = hoveredSentimentBadge?.provider === provider && hoveredSentimentBadge?.sentiment === sentiment;
+      const matchingResults = isHovered ? getResultsForProviderSentiment(provider, sentiment) : [];
+
+      return (
+        <div className="relative inline-block">
+          <button
+            className={`inline-flex items-center justify-center w-8 h-8 ${bgColor} ${textColor} text-sm font-medium rounded-lg cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all`}
+            onMouseEnter={() => setHoveredSentimentBadge({ provider, sentiment })}
+            onMouseLeave={() => setHoveredSentimentBadge(null)}
+          >
+            {count}
+          </button>
+
+          {isHovered && matchingResults.length > 0 && (
+            <div
+              className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 p-3"
+              onMouseEnter={() => setHoveredSentimentBadge({ provider, sentiment })}
+              onMouseLeave={() => setHoveredSentimentBadge(null)}
+            >
+              <div className="text-xs font-medium text-gray-500 mb-2">
+                {count} response{count !== 1 ? 's' : ''} • Click to view full response
+              </div>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {matchingResults.slice(0, 3).map((result, idx) => (
+                  <div
+                    key={result.id}
+                    className="p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => {
+                      setSelectedResult(result);
+                      setHoveredSentimentBadge(null);
+                    }}
+                  >
+                    <p className="text-xs text-gray-500 mb-1 truncate">{result.prompt}</p>
+                    <p className="text-sm text-gray-700 line-clamp-2">
+                      {result.response_text?.substring(0, 150)}...
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {matchingResults.length > 3 && (
+                <p className="text-xs text-gray-400 mt-2 text-center">
+                  +{matchingResults.length - 3} more response{matchingResults.length - 3 !== 1 ? 's' : ''}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    };
+
     // Calculate competitor sentiment comparison
     const competitorSentimentData = useMemo(() => {
       const competitorData: Record<string, {
@@ -4155,46 +4249,58 @@ export default function ResultsPage() {
                       <span className="text-sm font-medium text-gray-900">{row.label}</span>
                     </td>
                     <td className="text-center py-3 px-2">
-                      {row.strong_endorsement > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-sm font-medium rounded-lg">
-                          {row.strong_endorsement}
-                        </span>
-                      )}
+                      <SentimentBadgeWithPreview
+                        provider={row.provider}
+                        sentiment="strong_endorsement"
+                        count={row.strong_endorsement}
+                        bgColor="bg-green-100"
+                        textColor="text-green-800"
+                      />
                     </td>
                     <td className="text-center py-3 px-2">
-                      {row.positive_endorsement > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-lime-100 text-lime-800 text-sm font-medium rounded-lg">
-                          {row.positive_endorsement}
-                        </span>
-                      )}
+                      <SentimentBadgeWithPreview
+                        provider={row.provider}
+                        sentiment="positive_endorsement"
+                        count={row.positive_endorsement}
+                        bgColor="bg-lime-100"
+                        textColor="text-lime-800"
+                      />
                     </td>
                     <td className="text-center py-3 px-2">
-                      {row.neutral_mention > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-lg">
-                          {row.neutral_mention}
-                        </span>
-                      )}
+                      <SentimentBadgeWithPreview
+                        provider={row.provider}
+                        sentiment="neutral_mention"
+                        count={row.neutral_mention}
+                        bgColor="bg-blue-100"
+                        textColor="text-blue-800"
+                      />
                     </td>
                     <td className="text-center py-3 px-2">
-                      {row.conditional > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-lg">
-                          {row.conditional}
-                        </span>
-                      )}
+                      <SentimentBadgeWithPreview
+                        provider={row.provider}
+                        sentiment="conditional"
+                        count={row.conditional}
+                        bgColor="bg-yellow-100"
+                        textColor="text-yellow-800"
+                      />
                     </td>
                     <td className="text-center py-3 px-2">
-                      {row.negative_comparison > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-800 text-sm font-medium rounded-lg">
-                          {row.negative_comparison}
-                        </span>
-                      )}
+                      <SentimentBadgeWithPreview
+                        provider={row.provider}
+                        sentiment="negative_comparison"
+                        count={row.negative_comparison}
+                        bgColor="bg-red-100"
+                        textColor="text-red-800"
+                      />
                     </td>
                     <td className="text-center py-3 px-2">
-                      {row.not_mentioned > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg">
-                          {row.not_mentioned}
-                        </span>
-                      )}
+                      <SentimentBadgeWithPreview
+                        provider={row.provider}
+                        sentiment="not_mentioned"
+                        count={row.not_mentioned}
+                        bgColor="bg-gray-100"
+                        textColor="text-gray-600"
+                      />
                     </td>
                     <td className="text-right py-3 px-4">
                       <span className={`text-sm font-medium ${row.strongRate >= 50 ? 'text-green-600' : row.strongRate >= 25 ? 'text-blue-600' : 'text-gray-600'}`}>
