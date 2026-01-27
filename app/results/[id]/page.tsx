@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -111,34 +111,51 @@ export default function ResultsPage() {
     window.history.replaceState(null, '', newUrl);
   }, [activeTab, globalBrandFilter, globalLlmFilter, globalPromptFilter]);
 
-  // Close sentiment badge hover popup on any scroll/wheel activity
+  // Close sentiment badge hover popup on scroll/wheel - track scroll position
+  const lastScrollY = React.useRef(0);
+  const lastScrollX = React.useRef(0);
+
   useEffect(() => {
     if (!hoveredSentimentBadge) return;
+
+    // Store initial scroll position
+    lastScrollY.current = window.scrollY;
+    lastScrollX.current = window.scrollX;
 
     const handleClose = () => {
       setHoveredSentimentBadge(null);
     };
 
-    // Use capture phase on document to catch ALL wheel/scroll events before anything else
-    const options = { capture: true, passive: true } as AddEventListenerOptions;
-
-    document.addEventListener('wheel', handleClose, options);
-    document.addEventListener('touchmove', handleClose, options);
-    document.addEventListener('scroll', handleClose, options);
-
-    // Keyboard scroll
-    const handleKeydown = (e: KeyboardEvent) => {
-      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
+    // Check scroll position change (works for all scroll methods)
+    const checkScrollPosition = () => {
+      if (window.scrollY !== lastScrollY.current || window.scrollX !== lastScrollX.current) {
         handleClose();
       }
     };
-    document.addEventListener('keydown', handleKeydown, { capture: true });
+
+    // Use requestAnimationFrame to check scroll position
+    let rafId: number;
+    const checkLoop = () => {
+      checkScrollPosition();
+      if (hoveredSentimentBadge) {
+        rafId = requestAnimationFrame(checkLoop);
+      }
+    };
+    rafId = requestAnimationFrame(checkLoop);
+
+    // Also listen for wheel as backup (for when scroll hasn't happened yet)
+    const handleWheel = (e: WheelEvent) => {
+      // Check if the wheel event is outside the popup
+      const popup = document.querySelector('[data-sentiment-popup]');
+      if (popup && !popup.contains(e.target as Node)) {
+        handleClose();
+      }
+    };
+    document.addEventListener('wheel', handleWheel, { passive: true });
 
     return () => {
-      document.removeEventListener('wheel', handleClose, options);
-      document.removeEventListener('touchmove', handleClose, options);
-      document.removeEventListener('scroll', handleClose, options);
-      document.removeEventListener('keydown', handleKeydown, { capture: true });
+      cancelAnimationFrame(rafId);
+      document.removeEventListener('wheel', handleWheel);
     };
   }, [hoveredSentimentBadge]);
 
@@ -4050,18 +4067,10 @@ export default function ResultsPage() {
           </div>
 
           {isHovered && matchingResults.length > 0 && (
-            <>
-              {/* Invisible overlay to catch scroll/wheel events outside the popup */}
               <div
-                className="fixed inset-0 z-40"
-                onWheel={() => setHoveredSentimentBadge(null)}
-                onScroll={() => setHoveredSentimentBadge(null)}
-                onTouchMove={() => setHoveredSentimentBadge(null)}
-              />
-              <div
+                data-sentiment-popup
                 className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200"
                 style={{ maxHeight: '400px' }}
-                onWheel={(e) => e.stopPropagation()}
               >
               <div className="p-3 border-b border-gray-100">
                 <div className="text-xs font-medium text-gray-500">
@@ -4140,7 +4149,6 @@ export default function ResultsPage() {
                 </div>
               </div>
             </div>
-            </>
           )}
         </div>
       );
