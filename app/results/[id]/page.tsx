@@ -2542,6 +2542,7 @@ export default function ResultsPage() {
                 {!isCategory && (
                     <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{runStatus?.brand} Mentioned</th>
                 )}
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors'}</th>
                 <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
@@ -2611,6 +2612,29 @@ export default function ResultsPage() {
                           )}
                         </td>
                       )}
+                      <td className="py-3 px-4">
+                        {result.error ? (
+                          <span className="text-sm text-gray-400">-</span>
+                        ) : result.brand_sentiment ? (
+                          <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
+                            result.brand_sentiment === 'strong_endorsement' ? 'bg-green-100 text-green-700' :
+                            result.brand_sentiment === 'conditional' ? 'bg-orange-100 text-orange-700' :
+                            result.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-700' :
+                            result.brand_sentiment === 'neutral_mention' ? 'bg-gray-100 text-gray-600' :
+                            'bg-gray-100 text-gray-500'
+                          }`}>
+                            {result.brand_sentiment === 'strong_endorsement' ? 'Strong' :
+                             result.brand_sentiment === 'conditional' ? 'Conditional' :
+                             result.brand_sentiment === 'negative_comparison' ? 'Negative' :
+                             result.brand_sentiment === 'neutral_mention' ? 'Neutral' :
+                             'Not mentioned'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
+                            Not mentioned
+                          </span>
+                        )}
+                      </td>
                       <td className="py-3 px-4">
                         {result.error ? (
                           <span className="text-sm text-gray-400">-</span>
