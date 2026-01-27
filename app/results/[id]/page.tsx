@@ -4090,8 +4090,8 @@ export default function ResultsPage() {
           {isHovered && matchingResults.length > 0 && (
               <div
                 data-sentiment-popup
-                className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200"
-                style={{ maxHeight: '400px' }}
+                className="absolute z-50 left-1/2 -translate-x-1/2 top-full mt-2 w-[480px] bg-white rounded-lg shadow-xl border border-gray-200"
+                style={{ maxHeight: '500px' }}
                 onWheel={(e) => {
                   // Prevent wheel events inside popup from closing it
                   e.stopPropagation();
@@ -4104,7 +4104,7 @@ export default function ResultsPage() {
               </div>
               <div
                 className="p-3 overflow-y-auto overscroll-contain"
-                style={{ maxHeight: '340px' }}
+                style={{ maxHeight: '440px' }}
                 onScroll={(e) => e.stopPropagation()}
                 onWheel={(e) => {
                   // Prevent overscroll from affecting the page
@@ -4120,19 +4120,23 @@ export default function ResultsPage() {
                   e.stopPropagation();
                 }}
               >
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {matchingResults.map((result) => (
                     <div
                       key={result.id}
-                      className="bg-gray-50 rounded-lg"
+                      className="bg-[#FAFAF8] rounded-lg border border-gray-100"
                     >
                       <button
                         type="button"
-                        className="w-full p-2 text-left hover:bg-gray-100 transition-colors rounded-t-lg"
+                        className="w-full p-3 text-left hover:bg-gray-50 transition-colors rounded-t-lg"
                         onClick={() => toggleExpanded(result.id)}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs text-gray-500 truncate flex-1 pr-2">{result.prompt}</p>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-gray-700 capitalize">{result.provider}</span>
+                            <span className="text-xs text-gray-400">•</span>
+                            <span className="text-xs text-gray-500">{result.model}</span>
+                          </div>
                           <span className="text-xs text-[#4A7C59] flex items-center gap-1 flex-shrink-0 font-medium">
                             {expandedResults.has(result.id) ? (
                               <>Hide <ChevronUp className="w-3 h-3" /></>
@@ -4141,41 +4145,78 @@ export default function ResultsPage() {
                             )}
                           </span>
                         </div>
+                        <p className="text-xs text-gray-500 mb-2 line-clamp-1">{result.prompt}</p>
                         {!expandedResults.has(result.id) && (
-                          <p className="text-sm text-gray-700 line-clamp-2">
-                            {result.response_text?.substring(0, 150)}...
+                          <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">
+                            {result.response_text?.substring(0, 200)}...
                           </p>
                         )}
                       </button>
                       {expandedResults.has(result.id) && (
-                        <div className="px-2 pb-2 border-t border-gray-200 bg-white rounded-b-lg">
-                          <div className="mt-2 max-h-48 overflow-y-auto">
-                            <p className="text-xs text-gray-500 mb-1">Full Response:</p>
-                            <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_p]:mb-2 [&_ul]:mb-2 [&_ul]:pl-4 [&_ul]:list-disc [&_ol]:mb-2 [&_ol]:pl-4 [&_ol]:list-decimal [&_li]:mb-1">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {result.response_text || ''}
+                        <div className="px-3 pb-3 border-t border-gray-200 bg-white rounded-b-lg">
+                          <div className="mt-3 max-h-64 overflow-y-auto">
+                            <p className="text-xs text-gray-500 mb-2">Full Response:</p>
+                            <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1 overflow-x-auto">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  a: ({ href, children }) => (
+                                    <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{children}</a>
+                                  ),
+                                  table: ({ children }) => (
+                                    <div className="overflow-x-auto mb-3">
+                                      <table className="min-w-full">{children}</table>
+                                    </div>
+                                  ),
+                                }}
+                              >
+                                {highlightCompetitors(formatResponseText(result.response_text || ''), result.all_brands_mentioned)}
                               </ReactMarkdown>
                             </div>
                           </div>
                           {result.sources && result.sources.length > 0 && (
-                            <div className="mt-2 pt-2 border-t border-gray-100">
-                              <p className="text-xs text-gray-500 mb-1">Sources ({result.sources.length}):</p>
-                              <div className="space-y-1">
-                                {result.sources.slice(0, 3).map((source, idx) => (
-                                  <a
-                                    key={idx}
-                                    href={source.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-xs text-[#4A7C59] hover:underline"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate">{source.title || source.url}</span>
-                                  </a>
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs text-gray-500 mb-2">Sources ({result.sources.length}):</p>
+                              <div className="space-y-1.5">
+                                {result.sources.map((source, idx) => {
+                                  const { domain, subtitle } = formatSourceDisplay(source.url, source.title);
+                                  return (
+                                    <a
+                                      key={idx}
+                                      href={source.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                      <span className="truncate">
+                                        <span className="font-medium">{domain}</span>
+                                        {subtitle && <span className="text-gray-500"> · {subtitle}</span>}
+                                      </span>
+                                    </a>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          {result.grounding_metadata && result.grounding_metadata.supports && result.grounding_metadata.supports.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs text-gray-500 mb-2">Grounding Confidence:</p>
+                              <div className="space-y-2">
+                                {result.grounding_metadata.supports.slice(0, 3).map((support, idx) => (
+                                  <div key={idx} className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                    <p className="text-xs text-gray-600 mb-1 line-clamp-2">&quot;{support.segment}&quot;</p>
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                        <div className="h-full bg-[#5B7B5D] rounded-full" style={{ width: `${(support.confidence_scores[0] || 0) * 100}%` }} />
+                                      </div>
+                                      <span className="text-xs text-gray-500 w-10 text-right">{Math.round((support.confidence_scores[0] || 0) * 100)}%</span>
+                                    </div>
+                                  </div>
                                 ))}
-                                {result.sources.length > 3 && (
-                                  <p className="text-xs text-gray-400">+{result.sources.length - 3} more</p>
+                                {result.grounding_metadata.supports.length > 3 && (
+                                  <p className="text-xs text-gray-400">+{result.grounding_metadata.supports.length - 3} more</p>
                                 )}
                               </div>
                             </div>
