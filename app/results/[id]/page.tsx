@@ -1954,41 +1954,51 @@ export default function ResultsPage() {
 
                 <div>
                   {/* Chart elements legend - above chart */}
-                  <div className="flex items-center justify-center flex-wrap gap-4 pl-[60px] mb-2">
-                    {!showSentimentColors && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
-                        <span className="text-xs text-gray-500">Individual answer</span>
+                  {(() => {
+                    // Check if any provider has more than 1 response
+                    const hasMultipleResponses = rangeChartData.some(d => d.promptsAnalyzed > 1);
+                    return (
+                      <div className="flex items-center justify-center flex-wrap gap-4 pl-[60px] mb-2">
+                        {!showSentimentColors && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
+                            <span className="text-xs text-gray-500">Individual answer</span>
+                          </div>
+                        )}
+                        {hasMultipleResponses && (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-3 bg-gray-500 opacity-30 rounded" />
+                              <span className="text-xs text-gray-500">Best–worst range</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div
+                                style={{
+                                  width: 0,
+                                  height: 0,
+                                  borderLeft: '3px solid transparent',
+                                  borderRight: '3px solid transparent',
+                                  borderBottom: '5px solid rgba(96, 165, 250, 0.7)',
+                                }}
+                              />
+                              <span className="text-xs text-gray-500">Average</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div
+                                style={{
+                                  width: '5px',
+                                  height: '5px',
+                                  backgroundColor: 'rgba(251, 146, 60, 0.7)',
+                                  transform: 'rotate(45deg)',
+                                }}
+                              />
+                              <span className="text-xs text-gray-500">Median</span>
+                            </div>
+                          </>
+                        )}
                       </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-3 bg-gray-500 opacity-30 rounded" />
-                      <span className="text-xs text-gray-500">Best–worst range</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        style={{
-                          width: 0,
-                          height: 0,
-                          borderLeft: '3px solid transparent',
-                          borderRight: '3px solid transparent',
-                          borderBottom: '5px solid rgba(96, 165, 250, 0.7)',
-                        }}
-                      />
-                      <span className="text-xs text-gray-500">Average</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div
-                        style={{
-                          width: '5px',
-                          height: '5px',
-                          backgroundColor: 'rgba(251, 146, 60, 0.7)',
-                          transform: 'rotate(45deg)',
-                        }}
-                      />
-                      <span className="text-xs text-gray-500">Median</span>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {/* Sentiment legend - above chart in two rows, only when sentiment is on */}
                   {showSentimentColors && (
