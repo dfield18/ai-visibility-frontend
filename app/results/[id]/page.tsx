@@ -4046,13 +4046,15 @@ export default function ResultsPage() {
       sentiment,
       count,
       bgColor,
-      textColor
+      textColor,
+      popupPosition = 'right'
     }: {
       provider: string;
       sentiment: string;
       count: number;
       bgColor: string;
       textColor: string;
+      popupPosition?: 'right' | 'top';
     }) => {
       if (count === 0) return null;
 
@@ -4088,7 +4090,11 @@ export default function ResultsPage() {
           {isHovered && matchingResults.length > 0 && (
             <div
               data-sentiment-popup
-              className="absolute z-50 left-full ml-2 top-0 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-w-[280px]"
+              className={`absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-w-[280px] ${
+                popupPosition === 'top'
+                  ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
+                  : 'left-full ml-2 top-0'
+              }`}
               style={{ maxHeight: '350px' }}
               onWheel={(e) => e.stopPropagation()}
             >
@@ -4339,72 +4345,84 @@ export default function ResultsPage() {
                 </tr>
               </thead>
               <tbody>
-                {sentimentByProvider.map((row) => (
-                  <tr key={row.provider} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <span className="text-sm font-medium text-gray-900">{row.label}</span>
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <SentimentBadgeWithPreview
-                        provider={row.provider}
-                        sentiment="strong_endorsement"
-                        count={row.strong_endorsement}
-                        bgColor="bg-green-100"
-                        textColor="text-green-800"
-                      />
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <SentimentBadgeWithPreview
-                        provider={row.provider}
-                        sentiment="positive_endorsement"
-                        count={row.positive_endorsement}
-                        bgColor="bg-lime-100"
-                        textColor="text-lime-800"
-                      />
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <SentimentBadgeWithPreview
-                        provider={row.provider}
-                        sentiment="neutral_mention"
-                        count={row.neutral_mention}
-                        bgColor="bg-blue-100"
-                        textColor="text-blue-800"
-                      />
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <SentimentBadgeWithPreview
-                        provider={row.provider}
-                        sentiment="conditional"
-                        count={row.conditional}
-                        bgColor="bg-yellow-100"
-                        textColor="text-yellow-800"
-                      />
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <SentimentBadgeWithPreview
-                        provider={row.provider}
-                        sentiment="negative_comparison"
-                        count={row.negative_comparison}
-                        bgColor="bg-red-100"
-                        textColor="text-red-800"
-                      />
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <SentimentBadgeWithPreview
-                        provider={row.provider}
-                        sentiment="not_mentioned"
-                        count={row.not_mentioned}
-                        bgColor="bg-gray-100"
-                        textColor="text-gray-600"
-                      />
-                    </td>
-                    <td className="text-right py-3 px-4">
-                      <span className={`text-sm font-medium ${row.strongRate >= 50 ? 'text-green-600' : row.strongRate >= 25 ? 'text-blue-600' : 'text-gray-600'}`}>
-                        {row.strongRate.toFixed(0)}%
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {sentimentByProvider.map((row, rowIndex) => {
+                  // Show popup above for bottom 2 rows to prevent cutoff
+                  const isBottomRow = rowIndex >= sentimentByProvider.length - 2;
+                  const popupPos = isBottomRow ? 'top' : 'right';
+
+                  return (
+                    <tr key={row.provider} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <span className="text-sm font-medium text-gray-900">{row.label}</span>
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <SentimentBadgeWithPreview
+                          provider={row.provider}
+                          sentiment="strong_endorsement"
+                          count={row.strong_endorsement}
+                          bgColor="bg-green-100"
+                          textColor="text-green-800"
+                          popupPosition={popupPos}
+                        />
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <SentimentBadgeWithPreview
+                          provider={row.provider}
+                          sentiment="positive_endorsement"
+                          count={row.positive_endorsement}
+                          bgColor="bg-lime-100"
+                          textColor="text-lime-800"
+                          popupPosition={popupPos}
+                        />
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <SentimentBadgeWithPreview
+                          provider={row.provider}
+                          sentiment="neutral_mention"
+                          count={row.neutral_mention}
+                          bgColor="bg-blue-100"
+                          textColor="text-blue-800"
+                          popupPosition={popupPos}
+                        />
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <SentimentBadgeWithPreview
+                          provider={row.provider}
+                          sentiment="conditional"
+                          count={row.conditional}
+                          bgColor="bg-yellow-100"
+                          textColor="text-yellow-800"
+                          popupPosition={popupPos}
+                        />
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <SentimentBadgeWithPreview
+                          provider={row.provider}
+                          sentiment="negative_comparison"
+                          count={row.negative_comparison}
+                          bgColor="bg-red-100"
+                          textColor="text-red-800"
+                          popupPosition={popupPos}
+                        />
+                      </td>
+                      <td className="text-center py-3 px-2">
+                        <SentimentBadgeWithPreview
+                          provider={row.provider}
+                          sentiment="not_mentioned"
+                          count={row.not_mentioned}
+                          bgColor="bg-gray-100"
+                          textColor="text-gray-600"
+                          popupPosition={popupPos}
+                        />
+                      </td>
+                      <td className="text-right py-3 px-4">
+                        <span className={`text-sm font-medium ${row.strongRate >= 50 ? 'text-green-600' : row.strongRate >= 25 ? 'text-blue-600' : 'text-gray-600'}`}>
+                          {row.strongRate.toFixed(0)}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
