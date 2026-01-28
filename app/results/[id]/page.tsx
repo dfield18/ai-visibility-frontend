@@ -4087,6 +4087,8 @@ export default function ResultsPage() {
         // For multiple results, the hover popup is already showing
       }, [resultsForClick]);
 
+      const hasMultipleResults = resultsForClick.length > 1;
+
       return (
         <div
           className="relative inline-block"
@@ -4099,6 +4101,11 @@ export default function ResultsPage() {
           >
             {count}
           </div>
+          {hasMultipleResults && (
+            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-gray-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm">
+              +
+            </div>
+          )}
 
           {isHovered && matchingResults.length > 0 && (
             <div
