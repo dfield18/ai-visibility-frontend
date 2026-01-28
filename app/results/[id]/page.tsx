@@ -4616,6 +4616,7 @@ export default function ResultsPage() {
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Brand Sentiment</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor Sentiments</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Response</th>
                 </tr>
               </thead>
               <tbody>
@@ -4658,6 +4659,14 @@ export default function ResultsPage() {
                             </span>
                           )}
                         </div>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => setSelectedResult(result)}
+                          className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+                        >
+                          View <ChevronDown className="w-4 h-4" />
+                        </button>
                       </td>
                     </tr>
                   ))}
