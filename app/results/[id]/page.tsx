@@ -4090,7 +4090,7 @@ export default function ResultsPage() {
           {isHovered && matchingResults.length > 0 && (
             <div
               data-sentiment-popup
-              className={`absolute z-50 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] max-w-[280px] ${
+              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px] max-w-[280px] text-left ${
                 popupPosition === 'top'
                   ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
                   : 'left-full ml-2 top-0'
@@ -4126,7 +4126,7 @@ export default function ResultsPage() {
                   return (
                     <div
                       key={result.id}
-                      className={`p-3 hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'border-t border-gray-100' : ''}`}
+                      className={`hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'pt-3 mt-3 border-t border-gray-100' : ''}`}
                       onClick={() => {
                         setSelectedResult(result);
                         setHoveredSentimentBadge(null);
