@@ -4607,7 +4607,17 @@ export default function ResultsPage() {
         {/* Individual Results with Sentiment */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
-          <p className="text-sm text-gray-500 mb-6">Detailed sentiment for each AI response</p>
+          <p className="text-sm text-gray-500 mb-4">Detailed sentiment for each AI response</p>
+
+          {/* Sentiment Legend */}
+          <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
+            <span className="text-gray-500">Sentiment:</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-green-100 text-green-800 border-green-200">Very Favorable</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-lime-100 text-lime-800 border-lime-200">Favorable</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-blue-100 text-blue-800 border-blue-200">Neutral</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-yellow-100 text-yellow-800 border-yellow-200">Conditional</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-red-100 text-red-800 border-red-200">Negative</span>
+          </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
