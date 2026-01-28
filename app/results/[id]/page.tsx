@@ -80,6 +80,7 @@ export default function ResultsPage() {
   const [shareOfVoiceFilter, setShareOfVoiceFilter] = useState<'all' | 'tracked'>('tracked');
   const [llmBreakdownBrandFilter, setLlmBreakdownBrandFilter] = useState<string>('');
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
+  const [expandedCompetitorRows, setExpandedCompetitorRows] = useState<Set<string>>(new Set());
   const [expandedLLMCards, setExpandedLLMCards] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
@@ -4639,26 +4640,52 @@ export default function ResultsPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex flex-wrap gap-1.5">
-                          {result.competitor_sentiments && Object.entries(result.competitor_sentiments)
-                            .filter(([_, sentiment]) => sentiment !== 'not_mentioned')
-                            .slice(0, 3)
-                            .map(([comp, sentiment]) => (
-                              <span
-                                key={comp}
-                                className={`inline-flex items-center px-2 py-0.5 text-xs rounded border ${getSentimentColor(sentiment)}`}
-                                title={`${comp}: ${getSentimentLabel(sentiment)}`}
-                              >
-                                {truncate(comp, 12)}
-                              </span>
-                            ))}
-                          {result.competitor_sentiments &&
-                            Object.values(result.competitor_sentiments).filter(s => s !== 'not_mentioned').length > 3 && (
-                            <span className="text-xs text-gray-400">
-                              +{Object.values(result.competitor_sentiments).filter(s => s !== 'not_mentioned').length - 3} more
-                            </span>
-                          )}
-                        </div>
+                        {(() => {
+                          const mentionedCompetitors = result.competitor_sentiments
+                            ? Object.entries(result.competitor_sentiments).filter(([_, sentiment]) => sentiment !== 'not_mentioned')
+                            : [];
+                          const isExpanded = expandedCompetitorRows.has(result.id);
+                          const displayCompetitors = isExpanded ? mentionedCompetitors : mentionedCompetitors.slice(0, 3);
+                          const hiddenCount = mentionedCompetitors.length - 3;
+
+                          return (
+                            <div className="flex flex-wrap gap-1.5">
+                              {displayCompetitors.map(([comp, sentiment]) => (
+                                <span
+                                  key={comp}
+                                  className={`inline-flex items-center px-2 py-0.5 text-xs rounded border ${getSentimentColor(sentiment)}`}
+                                  title={`${comp}: ${getSentimentLabel(sentiment)}`}
+                                >
+                                  {truncate(comp, 12)}
+                                </span>
+                              ))}
+                              {hiddenCount > 0 && !isExpanded && (
+                                <button
+                                  onClick={() => {
+                                    const newExpanded = new Set(expandedCompetitorRows);
+                                    newExpanded.add(result.id);
+                                    setExpandedCompetitorRows(newExpanded);
+                                  }}
+                                  className="text-xs text-[#4A7C59] hover:text-[#3d6649] hover:underline font-medium"
+                                >
+                                  +{hiddenCount} more
+                                </button>
+                              )}
+                              {isExpanded && mentionedCompetitors.length > 3 && (
+                                <button
+                                  onClick={() => {
+                                    const newExpanded = new Set(expandedCompetitorRows);
+                                    newExpanded.delete(result.id);
+                                    setExpandedCompetitorRows(newExpanded);
+                                  }}
+                                  className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
+                                >
+                                  Show less
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <button
