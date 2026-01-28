@@ -4130,11 +4130,47 @@ export default function ResultsPage() {
                   const truncatedPrompt = result.prompt.length > 70
                     ? result.prompt.substring(0, 70) + '...'
                     : result.prompt;
-                  // Find brand position in all_brands_mentioned
-                  const brandPosition = result.all_brands_mentioned?.findIndex(
-                    b => b.toLowerCase() === runStatus?.brand.toLowerCase()
-                  );
-                  const rank = brandPosition !== undefined && brandPosition >= 0 ? brandPosition + 1 : 0;
+
+                  // Calculate rank using same logic as All Answers chart
+                  let rank = 0;
+                  const brandLower = (runStatus?.brand || '').toLowerCase();
+                  const isMentioned = result.brand_mentioned;
+
+                  if (isMentioned && result.response_text) {
+                    const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                      ? result.all_brands_mentioned
+                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+
+                    // Try exact match first
+                    let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+                    // If not found, try partial match
+                    if (foundIndex === -1) {
+                      foundIndex = allBrands.findIndex(b =>
+                        b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+                      );
+                    }
+
+                    // If still not found, use text search fallback
+                    if (foundIndex === -1) {
+                      const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+                      if (brandPos >= 0) {
+                        let brandsBeforeCount = 0;
+                        for (const b of allBrands) {
+                          const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                          if (bPos >= 0 && bPos < brandPos) {
+                            brandsBeforeCount++;
+                          }
+                        }
+                        rank = brandsBeforeCount + 1;
+                      } else {
+                        // Brand mentioned but can't find position - place after known brands
+                        rank = allBrands.length + 1;
+                      }
+                    } else {
+                      rank = foundIndex + 1;
+                    }
+                  }
 
                   return (
                     <div
