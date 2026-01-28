@@ -4075,6 +4075,18 @@ export default function ResultsPage() {
         setHoveredSentimentBadge(null);
       }, []);
 
+      // Get results for click handling
+      const resultsForClick = getResultsForProviderSentiment(provider, sentiment);
+
+      const handleClick = useCallback(() => {
+        // If single result, open modal directly (same as clicking dots on All Answers)
+        if (resultsForClick.length === 1) {
+          setSelectedResult(resultsForClick[0]);
+          setHoveredSentimentBadge(null);
+        }
+        // For multiple results, the hover popup is already showing
+      }, [resultsForClick]);
+
       return (
         <div
           className="relative inline-block"
@@ -4083,6 +4095,7 @@ export default function ResultsPage() {
         >
           <div
             className={`inline-flex items-center justify-center w-8 h-8 ${bgColor} ${textColor} text-sm font-medium rounded-lg cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all`}
+            onClick={handleClick}
           >
             {count}
           </div>
