@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -773,6 +773,7 @@ export default function ResultsPage() {
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
+  const sourcesListRef = useRef<HTMLDivElement>(null);
 
   // Extract domain from URL
   const getDomain = (url: string): string => {
@@ -3993,7 +3994,11 @@ export default function ResultsPage() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Top Cited Sources List */}
-                <div className={`space-y-2 ${topCitedSources.length > 8 ? 'max-h-[400px] overflow-y-auto pr-2' : ''}`} style={{ overflowAnchor: 'none' }}>
+                <div
+                  ref={sourcesListRef}
+                  className={`space-y-2 ${topCitedSources.length > 8 ? 'max-h-[400px] overflow-y-auto pr-2' : ''}`}
+                  style={{ overflowAnchor: 'none' }}
+                >
                   {topCitedSources.map((source, index) => {
                     const isExpanded = expandedSources.has(source.domain);
                     return (
@@ -4002,6 +4007,11 @@ export default function ResultsPage() {
                           className="flex items-center gap-2 p-2.5 cursor-pointer hover:bg-gray-100 transition-colors"
                           onClick={(e) => {
                             e.preventDefault();
+                            e.stopPropagation();
+                            // Capture scroll position before state change
+                            const scrollContainer = sourcesListRef.current;
+                            const scrollTop = scrollContainer?.scrollTop || 0;
+
                             const newExpanded = new Set(expandedSources);
                             if (isExpanded) {
                               newExpanded.delete(source.domain);
@@ -4009,6 +4019,13 @@ export default function ResultsPage() {
                               newExpanded.add(source.domain);
                             }
                             setExpandedSources(newExpanded);
+
+                            // Restore scroll position after React re-renders
+                            requestAnimationFrame(() => {
+                              if (scrollContainer) {
+                                scrollContainer.scrollTop = scrollTop;
+                              }
+                            });
                           }}
                         >
                           <span className="text-xs font-medium text-gray-400 w-5">{index + 1}.</span>
