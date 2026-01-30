@@ -4125,7 +4125,7 @@ export default function ResultsPage() {
       count,
       bgColor,
       textColor,
-      popupPosition = 'right'
+      popupPosition = 'bottom'
     }: {
       provider: string;
       sentiment: string;
