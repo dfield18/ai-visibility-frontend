@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -774,6 +774,19 @@ export default function ResultsPage() {
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
   const sourcesListRef = useRef<HTMLDivElement>(null);
+  const pendingScrollRestore = useRef<{ container: number; window: number } | null>(null);
+
+  // Restore scroll position after expandedSources changes
+  useLayoutEffect(() => {
+    if (pendingScrollRestore.current) {
+      const { container, window: windowY } = pendingScrollRestore.current;
+      if (sourcesListRef.current) {
+        sourcesListRef.current.scrollTop = container;
+      }
+      window.scrollTo(window.scrollX, windowY);
+      pendingScrollRestore.current = null;
+    }
+  }, [expandedSources]);
 
   // Extract domain from URL
   const getDomain = (url: string): string => {
@@ -4001,10 +4014,11 @@ export default function ResultsPage() {
                             e.preventDefault();
                             e.stopPropagation();
 
-                            // Capture scroll positions before state change
-                            const scrollContainer = sourcesListRef.current;
-                            const containerScrollTop = scrollContainer?.scrollTop || 0;
-                            const windowScrollY = window.scrollY;
+                            // Store scroll positions to restore after render
+                            pendingScrollRestore.current = {
+                              container: sourcesListRef.current?.scrollTop || 0,
+                              window: window.scrollY
+                            };
 
                             const newExpanded = new Set(expandedSources);
                             if (isExpanded) {
@@ -4013,14 +4027,6 @@ export default function ResultsPage() {
                               newExpanded.add(source.domain);
                             }
                             setExpandedSources(newExpanded);
-
-                            // Use setTimeout to restore after React's commit phase
-                            setTimeout(() => {
-                              if (scrollContainer) {
-                                scrollContainer.scrollTop = containerScrollTop;
-                              }
-                              window.scrollTo(window.scrollX, windowScrollY);
-                            }, 0);
                           }}
                         >
                           <span className="text-xs font-medium text-gray-400 w-5">{index + 1}.</span>
