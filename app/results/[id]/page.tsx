@@ -3813,6 +3813,60 @@ export default function ResultsPage() {
       };
     }, [brandWebsiteCitations]);
 
+    // Calculate sources by brand for pie chart
+    const sourcesByBrand = useMemo(() => {
+      const brandSourceCounts: Record<string, number> = {};
+
+      // Filter results based on current filters
+      const filteredResults = globallyFilteredResults
+        .filter((r: Result) => !r.error && r.sources && r.sources.length > 0)
+        .filter((r: Result) => {
+          if (sourcesProviderFilter !== 'all' && r.provider !== sourcesProviderFilter) return false;
+          if (sourcesBrandFilter !== 'all') {
+            if (sourcesBrandFilter === runStatus?.brand) {
+              return r.brand_mentioned;
+            }
+            return r.competitors_mentioned?.includes(sourcesBrandFilter);
+          }
+          return true;
+        });
+
+      // Count sources per brand mentioned in responses
+      filteredResults.forEach((r: Result) => {
+        const sourcesCount = r.sources?.length || 0;
+
+        // Attribute sources to mentioned brands
+        if (r.brand_mentioned && runStatus?.brand) {
+          brandSourceCounts[runStatus.brand] = (brandSourceCounts[runStatus.brand] || 0) + sourcesCount;
+        }
+        r.competitors_mentioned?.forEach((comp) => {
+          brandSourceCounts[comp] = (brandSourceCounts[comp] || 0) + sourcesCount;
+        });
+
+        // If no brands mentioned, count as "Other"
+        if (!r.brand_mentioned && (!r.competitors_mentioned || r.competitors_mentioned.length === 0)) {
+          brandSourceCounts['No brand mentioned'] = (brandSourceCounts['No brand mentioned'] || 0) + sourcesCount;
+        }
+      });
+
+      const total = Object.values(brandSourceCounts).reduce((sum, count) => sum + count, 0);
+
+      return Object.entries(brandSourceCounts)
+        .map(([brand, count]) => ({
+          name: brand,
+          value: count,
+          percentage: total > 0 ? (count / total) * 100 : 0,
+          isSearchedBrand: brand === runStatus?.brand
+        }))
+        .sort((a, b) => {
+          if (a.isSearchedBrand) return -1;
+          if (b.isSearchedBrand) return 1;
+          return b.value - a.value;
+        });
+    }, [globallyFilteredResults, sourcesProviderFilter, sourcesBrandFilter, runStatus?.brand]);
+
+    const SOURCE_PIE_COLORS = ['#4A7C59', '#7BA38C', '#A8C5B5', '#D4E2DB', '#6B8E7B', '#8FB09D', '#B3CFBE', '#2D5A3D', '#3D6B4D', '#5C8A6C'];
+
     // Check if we have any sources data
     const hasSourcesData = globallyFilteredResults.some(
       (r: Result) => !r.error && r.sources && r.sources.length > 0
@@ -3902,123 +3956,171 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Top Cited Sources */}
+        {/* Top Cited Sources with Pie Chart */}
         {hasAnySources && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Link2 className="w-5 h-5 text-[#4A7C59]" />
-                <h2 className="text-base font-semibold text-gray-900">Top Cited Sources</h2>
-              </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={sourcesBrandFilter}
-                  onChange={(e) => setSourcesBrandFilter(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                >
-                  <option value="all">All Brands</option>
-                  {runStatus?.brand && availableBrands.includes(runStatus.brand) && (
-                    <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
-                  )}
-                  {availableBrands.filter(brand => brand !== runStatus?.brand).map((brand) => (
-                    <option key={brand} value={brand}>{brand}</option>
-                  ))}
-                </select>
-                <select
-                  value={sourcesProviderFilter}
-                  onChange={(e) => setSourcesProviderFilter(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                >
-                  <option value="all">All LLMs</option>
-                  {availableProviders.map((provider) => (
-                    <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className={`space-y-2 ${topCitedSources.length > 10 ? 'max-h-[600px] overflow-y-auto pr-2' : ''}`} style={{ overflowAnchor: 'none' }}>
-              {topCitedSources.map((source, index) => {
-                const isExpanded = expandedSources.has(source.domain);
-                return (
-                  <div key={source.domain} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
-                    <div
-                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const newExpanded = new Set(expandedSources);
-                        if (isExpanded) {
-                          newExpanded.delete(source.domain);
-                        } else {
-                          newExpanded.add(source.domain);
-                        }
-                        setExpandedSources(newExpanded);
-                      }}
-                    >
-                      <span className="text-sm font-medium text-gray-400 w-6">{index + 1}.</span>
-                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
-                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
-                        {source.domain}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex gap-1">
-                          {source.providers.map((provider) => (
-                            <span key={provider} className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
-                              {getProviderShortLabel(provider)}
-                            </span>
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-500 w-20 text-right">{source.count} {source.count === 1 ? 'citation' : 'citations'}</span>
-                      </div>
-                    </div>
-                    {isExpanded && (
-                      <div className="px-3 pb-3 pt-1 border-t border-gray-200 ml-9">
-                        <p className="text-xs text-gray-500 mb-2">
-                          {source.urlDetails.length > 1 ? `${source.urlDetails.length} unique pages:` : `${source.count} citation from this page:`}
-                        </p>
-                        <div className="space-y-1.5">
-                          {source.urlDetails.map((urlDetail, idx) => {
-                            const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
-                            const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
-                            return (
-                              <a
-                                key={idx}
-                                href={urlDetail.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate">
-                                  <span className="font-medium">{source.domain}</span>
-                                  {displayTitle && displayTitle !== source.domain && (
-                                    <span className="text-gray-600"> · {displayTitle}</span>
-                                  )}
-                                </span>
-                                <span className="flex items-center gap-2 flex-shrink-0 ml-auto">
-                                  <span className="flex gap-1">
-                                    {urlDetail.providers.map((provider: string) => (
-                                      <span key={provider} className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
-                                        {getProviderShortLabel(provider)}
-                                      </span>
-                                    ))}
-                                  </span>
-                                  <span className="text-gray-400 text-xs">({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
-                                </span>
-                              </a>
-                            );
-                          })}
-                        </div>
-                      </div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Link2 className="w-5 h-5 text-[#4A7C59]" />
+                  <h2 className="text-base font-semibold text-gray-900">Top Cited Sources</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={sourcesBrandFilter}
+                    onChange={(e) => setSourcesBrandFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                  >
+                    <option value="all">All Brands</option>
+                    {runStatus?.brand && availableBrands.includes(runStatus.brand) && (
+                      <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
                     )}
-                  </div>
-                );
-              })}
+                    {availableBrands.filter(brand => brand !== runStatus?.brand).map((brand) => (
+                      <option key={brand} value={brand}>{brand}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={sourcesProviderFilter}
+                    onChange={(e) => setSourcesProviderFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                  >
+                    <option value="all">All LLMs</option>
+                    {availableProviders.map((provider) => (
+                      <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Top Cited Sources List */}
+                <div className={`space-y-2 ${topCitedSources.length > 8 ? 'max-h-[400px] overflow-y-auto pr-2' : ''}`} style={{ overflowAnchor: 'none' }}>
+                  {topCitedSources.map((source, index) => {
+                    const isExpanded = expandedSources.has(source.domain);
+                    return (
+                      <div key={source.domain} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
+                        <div
+                          className="flex items-center gap-2 p-2.5 cursor-pointer hover:bg-gray-100 transition-colors"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const newExpanded = new Set(expandedSources);
+                            if (isExpanded) {
+                              newExpanded.delete(source.domain);
+                            } else {
+                              newExpanded.add(source.domain);
+                            }
+                            setExpandedSources(newExpanded);
+                          }}
+                        >
+                          <span className="text-xs font-medium text-gray-400 w-5">{index + 1}.</span>
+                          <div className="flex-1 flex items-center gap-1.5 text-sm font-medium text-[#4A7C59] min-w-0">
+                            {isExpanded ? <ChevronUp className="w-3 h-3 flex-shrink-0" /> : <ChevronDown className="w-3 h-3 flex-shrink-0" />}
+                            <span className="truncate">{source.domain}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex gap-0.5">
+                              {source.providers.slice(0, 3).map((provider) => (
+                                <span key={provider} className="text-[10px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
+                                  {getProviderShortLabel(provider)}
+                                </span>
+                              ))}
+                              {source.providers.length > 3 && (
+                                <span className="text-[10px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded">+{source.providers.length - 3}</span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500 w-16 text-right">{source.count} cit.</span>
+                          </div>
+                        </div>
+                        {isExpanded && (
+                          <div className="px-2.5 pb-2.5 pt-1 border-t border-gray-200 ml-7">
+                            <p className="text-xs text-gray-500 mb-1.5">
+                              {source.urlDetails.length > 1 ? `${source.urlDetails.length} unique pages:` : `${source.count} citation from this page:`}
+                            </p>
+                            <div className="space-y-1">
+                              {source.urlDetails.map((urlDetail, idx) => {
+                                const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
+                                const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
+                                return (
+                                  <a
+                                    key={idx}
+                                    href={urlDetail.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1.5 text-xs text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
+                                    <span className="truncate">
+                                      {displayTitle && displayTitle !== source.domain ? displayTitle : source.domain}
+                                    </span>
+                                    <span className="text-gray-400 flex-shrink-0">({urlDetail.count})</span>
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {topCitedSources.length === 0 && (
+                    <p className="text-sm text-gray-500 text-center py-4">No sources found for the selected filters</p>
+                  )}
+                </div>
+
+                {/* Sources by Brand Pie Chart */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Sources by Brand Mentioned</h3>
+                  <p className="text-xs text-gray-500 mb-4">Distribution of sources across responses mentioning each brand</p>
+                  {sourcesByBrand.length > 0 ? (
+                    <>
+                      <div className="h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={sourcesByBrand}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={90}
+                              paddingAngle={2}
+                              dataKey="value"
+                              nameKey="name"
+                            >
+                              {sourcesByBrand.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value, name) => {
+                                const numValue = typeof value === 'number' ? value : 0;
+                                const brandData = sourcesByBrand.find(s => s.name === name);
+                                return [`${numValue} sources (${brandData?.percentage.toFixed(1) || 0}%)`, String(name)];
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="mt-3 space-y-1.5 max-h-[120px] overflow-y-auto">
+                        {sourcesByBrand.map((item, index) => (
+                          <div key={item.name} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length] }} />
+                              <span className="text-gray-700 truncate max-w-[150px]">
+                                {item.name}
+                                {item.isSearchedBrand && <span className="text-[#4A7C59] ml-1">(searched)</span>}
+                              </span>
+                            </div>
+                            <span className="text-gray-500">{item.value} ({item.percentage.toFixed(0)}%)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-500 text-center py-8">No data available</p>
+                  )}
+                </div>
+              </div>
             </div>
-            {topCitedSources.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-4">No sources found for the selected filters</p>
-            )}
-          </div>
         )}
 
         {/* Brand Website Citations */}
