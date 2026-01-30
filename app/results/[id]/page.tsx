@@ -3814,45 +3814,18 @@ export default function ResultsPage() {
       };
     }, [brandWebsiteCitations]);
 
-    // Calculate sources by domain for pie chart
-    const sourcesByDomain = useMemo(() => {
-      const domainCounts: Record<string, number> = {};
+    // Derive pie chart data from topCitedSources (same data as the table)
+    const sourcesPieData = useMemo(() => {
+      const total = topCitedSources.reduce((sum, s) => sum + s.count, 0);
 
-      // Filter results based on current filters
-      const filteredResults = globallyFilteredResults
-        .filter((r: Result) => !r.error && r.sources && r.sources.length > 0)
-        .filter((r: Result) => {
-          if (sourcesProviderFilter !== 'all' && r.provider !== sourcesProviderFilter) return false;
-          if (sourcesBrandFilter !== 'all') {
-            if (sourcesBrandFilter === runStatus?.brand) {
-              return r.brand_mentioned;
-            }
-            return r.competitors_mentioned?.includes(sourcesBrandFilter);
-          }
-          return true;
-        });
+      // Get top 10, group rest as "Other"
+      const top10 = topCitedSources.slice(0, 10);
+      const otherCount = topCitedSources.slice(10).reduce((sum, s) => sum + s.count, 0);
 
-      // Count sources by domain
-      filteredResults.forEach((r: Result) => {
-        r.sources?.forEach((source) => {
-          const domain = extractDomain(source.url);
-          domainCounts[domain] = (domainCounts[domain] || 0) + 1;
-        });
-      });
-
-      const total = Object.values(domainCounts).reduce((sum, count) => sum + count, 0);
-
-      // Get top 10 domains, group rest as "Other"
-      const sortedDomains = Object.entries(domainCounts)
-        .sort((a, b) => b[1] - a[1]);
-
-      const top10 = sortedDomains.slice(0, 10);
-      const otherCount = sortedDomains.slice(10).reduce((sum, [, count]) => sum + count, 0);
-
-      const result = top10.map(([domain, count]) => ({
-        name: domain,
-        value: count,
-        percentage: total > 0 ? (count / total) * 100 : 0
+      const result = top10.map((source) => ({
+        name: source.domain,
+        value: source.count,
+        percentage: total > 0 ? (source.count / total) * 100 : 0
       }));
 
       if (otherCount > 0) {
@@ -3864,7 +3837,7 @@ export default function ResultsPage() {
       }
 
       return result;
-    }, [globallyFilteredResults, sourcesProviderFilter, sourcesBrandFilter, runStatus?.brand, extractDomain]);
+    }, [topCitedSources]);
 
     const SOURCE_PIE_COLORS = ['#4A7C59', '#7BA38C', '#A8C5B5', '#D4E2DB', '#6B8E7B', '#8FB09D', '#B3CFBE', '#2D5A3D', '#3D6B4D', '#5C8A6C'];
 
@@ -4087,17 +4060,17 @@ export default function ResultsPage() {
                   )}
                 </div>
 
-                {/* Sources by Domain Pie Chart */}
+                {/* Top Cited Sources Pie Chart */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Top Source Domains</h3>
-                  <p className="text-xs text-gray-500 mb-4">Most frequently cited domains in LLM responses</p>
-                  {sourcesByDomain.length > 0 ? (
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Top Cited Sources</h3>
+                  <p className="text-xs text-gray-500 mb-4">Distribution of citations by source domain</p>
+                  {sourcesPieData.length > 0 ? (
                     <>
                       <div className="h-[250px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={sourcesByDomain}
+                              data={sourcesPieData}
                               cx="50%"
                               cy="50%"
                               innerRadius={50}
@@ -4106,14 +4079,14 @@ export default function ResultsPage() {
                               dataKey="value"
                               nameKey="name"
                             >
-                              {sourcesByDomain.map((entry, index) => (
+                              {sourcesPieData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length]} />
                               ))}
                             </Pie>
                             <Tooltip
                               formatter={(value, name) => {
                                 const numValue = typeof value === 'number' ? value : 0;
-                                const domainData = sourcesByDomain.find(s => s.name === name);
+                                const domainData = sourcesPieData.find(s => s.name === name);
                                 return [`${numValue} citations (${domainData?.percentage.toFixed(1) || 0}%)`, String(name)];
                               }}
                             />
@@ -4121,7 +4094,7 @@ export default function ResultsPage() {
                         </ResponsiveContainer>
                       </div>
                       <div className="mt-3 space-y-1.5 max-h-[120px] overflow-y-auto">
-                        {sourcesByDomain.map((item, index) => (
+                        {sourcesPieData.map((item, index) => (
                           <div key={item.name} className="flex items-center justify-between text-xs">
                             <div className="flex items-center gap-2">
                               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length] }} />
