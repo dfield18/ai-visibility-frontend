@@ -154,3 +154,4 @@ Enter a brand name to begin analysis. Includes example brands for quick testing.
 ## License
 
 MIT
+
