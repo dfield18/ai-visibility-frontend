@@ -4726,11 +4726,11 @@ export default function ResultsPage() {
                             ? 'text-[#4A7C59] bg-green-50'
                             : 'text-gray-600'
                         }`}
-                        title={`${brandSourceHeatmap.brandTotals[brand] || 0} total mentions`}
+                        title={`${brandSourceHeatmap.brandTotals[brand] || 0} total ${(brandSourceHeatmap.brandTotals[brand] || 0) === 1 ? 'mention' : 'mentions'}`}
                       >
                         <div className="truncate max-w-[100px]">{brand}</div>
                         <div className="text-[10px] font-normal text-gray-400">
-                          {brandSourceHeatmap.brandTotals[brand] || 0} mentions
+                          {brandSourceHeatmap.brandTotals[brand] || 0} {(brandSourceHeatmap.brandTotals[brand] || 0) === 1 ? 'mention' : 'mentions'}
                         </div>
                       </th>
                     ))}
