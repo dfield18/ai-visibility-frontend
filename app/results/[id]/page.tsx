@@ -4276,19 +4276,34 @@ export default function ResultsPage() {
         .sort((a, b) => b.value - a.value);
     }, [topCitedSources, aiCategorizations]);
 
-    // Provider-Source Heatmap data
-    const providerSourceHeatmap = useMemo(() => {
-      if (!runStatus) return { providers: [], sources: [], data: [] };
+    // Brand-Source Heatmap data (sources by brand mentioned)
+    const brandSourceHeatmap = useMemo(() => {
+      if (!runStatus) return { brands: [], sources: [], data: [], brandTotals: {} as Record<string, number> };
 
-      // Get all providers that have citations
-      const providersWithCitations = new Set<string>();
-      const sourceProviderCounts: Record<string, Record<string, number>> = {};
+      const sourceBrandCounts: Record<string, Record<string, number>> = {};
+      const brandTotalMentions: Record<string, number> = {};
 
-      // Process all results to get per-provider citation counts per source
+      // Process all results to get per-brand citation counts per source
       const results = globallyFilteredResults.filter((r: Result) => !r.error && r.sources && r.sources.length > 0);
 
       for (const result of results) {
         if (!result.sources) continue;
+
+        // Get all brands mentioned in this result
+        const brandsInResult: string[] = [];
+        if (result.brand_mentioned && runStatus.brand) {
+          brandsInResult.push(runStatus.brand);
+        }
+        if (result.competitors_mentioned) {
+          brandsInResult.push(...result.competitors_mentioned);
+        }
+
+        // Count brand mentions for sorting
+        brandsInResult.forEach(brand => {
+          brandTotalMentions[brand] = (brandTotalMentions[brand] || 0) + 1;
+        });
+
+        if (brandsInResult.length === 0) continue;
 
         const seenDomains = new Set<string>();
         for (const source of result.sources) {
@@ -4299,40 +4314,52 @@ export default function ResultsPage() {
           if (seenDomains.has(domain)) continue;
           seenDomains.add(domain);
 
-          if (!sourceProviderCounts[domain]) {
-            sourceProviderCounts[domain] = {};
+          if (!sourceBrandCounts[domain]) {
+            sourceBrandCounts[domain] = {};
           }
-          sourceProviderCounts[domain][result.provider] = (sourceProviderCounts[domain][result.provider] || 0) + 1;
-          providersWithCitations.add(result.provider);
+
+          // Associate this source with all brands mentioned in the response
+          brandsInResult.forEach(brand => {
+            sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
+          });
         }
       }
 
       // Get top 10 sources by total citations
-      const topSources = Object.entries(sourceProviderCounts)
-        .map(([domain, providers]) => ({
+      const topSources = Object.entries(sourceBrandCounts)
+        .map(([domain, brands]) => ({
           domain,
-          total: Object.values(providers).reduce((sum, count) => sum + count, 0),
-          providers,
+          total: Object.values(brands).reduce((sum, count) => sum + count, 0),
+          brands,
         }))
         .sort((a, b) => b.total - a.total)
         .slice(0, 10);
 
-      const providerList = Array.from(providersWithCitations).sort();
+      // Sort brands: searched brand first, then by total mentions
+      const searchedBrand = runStatus.brand;
+      const brandList = Object.keys(brandTotalMentions)
+        .sort((a, b) => {
+          if (a === searchedBrand) return -1;
+          if (b === searchedBrand) return 1;
+          return brandTotalMentions[b] - brandTotalMentions[a];
+        });
 
       // Build heatmap data
       const heatmapData: Array<{ domain: string; total: number; [key: string]: string | number }> = topSources.map(source => ({
         domain: source.domain,
         total: source.total,
-        ...providerList.reduce((acc, provider) => {
-          acc[provider] = source.providers[provider] || 0;
+        ...brandList.reduce((acc, brand) => {
+          acc[brand] = source.brands[brand] || 0;
           return acc;
         }, {} as Record<string, number>),
       }));
 
       return {
-        providers: providerList,
+        brands: brandList,
         sources: topSources.map(s => s.domain),
         data: heatmapData,
+        brandTotals: brandTotalMentions,
+        searchedBrand,
       };
     }, [runStatus, globallyFilteredResults]);
 
@@ -4640,53 +4667,66 @@ export default function ResultsPage() {
             </div>
         )}
 
-        {/* Provider-Source Heatmap */}
-        {providerSourceHeatmap.sources.length > 0 && (
+        {/* Brand-Source Heatmap */}
+        {brandSourceHeatmap.sources.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Provider-Source Heatmap</h3>
-              <p className="text-sm text-gray-500">Which sources are cited by which AI providers</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
+              <p className="text-sm text-gray-500">Which sources are cited when each brand is mentioned</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr>
-                    <th className="text-left py-2 px-3 font-medium text-gray-600 border-b border-gray-200">Source</th>
-                    {providerSourceHeatmap.providers.map(provider => (
-                      <th key={provider} className="text-center py-2 px-3 font-medium text-gray-600 border-b border-gray-200 min-w-[80px]">
-                        {getProviderShortLabel(provider)}
+                    <th className="text-left py-2 px-3 font-medium text-gray-600 border-b border-gray-200 sticky left-0 bg-white z-10">Source</th>
+                    {brandSourceHeatmap.brands.map(brand => (
+                      <th
+                        key={brand}
+                        className={`text-center py-2 px-3 font-medium border-b border-gray-200 min-w-[100px] ${
+                          brand === brandSourceHeatmap.searchedBrand
+                            ? 'text-[#4A7C59] bg-green-50'
+                            : 'text-gray-600'
+                        }`}
+                        title={`${brandSourceHeatmap.brandTotals[brand] || 0} total mentions`}
+                      >
+                        <div className="truncate max-w-[100px]">{brand}</div>
+                        <div className="text-[10px] font-normal text-gray-400">
+                          {brandSourceHeatmap.brandTotals[brand] || 0} mentions
+                        </div>
                       </th>
                     ))}
-                    <th className="text-center py-2 px-3 font-medium text-gray-600 border-b border-gray-200">Total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {providerSourceHeatmap.data.map((row, index) => {
-                    const maxCount = Math.max(...providerSourceHeatmap.providers.map(p => row[p] as number || 0));
+                  {brandSourceHeatmap.data.map((row, index) => {
+                    const maxCount = Math.max(...brandSourceHeatmap.brands.map(b => row[b] as number || 0));
                     return (
                       <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                        <td className="py-2 px-3 font-medium text-[#4A7C59] truncate max-w-[200px]" title={row.domain}>
-                          <div className="flex items-center gap-2">
+                        <td className="py-2 px-3 font-medium text-[#4A7C59] sticky left-0 bg-inherit z-10" title={row.domain}>
+                          <div className="flex items-center gap-2 max-w-[180px]">
                             <span className="flex-shrink-0">
                               {getCategoryIcon(categorizeDomain(row.domain), "w-3.5 h-3.5")}
                             </span>
                             <span className="truncate">{row.domain}</span>
                           </div>
                         </td>
-                        {providerSourceHeatmap.providers.map(provider => {
-                          const count = row[provider] as number || 0;
+                        {brandSourceHeatmap.brands.map(brand => {
+                          const count = row[brand] as number || 0;
                           const intensity = maxCount > 0 ? count / maxCount : 0;
+                          const isSearchedBrand = brand === brandSourceHeatmap.searchedBrand;
                           const bgColor = count > 0
-                            ? `rgba(74, 124, 89, ${0.15 + intensity * 0.6})`
-                            : 'transparent';
+                            ? isSearchedBrand
+                              ? `rgba(74, 124, 89, ${0.2 + intensity * 0.6})`
+                              : `rgba(91, 163, 192, ${0.15 + intensity * 0.55})`
+                            : isSearchedBrand ? 'rgba(74, 124, 89, 0.05)' : 'transparent';
                           return (
                             <td
-                              key={provider}
+                              key={brand}
                               className="text-center py-2 px-3"
                               style={{ backgroundColor: bgColor }}
                             >
                               {count > 0 ? (
-                                <span className={intensity > 0.5 ? 'text-white font-medium' : 'text-gray-700'}>
+                                <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
                                   {count}
                                 </span>
                               ) : (
@@ -4695,24 +4735,31 @@ export default function ResultsPage() {
                             </td>
                           );
                         })}
-                        <td className="text-center py-2 px-3 font-semibold text-gray-700 bg-gray-100">
-                          {row.total}
-                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-            <div className="mt-4 flex items-center justify-end gap-4 text-xs text-gray-500">
-              <div className="flex items-center gap-2">
-                <span>Fewer citations</span>
-                <div className="flex">
-                  <div className="w-6 h-4 rounded-l" style={{ backgroundColor: 'rgba(74, 124, 89, 0.15)' }} />
-                  <div className="w-6 h-4" style={{ backgroundColor: 'rgba(74, 124, 89, 0.45)' }} />
-                  <div className="w-6 h-4 rounded-r" style={{ backgroundColor: 'rgba(74, 124, 89, 0.75)' }} />
+            <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(74, 124, 89, 0.5)' }} />
+                  <span>Searched brand</span>
                 </div>
-                <span>More citations</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(91, 163, 192, 0.5)' }} />
+                  <span>Competitors</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>Fewer</span>
+                <div className="flex">
+                  <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(91, 163, 192, 0.15)' }} />
+                  <div className="w-5 h-3" style={{ backgroundColor: 'rgba(91, 163, 192, 0.4)' }} />
+                  <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(91, 163, 192, 0.7)' }} />
+                </div>
+                <span>More</span>
               </div>
             </div>
           </div>
