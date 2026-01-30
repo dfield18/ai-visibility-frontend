@@ -4723,7 +4723,7 @@ export default function ResultsPage() {
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Prompt</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Position</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Position</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Brand Sentiment</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor Sentiments</th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Response</th>
@@ -4743,7 +4743,7 @@ export default function ResultsPage() {
                       <td className="py-3 px-4">
                         <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-4">
                         {(() => {
                           let rank = 0;
                           const brandLower = (runStatus?.brand || '').toLowerCase();
@@ -4774,14 +4774,17 @@ export default function ResultsPage() {
                               rank = foundIndex + 1;
                             }
                           }
-                          return (
-                            <span className={`inline-flex items-center justify-center w-7 h-7 text-xs font-medium rounded-full ${
-                              rank === 0 ? 'bg-gray-100 text-gray-400' :
-                              rank === 1 ? 'bg-[#E8F0E8] text-[#4A7C59]' :
-                              rank <= 3 ? 'bg-blue-50 text-blue-600' :
+                          return rank > 0 ? (
+                            <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
+                              rank === 1 ? 'bg-green-100 text-green-700' :
+                              rank <= 3 ? 'bg-yellow-100 text-yellow-700' :
                               'bg-gray-100 text-gray-600'
                             }`}>
-                              {rank === 0 ? '—' : `#${rank}`}
+                              #{rank}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
+                              Not shown
                             </span>
                           );
                         })()}
