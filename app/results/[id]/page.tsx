@@ -3872,12 +3872,43 @@ export default function ResultsPage() {
       }
 
       // Video Platforms
-      if (['youtube.com', 'vimeo.com', 'twitch.tv', 'dailymotion.com'].some(s => d.includes(s))) {
+      const videoSites = [
+        // Major platforms
+        'youtube.com', 'youtu.be', 'vimeo.com', 'twitch.tv', 'dailymotion.com',
+        // Streaming services
+        'netflix.com', 'hulu.com', 'disneyplus.com', 'hbomax.com', 'max.com', 'peacocktv.com',
+        'paramountplus.com', 'appletv.com', 'primevideo.com', 'crunchyroll.com', 'funimation.com',
+        // Video hosting/sharing
+        'wistia.com', 'brightcove.com', 'vidyard.com', 'loom.com', 'streamable.com',
+        'rumble.com', 'bitchute.com', 'odysee.com', 'd.tube',
+        // Educational video
+        'ted.com', 'masterclass.com', 'skillshare.com', 'udemy.com', 'coursera.org', 'edx.org',
+        'khanacademy.org', 'lynda.com', 'pluralsight.com'
+      ];
+      if (videoSites.some(s => d.includes(s))) {
         return 'Video';
       }
 
       // Reference/Educational
-      if (['wikipedia.org', 'wikimedia.org', 'britannica.com', 'merriam-webster.com', 'dictionary.com', 'edu', 'scholarpedia.org', 'stanford.edu', 'mit.edu', 'harvard.edu'].some(s => d.includes(s))) {
+      const referenceSites = [
+        // Encyclopedias & Wikis
+        'wikipedia.org', 'wikimedia.org', 'wiktionary.org', 'wikihow.com', 'fandom.com',
+        'britannica.com', 'encyclopedia.com', 'scholarpedia.org', 'citizendium.org',
+        // Dictionaries & Language
+        'merriam-webster.com', 'dictionary.com', 'thesaurus.com', 'oxforddictionaries.com',
+        'cambridge.org', 'collinsdictionary.com', 'wordreference.com', 'linguee.com',
+        // Academic & Research
+        'scholar.google.com', 'researchgate.net', 'academia.edu', 'jstor.org', 'pubmed.gov',
+        'ncbi.nlm.nih.gov', 'arxiv.org', 'ssrn.com', 'sciencedirect.com', 'springer.com',
+        'nature.com', 'science.org', 'ieee.org', 'acm.org', 'plos.org',
+        // Universities (.edu will catch most)
+        '.edu', 'stanford.edu', 'mit.edu', 'harvard.edu', 'berkeley.edu', 'yale.edu',
+        'princeton.edu', 'columbia.edu', 'cornell.edu', 'ox.ac.uk', 'cam.ac.uk',
+        // How-to & Learning
+        'instructables.com', 'howstuffworks.com', 'lifehacker.com', 'makeuseof.com',
+        'investopedia.com', 'healthline.com', 'webmd.com', 'mayoclinic.org', 'nih.gov'
+      ];
+      if (referenceSites.some(s => d.includes(s))) {
         return 'Reference';
       }
 
@@ -3921,27 +3952,114 @@ export default function ResultsPage() {
       }
 
       // E-commerce
-      if (['amazon.com', 'ebay.com', 'walmart.com', 'target.com', 'bestbuy.com', 'etsy.com', 'alibaba.com', 'aliexpress.com', 'shopify.com', 'shop', 'store'].some(s => d.includes(s))) {
+      const ecommerceSites = [
+        // Major marketplaces
+        'amazon.com', 'amazon.co.uk', 'amazon.ca', 'amazon.de', 'ebay.com', 'ebay.co.uk',
+        'walmart.com', 'target.com', 'costco.com', 'samsclub.com', 'kohls.com', 'macys.com',
+        'nordstrom.com', 'jcpenney.com', 'homedepot.com', 'lowes.com', 'menards.com',
+        // Electronics
+        'bestbuy.com', 'newegg.com', 'bhphotovideo.com', 'adorama.com', 'microcenter.com',
+        // Fashion
+        'zappos.com', 'asos.com', 'zara.com', 'hm.com', 'uniqlo.com', 'gap.com', 'nike.com',
+        'adidas.com', 'footlocker.com', 'rei.com', 'patagonia.com', 'lululemon.com',
+        // Specialty
+        'etsy.com', 'wayfair.com', 'overstock.com', 'chewy.com', 'petco.com', 'petsmart.com',
+        'sephora.com', 'ulta.com', 'bathandbodyworks.com', 'williams-sonoma.com', 'crateandbarrel.com',
+        // International
+        'alibaba.com', 'aliexpress.com', 'wish.com', 'shein.com', 'temu.com', 'rakuten.com',
+        'flipkart.com', 'jd.com', 'taobao.com', 'mercadolibre.com',
+        // Platforms
+        'shopify.com', 'bigcommerce.com', 'squarespace.com', 'wix.com', 'woocommerce.com',
+        // Grocery
+        'instacart.com', 'freshdirect.com', 'peapod.com', 'shipt.com', 'doordash.com', 'ubereats.com',
+        // Pattern matching
+        'shop', 'store', 'buy', 'market', 'outlet', 'deals'
+      ];
+      if (ecommerceSites.some(s => d.includes(s))) {
         return 'E-commerce';
       }
 
       // Review Sites
-      if (['yelp.com', 'tripadvisor.com', 'trustpilot.com', 'g2.com', 'capterra.com', 'glassdoor.com', 'consumerreports.org', 'reviews', 'review', 'rating'].some(s => d.includes(s))) {
+      const reviewSites = [
+        // General reviews
+        'yelp.com', 'tripadvisor.com', 'trustpilot.com', 'sitejabber.com', 'bbb.org',
+        'consumerreports.org', 'consumersearch.com', 'which.co.uk',
+        // Software/Business reviews
+        'g2.com', 'capterra.com', 'softwareadvice.com', 'getapp.com', 'trustradius.com',
+        'gartner.com', 'forrester.com', 'pcmag.com',
+        // Employment
+        'glassdoor.com', 'indeed.com', 'comparably.com', 'kununu.com',
+        // Product reviews
+        'wirecutter.com', 'rtings.com', 'tomsguide.com', 'digitaltrends.com', 'reviewed.com',
+        'thespruce.com', 'foodnetwork.com', 'allrecipes.com', 'epicurious.com',
+        // Travel
+        'booking.com', 'hotels.com', 'expedia.com', 'kayak.com', 'airbnb.com', 'vrbo.com',
+        // Auto
+        'edmunds.com', 'kbb.com', 'caranddriver.com', 'motortrend.com', 'autotrader.com',
+        // Real estate
+        'zillow.com', 'realtor.com', 'redfin.com', 'trulia.com', 'apartments.com',
+        // Pattern matching
+        'reviews', 'review', 'rating', 'rated', 'compare', 'versus', 'vs'
+      ];
+      if (reviewSites.some(s => d.includes(s))) {
         return 'Reviews';
       }
 
       // Forums & Q&A
-      if (['quora.com', 'stackexchange.com', 'stackoverflow.com', 'discourse', 'forum', 'community', 'answers'].some(s => d.includes(s))) {
+      const forumSites = [
+        // Major Q&A
+        'quora.com', 'answers.com', 'ask.com', 'answers.yahoo.com', 'chacha.com',
+        // Tech forums
+        'stackoverflow.com', 'stackexchange.com', 'superuser.com', 'serverfault.com',
+        'askubuntu.com', 'mathoverflow.net', 'github.com', 'gitlab.com', 'bitbucket.org',
+        // General forums
+        'reddit.com', 'digg.com', 'slashdot.org', 'hackernews.com', 'news.ycombinator.com',
+        'voat.co', 'hubpages.com', 'xda-developers.com', 'androidcentral.com',
+        // Hobby/Interest forums
+        'avsforum.com', 'head-fi.org', 'audiogon.com', 'dpreview.com', 'fredmiranda.com',
+        'flyertalk.com', 'fatwalletfinance.com', 'bogleheads.org', 'early-retirement.org',
+        // Platform indicators
+        'discourse', 'forum', 'forums', 'community', 'communities', 'discuss', 'discussion',
+        'board', 'boards', 'bbs', 'phpbb', 'vbulletin', 'xenforo', 'invision'
+      ];
+      if (forumSites.some(s => d.includes(s))) {
         return 'Forums & Q&A';
       }
 
-      // Government
-      if (['.gov', '.gov.uk', '.govt'].some(s => d.includes(s))) {
+      // Government & Organizations
+      const govSites = [
+        // Government TLDs
+        '.gov', '.gov.uk', '.gov.au', '.gov.ca', '.govt.nz', '.gob', '.gouv',
+        // US Government
+        'usa.gov', 'whitehouse.gov', 'congress.gov', 'senate.gov', 'house.gov',
+        'supremecourt.gov', 'uscourts.gov', 'state.gov', 'treasury.gov', 'irs.gov',
+        'ssa.gov', 'medicare.gov', 'va.gov', 'hud.gov', 'usda.gov', 'epa.gov',
+        'fda.gov', 'cdc.gov', 'fbi.gov', 'cia.gov', 'nsa.gov', 'dhs.gov',
+        // International organizations
+        'un.org', 'who.int', 'worldbank.org', 'imf.org', 'wto.org', 'nato.int',
+        'europa.eu', 'ec.europa.eu', 'oecd.org', 'unicef.org', 'unesco.org',
+        // Non-profits & NGOs
+        '.org', 'redcross.org', 'salvationarmy.org', 'habitat.org', 'aclu.org',
+        'eff.org', 'fsf.org', 'creativecommons.org', 'mozilla.org', 'apache.org'
+      ];
+      if (govSites.some(s => d.includes(s))) {
         return 'Government';
       }
 
       // Blogs & Personal
-      if (['medium.com', 'substack.com', 'blogger.com', 'wordpress.com', 'tumblr.com', 'blog'].some(s => d.includes(s))) {
+      const blogSites = [
+        // Blogging platforms
+        'medium.com', 'substack.com', 'blogger.com', 'blogspot.com', 'wordpress.com',
+        'wordpress.org', 'tumblr.com', 'ghost.io', 'ghost.org', 'svbtle.com',
+        'typepad.com', 'livejournal.com', 'wix.com', 'squarespace.com', 'weebly.com',
+        // Newsletter platforms
+        'buttondown.email', 'revue.co', 'mailchimp.com', 'convertkit.com', 'beehiiv.com',
+        // Personal site indicators
+        'blog', 'blogs', 'personal', 'journal', 'diary', 'thoughts', 'musings',
+        // Developer blogs
+        'dev.to', 'hashnode.com', 'hashnode.dev', 'mirror.xyz'
+      ];
+      if (blogSites.some(s => d.includes(s))) {
         return 'Blogs';
       }
 
