@@ -788,6 +788,7 @@ export default function ResultsPage() {
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
   const [heatmapProviderFilter, setHeatmapProviderFilter] = useState<string>('all');
+  const [heatmapShowSentiment, setHeatmapShowSentiment] = useState<boolean>(false);
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
   const [aiCategorizations, setAiCategorizations] = useState<Record<string, string>>({});
   const [categorizationLoading, setCategorizationLoading] = useState(false);
@@ -4278,11 +4279,40 @@ export default function ResultsPage() {
         .sort((a, b) => b.value - a.value);
     }, [topCitedSources, aiCategorizations]);
 
+    // Sentiment score mapping for calculations
+    const sentimentScores: Record<string, number> = {
+      'strong_endorsement': 5,
+      'positive_endorsement': 4,
+      'neutral_mention': 3,
+      'conditional': 2,
+      'negative_comparison': 1,
+      'not_mentioned': 0,
+    };
+
+    const sentimentLabels: Record<number, string> = {
+      5: 'Very Favorable',
+      4: 'Favorable',
+      3: 'Neutral',
+      2: 'Conditional',
+      1: 'Negative',
+      0: 'N/A',
+    };
+
+    const getSentimentLabel = (score: number): string => {
+      if (score >= 4.5) return 'Very Favorable';
+      if (score >= 3.5) return 'Favorable';
+      if (score >= 2.5) return 'Neutral';
+      if (score >= 1.5) return 'Conditional';
+      if (score >= 0.5) return 'Negative';
+      return 'N/A';
+    };
+
     // Brand-Source Heatmap data (sources by brand mentioned)
     const brandSourceHeatmap = useMemo(() => {
-      if (!runStatus) return { brands: [], sources: [], data: [], brandTotals: {} as Record<string, number> };
+      if (!runStatus) return { brands: [], sources: [], data: [], brandTotals: {} as Record<string, number>, sentimentData: {} as Record<string, Record<string, { total: number; sum: number; avg: number }>> };
 
       const sourceBrandCounts: Record<string, Record<string, number>> = {};
+      const sourceBrandSentiments: Record<string, Record<string, { total: number; sum: number }>> = {};
       const brandTotalMentions: Record<string, number> = {};
 
       // Process all results to get per-brand citation counts per source
@@ -4295,17 +4325,19 @@ export default function ResultsPage() {
       for (const result of results) {
         if (!result.sources) continue;
 
-        // Get all brands mentioned in this result
-        const brandsInResult: string[] = [];
+        // Get all brands mentioned in this result with their sentiments
+        const brandsInResult: Array<{ brand: string; sentiment: string | null }> = [];
         if (result.brand_mentioned && runStatus.brand) {
-          brandsInResult.push(runStatus.brand);
+          brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
         }
-        if (result.competitors_mentioned) {
-          brandsInResult.push(...result.competitors_mentioned);
+        if (result.competitors_mentioned && result.competitor_sentiments) {
+          result.competitors_mentioned.forEach(comp => {
+            brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null });
+          });
         }
 
         // Count brand mentions for sorting
-        brandsInResult.forEach(brand => {
+        brandsInResult.forEach(({ brand }) => {
           brandTotalMentions[brand] = (brandTotalMentions[brand] || 0) + 1;
         });
 
@@ -4322,11 +4354,21 @@ export default function ResultsPage() {
 
           if (!sourceBrandCounts[domain]) {
             sourceBrandCounts[domain] = {};
+            sourceBrandSentiments[domain] = {};
           }
 
           // Associate this source with all brands mentioned in the response
-          brandsInResult.forEach(brand => {
+          brandsInResult.forEach(({ brand, sentiment }) => {
             sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
+
+            // Track sentiment
+            if (!sourceBrandSentiments[domain][brand]) {
+              sourceBrandSentiments[domain][brand] = { total: 0, sum: 0 };
+            }
+            if (sentiment && sentimentScores[sentiment] !== undefined) {
+              sourceBrandSentiments[domain][brand].total += 1;
+              sourceBrandSentiments[domain][brand].sum += sentimentScores[sentiment];
+            }
           });
         }
       }
@@ -4350,7 +4392,7 @@ export default function ResultsPage() {
           return brandTotalMentions[b] - brandTotalMentions[a];
         });
 
-      // Build heatmap data
+      // Build heatmap data with counts
       const heatmapData: Array<{ domain: string; total: number; [key: string]: string | number }> = topSources.map(source => ({
         domain: source.domain,
         total: source.total,
@@ -4360,12 +4402,30 @@ export default function ResultsPage() {
         }, {} as Record<string, number>),
       }));
 
+      // Build sentiment data
+      const sentimentData: Record<string, Record<string, { total: number; sum: number; avg: number }>> = {};
+      topSources.forEach(source => {
+        sentimentData[source.domain] = {};
+        brandList.forEach(brand => {
+          const data = sourceBrandSentiments[source.domain]?.[brand];
+          if (data && data.total > 0) {
+            sentimentData[source.domain][brand] = {
+              ...data,
+              avg: data.sum / data.total,
+            };
+          } else {
+            sentimentData[source.domain][brand] = { total: 0, sum: 0, avg: 0 };
+          }
+        });
+      });
+
       return {
         brands: brandList,
         sources: topSources.map(s => s.domain),
         data: heatmapData,
         brandTotals: brandTotalMentions,
         searchedBrand,
+        sentimentData,
       };
     }, [runStatus, globallyFilteredResults, heatmapProviderFilter]);
 
@@ -4719,16 +4779,28 @@ export default function ResultsPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
                 <p className="text-sm text-gray-500">Which sources are cited when each brand is mentioned</p>
               </div>
-              <select
-                value={heatmapProviderFilter}
-                onChange={(e) => setHeatmapProviderFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-              >
-                <option value="all">All LLMs</option>
-                {availableProviders.map((provider) => (
-                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                ))}
-              </select>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setHeatmapShowSentiment(!heatmapShowSentiment)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                    heatmapShowSentiment
+                      ? 'bg-[#4A7C59] text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {heatmapShowSentiment ? 'Showing Sentiment' : 'Show Sentiment'}
+                </button>
+                <select
+                  value={heatmapProviderFilter}
+                  onChange={(e) => setHeatmapProviderFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                >
+                  <option value="all">All LLMs</option>
+                  {availableProviders.map((provider) => (
+                    <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -4776,13 +4848,37 @@ export default function ResultsPage() {
                         </td>
                         {brandSourceHeatmap.brands.map(brand => {
                           const count = row[brand] as number || 0;
-                          const intensity = globalMax > 0 ? count / globalMax : 0;
+                          const sentimentInfo = brandSourceHeatmap.sentimentData[row.domain as string]?.[brand];
+                          const avgSentiment = sentimentInfo?.avg || 0;
+
+                          // Calculate intensity based on mode
+                          const intensity = heatmapShowSentiment
+                            ? avgSentiment > 0 ? (avgSentiment - 1) / 4 : 0  // Scale 1-5 to 0-1
+                            : globalMax > 0 ? count / globalMax : 0;
+
                           const isSearchedBrand = brand === brandSourceHeatmap.searchedBrand;
-                          const bgColor = count > 0
-                            ? isSearchedBrand
+
+                          // In sentiment mode, use different colors: green for positive, yellow for neutral, red for negative
+                          let bgColor: string;
+                          if (count === 0) {
+                            bgColor = isSearchedBrand ? 'rgba(74, 124, 89, 0.05)' : 'transparent';
+                          } else if (heatmapShowSentiment) {
+                            // Sentiment color: green (high) to yellow (mid) to red (low)
+                            if (avgSentiment >= 3.5) {
+                              bgColor = `rgba(74, 124, 89, ${0.3 + (avgSentiment - 3.5) / 1.5 * 0.5})`; // Green
+                            } else if (avgSentiment >= 2.5) {
+                              bgColor = `rgba(234, 179, 8, ${0.3 + (avgSentiment - 2.5) * 0.3})`; // Yellow
+                            } else if (avgSentiment >= 1.5) {
+                              bgColor = `rgba(245, 158, 11, ${0.3 + (avgSentiment - 1.5) * 0.3})`; // Orange
+                            } else {
+                              bgColor = `rgba(239, 68, 68, ${0.3 + intensity * 0.4})`; // Red
+                            }
+                          } else {
+                            bgColor = isSearchedBrand
                               ? `rgba(74, 124, 89, ${0.2 + intensity * 0.6})`
-                              : `rgba(91, 163, 192, ${0.15 + intensity * 0.55})`
-                            : isSearchedBrand ? 'rgba(74, 124, 89, 0.05)' : 'transparent';
+                              : `rgba(91, 163, 192, ${0.15 + intensity * 0.55})`;
+                          }
+
                           return (
                             <td
                               key={brand}
@@ -4792,9 +4888,15 @@ export default function ResultsPage() {
                               title={count > 0 ? 'Double-click to view responses' : undefined}
                             >
                               {count > 0 ? (
-                                <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
-                                  {count}
-                                </span>
+                                heatmapShowSentiment ? (
+                                  <span className={avgSentiment >= 3.5 && intensity > 0.5 ? 'text-white font-medium' : 'text-gray-700'}>
+                                    {getSentimentLabel(avgSentiment)}
+                                  </span>
+                                ) : (
+                                  <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
+                                    {count}
+                                  </span>
+                                )
                               ) : (
                                 <span className="text-gray-300">-</span>
                               )}
@@ -4808,25 +4910,45 @@ export default function ResultsPage() {
               </table>
             </div>
             <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(74, 124, 89, 0.5)' }} />
-                  <span>Searched brand</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(91, 163, 192, 0.5)' }} />
-                  <span>Competitors</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span>Fewer</span>
-                <div className="flex">
-                  <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(91, 163, 192, 0.15)' }} />
-                  <div className="w-5 h-3" style={{ backgroundColor: 'rgba(91, 163, 192, 0.4)' }} />
-                  <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(91, 163, 192, 0.7)' }} />
-                </div>
-                <span>More</span>
-              </div>
+              {heatmapShowSentiment ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-600">Sentiment Scale:</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>Negative</span>
+                    <div className="flex">
+                      <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(239, 68, 68, 0.5)' }} />
+                      <div className="w-5 h-3" style={{ backgroundColor: 'rgba(245, 158, 11, 0.4)' }} />
+                      <div className="w-5 h-3" style={{ backgroundColor: 'rgba(234, 179, 8, 0.4)' }} />
+                      <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(74, 124, 89, 0.6)' }} />
+                    </div>
+                    <span>Favorable</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(74, 124, 89, 0.5)' }} />
+                      <span>Searched brand</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(91, 163, 192, 0.5)' }} />
+                      <span>Competitors</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span>Fewer</span>
+                    <div className="flex">
+                      <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(91, 163, 192, 0.15)' }} />
+                      <div className="w-5 h-3" style={{ backgroundColor: 'rgba(91, 163, 192, 0.4)' }} />
+                      <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(91, 163, 192, 0.7)' }} />
+                    </div>
+                    <span>More</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -6233,6 +6355,18 @@ export default function ResultsPage() {
                 </h2>
                 <p className="text-sm text-gray-500">
                   {heatmapResultsList.results.length} response{heatmapResultsList.results.length !== 1 ? 's' : ''} mentioning {heatmapResultsList.brand}
+                  {heatmapShowSentiment && (() => {
+                    const sentimentInfo = brandSourceHeatmap.sentimentData[heatmapResultsList.domain]?.[heatmapResultsList.brand];
+                    if (sentimentInfo && sentimentInfo.total > 0) {
+                      const avgSentiment = sentimentInfo.avg;
+                      return (
+                        <span className="ml-2">
+                          — {getSentimentLabel(avgSentiment)} ({heatmapResultsList.results.length} citation{heatmapResultsList.results.length !== 1 ? 's' : ''})
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
                 </p>
               </div>
               <button
