@@ -127,3 +127,11 @@ export interface AISummaryResponse {
   summary: string;
   generated_at: string;
 }
+
+export interface CategorizeRequest {
+  domains: string[];
+}
+
+export interface CategorizeResponse {
+  categories: Record<string, string>;
+}

@@ -35,7 +35,10 @@ import {
   Landmark,
   PenLine,
   CircleDot,
+  Plane,
+  Wallet,
 } from 'lucide-react';
+import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
 import { useRunStatus, useAISummary } from '@/hooks/useApi';
 import {
@@ -784,6 +787,8 @@ export default function ResultsPage() {
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
+  const [aiCategorizations, setAiCategorizations] = useState<Record<string, string>>({});
+  const [categorizationLoading, setCategorizationLoading] = useState(false);
   const sourcesListRef = useRef<HTMLDivElement>(null);
   const pendingScrollRestore = useRef<{ container: number; window: number } | null>(null);
 
@@ -4074,8 +4079,182 @@ export default function ResultsPage() {
         return 'Blogs';
       }
 
+      // Check AI categorization for domains that would be "Other"
+      if (aiCategorizations[domain]) {
+        return aiCategorizations[domain];
+      }
+
       return 'Other';
     };
+
+    // Helper to get base category (without AI lookup) - for finding domains to categorize
+    const getBaseCategory = (domain: string): string => {
+      const d = domain.toLowerCase();
+
+      // Social Media
+      const socialMediaSites = [
+        'reddit.com', 'twitter.com', 'x.com', 'facebook.com', 'fb.com', 'instagram.com', 'tiktok.com',
+        'linkedin.com', 'pinterest.com', 'snapchat.com', 'discord.com', 'discord.gg',
+        'whatsapp.com', 'telegram.org', 't.me', 'signal.org',
+        'threads.net', 'mastodon.social', 'mastodon.online', 'bsky.app', 'bluesky', 'bereal.com',
+        'lemon8-app.com', 'clubhouse.com', 'nextdoor.com',
+        'flickr.com', 'imgur.com', 'giphy.com', '500px.com', 'deviantart.com',
+        'vk.com', 'weibo.com', 'weixin.qq.com', 'wechat.com', 'line.me', 'kakaotalk',
+        'behance.net', 'dribbble.com', 'goodreads.com', 'letterboxd.com', 'untappd.com', 'strava.com'
+      ];
+      if (socialMediaSites.some(s => d.includes(s))) return 'Social Media';
+
+      // Video
+      const videoSites = [
+        'youtube.com', 'youtu.be', 'vimeo.com', 'twitch.tv', 'dailymotion.com',
+        'netflix.com', 'hulu.com', 'disneyplus.com', 'hbomax.com', 'max.com', 'peacocktv.com',
+        'paramountplus.com', 'appletv.com', 'primevideo.com', 'crunchyroll.com', 'funimation.com',
+        'wistia.com', 'brightcove.com', 'vidyard.com', 'loom.com', 'streamable.com',
+        'rumble.com', 'bitchute.com', 'odysee.com', 'd.tube',
+        'ted.com', 'masterclass.com', 'skillshare.com', 'udemy.com', 'coursera.org', 'edx.org',
+        'khanacademy.org', 'lynda.com', 'pluralsight.com'
+      ];
+      if (videoSites.some(s => d.includes(s))) return 'Video';
+
+      // Reference
+      const referenceSites = [
+        'wikipedia.org', 'wikimedia.org', 'wiktionary.org', 'wikihow.com', 'fandom.com',
+        'britannica.com', 'encyclopedia.com', 'scholarpedia.org', 'citizendium.org',
+        'merriam-webster.com', 'dictionary.com', 'thesaurus.com', 'oxforddictionaries.com',
+        'cambridge.org', 'collinsdictionary.com', 'wordreference.com', 'linguee.com',
+        'scholar.google.com', 'researchgate.net', 'academia.edu', 'jstor.org', 'pubmed.gov',
+        'ncbi.nlm.nih.gov', 'arxiv.org', 'ssrn.com', 'sciencedirect.com', 'springer.com',
+        'nature.com', 'science.org', 'ieee.org', 'acm.org', 'plos.org',
+        '.edu', 'instructables.com', 'howstuffworks.com', 'lifehacker.com', 'makeuseof.com',
+        'investopedia.com', 'healthline.com', 'webmd.com', 'mayoclinic.org', 'nih.gov'
+      ];
+      if (referenceSites.some(s => d.includes(s))) return 'Reference';
+
+      // News & Media
+      const majorNewsOutlets = [
+        'nytimes.com', 'wsj.com', 'washingtonpost.com', 'usatoday.com', 'latimes.com', 'chicagotribune.com',
+        'nypost.com', 'nydailynews.com', 'sfchronicle.com', 'bostonglobe.com', 'dallasnews.com',
+        'cnn.com', 'foxnews.com', 'msnbc.com', 'nbcnews.com', 'abcnews.go.com', 'cbsnews.com', 'pbs.org', 'npr.org',
+        'bbc.com', 'bbc.co.uk', 'theguardian.com', 'telegraph.co.uk', 'dailymail.co.uk', 'independent.co.uk',
+        'mirror.co.uk', 'thesun.co.uk', 'express.co.uk', 'metro.co.uk', 'standard.co.uk', 'sky.com',
+        'reuters.com', 'apnews.com', 'afp.com', 'aljazeera.com', 'dw.com', 'france24.com', 'rt.com',
+        'scmp.com', 'straitstimes.com', 'theaustralian.com.au', 'abc.net.au', 'cbc.ca', 'globalnews.ca',
+        'forbes.com', 'bloomberg.com', 'businessinsider.com', 'cnbc.com', 'marketwatch.com', 'ft.com',
+        'economist.com', 'fortune.com', 'inc.com', 'entrepreneur.com', 'fastcompany.com', 'qz.com',
+        'techcrunch.com', 'wired.com', 'theverge.com', 'engadget.com', 'arstechnica.com', 'mashable.com',
+        'gizmodo.com', 'cnet.com', 'zdnet.com', 'venturebeat.com', 'thenextweb.com', 'recode.net',
+        'techradar.com', 'tomshardware.com', 'anandtech.com', '9to5mac.com', '9to5google.com', 'macrumors.com',
+        'variety.com', 'hollywoodreporter.com', 'deadline.com', 'ew.com', 'people.com', 'tmz.com',
+        'rollingstone.com', 'billboard.com', 'pitchfork.com', 'ign.com', 'gamespot.com', 'kotaku.com', 'polygon.com',
+        'espn.com', 'sports.yahoo.com', 'bleacherreport.com', 'si.com', 'cbssports.com', 'theathletic.com',
+        'huffpost.com', 'buzzfeednews.com', 'vox.com', 'theatlantic.com', 'newyorker.com', 'slate.com',
+        'salon.com', 'thedailybeast.com', 'axios.com', 'politico.com', 'thehill.com', 'realclearpolitics.com'
+      ];
+      const newsPatterns = ['news', 'daily', 'times', 'post', 'herald', 'tribune', 'journal', 'gazette',
+        'observer', 'chronicle', 'examiner', 'inquirer', 'dispatch', 'sentinel', 'courier', 'press',
+        'register', 'record', 'reporter', 'bulletin', 'beacon', 'argus', 'banner', 'ledger', 'star',
+        'sun', 'mirror', 'express', 'mail', 'telegraph', 'monitor', 'insider', 'today'];
+      if (majorNewsOutlets.some(s => d.includes(s)) || newsPatterns.some(p => d.includes(p))) return 'News & Media';
+
+      // E-commerce
+      const ecommerceSites = [
+        'amazon.com', 'amazon.co.uk', 'amazon.ca', 'amazon.de', 'ebay.com', 'ebay.co.uk',
+        'walmart.com', 'target.com', 'costco.com', 'samsclub.com', 'kohls.com', 'macys.com',
+        'nordstrom.com', 'jcpenney.com', 'homedepot.com', 'lowes.com', 'menards.com',
+        'bestbuy.com', 'newegg.com', 'bhphotovideo.com', 'adorama.com', 'microcenter.com',
+        'zappos.com', 'asos.com', 'zara.com', 'hm.com', 'uniqlo.com', 'gap.com', 'nike.com',
+        'adidas.com', 'footlocker.com', 'rei.com', 'patagonia.com', 'lululemon.com',
+        'etsy.com', 'wayfair.com', 'overstock.com', 'chewy.com', 'petco.com', 'petsmart.com',
+        'sephora.com', 'ulta.com', 'bathandbodyworks.com', 'williams-sonoma.com', 'crateandbarrel.com',
+        'alibaba.com', 'aliexpress.com', 'wish.com', 'shein.com', 'temu.com', 'rakuten.com',
+        'flipkart.com', 'jd.com', 'taobao.com', 'mercadolibre.com',
+        'shopify.com', 'bigcommerce.com', 'squarespace.com', 'wix.com', 'woocommerce.com',
+        'instacart.com', 'freshdirect.com', 'peapod.com', 'shipt.com', 'doordash.com', 'ubereats.com',
+        'shop', 'store', 'buy', 'market', 'outlet', 'deals'
+      ];
+      if (ecommerceSites.some(s => d.includes(s))) return 'E-commerce';
+
+      // Reviews
+      const reviewSites = [
+        'yelp.com', 'tripadvisor.com', 'trustpilot.com', 'sitejabber.com', 'bbb.org',
+        'consumerreports.org', 'consumersearch.com', 'which.co.uk',
+        'g2.com', 'capterra.com', 'softwareadvice.com', 'getapp.com', 'trustradius.com',
+        'gartner.com', 'forrester.com', 'pcmag.com',
+        'glassdoor.com', 'indeed.com', 'comparably.com', 'kununu.com',
+        'wirecutter.com', 'rtings.com', 'tomsguide.com', 'digitaltrends.com', 'reviewed.com',
+        'thespruce.com', 'foodnetwork.com', 'allrecipes.com', 'epicurious.com',
+        'booking.com', 'hotels.com', 'expedia.com', 'kayak.com', 'airbnb.com', 'vrbo.com',
+        'edmunds.com', 'kbb.com', 'caranddriver.com', 'motortrend.com', 'autotrader.com',
+        'zillow.com', 'realtor.com', 'redfin.com', 'trulia.com', 'apartments.com',
+        'reviews', 'review', 'rating', 'rated', 'compare', 'versus', 'vs'
+      ];
+      if (reviewSites.some(s => d.includes(s))) return 'Reviews';
+
+      // Forums & Q&A
+      const forumSites = [
+        'quora.com', 'answers.com', 'ask.com', 'answers.yahoo.com', 'chacha.com',
+        'stackoverflow.com', 'stackexchange.com', 'superuser.com', 'serverfault.com',
+        'askubuntu.com', 'mathoverflow.net', 'github.com', 'gitlab.com', 'bitbucket.org',
+        'reddit.com', 'digg.com', 'slashdot.org', 'hackernews.com', 'news.ycombinator.com',
+        'voat.co', 'hubpages.com', 'xda-developers.com', 'androidcentral.com',
+        'avsforum.com', 'head-fi.org', 'audiogon.com', 'dpreview.com', 'fredmiranda.com',
+        'flyertalk.com', 'fatwalletfinance.com', 'bogleheads.org', 'early-retirement.org',
+        'discourse', 'forum', 'forums', 'community', 'communities', 'discuss', 'discussion',
+        'board', 'boards', 'bbs', 'phpbb', 'vbulletin', 'xenforo', 'invision'
+      ];
+      if (forumSites.some(s => d.includes(s))) return 'Forums & Q&A';
+
+      // Government
+      const govSites = [
+        '.gov', '.gov.uk', '.gov.au', '.gov.ca', '.govt.nz', '.gob', '.gouv',
+        'usa.gov', 'whitehouse.gov', 'congress.gov', 'senate.gov', 'house.gov',
+        'supremecourt.gov', 'uscourts.gov', 'state.gov', 'treasury.gov', 'irs.gov',
+        'ssa.gov', 'medicare.gov', 'va.gov', 'hud.gov', 'usda.gov', 'epa.gov',
+        'fda.gov', 'cdc.gov', 'fbi.gov', 'cia.gov', 'nsa.gov', 'dhs.gov',
+        'un.org', 'who.int', 'worldbank.org', 'imf.org', 'wto.org', 'nato.int',
+        'europa.eu', 'ec.europa.eu', 'oecd.org', 'unicef.org', 'unesco.org',
+        '.org', 'redcross.org', 'salvationarmy.org', 'habitat.org', 'aclu.org',
+        'eff.org', 'fsf.org', 'creativecommons.org', 'mozilla.org', 'apache.org'
+      ];
+      if (govSites.some(s => d.includes(s))) return 'Government';
+
+      // Blogs
+      const blogSites = [
+        'medium.com', 'substack.com', 'blogger.com', 'blogspot.com', 'wordpress.com',
+        'wordpress.org', 'tumblr.com', 'ghost.io', 'ghost.org', 'svbtle.com',
+        'typepad.com', 'livejournal.com', 'wix.com', 'squarespace.com', 'weebly.com',
+        'buttondown.email', 'revue.co', 'mailchimp.com', 'convertkit.com', 'beehiiv.com',
+        'blog', 'blogs', 'personal', 'journal', 'diary', 'thoughts', 'musings',
+        'dev.to', 'hashnode.com', 'hashnode.dev', 'mirror.xyz'
+      ];
+      if (blogSites.some(s => d.includes(s))) return 'Blogs';
+
+      return 'Other';
+    };
+
+    // Fetch AI categorizations for domains that are "Other"
+    useEffect(() => {
+      const domainsToFetch = topCitedSources
+        .filter(source => getBaseCategory(source.domain) === 'Other')
+        .map(source => source.domain)
+        .filter(domain => !aiCategorizations[domain]); // Don't re-fetch already categorized
+
+      if (domainsToFetch.length === 0 || categorizationLoading) return;
+
+      const fetchCategories = async () => {
+        setCategorizationLoading(true);
+        try {
+          const response = await api.categorizeDomains(domainsToFetch);
+          setAiCategorizations(prev => ({ ...prev, ...response.categories }));
+        } catch (error) {
+          console.error('Failed to fetch AI categorizations:', error);
+        } finally {
+          setCategorizationLoading(false);
+        }
+      };
+
+      fetchCategories();
+    }, [topCitedSources, aiCategorizations, categorizationLoading]);
 
     // Calculate source category breakdown
     const sourceCategoryData = useMemo(() => {
@@ -4095,7 +4274,7 @@ export default function ResultsPage() {
           percentage: total > 0 ? (count / total) * 100 : 0
         }))
         .sort((a, b) => b.value - a.value);
-    }, [topCitedSources]);
+    }, [topCitedSources, aiCategorizations]);
 
     const CATEGORY_COLORS: Record<string, string> = {
       'Social Media': '#4A7C59',      // Primary green
@@ -4107,6 +4286,8 @@ export default function ResultsPage() {
       'Forums & Q&A': '#2D5A3D',      // Deep green
       'Government': '#4A90A4',        // Teal blue
       'Blogs': '#A8C5B5',             // Pale green
+      'Travel': '#6BA3A0',            // Teal green
+      'Finance': '#5B8FA8',           // Steel blue
       'Other': '#B8C9BE'              // Light gray-green
     };
 
@@ -4124,6 +4305,8 @@ export default function ResultsPage() {
         case 'Forums & Q&A': return <HelpCircle {...props} />;
         case 'Government': return <Landmark {...props} />;
         case 'Blogs': return <PenLine {...props} />;
+        case 'Travel': return <Plane {...props} />;
+        case 'Finance': return <Wallet {...props} />;
         default: return <CircleDot {...props} />;
       }
     };

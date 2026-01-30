@@ -6,6 +6,8 @@ import {
   RunStatusResponse,
   CancelResponse,
   AISummaryResponse,
+  CategorizeRequest,
+  CategorizeResponse,
   ApiError,
 } from './types';
 
@@ -73,6 +75,14 @@ class ApiClient {
 
   async getAISummary(runId: string): Promise<AISummaryResponse> {
     return this.request<AISummaryResponse>(`/api/v1/run/${runId}/ai-summary`);
+  }
+
+  async categorizeDomains(domains: string[]): Promise<CategorizeResponse> {
+    const body: CategorizeRequest = { domains };
+    return this.request<CategorizeResponse>('/api/v1/categorize', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
   }
 }
 
