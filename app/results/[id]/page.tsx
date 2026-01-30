@@ -3851,7 +3851,23 @@ export default function ResultsPage() {
       const d = domain.toLowerCase();
 
       // Social Media
-      if (['reddit.com', 'twitter.com', 'x.com', 'facebook.com', 'instagram.com', 'tiktok.com', 'linkedin.com', 'pinterest.com', 'threads.net', 'mastodon.social'].some(s => d.includes(s))) {
+      const socialMediaSites = [
+        // Major platforms
+        'reddit.com', 'twitter.com', 'x.com', 'facebook.com', 'fb.com', 'instagram.com', 'tiktok.com',
+        'linkedin.com', 'pinterest.com', 'snapchat.com', 'discord.com', 'discord.gg',
+        // Messaging (with public content)
+        'whatsapp.com', 'telegram.org', 't.me', 'signal.org',
+        // Newer/Alternative platforms
+        'threads.net', 'mastodon.social', 'mastodon.online', 'bsky.app', 'bluesky', 'bereal.com',
+        'lemon8-app.com', 'clubhouse.com', 'nextdoor.com',
+        // Media sharing
+        'flickr.com', 'imgur.com', 'giphy.com', '500px.com', 'deviantart.com',
+        // International
+        'vk.com', 'weibo.com', 'weixin.qq.com', 'wechat.com', 'line.me', 'kakaotalk',
+        // Professional/Niche
+        'behance.net', 'dribbble.com', 'goodreads.com', 'letterboxd.com', 'untappd.com', 'strava.com'
+      ];
+      if (socialMediaSites.some(s => d.includes(s))) {
         return 'Social Media';
       }
 
