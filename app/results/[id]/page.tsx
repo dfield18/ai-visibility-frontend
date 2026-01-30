@@ -3807,54 +3807,26 @@ export default function ResultsPage() {
             </div>
             <div className={`space-y-2 ${topCitedSources.length > 10 ? 'max-h-[600px] overflow-y-auto pr-2' : ''}`}>
               {topCitedSources.map((source, index) => {
-                const hasMultipleCitations = source.count > 1;
                 const isExpanded = expandedSources.has(source.domain);
                 return (
                   <div key={source.domain} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
                     <div
-                      className={`flex items-center gap-3 p-3 ${hasMultipleCitations ? 'cursor-pointer hover:bg-gray-100' : ''} transition-colors`}
+                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => {
-                        if (hasMultipleCitations) {
-                          const newExpanded = new Set(expandedSources);
-                          if (isExpanded) {
-                            newExpanded.delete(source.domain);
-                          } else {
-                            newExpanded.add(source.domain);
-                          }
-                          setExpandedSources(newExpanded);
+                        const newExpanded = new Set(expandedSources);
+                        if (isExpanded) {
+                          newExpanded.delete(source.domain);
+                        } else {
+                          newExpanded.add(source.domain);
                         }
+                        setExpandedSources(newExpanded);
                       }}
                     >
                       <span className="text-sm font-medium text-gray-400 w-6">{index + 1}.</span>
-                      {hasMultipleCitations ? (
-                        <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
-                          {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
-                          {source.domain}
-                        </div>
-                      ) : (
-                        (() => {
-                          const singleUrlDetail = source.urlDetails[0];
-                          const { subtitle } = formatSourceDisplay(singleUrlDetail?.url || source.url, singleUrlDetail?.title);
-                          const displayTitle = subtitle || getReadableTitleFromUrl(singleUrlDetail?.url || source.url);
-                          return (
-                            <a
-                              href={source.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
-                              <span className="truncate">
-                                <span>{source.domain}</span>
-                                {displayTitle && displayTitle !== source.domain && (
-                                  <span className="text-gray-500 font-normal"> · {displayTitle}</span>
-                                )}
-                              </span>
-                            </a>
-                          );
-                        })()
-                      )}
+                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
+                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
+                        {source.domain}
+                      </div>
                       <div className="flex items-center gap-3">
                         <div className="flex gap-1">
                           {source.providers.map((provider) => (
@@ -3866,10 +3838,10 @@ export default function ResultsPage() {
                         <span className="text-sm text-gray-500 w-20 text-right">{source.count} {source.count === 1 ? 'citation' : 'citations'}</span>
                       </div>
                     </div>
-                    {hasMultipleCitations && isExpanded && (
+                    {isExpanded && (
                       <div className="px-3 pb-3 pt-1 border-t border-gray-200 ml-9">
                         <p className="text-xs text-gray-500 mb-2">
-                          {source.urlDetails.length > 1 ? `${source.urlDetails.length} unique pages:` : `${source.count} citations from this page:`}
+                          {source.urlDetails.length > 1 ? `${source.urlDetails.length} unique pages:` : `${source.count} citation from this page:`}
                         </p>
                         <div className="space-y-1.5">
                           {source.urlDetails.map((urlDetail, idx) => {
@@ -3882,6 +3854,7 @@ export default function ResultsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 <ExternalLink className="w-3 h-3 flex-shrink-0" />
                                 <span className="truncate">
