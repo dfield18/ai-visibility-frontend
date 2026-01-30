@@ -3955,8 +3955,7 @@ export default function ResultsPage() {
           percentage: totalCitations > 0 ? (data.count / totalCitations) * 100 : 0,
           uniqueUrls: data.urls.length,
         }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 15);
+        .sort((a, b) => b.count - a.count);
     }, [globallyFilteredResults]);
 
     // Calculate brand presence in sources
@@ -4027,40 +4026,49 @@ export default function ResultsPage() {
       <div className="space-y-6">
         {/* Top Cited Domains */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Top Cited Domains</h3>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-semibold text-gray-900">Top Cited Domains</h3>
+            <span className="text-sm text-gray-500">{topCitedDomains.length} domains</span>
+          </div>
           <p className="text-sm text-gray-500 mb-6">Most frequently cited sources across all AI responses</p>
 
-          <div className="space-y-3">
-            {topCitedDomains.map((item, idx) => (
-              <div key={item.domain} className="group">
-                <div className="flex items-center gap-4">
-                  <div className="w-8 text-sm font-medium text-gray-400">#{idx + 1}</div>
-                  <div className="w-48 shrink-0">
-                    <p className="text-sm font-medium text-gray-900 truncate" title={item.domain}>
-                      {item.domain}
-                    </p>
+          <div className="max-h-[480px] overflow-y-auto pr-2">
+            <div className="space-y-3">
+              {topCitedDomains.map((item, idx) => (
+                <div key={item.domain} className="group">
+                  <div className="flex items-center gap-4">
+                    <div className="w-8 text-sm font-medium text-gray-400">#{idx + 1}</div>
+                    <div className="w-48 shrink-0">
+                      <p className="text-sm font-medium text-gray-900 truncate" title={item.domain}>
+                        {item.domain}
+                      </p>
+                    </div>
+                    <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                      <div
+                        className="h-full bg-[#4A7C59] rounded-full transition-all duration-500"
+                        style={{ width: `${(item.count / maxCount) * 100}%` }}
+                      />
+                    </div>
+                    <div className="w-24 text-right">
+                      <span className="text-sm font-medium text-gray-900">{item.count}</span>
+                      <span className="text-xs text-gray-500 ml-1">({item.percentage.toFixed(0)}%)</span>
+                    </div>
                   </div>
-                  <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
-                    <div
-                      className="h-full bg-[#4A7C59] rounded-full transition-all duration-500"
-                      style={{ width: `${(item.count / maxCount) * 100}%` }}
-                    />
-                  </div>
-                  <div className="w-24 text-right">
-                    <span className="text-sm font-medium text-gray-900">{item.count}</span>
-                    <span className="text-xs text-gray-500 ml-1">({item.percentage.toFixed(0)}%)</span>
-                  </div>
+                  {item.brandMentionRate > 0 && (
+                    <div className="ml-12 mt-1">
+                      <span className="text-xs text-[#4A7C59]">
+                        Brand mentioned in {item.brandMentionRate.toFixed(0)}% of responses citing this source
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {item.brandMentionRate > 0 && (
-                  <div className="ml-12 mt-1">
-                    <span className="text-xs text-[#4A7C59]">
-                      Brand mentioned in {item.brandMentionRate.toFixed(0)}% of responses citing this source
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+
+          {topCitedDomains.length > 10 && (
+            <p className="text-xs text-gray-400 text-center mt-4">Scroll to see more domains</p>
+          )}
 
           {topCitedDomains.length === 0 && (
             <p className="text-gray-500 text-center py-8">No citation data available</p>
