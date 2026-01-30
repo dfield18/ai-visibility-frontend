@@ -3908,6 +3908,234 @@ export default function ResultsPage() {
     </div>
   );
 
+  // Sources Tab Content
+  const SourcesTab = () => {
+    // Helper to extract domain from URL
+    const extractDomain = (url: string): string => {
+      try {
+        const hostname = new URL(url).hostname;
+        return hostname.replace(/^www\./, '');
+      } catch {
+        return url;
+      }
+    };
+
+    // Calculate top cited domains
+    const topCitedDomains = useMemo(() => {
+      const domainCounts: Record<string, { count: number; brandMentionCount: number; urls: string[] }> = {};
+
+      globallyFilteredResults
+        .filter((r: Result) => !r.error && r.sources && r.sources.length > 0)
+        .forEach((r: Result) => {
+          r.sources?.forEach((source) => {
+            if (source.url) {
+              const domain = extractDomain(source.url);
+              if (!domainCounts[domain]) {
+                domainCounts[domain] = { count: 0, brandMentionCount: 0, urls: [] };
+              }
+              domainCounts[domain].count++;
+              if (r.brand_mentioned) {
+                domainCounts[domain].brandMentionCount++;
+              }
+              if (!domainCounts[domain].urls.includes(source.url)) {
+                domainCounts[domain].urls.push(source.url);
+              }
+            }
+          });
+        });
+
+      const totalCitations = Object.values(domainCounts).reduce((sum, d) => sum + d.count, 0);
+
+      return Object.entries(domainCounts)
+        .map(([domain, data]) => ({
+          domain,
+          count: data.count,
+          brandMentionCount: data.brandMentionCount,
+          brandMentionRate: data.count > 0 ? (data.brandMentionCount / data.count) * 100 : 0,
+          percentage: totalCitations > 0 ? (data.count / totalCitations) * 100 : 0,
+          uniqueUrls: data.urls.length,
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 15);
+    }, [globallyFilteredResults]);
+
+    // Calculate brand presence in sources
+    const brandPresenceData = useMemo(() => {
+      const brandDomain = runStatus?.brand?.toLowerCase().replace(/\s+/g, '') || '';
+      const competitorDomains = trackedBrands;
+
+      let brandCitations = 0;
+      let totalResultsWithSources = 0;
+      const competitorCitations: Record<string, number> = {};
+
+      globallyFilteredResults
+        .filter((r: Result) => !r.error && r.sources && r.sources.length > 0)
+        .forEach((r: Result) => {
+          totalResultsWithSources++;
+          r.sources?.forEach((source) => {
+            if (source.url) {
+              const domain = extractDomain(source.url).toLowerCase();
+
+              // Check if brand domain is cited
+              if (domain.includes(brandDomain) || brandDomain.includes(domain.replace('.com', '').replace('.org', ''))) {
+                brandCitations++;
+              }
+
+              // Check competitor domains
+              competitorDomains.forEach((comp) => {
+                const compDomain = comp.toLowerCase().replace(/\s+/g, '');
+                if (domain.includes(compDomain) || compDomain.includes(domain.replace('.com', '').replace('.org', ''))) {
+                  competitorCitations[comp] = (competitorCitations[comp] || 0) + 1;
+                }
+              });
+            }
+          });
+        });
+
+      return {
+        brandCitations,
+        brandCitationRate: totalResultsWithSources > 0 ? (brandCitations / totalResultsWithSources) * 100 : 0,
+        totalResultsWithSources,
+        competitorCitations: Object.entries(competitorCitations)
+          .map(([name, count]) => ({ name, count, rate: totalResultsWithSources > 0 ? (count / totalResultsWithSources) * 100 : 0 }))
+          .sort((a, b) => b.count - a.count),
+      };
+    }, [globallyFilteredResults, runStatus?.brand, trackedBrands]);
+
+    // Check if we have any sources data
+    const hasSourcesData = globallyFilteredResults.some(
+      (r: Result) => !r.error && r.sources && r.sources.length > 0
+    );
+
+    if (!hasSourcesData) {
+      return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ExternalLink className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Source Data Available</h3>
+          <p className="text-gray-500 max-w-md mx-auto">
+            Source citations are only available for providers that include them (like Google Gemini with grounding).
+          </p>
+        </div>
+      );
+    }
+
+    const maxCount = topCitedDomains.length > 0 ? topCitedDomains[0].count : 1;
+
+    return (
+      <div className="space-y-6">
+        {/* Top Cited Domains */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Top Cited Domains</h3>
+          <p className="text-sm text-gray-500 mb-6">Most frequently cited sources across all AI responses</p>
+
+          <div className="space-y-3">
+            {topCitedDomains.map((item, idx) => (
+              <div key={item.domain} className="group">
+                <div className="flex items-center gap-4">
+                  <div className="w-8 text-sm font-medium text-gray-400">#{idx + 1}</div>
+                  <div className="w-48 shrink-0">
+                    <p className="text-sm font-medium text-gray-900 truncate" title={item.domain}>
+                      {item.domain}
+                    </p>
+                  </div>
+                  <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                    <div
+                      className="h-full bg-[#4A7C59] rounded-full transition-all duration-500"
+                      style={{ width: `${(item.count / maxCount) * 100}%` }}
+                    />
+                  </div>
+                  <div className="w-24 text-right">
+                    <span className="text-sm font-medium text-gray-900">{item.count}</span>
+                    <span className="text-xs text-gray-500 ml-1">({item.percentage.toFixed(0)}%)</span>
+                  </div>
+                </div>
+                {item.brandMentionRate > 0 && (
+                  <div className="ml-12 mt-1">
+                    <span className="text-xs text-[#4A7C59]">
+                      Brand mentioned in {item.brandMentionRate.toFixed(0)}% of responses citing this source
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {topCitedDomains.length === 0 && (
+            <p className="text-gray-500 text-center py-8">No citation data available</p>
+          )}
+        </div>
+
+        {/* Your Brand's Presence in Sources */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Presence in Sources</h3>
+          <p className="text-sm text-gray-500 mb-6">How often your brand and competitors are cited as sources</p>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Your Brand */}
+            <div className="bg-[#FAFAF8] rounded-lg p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-semibold text-gray-800">{runStatus?.brand}</h4>
+                <span className={`text-2xl font-bold ${brandPresenceData.brandCitations > 0 ? 'text-[#4A7C59]' : 'text-gray-400'}`}>
+                  {brandPresenceData.brandCitations}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">
+                {brandPresenceData.brandCitations > 0 ? (
+                  <>Your brand's website was cited in <span className="font-medium text-[#4A7C59]">{brandPresenceData.brandCitationRate.toFixed(0)}%</span> of responses with sources.</>
+                ) : (
+                  <>Your brand's website was not cited in any AI responses.</>
+                )}
+              </p>
+              {brandPresenceData.brandCitations === 0 && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-xs text-yellow-800">
+                    <strong>Opportunity:</strong> Consider improving your website's SEO and creating authoritative content that LLMs might cite.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Competitors */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 mb-3">Competitor Citations</h4>
+              {brandPresenceData.competitorCitations.length > 0 ? (
+                <div className="space-y-2">
+                  {brandPresenceData.competitorCitations.slice(0, 5).map((comp) => (
+                    <div key={comp.name} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                      <span className="text-sm text-gray-700">{comp.name}</span>
+                      <div className="text-right">
+                        <span className="text-sm font-medium text-gray-900">{comp.count}</span>
+                        <span className="text-xs text-gray-500 ml-1">({comp.rate.toFixed(0)}%)</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No competitor websites were cited as sources.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Summary Stats */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="flex flex-wrap gap-6 text-sm">
+              <div>
+                <span className="text-gray-500">Total responses with sources: </span>
+                <span className="font-medium text-gray-900">{brandPresenceData.totalResultsWithSources}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Unique domains cited: </span>
+                <span className="font-medium text-gray-900">{topCitedDomains.length}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Sentiment Tab Content
   const SentimentTab = () => {
     // Helper function to get sentiment label
@@ -5024,12 +5252,7 @@ export default function ResultsPage() {
           />
         )}
         {activeTab === 'sentiment' && <SentimentTab />}
-        {activeTab === 'sources' && (
-          <PlaceholderTab
-            title="Sources Deep Dive"
-            description="Explore the sources that LLMs cite when mentioning your brand. Coming soon."
-          />
-        )}
+        {activeTab === 'sources' && <SourcesTab />}
         {activeTab === 'recommendations' && (
           <PlaceholderTab
             title="Recommendations"
