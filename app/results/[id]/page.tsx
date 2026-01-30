@@ -4312,19 +4312,19 @@ export default function ResultsPage() {
                 </div>
 
                 {/* Source Category Breakdown */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Source Types</h3>
+                <div className="flex flex-col h-full">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Source Types</h3>
                   {sourceCategoryData.length > 0 ? (
-                    <div className="flex flex-col items-center">
-                      <div className="h-[120px] w-[120px]">
+                    <div className="flex flex-col items-center justify-center flex-1">
+                      <div className="h-[200px] w-[200px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={sourceCategoryData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={30}
-                              outerRadius={50}
+                              innerRadius={50}
+                              outerRadius={85}
                               paddingAngle={2}
                               dataKey="value"
                               nameKey="name"
@@ -4344,10 +4344,10 @@ export default function ResultsPage() {
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-3 text-[11px]">
+                      <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-6 text-xs px-2">
                         {sourceCategoryData.map((item) => (
                           <div key={item.name} className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: CATEGORY_COLORS[item.name] || CATEGORY_COLORS['Other'] }} />
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: CATEGORY_COLORS[item.name] || CATEGORY_COLORS['Other'] }} />
                             <span className="text-gray-700">{item.name}</span>
                             <span className="text-gray-400">{item.percentage.toFixed(0)}%</span>
                           </div>
