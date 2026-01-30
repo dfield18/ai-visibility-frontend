@@ -3710,48 +3710,108 @@ export default function ResultsPage() {
       }
     };
 
-    // Calculate brand presence in sources
-    const brandPresenceData = useMemo(() => {
+    // State for Brand Website Citations filters and expansion
+    const [brandCitationsBrandFilter, setBrandCitationsBrandFilter] = useState<string>('all');
+    const [brandCitationsProviderFilter, setBrandCitationsProviderFilter] = useState<string>('all');
+    const [expandedBrandCitations, setExpandedBrandCitations] = useState<Set<string>>(new Set());
+
+    // Calculate brand website citations with URL details
+    const brandWebsiteCitations = useMemo(() => {
       const brandDomain = runStatus?.brand?.toLowerCase().replace(/\s+/g, '') || '';
-      const competitorDomains = trackedBrands;
+      const allBrandsToTrack = [runStatus?.brand || '', ...Array.from(trackedBrands)].filter(Boolean);
 
-      let brandCitations = 0;
+      // Structure to hold citation data per brand
+      const brandCitationData: Record<string, {
+        count: number;
+        urls: { url: string; title: string; provider: string; count: number }[];
+        providers: Set<string>;
+      }> = {};
+
       let totalResultsWithSources = 0;
-      const competitorCitations: Record<string, number> = {};
 
-      globallyFilteredResults
+      // Filter results by selected filters
+      const filteredResults = globallyFilteredResults
         .filter((r: Result) => !r.error && r.sources && r.sources.length > 0)
-        .forEach((r: Result) => {
-          totalResultsWithSources++;
-          r.sources?.forEach((source) => {
-            if (source.url) {
-              const domain = extractDomain(source.url).toLowerCase();
-
-              // Check if brand domain is cited
-              if (domain.includes(brandDomain) || brandDomain.includes(domain.replace('.com', '').replace('.org', ''))) {
-                brandCitations++;
-              }
-
-              // Check competitor domains
-              competitorDomains.forEach((comp) => {
-                const compDomain = comp.toLowerCase().replace(/\s+/g, '');
-                if (domain.includes(compDomain) || compDomain.includes(domain.replace('.com', '').replace('.org', ''))) {
-                  competitorCitations[comp] = (competitorCitations[comp] || 0) + 1;
-                }
-              });
-            }
-          });
+        .filter((r: Result) => {
+          if (brandCitationsProviderFilter !== 'all' && r.provider !== brandCitationsProviderFilter) return false;
+          return true;
         });
 
+      filteredResults.forEach((r: Result) => {
+        totalResultsWithSources++;
+        r.sources?.forEach((source) => {
+          if (source.url) {
+            const domain = extractDomain(source.url).toLowerCase();
+
+            // Check each brand (including searched brand and competitors)
+            allBrandsToTrack.forEach((brand) => {
+              const brandDomainCheck = brand.toLowerCase().replace(/\s+/g, '');
+              if (domain.includes(brandDomainCheck) || brandDomainCheck.includes(domain.replace('.com', '').replace('.org', '').replace('.net', ''))) {
+                if (!brandCitationData[brand]) {
+                  brandCitationData[brand] = { count: 0, urls: [], providers: new Set() };
+                }
+                brandCitationData[brand].count++;
+                brandCitationData[brand].providers.add(r.provider);
+
+                // Track individual URLs
+                const existingUrl = brandCitationData[brand].urls.find(u => u.url === source.url);
+                if (existingUrl) {
+                  existingUrl.count++;
+                } else {
+                  brandCitationData[brand].urls.push({
+                    url: source.url,
+                    title: source.title || '',
+                    provider: r.provider,
+                    count: 1
+                  });
+                }
+              }
+            });
+          }
+        });
+      });
+
+      // Convert to array and sort
+      const citationsArray = Object.entries(brandCitationData)
+        .map(([brand, data]) => ({
+          brand,
+          count: data.count,
+          urls: data.urls.sort((a, b) => b.count - a.count),
+          providers: Array.from(data.providers),
+          rate: totalResultsWithSources > 0 ? (data.count / totalResultsWithSources) * 100 : 0,
+          isSearchedBrand: brand === runStatus?.brand
+        }))
+        .sort((a, b) => {
+          // Searched brand first, then by count
+          if (a.isSearchedBrand) return -1;
+          if (b.isSearchedBrand) return 1;
+          return b.count - a.count;
+        });
+
+      // Filter by brand filter
+      const filteredCitations = brandCitationsBrandFilter === 'all'
+        ? citationsArray
+        : citationsArray.filter(c => c.brand === brandCitationsBrandFilter);
+
       return {
-        brandCitations,
-        brandCitationRate: totalResultsWithSources > 0 ? (brandCitations / totalResultsWithSources) * 100 : 0,
+        citations: filteredCitations,
         totalResultsWithSources,
-        competitorCitations: Object.entries(competitorCitations)
-          .map(([name, count]) => ({ name, count, rate: totalResultsWithSources > 0 ? (count / totalResultsWithSources) * 100 : 0 }))
-          .sort((a, b) => b.count - a.count),
+        totalBrandsWithCitations: citationsArray.length
       };
-    }, [globallyFilteredResults, runStatus?.brand, trackedBrands]);
+    }, [globallyFilteredResults, runStatus?.brand, trackedBrands, brandCitationsBrandFilter, brandCitationsProviderFilter]);
+
+    // Legacy brandPresenceData for summary stats (keeping for backwards compat)
+    const brandPresenceData = useMemo(() => {
+      const searchedBrandData = brandWebsiteCitations.citations.find(c => c.isSearchedBrand);
+      return {
+        brandCitations: searchedBrandData?.count || 0,
+        brandCitationRate: searchedBrandData?.rate || 0,
+        totalResultsWithSources: brandWebsiteCitations.totalResultsWithSources,
+        competitorCitations: brandWebsiteCitations.citations
+          .filter(c => !c.isSearchedBrand)
+          .map(c => ({ name: c.brand, count: c.count, rate: c.rate }))
+      };
+    }, [brandWebsiteCitations]);
 
     // Check if we have any sources data
     const hasSourcesData = globallyFilteredResults.some(
@@ -3961,67 +4021,138 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Your Brand's Presence in Sources */}
+        {/* Brand Website Citations */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Website Citations</h3>
-          <p className="text-sm text-gray-500 mb-6">How often AI models cite your brand's and competitors' own websites as sources in their responses</p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Your Brand */}
-            <div className="bg-[#FAFAF8] rounded-lg p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-semibold text-gray-800">{runStatus?.brand}'s Website</h4>
-                <span className={`text-2xl font-bold ${brandPresenceData.brandCitations > 0 ? 'text-[#4A7C59]' : 'text-gray-400'}`}>
-                  {brandPresenceData.brandCitations}
-                </span>
-              </div>
-              <p className="text-sm text-gray-600 mb-2">
-                {brandPresenceData.brandCitations > 0 ? (
-                  <>{runStatus?.brand}'s own website (e.g., {runStatus?.brand?.toLowerCase().replace(/\s+/g, '')}.com) was cited as a source in <span className="font-medium text-[#4A7C59]">{brandPresenceData.brandCitationRate.toFixed(0)}%</span> of responses.</>
-                ) : (
-                  <>{runStatus?.brand}'s own website was not cited as a source in any AI responses.</>
-                )}
-              </p>
-              {brandPresenceData.brandCitations === 0 && (
-                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-xs text-yellow-800">
-                    <strong>Opportunity:</strong> Consider improving your website's SEO and creating authoritative content that LLMs might cite.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Competitors */}
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h4 className="text-sm font-semibold text-gray-800 mb-3">Competitor Website Citations</h4>
-              {brandPresenceData.competitorCitations.length > 0 ? (
-                <div className="space-y-2">
-                  {brandPresenceData.competitorCitations.slice(0, 5).map((comp) => (
-                    <div key={comp.name} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                      <span className="text-sm text-gray-700">{comp.name}'s website</span>
-                      <div className="text-right">
-                        <span className="text-sm font-medium text-gray-900">{comp.count}</span>
-                        <span className="text-xs text-gray-500 ml-1">({comp.rate.toFixed(0)}%)</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">No competitor websites were cited as sources.</p>
-              )}
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Website Citations</h3>
+              <p className="text-sm text-gray-500">How often AI models cite your brand's and competitors' own websites as sources</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={brandCitationsBrandFilter}
+                onChange={(e) => setBrandCitationsBrandFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Brands</option>
+                {runStatus?.brand && (
+                  <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
+                )}
+                {Array.from(trackedBrands).filter(b => b !== runStatus?.brand).map((brand) => (
+                  <option key={brand} value={brand}>{brand}</option>
+                ))}
+              </select>
+              <select
+                value={brandCitationsProviderFilter}
+                onChange={(e) => setBrandCitationsProviderFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All LLMs</option>
+                {availableProviders.map((provider) => (
+                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                ))}
+              </select>
             </div>
           </div>
+
+          {brandWebsiteCitations.citations.length > 0 ? (
+            <div className="space-y-2" style={{ overflowAnchor: 'none' }}>
+              {brandWebsiteCitations.citations.map((citation, index) => {
+                const isExpanded = expandedBrandCitations.has(citation.brand);
+                return (
+                  <div key={citation.brand} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
+                    <div
+                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const newExpanded = new Set(expandedBrandCitations);
+                        if (isExpanded) {
+                          newExpanded.delete(citation.brand);
+                        } else {
+                          newExpanded.add(citation.brand);
+                        }
+                        setExpandedBrandCitations(newExpanded);
+                      }}
+                    >
+                      <span className="text-sm font-medium text-gray-400 w-6">{index + 1}.</span>
+                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
+                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
+                        {citation.brand}'s website
+                        {citation.isSearchedBrand && (
+                          <span className="text-xs px-1.5 py-0.5 bg-[#4A7C59] text-white rounded">searched</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-1">
+                          {citation.providers.map((provider) => (
+                            <span key={provider} className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
+                              {getProviderShortLabel(provider)}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-500 w-24 text-right">
+                          {citation.count} {citation.count === 1 ? 'citation' : 'citations'}
+                          <span className="text-xs text-gray-400 ml-1">({citation.rate.toFixed(0)}%)</span>
+                        </span>
+                      </div>
+                    </div>
+                    {isExpanded && citation.urls.length > 0 && (
+                      <div className="px-3 pb-3 pt-1 border-t border-gray-200 ml-9">
+                        <p className="text-xs text-gray-500 mb-2">
+                          {citation.urls.length} unique {citation.urls.length === 1 ? 'page' : 'pages'} cited:
+                        </p>
+                        <div className="space-y-1.5">
+                          {citation.urls.map((urlDetail, idx) => {
+                            const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
+                            const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
+                            return (
+                              <a
+                                key={idx}
+                                href={urlDetail.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  <span className="font-medium">{extractDomain(urlDetail.url)}</span>
+                                  {displayTitle && displayTitle !== extractDomain(urlDetail.url) && (
+                                    <span className="text-gray-600"> · {displayTitle}</span>
+                                  )}
+                                </span>
+                                <span className="text-gray-400 text-xs flex-shrink-0">({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500">No brand or competitor websites were cited as sources.</p>
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg inline-block">
+                <p className="text-xs text-yellow-800">
+                  <strong>Opportunity:</strong> Consider improving your website's SEO and creating authoritative content that LLMs might cite.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Summary Stats */}
           <div className="mt-6 pt-4 border-t border-gray-200">
             <div className="flex flex-wrap gap-6 text-sm">
               <div>
                 <span className="text-gray-500">Total responses with sources: </span>
-                <span className="font-medium text-gray-900">{brandPresenceData.totalResultsWithSources}</span>
+                <span className="font-medium text-gray-900">{brandWebsiteCitations.totalResultsWithSources}</span>
               </div>
               <div>
-                <span className="text-gray-500">Unique domains cited: </span>
-                <span className="font-medium text-gray-900">{topCitedSources.length}</span>
+                <span className="text-gray-500">Brands with citations: </span>
+                <span className="font-medium text-gray-900">{brandWebsiteCitations.totalBrandsWithCitations}</span>
               </div>
             </div>
           </div>
