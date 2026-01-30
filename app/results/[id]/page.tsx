@@ -3857,8 +3857,11 @@ export default function ResultsPage() {
                   className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
                 >
                   <option value="all">All Brands</option>
-                  {availableBrands.map((brand) => (
-                    <option key={brand} value={brand}>{brand}{brand === runStatus?.brand ? ' (searched)' : ''}</option>
+                  {runStatus?.brand && availableBrands.includes(runStatus.brand) && (
+                    <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
+                  )}
+                  {availableBrands.filter(brand => brand !== runStatus?.brand).map((brand) => (
+                    <option key={brand} value={brand}>{brand}</option>
                   ))}
                 </select>
                 <select
