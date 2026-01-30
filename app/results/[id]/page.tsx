@@ -3814,9 +3814,9 @@ export default function ResultsPage() {
       };
     }, [brandWebsiteCitations]);
 
-    // Calculate sources by brand for pie chart
-    const sourcesByBrand = useMemo(() => {
-      const brandSourceCounts: Record<string, number> = {};
+    // Calculate sources by domain for pie chart
+    const sourcesByDomain = useMemo(() => {
+      const domainCounts: Record<string, number> = {};
 
       // Filter results based on current filters
       const filteredResults = globallyFilteredResults
@@ -3832,39 +3832,39 @@ export default function ResultsPage() {
           return true;
         });
 
-      // Count sources per brand mentioned in responses
+      // Count sources by domain
       filteredResults.forEach((r: Result) => {
-        const sourcesCount = r.sources?.length || 0;
-
-        // Attribute sources to mentioned brands
-        if (r.brand_mentioned && runStatus?.brand) {
-          brandSourceCounts[runStatus.brand] = (brandSourceCounts[runStatus.brand] || 0) + sourcesCount;
-        }
-        r.competitors_mentioned?.forEach((comp) => {
-          brandSourceCounts[comp] = (brandSourceCounts[comp] || 0) + sourcesCount;
+        r.sources?.forEach((source) => {
+          const domain = extractDomain(source.url);
+          domainCounts[domain] = (domainCounts[domain] || 0) + 1;
         });
-
-        // If no brands mentioned, count as "Other"
-        if (!r.brand_mentioned && (!r.competitors_mentioned || r.competitors_mentioned.length === 0)) {
-          brandSourceCounts['No brand mentioned'] = (brandSourceCounts['No brand mentioned'] || 0) + sourcesCount;
-        }
       });
 
-      const total = Object.values(brandSourceCounts).reduce((sum, count) => sum + count, 0);
+      const total = Object.values(domainCounts).reduce((sum, count) => sum + count, 0);
 
-      return Object.entries(brandSourceCounts)
-        .map(([brand, count]) => ({
-          name: brand,
-          value: count,
-          percentage: total > 0 ? (count / total) * 100 : 0,
-          isSearchedBrand: brand === runStatus?.brand
-        }))
-        .sort((a, b) => {
-          if (a.isSearchedBrand) return -1;
-          if (b.isSearchedBrand) return 1;
-          return b.value - a.value;
+      // Get top 10 domains, group rest as "Other"
+      const sortedDomains = Object.entries(domainCounts)
+        .sort((a, b) => b[1] - a[1]);
+
+      const top10 = sortedDomains.slice(0, 10);
+      const otherCount = sortedDomains.slice(10).reduce((sum, [, count]) => sum + count, 0);
+
+      const result = top10.map(([domain, count]) => ({
+        name: domain,
+        value: count,
+        percentage: total > 0 ? (count / total) * 100 : 0
+      }));
+
+      if (otherCount > 0) {
+        result.push({
+          name: 'Other',
+          value: otherCount,
+          percentage: total > 0 ? (otherCount / total) * 100 : 0
         });
-    }, [globallyFilteredResults, sourcesProviderFilter, sourcesBrandFilter, runStatus?.brand]);
+      }
+
+      return result;
+    }, [globallyFilteredResults, sourcesProviderFilter, sourcesBrandFilter, runStatus?.brand, extractDomain]);
 
     const SOURCE_PIE_COLORS = ['#4A7C59', '#7BA38C', '#A8C5B5', '#D4E2DB', '#6B8E7B', '#8FB09D', '#B3CFBE', '#2D5A3D', '#3D6B4D', '#5C8A6C'];
 
@@ -4084,17 +4084,17 @@ export default function ResultsPage() {
                   )}
                 </div>
 
-                {/* Sources by Brand Pie Chart */}
+                {/* Sources by Domain Pie Chart */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Sources by Brand Mentioned</h3>
-                  <p className="text-xs text-gray-500 mb-4">Distribution of sources across responses mentioning each brand</p>
-                  {sourcesByBrand.length > 0 ? (
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Top Source Domains</h3>
+                  <p className="text-xs text-gray-500 mb-4">Most frequently cited domains in LLM responses</p>
+                  {sourcesByDomain.length > 0 ? (
                     <>
                       <div className="h-[250px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={sourcesByBrand}
+                              data={sourcesByDomain}
                               cx="50%"
                               cy="50%"
                               innerRadius={50}
@@ -4103,29 +4103,26 @@ export default function ResultsPage() {
                               dataKey="value"
                               nameKey="name"
                             >
-                              {sourcesByBrand.map((entry, index) => (
+                              {sourcesByDomain.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length]} />
                               ))}
                             </Pie>
                             <Tooltip
                               formatter={(value, name) => {
                                 const numValue = typeof value === 'number' ? value : 0;
-                                const brandData = sourcesByBrand.find(s => s.name === name);
-                                return [`${numValue} sources (${brandData?.percentage.toFixed(1) || 0}%)`, String(name)];
+                                const domainData = sourcesByDomain.find(s => s.name === name);
+                                return [`${numValue} citations (${domainData?.percentage.toFixed(1) || 0}%)`, String(name)];
                               }}
                             />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
                       <div className="mt-3 space-y-1.5 max-h-[120px] overflow-y-auto">
-                        {sourcesByBrand.map((item, index) => (
+                        {sourcesByDomain.map((item, index) => (
                           <div key={item.name} className="flex items-center justify-between text-xs">
                             <div className="flex items-center gap-2">
                               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length] }} />
-                              <span className="text-gray-700 truncate max-w-[150px]">
-                                {item.name}
-                                {item.isSearchedBrand && <span className="text-[#4A7C59] ml-1">(searched)</span>}
-                              </span>
+                              <span className="text-gray-700 truncate max-w-[150px]">{item.name}</span>
                             </div>
                             <span className="text-gray-500">{item.value} ({item.percentage.toFixed(0)}%)</span>
                           </div>
