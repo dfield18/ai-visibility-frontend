@@ -3954,9 +3954,13 @@ export default function ResultsPage() {
           brandMentionRate: data.count > 0 ? (data.brandMentionCount / data.count) * 100 : 0,
           percentage: totalCitations > 0 ? (data.count / totalCitations) * 100 : 0,
           uniqueUrls: data.urls.length,
+          urls: data.urls,
         }))
         .sort((a, b) => b.count - a.count);
     }, [globallyFilteredResults]);
+
+    // State for expanded domains
+    const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
 
     // Calculate brand presence in sources
     const brandPresenceData = useMemo(() => {
@@ -4034,35 +4038,83 @@ export default function ResultsPage() {
 
           <div className="max-h-[480px] overflow-y-auto pr-2">
             <div className="space-y-3">
-              {topCitedDomains.map((item, idx) => (
-                <div key={item.domain} className="group">
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 text-sm font-medium text-gray-400">#{idx + 1}</div>
-                    <div className="w-48 shrink-0">
-                      <p className="text-sm font-medium text-gray-900 truncate" title={item.domain}>
-                        {item.domain}
-                      </p>
+              {topCitedDomains.map((item, idx) => {
+                const isExpanded = expandedDomains.has(item.domain);
+                const toggleExpand = () => {
+                  setExpandedDomains(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(item.domain)) {
+                      newSet.delete(item.domain);
+                    } else {
+                      newSet.add(item.domain);
+                    }
+                    return newSet;
+                  });
+                };
+
+                return (
+                  <div key={item.domain} className="group">
+                    <div
+                      className="flex items-center gap-4 cursor-pointer hover:bg-gray-50 rounded-lg p-1 -m-1 transition-colors"
+                      onClick={toggleExpand}
+                    >
+                      <div className="w-5 flex-shrink-0">
+                        {isExpanded ? (
+                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="w-6 text-sm font-medium text-gray-400">#{idx + 1}</div>
+                      <div className="w-44 shrink-0">
+                        <p className="text-sm font-medium text-gray-900 truncate" title={item.domain}>
+                          {item.domain}
+                        </p>
+                      </div>
+                      <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                        <div
+                          className="h-full bg-[#4A7C59] rounded-full transition-all duration-500"
+                          style={{ width: `${(item.count / maxCount) * 100}%` }}
+                        />
+                      </div>
+                      <div className="w-24 text-right">
+                        <span className="text-sm font-medium text-gray-900">{item.count}</span>
+                        <span className="text-xs text-gray-500 ml-1">({item.percentage.toFixed(0)}%)</span>
+                      </div>
                     </div>
-                    <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
-                      <div
-                        className="h-full bg-[#4A7C59] rounded-full transition-all duration-500"
-                        style={{ width: `${(item.count / maxCount) * 100}%` }}
-                      />
-                    </div>
-                    <div className="w-24 text-right">
-                      <span className="text-sm font-medium text-gray-900">{item.count}</span>
-                      <span className="text-xs text-gray-500 ml-1">({item.percentage.toFixed(0)}%)</span>
-                    </div>
+                    {item.brandMentionRate > 0 && (
+                      <div className="ml-12 mt-1">
+                        <span className="text-xs text-[#4A7C59]">
+                          Brand mentioned in {item.brandMentionRate.toFixed(0)}% of responses citing this source
+                        </span>
+                      </div>
+                    )}
+                    {/* Expanded section showing individual URLs */}
+                    {isExpanded && item.urls.length > 0 && (
+                      <div className="ml-12 mt-2 mb-2 bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        <p className="text-xs font-medium text-gray-500 mb-2">
+                          {item.urls.length} unique {item.urls.length === 1 ? 'URL' : 'URLs'} from this domain:
+                        </p>
+                        <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                          {item.urls.map((url, urlIdx) => (
+                            <a
+                              key={urlIdx}
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-800 hover:underline truncate"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                              <span className="truncate">{url}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {item.brandMentionRate > 0 && (
-                    <div className="ml-12 mt-1">
-                      <span className="text-xs text-[#4A7C59]">
-                        Brand mentioned in {item.brandMentionRate.toFixed(0)}% of responses citing this source
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
