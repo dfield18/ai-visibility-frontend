@@ -3846,32 +3846,90 @@ export default function ResultsPage() {
       };
     }, [brandWebsiteCitations]);
 
-    // Derive pie chart data from topCitedSources (same data as the table)
-    const sourcesPieData = useMemo(() => {
-      const total = topCitedSources.reduce((sum, s) => sum + s.count, 0);
+    // Categorize a domain into a source type
+    const categorizeDomain = (domain: string): string => {
+      const d = domain.toLowerCase();
 
-      // Get top 10, group rest as "Other"
-      const top10 = topCitedSources.slice(0, 10);
-      const otherCount = topCitedSources.slice(10).reduce((sum, s) => sum + s.count, 0);
-
-      const result = top10.map((source) => ({
-        name: source.domain,
-        value: source.count,
-        percentage: total > 0 ? (source.count / total) * 100 : 0
-      }));
-
-      if (otherCount > 0) {
-        result.push({
-          name: 'Other',
-          value: otherCount,
-          percentage: total > 0 ? (otherCount / total) * 100 : 0
-        });
+      // Social Media
+      if (['reddit.com', 'twitter.com', 'x.com', 'facebook.com', 'instagram.com', 'tiktok.com', 'linkedin.com', 'pinterest.com', 'threads.net', 'mastodon.social'].some(s => d.includes(s))) {
+        return 'Social Media';
       }
 
-      return result;
+      // Video Platforms
+      if (['youtube.com', 'vimeo.com', 'twitch.tv', 'dailymotion.com'].some(s => d.includes(s))) {
+        return 'Video';
+      }
+
+      // Reference/Educational
+      if (['wikipedia.org', 'wikimedia.org', 'britannica.com', 'merriam-webster.com', 'dictionary.com', 'edu', 'scholarpedia.org', 'stanford.edu', 'mit.edu', 'harvard.edu'].some(s => d.includes(s))) {
+        return 'Reference';
+      }
+
+      // News & Media
+      if (['nytimes.com', 'wsj.com', 'bbc.com', 'bbc.co.uk', 'cnn.com', 'reuters.com', 'apnews.com', 'theguardian.com', 'washingtonpost.com', 'forbes.com', 'bloomberg.com', 'businessinsider.com', 'techcrunch.com', 'wired.com', 'theverge.com', 'engadget.com', 'arstechnica.com', 'mashable.com', 'huffpost.com', 'usatoday.com', 'news', 'times', 'post', 'herald', 'tribune', 'journal', 'gazette'].some(s => d.includes(s))) {
+        return 'News & Media';
+      }
+
+      // E-commerce
+      if (['amazon.com', 'ebay.com', 'walmart.com', 'target.com', 'bestbuy.com', 'etsy.com', 'alibaba.com', 'aliexpress.com', 'shopify.com', 'shop', 'store'].some(s => d.includes(s))) {
+        return 'E-commerce';
+      }
+
+      // Review Sites
+      if (['yelp.com', 'tripadvisor.com', 'trustpilot.com', 'g2.com', 'capterra.com', 'glassdoor.com', 'consumerreports.org', 'reviews', 'review', 'rating'].some(s => d.includes(s))) {
+        return 'Reviews';
+      }
+
+      // Forums & Q&A
+      if (['quora.com', 'stackexchange.com', 'stackoverflow.com', 'discourse', 'forum', 'community', 'answers'].some(s => d.includes(s))) {
+        return 'Forums & Q&A';
+      }
+
+      // Government
+      if (['.gov', '.gov.uk', '.govt'].some(s => d.includes(s))) {
+        return 'Government';
+      }
+
+      // Blogs & Personal
+      if (['medium.com', 'substack.com', 'blogger.com', 'wordpress.com', 'tumblr.com', 'blog'].some(s => d.includes(s))) {
+        return 'Blogs';
+      }
+
+      return 'Other';
+    };
+
+    // Calculate source category breakdown
+    const sourceCategoryData = useMemo(() => {
+      const categoryCounts: Record<string, number> = {};
+
+      topCitedSources.forEach((source) => {
+        const category = categorizeDomain(source.domain);
+        categoryCounts[category] = (categoryCounts[category] || 0) + source.count;
+      });
+
+      const total = Object.values(categoryCounts).reduce((sum, count) => sum + count, 0);
+
+      return Object.entries(categoryCounts)
+        .map(([category, count]) => ({
+          name: category,
+          value: count,
+          percentage: total > 0 ? (count / total) * 100 : 0
+        }))
+        .sort((a, b) => b.value - a.value);
     }, [topCitedSources]);
 
-    const SOURCE_PIE_COLORS = ['#4A7C59', '#7BA38C', '#A8C5B5', '#D4E2DB', '#6B8E7B', '#8FB09D', '#B3CFBE', '#2D5A3D', '#3D6B4D', '#5C8A6C'];
+    const CATEGORY_COLORS: Record<string, string> = {
+      'Social Media': '#E91E63',
+      'Video': '#F44336',
+      'Reference': '#9C27B0',
+      'News & Media': '#2196F3',
+      'E-commerce': '#FF9800',
+      'Reviews': '#FFEB3B',
+      'Forums & Q&A': '#00BCD4',
+      'Government': '#607D8B',
+      'Blogs': '#8BC34A',
+      'Other': '#9E9E9E'
+    };
 
     // Check if we have any sources data
     const hasSourcesData = globallyFilteredResults.some(
@@ -4085,15 +4143,16 @@ export default function ResultsPage() {
                   )}
                 </div>
 
-                {/* Top Cited Sources Pie Chart */}
+                {/* Source Category Breakdown */}
                 <div>
-                  {sourcesPieData.length > 0 ? (
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Source Types</h3>
+                  {sourceCategoryData.length > 0 ? (
                     <div className="flex items-start gap-4">
                       <div className="h-[140px] w-[140px] flex-shrink-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={sourcesPieData}
+                              data={sourceCategoryData}
                               cx="50%"
                               cy="50%"
                               innerRadius={35}
@@ -4103,25 +4162,25 @@ export default function ResultsPage() {
                               nameKey="name"
                               isAnimationActive={false}
                             >
-                              {sourcesPieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length]} />
+                              {sourceCategoryData.map((entry) => (
+                                <Cell key={`cell-${entry.name}`} fill={CATEGORY_COLORS[entry.name] || CATEGORY_COLORS['Other']} />
                               ))}
                             </Pie>
                             <Tooltip
                               formatter={(value, name) => {
                                 const numValue = typeof value === 'number' ? value : 0;
-                                const domainData = sourcesPieData.find(s => s.name === name);
-                                return [`${numValue} (${domainData?.percentage.toFixed(0) || 0}%)`, String(name)];
+                                const categoryData = sourceCategoryData.find(s => s.name === name);
+                                return [`${numValue} citations (${categoryData?.percentage.toFixed(0) || 0}%)`, String(name)];
                               }}
                             />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
                       <div className="flex-1 space-y-0.5 max-h-[140px] overflow-y-auto text-[11px]">
-                        {sourcesPieData.map((item, index) => (
+                        {sourceCategoryData.map((item) => (
                           <div key={item.name} className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length] }} />
+                              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: CATEGORY_COLORS[item.name] || CATEGORY_COLORS['Other'] }} />
                               <span className="text-gray-700 truncate">{item.name}</span>
                             </div>
                             <span className="text-gray-500 flex-shrink-0">{item.value} ({item.percentage.toFixed(0)}%)</span>
