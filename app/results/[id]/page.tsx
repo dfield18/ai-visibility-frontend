@@ -99,6 +99,7 @@ export default function ResultsPage() {
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
+  const [heatmapResultsList, setHeatmapResultsList] = useState<{ results: Result[]; domain: string; brand: string } | null>(null);
   const [chartTab, setChartTab] = useState<'allAnswers' | 'performanceRange' | 'shareOfVoice'>('allAnswers');
   const [showSentimentColors, setShowSentimentColors] = useState(false);
   const [tableSortColumn, setTableSortColumn] = useState<'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('prompt');
@@ -4363,6 +4364,44 @@ export default function ResultsPage() {
       };
     }, [runStatus, globallyFilteredResults]);
 
+    // Handler for heatmap cell double-click - find matching results
+    const handleHeatmapCellClick = useCallback((domain: string, brand: string) => {
+      if (!runStatus) return;
+
+      // Find results that:
+      // 1. Have the specified domain in their sources
+      // 2. Mention the specified brand (either as main brand or competitor)
+      const matchingResults = globallyFilteredResults.filter((result: Result) => {
+        if (result.error || !result.sources || result.sources.length === 0) return false;
+
+        // Check if this source domain is cited
+        const hasDomain = result.sources.some(source => {
+          if (!source.url) return false;
+          const sourceDomain = getDomain(source.url);
+          return sourceDomain === domain;
+        });
+        if (!hasDomain) return false;
+
+        // Check if the brand is mentioned
+        const isBrandMentioned = (
+          (brand === runStatus.brand && result.brand_mentioned) ||
+          (result.competitors_mentioned && result.competitors_mentioned.includes(brand))
+        );
+
+        return isBrandMentioned;
+      });
+
+      if (matchingResults.length === 0) return;
+
+      if (matchingResults.length === 1) {
+        // Single result - open directly
+        setSelectedResult(matchingResults[0]);
+      } else {
+        // Multiple results - show list modal
+        setHeatmapResultsList({ results: matchingResults, domain, brand });
+      }
+    }, [runStatus, globallyFilteredResults]);
+
     const CATEGORY_COLORS: Record<string, string> = {
       'Social Media': '#4A7C59',      // Primary green
       'Video': '#6B9E7A',             // Medium green
@@ -4730,8 +4769,10 @@ export default function ResultsPage() {
                           return (
                             <td
                               key={brand}
-                              className="text-center py-2 px-3"
+                              className={`text-center py-2 px-3 ${count > 0 ? 'cursor-pointer hover:ring-2 hover:ring-inset hover:ring-gray-400' : ''}`}
                               style={{ backgroundColor: bgColor }}
+                              onDoubleClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
+                              title={count > 0 ? 'Double-click to view responses' : undefined}
                             >
                               {count > 0 ? (
                                 <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
@@ -6159,6 +6200,71 @@ export default function ResultsPage() {
                   )}
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Heatmap Results List Modal */}
+      {heatmapResultsList && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setHeatmapResultsList(null)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Responses citing {heatmapResultsList.domain}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {heatmapResultsList.results.length} response{heatmapResultsList.results.length !== 1 ? 's' : ''} mentioning {heatmapResultsList.brand}
+                </p>
+              </div>
+              <button
+                onClick={() => setHeatmapResultsList(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {heatmapResultsList.results.map((result, idx) => (
+                <div
+                  key={result.id}
+                  className="p-3 border border-gray-200 rounded-lg hover:border-[#4A7C59] hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSelectedResult(result);
+                    setHeatmapResultsList(null);
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-gray-400">#{idx + 1}</span>
+                      <span className="text-sm font-medium text-gray-900">{getProviderLabel(result.provider)}</span>
+                      <span className="text-xs text-gray-500">T={result.temperature}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {result.brand_sentiment && result.brand_sentiment !== 'not_mentioned' && (
+                        <span className={`px-2 py-0.5 text-xs rounded ${
+                          result.brand_sentiment === 'strong_endorsement' ? 'bg-green-100 text-green-700' :
+                          result.brand_sentiment === 'positive_endorsement' ? 'bg-lime-100 text-lime-700' :
+                          result.brand_sentiment === 'neutral_mention' ? 'bg-blue-100 text-blue-700' :
+                          result.brand_sentiment === 'conditional' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {result.brand_sentiment === 'strong_endorsement' ? 'Very Favorable' :
+                           result.brand_sentiment === 'positive_endorsement' ? 'Favorable' :
+                           result.brand_sentiment === 'neutral_mention' ? 'Neutral' :
+                           result.brand_sentiment === 'conditional' ? 'Conditional' : 'Negative'}
+                        </span>
+                      )}
+                      <ExternalLink className="w-4 h-4 text-gray-400" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-1">{result.prompt}</p>
+                  <p className="text-xs text-gray-500 line-clamp-2">
+                    {result.response_text?.substring(0, 200)}...
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
