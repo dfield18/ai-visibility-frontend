@@ -4103,6 +4103,7 @@ export default function ResultsPage() {
                               paddingAngle={2}
                               dataKey="value"
                               nameKey="name"
+                              isAnimationActive={false}
                             >
                               {sourcesPieData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length]} />
