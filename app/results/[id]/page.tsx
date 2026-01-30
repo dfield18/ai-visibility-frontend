@@ -4087,19 +4087,19 @@ export default function ResultsPage() {
 
                 {/* Top Cited Sources Pie Chart */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Top Cited Sources</h3>
-                  <p className="text-xs text-gray-500 mb-4">Distribution of citations by source domain</p>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Top Cited Sources</h3>
+                  <p className="text-xs text-gray-500 mb-2">Distribution by domain</p>
                   {sourcesPieData.length > 0 ? (
-                    <>
-                      <div className="h-[250px]">
+                    <div className="flex items-start gap-4">
+                      <div className="h-[140px] w-[140px] flex-shrink-0">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={sourcesPieData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={50}
-                              outerRadius={90}
+                              innerRadius={35}
+                              outerRadius={60}
                               paddingAngle={2}
                               dataKey="value"
                               nameKey="name"
@@ -4113,26 +4113,26 @@ export default function ResultsPage() {
                               formatter={(value, name) => {
                                 const numValue = typeof value === 'number' ? value : 0;
                                 const domainData = sourcesPieData.find(s => s.name === name);
-                                return [`${numValue} citations (${domainData?.percentage.toFixed(1) || 0}%)`, String(name)];
+                                return [`${numValue} (${domainData?.percentage.toFixed(0) || 0}%)`, String(name)];
                               }}
                             />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="mt-3 space-y-1.5 max-h-[120px] overflow-y-auto">
+                      <div className="flex-1 space-y-0.5 max-h-[140px] overflow-y-auto text-[11px]">
                         {sourcesPieData.map((item, index) => (
-                          <div key={item.name} className="flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length] }} />
-                              <span className="text-gray-700 truncate max-w-[150px]">{item.name}</span>
+                          <div key={item.name} className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: SOURCE_PIE_COLORS[index % SOURCE_PIE_COLORS.length] }} />
+                              <span className="text-gray-700 truncate">{item.name}</span>
                             </div>
-                            <span className="text-gray-500">{item.value} ({item.percentage.toFixed(0)}%)</span>
+                            <span className="text-gray-500 flex-shrink-0">{item.value} ({item.percentage.toFixed(0)}%)</span>
                           </div>
                         ))}
                       </div>
-                    </>
+                    </div>
                   ) : (
-                    <p className="text-sm text-gray-500 text-center py-8">No data available</p>
+                    <p className="text-sm text-gray-500 text-center py-4">No data available</p>
                   )}
                 </div>
               </div>
