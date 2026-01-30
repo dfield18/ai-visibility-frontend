@@ -787,6 +787,7 @@ export default function ResultsPage() {
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
+  const [heatmapProviderFilter, setHeatmapProviderFilter] = useState<string>('all');
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
   const [aiCategorizations, setAiCategorizations] = useState<Record<string, string>>({});
   const [categorizationLoading, setCategorizationLoading] = useState(false);
@@ -4285,7 +4286,11 @@ export default function ResultsPage() {
       const brandTotalMentions: Record<string, number> = {};
 
       // Process all results to get per-brand citation counts per source
-      const results = globallyFilteredResults.filter((r: Result) => !r.error && r.sources && r.sources.length > 0);
+      const results = globallyFilteredResults.filter((r: Result) => {
+        if (r.error || !r.sources || r.sources.length === 0) return false;
+        if (heatmapProviderFilter !== 'all' && r.provider !== heatmapProviderFilter) return false;
+        return true;
+      });
 
       for (const result of results) {
         if (!result.sources) continue;
@@ -4362,7 +4367,7 @@ export default function ResultsPage() {
         brandTotals: brandTotalMentions,
         searchedBrand,
       };
-    }, [runStatus, globallyFilteredResults]);
+    }, [runStatus, globallyFilteredResults, heatmapProviderFilter]);
 
     // Handler for heatmap cell double-click - find matching results
     const handleHeatmapCellClick = useCallback((domain: string, brand: string) => {
@@ -4709,9 +4714,21 @@ export default function ResultsPage() {
         {/* Brand-Source Heatmap */}
         {brandSourceHeatmap.sources.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
-              <p className="text-sm text-gray-500">Which sources are cited when each brand is mentioned</p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
+                <p className="text-sm text-gray-500">Which sources are cited when each brand is mentioned</p>
+              </div>
+              <select
+                value={heatmapProviderFilter}
+                onChange={(e) => setHeatmapProviderFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All LLMs</option>
+                {availableProviders.map((provider) => (
+                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                ))}
+              </select>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
