@@ -1625,6 +1625,83 @@ export default function ResultsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleExportSentimentCSV = () => {
+    if (!runStatus) return;
+
+    const headers = [
+      'Prompt',
+      'Provider',
+      'Model',
+      'Position',
+      'Brand Sentiment',
+      'Competitor Sentiments',
+      'All Brands Mentioned',
+      'Response',
+    ];
+
+    const rows = globallyFilteredResults
+      .filter((r: Result) => !r.error && r.brand_sentiment)
+      .map((r: Result) => {
+        const competitorSentiments = r.competitor_sentiments
+          ? Object.entries(r.competitor_sentiments)
+              .filter(([_, sentiment]) => sentiment !== 'not_mentioned')
+              .map(([comp, sentiment]) => `${comp}: ${sentiment}`)
+              .join('; ')
+          : '';
+
+        // Calculate position/rank
+        let rank = 0;
+        const brandLower = runStatus.brand.toLowerCase();
+        if (r.brand_mentioned && r.response_text) {
+          const allBrands = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+            ? r.all_brands_mentioned
+            : [runStatus.brand, ...(r.competitors_mentioned || [])].filter(Boolean);
+
+          let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+          if (foundIndex === -1) {
+            foundIndex = allBrands.findIndex(b =>
+              b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+            );
+          }
+          if (foundIndex === -1) {
+            const brandPos = r.response_text.toLowerCase().indexOf(brandLower);
+            if (brandPos >= 0) {
+              let brandsBeforeCount = 0;
+              for (const b of allBrands) {
+                const bPos = r.response_text.toLowerCase().indexOf(b.toLowerCase());
+                if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
+              }
+              rank = brandsBeforeCount + 1;
+            } else {
+              rank = allBrands.length + 1;
+            }
+          } else {
+            rank = foundIndex + 1;
+          }
+        }
+
+        return [
+          `"${r.prompt.replace(/"/g, '""')}"`,
+          r.provider,
+          r.model,
+          rank > 0 ? rank : '',
+          r.brand_sentiment || '',
+          `"${competitorSentiments}"`,
+          `"${(r.all_brands_mentioned || []).join(', ')}"`,
+          `"${(r.response_text || '').replace(/"/g, '""')}"`,
+        ];
+      });
+
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sentiment-results-${runStatus.brand}-${runId.slice(0, 8)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
@@ -2000,7 +2077,7 @@ export default function ResultsPage() {
                               ? data.prompt.substring(0, 70) + '...'
                               : data.prompt;
                             return (
-                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px] max-w-[280px]">
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[320px]">
                                 <p className="text-sm font-semibold text-gray-900 mb-1" title={data.prompt}>
                                   {truncatedPrompt}
                                 </p>
@@ -2509,7 +2586,7 @@ export default function ResultsPage() {
                                 />
                                 {/* Tooltip on hover */}
                                 <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
-                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px] max-w-[280px] text-left">
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[320px] text-left">
                                     <p className="text-sm font-semibold text-gray-900 mb-1">{dot.prompt.length > 70 ? dot.prompt.substring(0, 70) + '...' : dot.prompt}</p>
                                     <p className="text-sm text-gray-700">
                                       {dot.rank === 0 ? 'Not shown' : dot.rank === 1 ? 'Shown as: #1 (Top result)' : `Shown as: #${dot.rank}`}
@@ -4055,7 +4132,7 @@ export default function ResultsPage() {
       count: number;
       bgColor: string;
       textColor: string;
-      popupPosition?: 'right' | 'top';
+      popupPosition?: 'right' | 'top' | 'bottom';
     }) => {
       if (count === 0) return null;
 
@@ -4111,10 +4188,12 @@ export default function ResultsPage() {
           {isHovered && matchingResults.length > 0 && (
             <div
               data-sentiment-popup
-              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[180px] max-w-[280px] text-left ${
+              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[320px] text-left ${
                 popupPosition === 'top'
                   ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
-                  : 'left-full ml-2 top-0'
+                  : popupPosition === 'bottom'
+                    ? 'top-full mt-2 left-1/2 -translate-x-1/2'
+                    : 'left-full ml-2 top-0'
               }`}
               style={{ maxHeight: '350px' }}
               onWheel={(e) => e.stopPropagation()}
@@ -4387,7 +4466,7 @@ export default function ResultsPage() {
           </div>
           <p className="text-sm text-gray-500 mb-6">How different AI models describe {effectiveSentimentBrand || 'your brand'}</p>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-visible">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
@@ -4403,9 +4482,10 @@ export default function ResultsPage() {
               </thead>
               <tbody>
                 {sentimentByProvider.map((row, rowIndex) => {
-                  // Show popup above for bottom 2 rows to prevent cutoff
+                  // Show popup above for bottom 2 rows, below for top 2 rows to prevent cutoff
                   const isBottomRow = rowIndex >= sentimentByProvider.length - 2;
-                  const popupPos = isBottomRow ? 'top' : 'right';
+                  const isTopRow = rowIndex < 2;
+                  const popupPos = isBottomRow ? 'top' : isTopRow ? 'bottom' : 'right';
 
                   return (
                     <tr key={row.provider} className="border-b border-gray-100 hover:bg-gray-50">
@@ -4606,8 +4686,28 @@ export default function ResultsPage() {
 
         {/* Individual Results with Sentiment */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
-          <p className="text-sm text-gray-500 mb-4">Detailed sentiment for each AI response</p>
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
+              <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportSentimentCSV}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Link2 className="w-4 h-4" />
+                {copied ? 'Copied!' : 'Share'}
+              </button>
+            </div>
+          </div>
 
           {/* Sentiment Legend */}
           <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
@@ -4625,6 +4725,7 @@ export default function ResultsPage() {
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Prompt</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Position</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Brand Sentiment</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor Sentiments</th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Response</th>
@@ -4643,6 +4744,49 @@ export default function ResultsPage() {
                       </td>
                       <td className="py-3 px-4">
                         <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {(() => {
+                          let rank = 0;
+                          const brandLower = (runStatus?.brand || '').toLowerCase();
+                          if (result.brand_mentioned && result.response_text) {
+                            const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                              ? result.all_brands_mentioned
+                              : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+
+                            let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+                            if (foundIndex === -1) {
+                              foundIndex = allBrands.findIndex(b =>
+                                b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+                              );
+                            }
+                            if (foundIndex === -1) {
+                              const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+                              if (brandPos >= 0) {
+                                let brandsBeforeCount = 0;
+                                for (const b of allBrands) {
+                                  const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                                  if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
+                                }
+                                rank = brandsBeforeCount + 1;
+                              } else {
+                                rank = allBrands.length + 1;
+                              }
+                            } else {
+                              rank = foundIndex + 1;
+                            }
+                          }
+                          return (
+                            <span className={`inline-flex items-center justify-center w-7 h-7 text-xs font-medium rounded-full ${
+                              rank === 0 ? 'bg-gray-100 text-gray-400' :
+                              rank === 1 ? 'bg-[#E8F0E8] text-[#4A7C59]' :
+                              rank <= 3 ? 'bg-blue-50 text-blue-600' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {rank === 0 ? '—' : `#${rank}`}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg border ${getSentimentColor(result.brand_sentiment)}`}>
