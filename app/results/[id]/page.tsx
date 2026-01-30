@@ -24,6 +24,17 @@ import {
   Globe,
   Lightbulb,
   FileBarChart,
+  // Category icons
+  Users,
+  Play,
+  BookOpen,
+  Newspaper,
+  ShoppingBag,
+  Star,
+  HelpCircle,
+  Landmark,
+  PenLine,
+  CircleDot,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useRunStatus, useAISummary } from '@/hooks/useApi';
@@ -4099,6 +4110,24 @@ export default function ResultsPage() {
       'Other': '#B8C9BE'              // Light gray-green
     };
 
+    // Get icon component for a category
+    const getCategoryIcon = (category: string, className: string = "w-3.5 h-3.5") => {
+      const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['Other'];
+      const props = { className, style: { color } };
+      switch (category) {
+        case 'Social Media': return <Users {...props} />;
+        case 'Video': return <Play {...props} />;
+        case 'Reference': return <BookOpen {...props} />;
+        case 'News & Media': return <Newspaper {...props} />;
+        case 'E-commerce': return <ShoppingBag {...props} />;
+        case 'Reviews': return <Star {...props} />;
+        case 'Forums & Q&A': return <HelpCircle {...props} />;
+        case 'Government': return <Landmark {...props} />;
+        case 'Blogs': return <PenLine {...props} />;
+        default: return <CircleDot {...props} />;
+      }
+    };
+
     // Check if we have any sources data
     const hasSourcesData = globallyFilteredResults.some(
       (r: Result) => !r.error && r.sources && r.sources.length > 0
@@ -4256,6 +4285,9 @@ export default function ResultsPage() {
                           }}
                         >
                           <span className="text-xs font-medium text-gray-400 w-5">{index + 1}.</span>
+                          <span className="flex-shrink-0" title={categorizeDomain(source.domain)}>
+                            {getCategoryIcon(categorizeDomain(source.domain))}
+                          </span>
                           <div className="flex-1 flex items-center gap-1.5 text-sm font-medium text-[#4A7C59] min-w-0">
                             {isExpanded ? <ChevronUp className="w-3 h-3 flex-shrink-0" /> : <ChevronDown className="w-3 h-3 flex-shrink-0" />}
                             <span className="truncate">{source.domain}</span>
