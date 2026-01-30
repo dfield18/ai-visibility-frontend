@@ -4087,8 +4087,6 @@ export default function ResultsPage() {
 
                 {/* Top Cited Sources Pie Chart */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 mb-1">Top Cited Sources</h3>
-                  <p className="text-xs text-gray-500 mb-2">Distribution by domain</p>
                   {sourcesPieData.length > 0 ? (
                     <div className="flex items-start gap-4">
                       <div className="h-[140px] w-[140px] flex-shrink-0">
