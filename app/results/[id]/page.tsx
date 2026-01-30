@@ -4087,16 +4087,16 @@ export default function ResultsPage() {
     }, [topCitedSources]);
 
     const CATEGORY_COLORS: Record<string, string> = {
-      'Social Media': '#E91E63',
-      'Video': '#F44336',
-      'Reference': '#9C27B0',
-      'News & Media': '#2196F3',
-      'E-commerce': '#FF9800',
-      'Reviews': '#FFEB3B',
-      'Forums & Q&A': '#00BCD4',
-      'Government': '#607D8B',
-      'Blogs': '#8BC34A',
-      'Other': '#9E9E9E'
+      'Social Media': '#4A7C59',      // Primary green
+      'Video': '#6B9E7A',             // Medium green
+      'Reference': '#3D6B4D',         // Dark green
+      'News & Media': '#5BA3C0',      // Light blue
+      'E-commerce': '#8BB5A2',        // Sage green
+      'Reviews': '#7FBCD4',           // Sky blue
+      'Forums & Q&A': '#2D5A3D',      // Deep green
+      'Government': '#4A90A4',        // Teal blue
+      'Blogs': '#A8C5B5',             // Pale green
+      'Other': '#B8C9BE'              // Light gray-green
     };
 
     // Check if we have any sources data
