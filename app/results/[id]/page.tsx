@@ -792,10 +792,29 @@ export default function ResultsPage() {
       const domain = parsedUrl.hostname.replace(/^www\./, '');
       const pathname = parsedUrl.pathname;
 
-      if (domain === 'reddit.com' || domain.endsWith('.reddit.com')) {
-        const redditMatch = pathname.match(/^\/r\/([^/]+)/);
-        if (redditMatch) {
-          return `r/${redditMatch[1]}`;
+      // Enhanced Reddit URL handling
+      if (domain === 'reddit.com' || domain.endsWith('.reddit.com') || domain === 'redd.it') {
+        // Try to extract subreddit from various URL patterns
+        const subredditMatch = pathname.match(/\/r\/([^/]+)/);
+        if (subredditMatch) {
+          // Try to also get post title from URL if available
+          // Pattern: /r/subreddit/comments/id/post_title_here/
+          const titleMatch = pathname.match(/\/r\/[^/]+\/comments\/[^/]+\/([^/]+)/);
+          if (titleMatch && titleMatch[1]) {
+            const postTitle = titleMatch[1].replace(/_/g, ' ');
+            return `${postTitle} (r/${subredditMatch[1]})`;
+          }
+          return `r/${subredditMatch[1]}`;
+        }
+        // Handle user profile URLs
+        const userMatch = pathname.match(/\/user\/([^/]+)/);
+        if (userMatch) {
+          return `u/${userMatch[1]}`;
+        }
+        // Handle direct comment URLs: /comments/id/
+        const commentsMatch = pathname.match(/\/comments\/([^/]+)(?:\/([^/]+))?/);
+        if (commentsMatch && commentsMatch[2]) {
+          return commentsMatch[2].replace(/_/g, ' ');
         }
       }
 
