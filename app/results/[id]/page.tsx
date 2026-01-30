@@ -3020,36 +3020,18 @@ export default function ResultsPage() {
 
       {/* All Results Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <h2 className="text-base font-semibold text-gray-900">All Results</h2>
-          <div className="flex flex-col items-end gap-2">
-            <select
-              value={providerFilter}
-              onChange={(e) => setProviderFilter(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-            >
-              <option value="all">All LLMs</option>
-              {availableProviders.map((p) => (
-                <option key={p} value={p}>{getProviderLabel(p)}</option>
-              ))}
-            </select>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleExportCSV}
-                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-              >
-                <Download className="w-4 h-4" />
-                Export CSV
-              </button>
-              <button
-                onClick={handleCopyLink}
-                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-              >
-                <Link2 className="w-4 h-4" />
-                {copied ? 'Copied!' : 'Share'}
-              </button>
-            </div>
-          </div>
+          <select
+            value={providerFilter}
+            onChange={(e) => setProviderFilter(e.target.value)}
+            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+          >
+            <option value="all">All LLMs</option>
+            {availableProviders.map((p) => (
+              <option key={p} value={p}>{getProviderLabel(p)}</option>
+            ))}
+          </select>
         </div>
         <p className="text-sm text-gray-500 mb-4">
           Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error).length} results
@@ -3860,6 +3842,24 @@ export default function ResultsPage() {
             <p className="text-gray-500">No results match your filters</p>
           </div>
         )}
+
+        {/* Export buttons at bottom of table */}
+        <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+          <button
+            onClick={handleExportCSV}
+            className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+          <button
+            onClick={handleCopyLink}
+            className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+          >
+            <Link2 className="w-4 h-4" />
+            {copied ? 'Copied!' : 'Share'}
+          </button>
+        </div>
       </div>
 
       {/* Export Section */}
