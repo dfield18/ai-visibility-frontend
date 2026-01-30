@@ -4008,9 +4008,11 @@ export default function ResultsPage() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            // Capture scroll position before state change
+
+                            // Capture scroll positions before state change
                             const scrollContainer = sourcesListRef.current;
-                            const scrollTop = scrollContainer?.scrollTop || 0;
+                            const containerScrollTop = scrollContainer?.scrollTop || 0;
+                            const windowScrollY = window.scrollY;
 
                             const newExpanded = new Set(expandedSources);
                             if (isExpanded) {
@@ -4020,12 +4022,13 @@ export default function ResultsPage() {
                             }
                             setExpandedSources(newExpanded);
 
-                            // Restore scroll position after React re-renders
-                            requestAnimationFrame(() => {
+                            // Use setTimeout to restore after React's commit phase
+                            setTimeout(() => {
                               if (scrollContainer) {
-                                scrollContainer.scrollTop = scrollTop;
+                                scrollContainer.scrollTop = containerScrollTop;
                               }
-                            });
+                              window.scrollTo(window.scrollX, windowScrollY);
+                            }, 0);
                           }}
                         >
                           <span className="text-xs font-medium text-gray-400 w-5">{index + 1}.</span>
