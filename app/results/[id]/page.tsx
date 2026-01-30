@@ -4085,7 +4085,7 @@ export default function ResultsPage() {
                     {item.brandMentionRate > 0 && (
                       <div className="ml-12 mt-1">
                         <span className="text-xs text-[#4A7C59]">
-                          Brand mentioned in {item.brandMentionRate.toFixed(0)}% of responses citing this source
+                          {runStatus?.brand} mentioned in {item.brandMentionRate.toFixed(0)}% of responses citing this source
                         </span>
                       </div>
                     )}
