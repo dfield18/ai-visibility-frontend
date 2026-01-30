@@ -3020,9 +3020,9 @@ export default function ResultsPage() {
 
       {/* All Results Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
           <h2 className="text-base font-semibold text-gray-900">All Results</h2>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col items-end gap-2">
             <select
               value={providerFilter}
               onChange={(e) => setProviderFilter(e.target.value)}
@@ -3033,20 +3033,22 @@ export default function ResultsPage() {
                 <option key={p} value={p}>{getProviderLabel(p)}</option>
               ))}
             </select>
-            <button
-              onClick={handleExportCSV}
-              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </button>
-            <button
-              onClick={handleCopyLink}
-              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-            >
-              <Link2 className="w-4 h-4" />
-              {copied ? 'Copied!' : 'Share'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExportCSV}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Link2 className="w-4 h-4" />
+                {copied ? 'Copied!' : 'Share'}
+              </button>
+            </div>
           </div>
         </div>
         <p className="text-sm text-gray-500 mb-4">
