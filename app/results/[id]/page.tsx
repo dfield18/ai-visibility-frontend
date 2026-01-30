@@ -4132,7 +4132,7 @@ export default function ResultsPage() {
       count: number;
       bgColor: string;
       textColor: string;
-      popupPosition?: 'right' | 'top' | 'bottom';
+      popupPosition?: 'top' | 'bottom';
     }) => {
       if (count === 0) return null;
 
@@ -4190,10 +4190,8 @@ export default function ResultsPage() {
               data-sentiment-popup
               className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[320px] text-left ${
                 popupPosition === 'top'
-                  ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
-                  : popupPosition === 'bottom'
-                    ? 'top-full mt-2 left-1/2 -translate-x-1/2'
-                    : 'left-full ml-2 top-0'
+                  ? 'bottom-full mb-2 left-0'
+                  : 'top-full mt-2 left-0'
               }`}
               style={{ maxHeight: '350px' }}
               onWheel={(e) => e.stopPropagation()}
@@ -4483,9 +4481,9 @@ export default function ResultsPage() {
               <tbody>
                 {sentimentByProvider.map((row, rowIndex) => {
                   // Show popup above for bottom 2 rows, below for top 2 rows to prevent cutoff
+                  // Show popup above (top-right) for bottom 2 rows, below (bottom-right) for all others
                   const isBottomRow = rowIndex >= sentimentByProvider.length - 2;
-                  const isTopRow = rowIndex < 2;
-                  const popupPos = isBottomRow ? 'top' : isTopRow ? 'bottom' : 'right';
+                  const popupPos = isBottomRow ? 'top' : 'bottom';
 
                   return (
                     <tr key={row.provider} className="border-b border-gray-100 hover:bg-gray-50">
