@@ -3876,14 +3876,15 @@ export default function ResultsPage() {
                 </select>
               </div>
             </div>
-            <div className={`space-y-2 ${topCitedSources.length > 10 ? 'max-h-[600px] overflow-y-auto pr-2' : ''}`}>
+            <div className={`space-y-2 ${topCitedSources.length > 10 ? 'max-h-[600px] overflow-y-auto pr-2' : ''}`} style={{ overflowAnchor: 'none' }}>
               {topCitedSources.map((source, index) => {
                 const isExpanded = expandedSources.has(source.domain);
                 return (
                   <div key={source.domain} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
                     <div
                       className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
                         const newExpanded = new Set(expandedSources);
                         if (isExpanded) {
                           newExpanded.delete(source.domain);
