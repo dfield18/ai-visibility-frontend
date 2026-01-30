@@ -4276,6 +4276,66 @@ export default function ResultsPage() {
         .sort((a, b) => b.value - a.value);
     }, [topCitedSources, aiCategorizations]);
 
+    // Provider-Source Heatmap data
+    const providerSourceHeatmap = useMemo(() => {
+      if (!runStatus) return { providers: [], sources: [], data: [] };
+
+      // Get all providers that have citations
+      const providersWithCitations = new Set<string>();
+      const sourceProviderCounts: Record<string, Record<string, number>> = {};
+
+      // Process all results to get per-provider citation counts per source
+      const results = globallyFilteredResults.filter((r: Result) => !r.error && r.sources && r.sources.length > 0);
+
+      for (const result of results) {
+        if (!result.sources) continue;
+
+        const seenDomains = new Set<string>();
+        for (const source of result.sources) {
+          if (!source.url) continue;
+          const domain = getDomain(source.url);
+
+          // Count each domain only once per response
+          if (seenDomains.has(domain)) continue;
+          seenDomains.add(domain);
+
+          if (!sourceProviderCounts[domain]) {
+            sourceProviderCounts[domain] = {};
+          }
+          sourceProviderCounts[domain][result.provider] = (sourceProviderCounts[domain][result.provider] || 0) + 1;
+          providersWithCitations.add(result.provider);
+        }
+      }
+
+      // Get top 10 sources by total citations
+      const topSources = Object.entries(sourceProviderCounts)
+        .map(([domain, providers]) => ({
+          domain,
+          total: Object.values(providers).reduce((sum, count) => sum + count, 0),
+          providers,
+        }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+
+      const providerList = Array.from(providersWithCitations).sort();
+
+      // Build heatmap data
+      const heatmapData: Array<{ domain: string; total: number; [key: string]: string | number }> = topSources.map(source => ({
+        domain: source.domain,
+        total: source.total,
+        ...providerList.reduce((acc, provider) => {
+          acc[provider] = source.providers[provider] || 0;
+          return acc;
+        }, {} as Record<string, number>),
+      }));
+
+      return {
+        providers: providerList,
+        sources: topSources.map(s => s.domain),
+        data: heatmapData,
+      };
+    }, [runStatus, globallyFilteredResults]);
+
     const CATEGORY_COLORS: Record<string, string> = {
       'Social Media': '#4A7C59',      // Primary green
       'Video': '#6B9E7A',             // Medium green
@@ -4578,6 +4638,84 @@ export default function ResultsPage() {
                 </div>
               </div>
             </div>
+        )}
+
+        {/* Provider-Source Heatmap */}
+        {providerSourceHeatmap.sources.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Provider-Source Heatmap</h3>
+              <p className="text-sm text-gray-500">Which sources are cited by which AI providers</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left py-2 px-3 font-medium text-gray-600 border-b border-gray-200">Source</th>
+                    {providerSourceHeatmap.providers.map(provider => (
+                      <th key={provider} className="text-center py-2 px-3 font-medium text-gray-600 border-b border-gray-200 min-w-[80px]">
+                        {getProviderShortLabel(provider)}
+                      </th>
+                    ))}
+                    <th className="text-center py-2 px-3 font-medium text-gray-600 border-b border-gray-200">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {providerSourceHeatmap.data.map((row, index) => {
+                    const maxCount = Math.max(...providerSourceHeatmap.providers.map(p => row[p] as number || 0));
+                    return (
+                      <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                        <td className="py-2 px-3 font-medium text-[#4A7C59] truncate max-w-[200px]" title={row.domain}>
+                          <div className="flex items-center gap-2">
+                            <span className="flex-shrink-0">
+                              {getCategoryIcon(categorizeDomain(row.domain), "w-3.5 h-3.5")}
+                            </span>
+                            <span className="truncate">{row.domain}</span>
+                          </div>
+                        </td>
+                        {providerSourceHeatmap.providers.map(provider => {
+                          const count = row[provider] as number || 0;
+                          const intensity = maxCount > 0 ? count / maxCount : 0;
+                          const bgColor = count > 0
+                            ? `rgba(74, 124, 89, ${0.15 + intensity * 0.6})`
+                            : 'transparent';
+                          return (
+                            <td
+                              key={provider}
+                              className="text-center py-2 px-3"
+                              style={{ backgroundColor: bgColor }}
+                            >
+                              {count > 0 ? (
+                                <span className={intensity > 0.5 ? 'text-white font-medium' : 'text-gray-700'}>
+                                  {count}
+                                </span>
+                              ) : (
+                                <span className="text-gray-300">-</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td className="text-center py-2 px-3 font-semibold text-gray-700 bg-gray-100">
+                          {row.total}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 flex items-center justify-end gap-4 text-xs text-gray-500">
+              <div className="flex items-center gap-2">
+                <span>Fewer citations</span>
+                <div className="flex">
+                  <div className="w-6 h-4 rounded-l" style={{ backgroundColor: 'rgba(74, 124, 89, 0.15)' }} />
+                  <div className="w-6 h-4" style={{ backgroundColor: 'rgba(74, 124, 89, 0.45)' }} />
+                  <div className="w-6 h-4 rounded-r" style={{ backgroundColor: 'rgba(74, 124, 89, 0.75)' }} />
+                </div>
+                <span>More citations</span>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Brand Website Citations */}
