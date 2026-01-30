@@ -4330,7 +4330,7 @@ export default function ResultsPage() {
         if (result.brand_mentioned && runStatus.brand) {
           brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
         }
-        if (result.competitors_mentioned && result.competitor_sentiments) {
+        if (result.competitors_mentioned) {
           result.competitors_mentioned.forEach(comp => {
             brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null });
           });
