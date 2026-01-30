@@ -4704,8 +4704,11 @@ export default function ResultsPage() {
                       <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
                         <td className="py-2 px-3 font-medium text-[#4A7C59] sticky left-0 bg-inherit z-10" title={row.domain}>
                           <div className="flex items-center gap-2 max-w-[180px]">
-                            <span className="flex-shrink-0">
+                            <span className="flex-shrink-0 relative group/heatmapicon">
                               {getCategoryIcon(categorizeDomain(row.domain), "w-3.5 h-3.5")}
+                              <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-700 bg-white border border-gray-200 rounded shadow-sm whitespace-nowrap opacity-0 group-hover/heatmapicon:opacity-100 pointer-events-none transition-opacity z-50">
+                                {categorizeDomain(row.domain)}
+                              </span>
                             </span>
                             <span className="truncate">{row.domain}</span>
                           </div>
