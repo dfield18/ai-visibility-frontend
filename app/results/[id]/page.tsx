@@ -3033,6 +3033,20 @@ export default function ResultsPage() {
                 <option key={p} value={p}>{getProviderLabel(p)}</option>
               ))}
             </select>
+            <button
+              onClick={handleExportCSV}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Link2 className="w-4 h-4" />
+              {copied ? 'Copied!' : 'Share'}
+            </button>
           </div>
         </div>
         <p className="text-sm text-gray-500 mb-4">
