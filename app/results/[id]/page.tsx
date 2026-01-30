@@ -4347,16 +4347,16 @@ export default function ResultsPage() {
                 <div className="flex flex-col h-full">
                   <h3 className="text-sm font-semibold text-gray-700 mb-4">Source Types</h3>
                   {sourceCategoryData.length > 0 ? (
-                    <div className="flex flex-col items-center justify-center flex-1">
-                      <div className="h-[200px] w-[200px]">
+                    <div className="flex flex-col items-center flex-1 pt-2">
+                      <div className="h-[220px] w-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={sourceCategoryData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={50}
-                              outerRadius={85}
+                              innerRadius={55}
+                              outerRadius={94}
                               paddingAngle={2}
                               dataKey="value"
                               nameKey="name"
@@ -4376,7 +4376,7 @@ export default function ResultsPage() {
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-6 text-xs px-2">
+                      <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-4 text-xs px-2">
                         {sourceCategoryData.map((item) => (
                           <div key={item.name} className="flex items-center gap-1.5">
                             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: CATEGORY_COLORS[item.name] || CATEGORY_COLORS['Other'] }} />
