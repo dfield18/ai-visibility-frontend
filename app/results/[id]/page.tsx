@@ -3920,29 +3920,70 @@ export default function ResultsPage() {
       }
     };
 
-    // Calculate top cited domains
-    const topCitedDomains = useMemo(() => {
-      const domainCounts: Record<string, { count: number; brandMentionCount: number; urls: string[] }> = {};
+    // State for brand filter in Top Cited Domains
+    type SourceBrandFilter = 'brand' | 'all' | 'competitors' | 'top10';
+    const [sourceBrandFilter, setSourceBrandFilter] = useState<SourceBrandFilter>('brand');
+
+    // State for expanded domains
+    const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
+
+    // Calculate top 10 competitors by citation count (for the filter)
+    const top10CompetitorsByCitations = useMemo(() => {
+      const competitorCiteCounts: Record<string, number> = {};
 
       globallyFilteredResults
         .filter((r: Result) => !r.error && r.sources && r.sources.length > 0)
         .forEach((r: Result) => {
-          r.sources?.forEach((source) => {
-            if (source.url) {
-              const domain = extractDomain(source.url);
-              if (!domainCounts[domain]) {
-                domainCounts[domain] = { count: 0, brandMentionCount: 0, urls: [] };
-              }
-              domainCounts[domain].count++;
-              if (r.brand_mentioned) {
-                domainCounts[domain].brandMentionCount++;
-              }
-              if (!domainCounts[domain].urls.includes(source.url)) {
-                domainCounts[domain].urls.push(source.url);
-              }
-            }
+          r.competitors_mentioned?.forEach((comp) => {
+            competitorCiteCounts[comp] = (competitorCiteCounts[comp] || 0) + (r.sources?.length || 0);
           });
         });
+
+      return Object.entries(competitorCiteCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([name]) => name);
+    }, [globallyFilteredResults]);
+
+    // Calculate top cited domains based on filter
+    const topCitedDomains = useMemo(() => {
+      const domainCounts: Record<string, { count: number; brandMentionCount: number; urls: string[] }> = {};
+
+      // Filter results based on selected brand filter
+      const filteredResults = globallyFilteredResults
+        .filter((r: Result) => !r.error && r.sources && r.sources.length > 0)
+        .filter((r: Result) => {
+          switch (sourceBrandFilter) {
+            case 'brand':
+              return r.brand_mentioned;
+            case 'all':
+              return true;
+            case 'competitors':
+              return r.competitors_mentioned && r.competitors_mentioned.length > 0;
+            case 'top10':
+              return r.competitors_mentioned?.some(comp => top10CompetitorsByCitations.includes(comp));
+            default:
+              return true;
+          }
+        });
+
+      filteredResults.forEach((r: Result) => {
+        r.sources?.forEach((source) => {
+          if (source.url) {
+            const domain = extractDomain(source.url);
+            if (!domainCounts[domain]) {
+              domainCounts[domain] = { count: 0, brandMentionCount: 0, urls: [] };
+            }
+            domainCounts[domain].count++;
+            if (r.brand_mentioned) {
+              domainCounts[domain].brandMentionCount++;
+            }
+            if (!domainCounts[domain].urls.includes(source.url)) {
+              domainCounts[domain].urls.push(source.url);
+            }
+          }
+        });
+      });
 
       const totalCitations = Object.values(domainCounts).reduce((sum, d) => sum + d.count, 0);
 
@@ -3957,10 +3998,7 @@ export default function ResultsPage() {
           urls: data.urls,
         }))
         .sort((a, b) => b.count - a.count);
-    }, [globallyFilteredResults]);
-
-    // State for expanded domains
-    const [expandedDomains, setExpandedDomains] = useState<Set<string>>(new Set());
+    }, [globallyFilteredResults, sourceBrandFilter, top10CompetitorsByCitations]);
 
     // Calculate brand presence in sources
     const brandPresenceData = useMemo(() => {
@@ -4032,9 +4070,26 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-lg font-semibold text-gray-900">Top Cited Domains</h3>
-            <span className="text-sm text-gray-500">{topCitedDomains.length} domains</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">{topCitedDomains.length} domains</span>
+              <select
+                value={sourceBrandFilter}
+                onChange={(e) => setSourceBrandFilter(e.target.value as SourceBrandFilter)}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="brand">{runStatus?.brand || 'Your Brand'}</option>
+                <option value="all">All Brands</option>
+                <option value="competitors">Competitors Only</option>
+                <option value="top10">Top 10 Competitors</option>
+              </select>
+            </div>
           </div>
-          <p className="text-sm text-gray-500 mb-6">Most frequently cited sources across all AI responses</p>
+          <p className="text-sm text-gray-500 mb-6">
+            {sourceBrandFilter === 'brand' && `Sources from responses where ${runStatus?.brand || 'your brand'} was mentioned`}
+            {sourceBrandFilter === 'all' && 'Most frequently cited sources across all AI responses'}
+            {sourceBrandFilter === 'competitors' && 'Sources from responses where any competitor was mentioned'}
+            {sourceBrandFilter === 'top10' && 'Sources from responses mentioning top 10 competitors by citations'}
+          </p>
 
           <div className="max-h-[480px] overflow-y-auto pr-2">
             <div className="space-y-3">
