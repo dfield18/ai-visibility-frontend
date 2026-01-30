@@ -3962,23 +3962,23 @@ export default function ResultsPage() {
 
         {/* Your Brand's Presence in Sources */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Presence in Sources</h3>
-          <p className="text-sm text-gray-500 mb-6">How often your brand and competitors are cited as sources</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Website Citations</h3>
+          <p className="text-sm text-gray-500 mb-6">How often AI models cite your brand's and competitors' own websites as sources in their responses</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Your Brand */}
             <div className="bg-[#FAFAF8] rounded-lg p-5">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-semibold text-gray-800">{runStatus?.brand}</h4>
+                <h4 className="text-sm font-semibold text-gray-800">{runStatus?.brand}'s Website</h4>
                 <span className={`text-2xl font-bold ${brandPresenceData.brandCitations > 0 ? 'text-[#4A7C59]' : 'text-gray-400'}`}>
                   {brandPresenceData.brandCitations}
                 </span>
               </div>
               <p className="text-sm text-gray-600 mb-2">
                 {brandPresenceData.brandCitations > 0 ? (
-                  <>Your brand's website was cited in <span className="font-medium text-[#4A7C59]">{brandPresenceData.brandCitationRate.toFixed(0)}%</span> of responses with sources.</>
+                  <>{runStatus?.brand}'s own website (e.g., {runStatus?.brand?.toLowerCase().replace(/\s+/g, '')}.com) was cited as a source in <span className="font-medium text-[#4A7C59]">{brandPresenceData.brandCitationRate.toFixed(0)}%</span> of responses.</>
                 ) : (
-                  <>Your brand's website was not cited in any AI responses.</>
+                  <>{runStatus?.brand}'s own website was not cited as a source in any AI responses.</>
                 )}
               </p>
               {brandPresenceData.brandCitations === 0 && (
@@ -3992,12 +3992,12 @@ export default function ResultsPage() {
 
             {/* Competitors */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-800 mb-3">Competitor Citations</h4>
+              <h4 className="text-sm font-semibold text-gray-800 mb-3">Competitor Website Citations</h4>
               {brandPresenceData.competitorCitations.length > 0 ? (
                 <div className="space-y-2">
                   {brandPresenceData.competitorCitations.slice(0, 5).map((comp) => (
                     <div key={comp.name} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                      <span className="text-sm text-gray-700">{comp.name}</span>
+                      <span className="text-sm text-gray-700">{comp.name}'s website</span>
                       <div className="text-right">
                         <span className="text-sm font-medium text-gray-900">{comp.count}</span>
                         <span className="text-xs text-gray-500 ml-1">({comp.rate.toFixed(0)}%)</span>
