@@ -4698,9 +4698,14 @@ export default function ResultsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {brandSourceHeatmap.data.map((row, index) => {
-                    const maxCount = Math.max(...brandSourceHeatmap.brands.map(b => row[b] as number || 0));
-                    return (
+                  {(() => {
+                    // Calculate global max across all cells for consistent color intensity
+                    const globalMax = Math.max(
+                      ...brandSourceHeatmap.data.flatMap(row =>
+                        brandSourceHeatmap.brands.map(b => row[b] as number || 0)
+                      )
+                    );
+                    return brandSourceHeatmap.data.map((row, index) => (
                       <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
                         <td className="py-2 px-3 font-medium text-[#4A7C59] sticky left-0 bg-inherit z-10" title={row.domain}>
                           <div className="flex items-center gap-2 max-w-[180px]">
@@ -4715,7 +4720,7 @@ export default function ResultsPage() {
                         </td>
                         {brandSourceHeatmap.brands.map(brand => {
                           const count = row[brand] as number || 0;
-                          const intensity = maxCount > 0 ? count / maxCount : 0;
+                          const intensity = globalMax > 0 ? count / globalMax : 0;
                           const isSearchedBrand = brand === brandSourceHeatmap.searchedBrand;
                           const bgColor = count > 0
                             ? isSearchedBrand
@@ -4739,8 +4744,8 @@ export default function ResultsPage() {
                           );
                         })}
                       </tr>
-                    );
-                  })}
+                    ));
+                  })()}
                 </tbody>
               </table>
             </div>
