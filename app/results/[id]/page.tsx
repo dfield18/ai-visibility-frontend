@@ -4285,8 +4285,11 @@ export default function ResultsPage() {
                           }}
                         >
                           <span className="text-xs font-medium text-gray-400 w-5">{index + 1}.</span>
-                          <span className="flex-shrink-0" title={categorizeDomain(source.domain)}>
+                          <span className="flex-shrink-0 relative group/icon">
                             {getCategoryIcon(categorizeDomain(source.domain))}
+                            <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1 px-2 py-1 text-xs text-white bg-gray-800 rounded whitespace-nowrap opacity-0 group-hover/icon:opacity-100 pointer-events-none transition-opacity z-10">
+                              {categorizeDomain(source.domain)}
+                            </span>
                           </span>
                           <div className="flex-1 flex items-center gap-1.5 text-sm font-medium text-[#4A7C59] min-w-0">
                             {isExpanded ? <ChevronUp className="w-3 h-3 flex-shrink-0" /> : <ChevronDown className="w-3 h-3 flex-shrink-0" />}
