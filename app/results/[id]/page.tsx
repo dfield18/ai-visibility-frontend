@@ -7173,7 +7173,7 @@ export default function ResultsPage() {
                                   <p className="text-[#4A7C59]">
                                     {runStatus?.brand || 'Brand'}: {data.brandRate.toFixed(1)}%
                                   </p>
-                                  <p className="text-red-500">
+                                  <p className="text-blue-500">
                                     {data.competitor}: {data.competitorRate.toFixed(1)}%
                                   </p>
                                   <p className="text-gray-500 mt-1">
@@ -7193,7 +7193,7 @@ export default function ResultsPage() {
                         />
                         <Bar
                           dataKey="competitorRate"
-                          fill="#ef4444"
+                          fill="#3b82f6"
                           name="Top Competitor"
                           radius={[0, 4, 4, 0]}
                         />
@@ -7206,7 +7206,7 @@ export default function ResultsPage() {
                       <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm bg-red-500"></div>
+                      <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
                       <span className="text-sm text-gray-600">Top Competitor</span>
                     </div>
                   </div>
@@ -7283,18 +7283,18 @@ export default function ResultsPage() {
                                 <div className="flex items-center justify-center gap-2">
                                   <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                                     <div
-                                      className="h-full bg-red-400 rounded-full"
+                                      className="h-full bg-blue-400 rounded-full"
                                       style={{ width: `${Math.min(row.gap, 100)}%` }}
                                     />
                                   </div>
-                                  <span className="text-red-600 font-medium min-w-[40px]">+{row.gap.toFixed(0)}%</span>
+                                  <span className="text-blue-600 font-medium min-w-[40px]">+{row.gap.toFixed(0)}%</span>
                                 </div>
                               </td>
                               <td className="text-center py-3 px-3">
                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  row.opportunityScore >= 30 ? 'bg-red-100 text-red-700' :
-                                  row.opportunityScore >= 15 ? 'bg-orange-100 text-orange-700' :
-                                  'bg-yellow-100 text-yellow-700'
+                                  row.opportunityScore >= 30 ? 'bg-blue-100 text-blue-700' :
+                                  row.opportunityScore >= 15 ? 'bg-blue-50 text-blue-600' :
+                                  'bg-gray-100 text-gray-600'
                                 }`}>
                                   {row.opportunityScore >= 30 ? 'High' :
                                    row.opportunityScore >= 15 ? 'Medium' : 'Low'}
