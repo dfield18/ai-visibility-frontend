@@ -2789,7 +2789,7 @@ export default function ResultsPage() {
           {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
             <>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-gray-400 invisible">Placeholder</p>
+                <p className="text-xs text-gray-400">Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.</p>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500">Show sentiment</span>
                   <button
@@ -2911,13 +2911,7 @@ export default function ResultsPage() {
                           tickLine={false}
                           ticks={RANGE_X_LABELS.map((_, i) => i)}
                           interval={0}
-                          label={{
-                            value: 'Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.',
-                            position: 'bottom',
-                            offset: 5,
-                            style: { fontSize: 13, fill: '#9ca3af' }
-                          }}
-                        />
+                                                  />
                         <Tooltip
                           cursor={false}
                           content={({ active, payload }) => {
@@ -2980,7 +2974,7 @@ export default function ResultsPage() {
                     {/* Dots overlay - positioned absolutely over the chart plotting area */}
                     {rangeViewDots.length > 0 && (() => {
                       // Chart margins matching ComposedChart margin prop
-                      const margin = { top: 20, right: 30, bottom: 50, left: 50 };
+                      const margin = { top: 20, right: 20, bottom: 20, left: 50 };
                       const yAxisWidth = 60; // Recharts default YAxis width when not specified
                       const xAxisHeight = 30; // Estimated height of X-axis with labels
                       const numProviders = rangeChartData.length;
