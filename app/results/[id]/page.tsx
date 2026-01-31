@@ -2052,6 +2052,26 @@ export default function ResultsPage() {
     }
   };
 
+  const getSentimentScore = (sentiment: string): number => {
+    const scoreMap: Record<string, number> = {
+      'strong_endorsement': 5,
+      'positive_endorsement': 4,
+      'neutral_mention': 3,
+      'conditional': 2,
+      'negative_comparison': 1,
+      'not_mentioned': 0,
+    };
+    return scoreMap[sentiment] ?? 0;
+  };
+
+  const getSentimentLabel = (score: number): string => {
+    if (score >= 4.5) return 'Very Favorable';
+    if (score >= 3.5) return 'Favorable';
+    if (score >= 2.5) return 'Neutral';
+    if (score >= 1.5) return 'Conditional';
+    return 'Negative';
+  };
+
   const getProviderShortLabel = (provider: string) => {
     switch (provider) {
       case 'openai': return 'GPT';
@@ -4905,6 +4925,90 @@ export default function ResultsPage() {
         .sort((a, b) => b.value - a.value);
     }, [topCitedSources, aiCategorizations]);
 
+    // Calculate domain table data with additional metrics
+    const domainTableData = useMemo(() => {
+      if (!runStatus) return [];
+
+      // Get all results with sources for calculating percentages
+      const resultsWithSources = globallyFilteredResults.filter(
+        (r: Result) => !r.error && r.sources && r.sources.length > 0
+      );
+      const totalResponsesWithSources = resultsWithSources.length;
+
+      // Track per-domain stats
+      const domainStats: Record<string, {
+        domain: string;
+        responsesWithDomain: number;
+        totalCitations: number;
+        sentimentScores: number[];
+      }> = {};
+
+      // Process each result to collect domain stats
+      resultsWithSources.forEach((r: Result) => {
+        if (!r.sources) return;
+
+        // Track unique domains per response
+        const domainsInResponse = new Set<string>();
+
+        r.sources.forEach((source: Source) => {
+          if (!source.url) return;
+          try {
+            const hostname = new URL(source.url).hostname.replace(/^www\./, '');
+            domainsInResponse.add(hostname);
+
+            if (!domainStats[hostname]) {
+              domainStats[hostname] = {
+                domain: hostname,
+                responsesWithDomain: 0,
+                totalCitations: 0,
+                sentimentScores: [],
+              };
+            }
+            domainStats[hostname].totalCitations += 1;
+          } catch {
+            // Skip invalid URLs
+          }
+        });
+
+        // Count unique responses per domain and capture sentiment
+        domainsInResponse.forEach(domain => {
+          domainStats[domain].responsesWithDomain += 1;
+          // Use brand sentiment if available (convert to numeric)
+          if (r.brand_sentiment) {
+            const sentimentScore = getSentimentScore(r.brand_sentiment);
+            if (sentimentScore > 0) {
+              domainStats[domain].sentimentScores.push(sentimentScore);
+            }
+          }
+        });
+      });
+
+      // Convert to array with calculated metrics
+      return Object.values(domainStats)
+        .map(stat => {
+          const usedPercent = totalResponsesWithSources > 0
+            ? (stat.responsesWithDomain / totalResponsesWithSources) * 100
+            : 0;
+          const avgCitation = stat.responsesWithDomain > 0
+            ? stat.totalCitations / stat.responsesWithDomain
+            : 0;
+          const avgSentiment = stat.sentimentScores.length > 0
+            ? stat.sentimentScores.reduce((a, b) => a + b, 0) / stat.sentimentScores.length
+            : null;
+
+          return {
+            domain: stat.domain,
+            usedPercent,
+            avgCitation,
+            category: categorizeDomain(stat.domain),
+            avgSentiment,
+            totalCitations: stat.totalCitations,
+            responsesWithDomain: stat.responsesWithDomain,
+          };
+        })
+        .sort((a, b) => b.usedPercent - a.usedPercent);
+    }, [runStatus, globallyFilteredResults, aiCategorizations]);
+
     const CATEGORY_COLORS: Record<string, string> = {
       'Social Media': '#4A7C59',      // Primary green
       'Video': '#6B9E7A',             // Medium green
@@ -5415,6 +5519,89 @@ export default function ResultsPage() {
                     <span>More</span>
                   </div>
                 </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Domain Breakdown Table */}
+        {domainTableData.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-5 h-5 text-[#4A7C59]" />
+              <h3 className="text-lg font-semibold text-gray-900">Domain Breakdown</h3>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Detailed view of how often each domain is cited across LLM responses
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-3 font-medium text-gray-600">Domain</th>
+                    <th className="text-center py-3 px-3 font-medium text-gray-600">
+                      <div>Used</div>
+                      <div className="text-xs font-normal text-gray-400">% of responses</div>
+                    </th>
+                    <th className="text-center py-3 px-3 font-medium text-gray-600">
+                      <div>Avg. Citation</div>
+                      <div className="text-xs font-normal text-gray-400">per response</div>
+                    </th>
+                    <th className="text-center py-3 px-3 font-medium text-gray-600">Type</th>
+                    <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {domainTableData.slice(0, 25).map((row, index) => (
+                    <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#4A7C59] font-medium">{row.domain}</span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-[#4A7C59] rounded-full"
+                              style={{ width: `${Math.min(row.usedPercent, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-gray-700 min-w-[40px]">{row.usedPercent.toFixed(1)}%</span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-center text-gray-700">
+                        {row.avgCitation.toFixed(2)}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {getCategoryIcon(row.category, "w-3.5 h-3.5")}
+                          <span className="text-gray-600 text-xs">{row.category}</span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        {row.avgSentiment !== null ? (
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                            row.avgSentiment >= 4.5 ? 'bg-green-100 text-green-700' :
+                            row.avgSentiment >= 3.5 ? 'bg-lime-100 text-lime-700' :
+                            row.avgSentiment >= 2.5 ? 'bg-gray-100 text-gray-600' :
+                            row.avgSentiment >= 1.5 ? 'bg-orange-100 text-orange-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {getSentimentLabel(row.avgSentiment)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {domainTableData.length > 25 && (
+                <p className="text-sm text-gray-500 text-center mt-3">
+                  Showing top 25 of {domainTableData.length} domains
+                </p>
               )}
             </div>
           </div>
