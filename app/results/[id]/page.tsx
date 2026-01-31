@@ -2566,7 +2566,7 @@ export default function ResultsPage() {
                       </div>
                     </div>
                   )}
-                  <div className="h-72 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
+                  <div className="h-[360px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 50 }}>
                       {/* Horizontal band shading - green gradient (darker = better ranking) */}
