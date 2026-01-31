@@ -2542,40 +2542,6 @@ export default function ResultsPage() {
                 Each dot represents one AI response. Dots higher on the chart mean your brand was recommended earlier.
               </p>
 
-              {/* Key takeaway */}
-              {(() => {
-                const totalAnswers = scatterPlotData.length;
-                const mentionedCount = scatterPlotData.filter(d => d.isMentioned).length;
-                const notMentionedCount = totalAnswers - mentionedCount;
-                const topPositionCount = scatterPlotData.filter(d => d.rank === 1).length;
-                const top3Count = scatterPlotData.filter(d => d.rank >= 1 && d.rank <= 3).length;
-                const mentionRate = totalAnswers > 0 ? (mentionedCount / totalAnswers) * 100 : 0;
-                const topPositionRate = mentionedCount > 0 ? (topPositionCount / mentionedCount) * 100 : 0;
-
-                let takeaway = '';
-                if (mentionRate < 30) {
-                  takeaway = `Your brand appears in only ${mentionRate.toFixed(0)}% of AI answers—there's room to improve visibility.`;
-                } else if (topPositionRate > 50 && mentionRate > 50) {
-                  takeaway = `Strong performance: your brand is the top result in ${topPositionRate.toFixed(0)}% of answers where it appears.`;
-                } else if (topPositionCount > 0 && top3Count > mentionedCount * 0.6) {
-                  takeaway = `Your brand typically appears in the top 3 positions when mentioned.`;
-                } else if (notMentionedCount > mentionedCount) {
-                  takeaway = `Your brand is not shown in ${notMentionedCount} of ${totalAnswers} answers—consider optimizing for AI visibility.`;
-                } else if (mentionRate > 70) {
-                  takeaway = `Good visibility: your brand appears in ${mentionRate.toFixed(0)}% of AI answers.`;
-                } else {
-                  takeaway = `Your brand appears in ${mentionedCount} of ${totalAnswers} AI answers across all platforms.`;
-                }
-
-                return (
-                  <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 mb-4">
-                    <p className="text-xs text-gray-600">
-                      <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
-                    </p>
-                  </div>
-                );
-              })()}
-
               <div>
                   {/* Legend for All Answers view - shows sentiment when toggle is on */}
                   {showSentimentColors && (
@@ -2785,6 +2751,40 @@ export default function ResultsPage() {
                   </ResponsiveContainer>
                   </div>
                 </div>
+
+              {/* Key takeaway */}
+              {(() => {
+                const totalAnswers = scatterPlotData.length;
+                const mentionedCount = scatterPlotData.filter(d => d.isMentioned).length;
+                const notMentionedCount = totalAnswers - mentionedCount;
+                const topPositionCount = scatterPlotData.filter(d => d.rank === 1).length;
+                const top3Count = scatterPlotData.filter(d => d.rank >= 1 && d.rank <= 3).length;
+                const mentionRate = totalAnswers > 0 ? (mentionedCount / totalAnswers) * 100 : 0;
+                const topPositionRate = mentionedCount > 0 ? (topPositionCount / mentionedCount) * 100 : 0;
+
+                let takeaway = '';
+                if (mentionRate < 30) {
+                  takeaway = `Your brand appears in only ${mentionRate.toFixed(0)}% of AI answers—there's room to improve visibility.`;
+                } else if (topPositionRate > 50 && mentionRate > 50) {
+                  takeaway = `Strong performance: your brand is the top result in ${topPositionRate.toFixed(0)}% of answers where it appears.`;
+                } else if (topPositionCount > 0 && top3Count > mentionedCount * 0.6) {
+                  takeaway = `Your brand typically appears in the top 3 positions when mentioned.`;
+                } else if (notMentionedCount > mentionedCount) {
+                  takeaway = `Your brand is not shown in ${notMentionedCount} of ${totalAnswers} answers—consider optimizing for AI visibility.`;
+                } else if (mentionRate > 70) {
+                  takeaway = `Good visibility: your brand appears in ${mentionRate.toFixed(0)}% of AI answers.`;
+                } else {
+                  takeaway = `Your brand appears in ${mentionedCount} of ${totalAnswers} AI answers across all platforms.`;
+                }
+
+                return (
+                  <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 mt-4">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
+                    </p>
+                  </div>
+                );
+              })()}
             </>
           )}
 
