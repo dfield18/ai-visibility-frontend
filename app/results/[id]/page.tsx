@@ -2808,7 +2808,7 @@ export default function ResultsPage() {
               </div>
 
               <div>
-                  <div className="h-[450px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
+                  <div className="h-[450px] relative [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={rangeChartData}
@@ -2975,8 +2975,8 @@ export default function ResultsPage() {
                     {rangeViewDots.length > 0 && (() => {
                       // Chart margins matching ComposedChart margin prop
                       const margin = { top: 20, right: 20, bottom: 20, left: 50 };
-                      const yAxisWidth = 60; // Recharts default YAxis width when not specified
-                      const xAxisHeight = 30; // Estimated height of X-axis with labels
+                      const yAxisWidth = 55; // Estimated YAxis width for labels like "Google AI Overviews"
+                      const xAxisHeight = 25; // Estimated height of X-axis with labels
                       const numProviders = rangeChartData.length;
 
                       // Domain is [-0.5, 10.5] - total range of 11 units
