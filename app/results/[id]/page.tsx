@@ -2543,6 +2543,7 @@ export default function ResultsPage() {
                   {/* Legend for All Answers view - shows sentiment when toggle is on */}
                   {showSentimentColors && (
                     <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pl-[140px] mb-[-14px]">
+                      <span className="text-xs text-gray-500 font-medium">How different AI models describe {runStatus?.brand || 'your brand'}:</span>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
                         <span className="text-xs text-gray-500">Highly Recommended</span>
