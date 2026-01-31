@@ -2788,8 +2788,7 @@ export default function ResultsPage() {
           {/* Performance Range Chart */}
           {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
             <>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-gray-400">Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.</p>
+              <div className="flex items-center justify-end mb-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500">Show sentiment</span>
                   <button
@@ -2807,59 +2806,8 @@ export default function ResultsPage() {
                 </label>
               </div>
 
-                <div>
-                  {/* Chart elements legend - above chart */}
-                  {(() => {
-                    // Check if any provider has more than 1 response
-                    const hasMultipleResponses = rangeChartData.some(d => d.promptsAnalyzed > 1);
-                    return (
-                      <div className="flex items-center justify-center flex-wrap gap-4 pl-[10px] mb-0">
-                        {!showSentimentColors && (
-                          <div className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
-                            <span className="text-xs text-gray-500">Individual answer</span>
-                          </div>
-                        )}
-                        {hasMultipleResponses && (
-                          <>
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-3 bg-gray-500 opacity-30 rounded" />
-                              <span className="text-xs text-gray-500">Best–worst range</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div
-                                style={{
-                                  width: 0,
-                                  height: 0,
-                                  borderLeft: '3px solid transparent',
-                                  borderRight: '3px solid transparent',
-                                  borderBottom: '5px solid rgba(96, 165, 250, 0.7)',
-                                }}
-                              />
-                              <span className="text-xs text-gray-500">Average</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <div
-                                style={{
-                                  width: '5px',
-                                  height: '5px',
-                                  backgroundColor: 'rgba(251, 146, 60, 0.7)',
-                                  transform: 'rotate(45deg)',
-                                }}
-                              />
-                              <span className="text-xs text-gray-500">Median</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Chart container */}
-                  <div>
-                    <div
-                      className="h-[450px] relative flex-1 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
-                    >
+              <div>
+                  <div className="h-[450px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={rangeChartData}
@@ -2963,7 +2911,7 @@ export default function ResultsPage() {
                           ticks={RANGE_X_LABELS.map((_, i) => i)}
                           interval={0}
                           label={{
-                            value: 'Position in the AI answer (lower = shown earlier)',
+                            value: 'Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.',
                             position: 'bottom',
                             offset: 5,
                             style: { fontSize: 11, fill: '#9ca3af' }
@@ -3256,7 +3204,6 @@ export default function ResultsPage() {
                         </div>
                       );
                     })()}
-                    </div>
                   </div>
                 </div>
 
