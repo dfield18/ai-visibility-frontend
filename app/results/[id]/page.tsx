@@ -2578,37 +2578,30 @@ export default function ResultsPage() {
 
               <div>
                   {/* Legend for All Answers view - shows sentiment when toggle is on */}
-                  <div className="flex items-center justify-center gap-4 pl-[140px] mb-[-14px]">
-                    {showSentimentColors ? (
-                      <>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                          <span className="text-xs text-gray-500">Highly Recommended</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                          <span className="text-xs text-gray-500">Recommended</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                          <span className="text-xs text-gray-500">Mentioned</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                          <span className="text-xs text-gray-500">With Caveats</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                          <span className="text-xs text-gray-500">Not Recommended</span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-2 h-2 rounded-full bg-gray-500 opacity-60" />
-                        <span className="text-xs text-gray-400">Each dot = one answer</span>
-                      </>
-                    )}
-                  </div>
+                  {showSentimentColors && (
+                    <div className="flex items-center justify-center gap-4 pl-[140px] mb-[-14px]">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                        <span className="text-xs text-gray-500">Highly Recommended</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                        <span className="text-xs text-gray-500">Recommended</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                        <span className="text-xs text-gray-500">Mentioned</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                        <span className="text-xs text-gray-500">With Caveats</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                        <span className="text-xs text-gray-500">Not Recommended</span>
+                      </div>
+                    </div>
+                  )}
                   <div className="h-72 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 50 }}>
