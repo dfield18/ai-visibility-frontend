@@ -1022,15 +1022,19 @@ export default function ResultsPage() {
     return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
   }, [runStatus, globallyFilteredResults, brandBreakdownLlmFilter, brandBreakdownPromptFilter]);
 
+  // State for Source Gap Analysis filter
+  const [sourceGapProviderFilter, setSourceGapProviderFilter] = useState<string>('all');
+
   // Source Gap Analysis - comparing brand vs competitor citation rates per source
   const sourceGapAnalysis = useMemo(() => {
     if (!runStatus) return [];
 
     const searchedBrand = runStatus.brand;
 
-    // Get results with sources
+    // Get results with sources, optionally filtered by provider
     const resultsWithSources = globallyFilteredResults.filter(
-      (r: Result) => !r.error && r.sources && r.sources.length > 0
+      (r: Result) => !r.error && r.sources && r.sources.length > 0 &&
+        (sourceGapProviderFilter === 'all' || r.provider === sourceGapProviderFilter)
     );
 
     if (resultsWithSources.length === 0) return [];
@@ -1152,7 +1156,7 @@ export default function ResultsPage() {
       })
       .filter(stat => stat.gap > 0) // Only show sources where competitors have an advantage
       .sort((a, b) => b.opportunityScore - a.opportunityScore);
-  }, [runStatus, globallyFilteredResults]);
+  }, [runStatus, globallyFilteredResults, sourceGapProviderFilter]);
 
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
@@ -7126,14 +7130,28 @@ export default function ResultsPage() {
             {/* Source Gap Analysis Chart & Table */}
             {sourceGapAnalysis.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="mb-4">
-                  <h2 className="text-base font-semibold text-gray-900">Source Gap Analysis</h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Sources where competitors are cited more often than {runStatus?.brand || 'your brand'}
-                  </p>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">Source Gap Analysis</h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Sources where competitors are cited more often than {runStatus?.brand || 'your brand'}
+                    </p>
+                  </div>
+                  <select
+                    value={sourceGapProviderFilter}
+                    onChange={(e) => setSourceGapProviderFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                  >
+                    <option value="all">All Models</option>
+                    {availableProviders.map((provider) => (
+                      <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Visual Chart */}
+                {sourceGapAnalysis.length > 0 ? (
+                <>
                 <div className="mb-6">
                   <div className="flex items-center justify-center gap-6 mb-3">
                     <div className="flex items-center gap-2">
@@ -7339,6 +7357,12 @@ export default function ResultsPage() {
                     </p>
                   )}
                 </div>
+                </>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No source gap data available for the selected model.</p>
+                  </div>
+                )}
               </div>
             )}
 
