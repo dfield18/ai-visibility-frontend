@@ -1022,8 +1022,9 @@ export default function ResultsPage() {
     return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
   }, [runStatus, globallyFilteredResults, brandBreakdownLlmFilter, brandBreakdownPromptFilter]);
 
-  // State for Source Gap Analysis filter
+  // State for Source Gap Analysis filters
   const [sourceGapProviderFilter, setSourceGapProviderFilter] = useState<string>('all');
+  const [sourceGapPromptFilter, setSourceGapPromptFilter] = useState<string>('all');
 
   // Source Gap Analysis - comparing brand vs competitor citation rates per source
   const sourceGapAnalysis = useMemo(() => {
@@ -1031,10 +1032,11 @@ export default function ResultsPage() {
 
     const searchedBrand = runStatus.brand;
 
-    // Get results with sources, optionally filtered by provider
+    // Get results with sources, optionally filtered by provider and prompt
     const resultsWithSources = globallyFilteredResults.filter(
       (r: Result) => !r.error && r.sources && r.sources.length > 0 &&
-        (sourceGapProviderFilter === 'all' || r.provider === sourceGapProviderFilter)
+        (sourceGapProviderFilter === 'all' || r.provider === sourceGapProviderFilter) &&
+        (sourceGapPromptFilter === 'all' || r.prompt === sourceGapPromptFilter)
     );
 
     if (resultsWithSources.length === 0) return [];
@@ -1156,7 +1158,7 @@ export default function ResultsPage() {
       })
       .filter(stat => stat.gap > 0) // Only show sources where competitors have an advantage
       .sort((a, b) => b.opportunityScore - a.opportunityScore);
-  }, [runStatus, globallyFilteredResults, sourceGapProviderFilter]);
+  }, [runStatus, globallyFilteredResults, sourceGapProviderFilter, sourceGapPromptFilter]);
 
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
@@ -7137,16 +7139,30 @@ export default function ResultsPage() {
                       Sources where competitors are cited more often than {runStatus?.brand || 'your brand'}
                     </p>
                   </div>
-                  <select
-                    value={sourceGapProviderFilter}
-                    onChange={(e) => setSourceGapProviderFilter(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                  >
-                    <option value="all">All Models</option>
-                    {availableProviders.map((provider) => (
-                      <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={sourceGapPromptFilter}
+                      onChange={(e) => setSourceGapPromptFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+                    >
+                      <option value="all">All Prompts</option>
+                      {availablePrompts.map((prompt) => (
+                        <option key={prompt} value={prompt} title={prompt}>
+                          {prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={sourceGapProviderFilter}
+                      onChange={(e) => setSourceGapProviderFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      <option value="all">All Models</option>
+                      {availableProviders.map((provider) => (
+                        <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Visual Chart */}
