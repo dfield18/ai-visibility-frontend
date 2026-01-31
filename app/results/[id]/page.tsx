@@ -4929,6 +4929,8 @@ export default function ResultsPage() {
     const domainTableData = useMemo(() => {
       if (!runStatus) return [];
 
+      const searchedBrand = runStatus.brand || '';
+
       // Get all results with sources for calculating percentages
       const resultsWithSources = globallyFilteredResults.filter(
         (r: Result) => !r.error && r.sources && r.sources.length > 0
@@ -4941,11 +4943,21 @@ export default function ResultsPage() {
         responsesWithDomain: number;
         totalCitations: number;
         sentimentScores: number[];
+        brands: Set<string>;
       }> = {};
 
       // Process each result to collect domain stats
       resultsWithSources.forEach((r: Result) => {
         if (!r.sources) return;
+
+        // Collect brands mentioned in this response
+        const brandsInResponse: string[] = [];
+        if (r.brand_mentioned && searchedBrand) {
+          brandsInResponse.push(searchedBrand);
+        }
+        if (r.competitors_mentioned) {
+          brandsInResponse.push(...r.competitors_mentioned);
+        }
 
         // Track unique domains per response
         const domainsInResponse = new Set<string>();
@@ -4962,6 +4974,7 @@ export default function ResultsPage() {
                 responsesWithDomain: 0,
                 totalCitations: 0,
                 sentimentScores: [],
+                brands: new Set(),
               };
             }
             domainStats[hostname].totalCitations += 1;
@@ -4970,9 +4983,11 @@ export default function ResultsPage() {
           }
         });
 
-        // Count unique responses per domain and capture sentiment
+        // Count unique responses per domain, capture sentiment, and track brands
         domainsInResponse.forEach(domain => {
           domainStats[domain].responsesWithDomain += 1;
+          // Add brands mentioned in this response to the domain's brand set
+          brandsInResponse.forEach(brand => domainStats[domain].brands.add(brand));
           // Use brand sentiment if available (convert to numeric)
           if (r.brand_sentiment) {
             const sentimentScore = getSentimentScore(r.brand_sentiment);
@@ -4996,6 +5011,14 @@ export default function ResultsPage() {
             ? stat.sentimentScores.reduce((a, b) => a + b, 0) / stat.sentimentScores.length
             : null;
 
+          // Sort brands: searched brand first, then others alphabetically
+          const brandsArray = Array.from(stat.brands);
+          const sortedBrands = brandsArray.sort((a, b) => {
+            if (a === searchedBrand) return -1;
+            if (b === searchedBrand) return 1;
+            return a.localeCompare(b);
+          });
+
           return {
             domain: stat.domain,
             usedPercent,
@@ -5004,6 +5027,7 @@ export default function ResultsPage() {
             avgSentiment,
             totalCitations: stat.totalCitations,
             responsesWithDomain: stat.responsesWithDomain,
+            brands: sortedBrands,
           };
         })
         .sort((a, b) => b.usedPercent - a.usedPercent);
@@ -5549,6 +5573,7 @@ export default function ResultsPage() {
                     </th>
                     <th className="text-center py-3 px-3 font-medium text-gray-600">Type</th>
                     <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-600">Brands</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -5590,6 +5615,26 @@ export default function ResultsPage() {
                           }`}>
                             {getSentimentLabel(row.avgSentiment)}
                           </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3">
+                        {row.brands.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {row.brands.map((brand, idx) => (
+                              <span
+                                key={brand}
+                                className={`text-xs px-2 py-0.5 rounded-full ${
+                                  brand === runStatus?.brand
+                                    ? 'bg-[#4A7C59] text-white font-medium'
+                                    : 'bg-gray-100 text-gray-600'
+                                }`}
+                              >
+                                {brand}
+                              </span>
+                            ))}
+                          </div>
                         ) : (
                           <span className="text-gray-400 text-xs">-</span>
                         )}
