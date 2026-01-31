@@ -2387,6 +2387,7 @@ export default function ResultsPage() {
               </span>
             );
           })()}
+          <p className="text-xs text-gray-400 mt-2">How often your brand appears in AI responses</p>
         </div>
 
         {/* Share of Voice Card */}
@@ -2417,6 +2418,7 @@ export default function ResultsPage() {
               </span>
             );
           })()}
+          <p className="text-xs text-gray-400 mt-2">Your brand's share of all brand mentions</p>
         </div>
 
         {/* Top Result Rate Card (formerly First Position) */}
@@ -2447,6 +2449,7 @@ export default function ResultsPage() {
               </span>
             );
           })()}
+          <p className="text-xs text-gray-400 mt-2">How often your brand is the #1 result</p>
         </div>
 
         {/* Avg. Position Card */}
@@ -2477,12 +2480,16 @@ export default function ResultsPage() {
               </span>
             );
           })()}
+          <p className="text-xs text-gray-400 mt-2">Your average ranking when mentioned</p>
         </div>
       </div>
 
       {/* Charts Section with Tabs */}
       {scatterPlotData.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          {/* Chart Title */}
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Where your brand appears in AI-generated answers</h2>
+
           {/* Key takeaway - shown above tabs for Ranking in AI Results and Performance Range */}
           {(chartTab === 'allAnswers' || chartTab === 'performanceRange') && (() => {
             const totalAnswers = scatterPlotData.length;
@@ -2544,7 +2551,6 @@ export default function ResultsPage() {
           {/* All Answers Chart */}
           {chartTab === 'allAnswers' && (
             <>
-              <p className="text-base text-gray-600 mb-1">Where your brand appears in AI-generated answers</p>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-gray-400">Each dot is one AI response. Higher dots mean earlier mentions of {runStatus?.brand || 'your brand'}.</p>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -2782,8 +2788,7 @@ export default function ResultsPage() {
           {/* Performance Range Chart */}
           {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
             <>
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-sm text-gray-500">Where your brand appears in AI-generated answers</p>
+              <div className="flex items-center justify-end mb-1">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500">Show sentiment</span>
                   <button
@@ -3259,7 +3264,7 @@ export default function ResultsPage() {
 
               {/* Legend for Performance Range view - shows sentiment when toggle is on */}
               {showSentimentColors && (
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-2">
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 -mt-6">
                   <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
