@@ -4365,6 +4365,31 @@ export default function ResultsPage() {
     const [brandCitationsProviderFilter, setBrandCitationsProviderFilter] = useState<string>('all');
     const [expandedBrandCitations, setExpandedBrandCitations] = useState<Set<string>>(new Set());
 
+    // State for Source Types category filter
+    const [sourceTypeCategoryFilter, setSourceTypeCategoryFilter] = useState<string>('all');
+
+    // Calculate sites within selected category for filtered donut chart view
+    const categoryFilteredSiteData = useMemo(() => {
+      if (sourceTypeCategoryFilter === 'all') return null;
+
+      // Get sites that match the selected category
+      const sitesInCategory = topCitedSources
+        .filter(source => categorizeDomain(source.domain) === sourceTypeCategoryFilter)
+        .map(source => ({
+          name: source.domain,
+          value: source.count,
+          percentage: 0, // Will calculate after
+        }));
+
+      // Calculate percentages
+      const total = sitesInCategory.reduce((sum, site) => sum + site.value, 0);
+      sitesInCategory.forEach(site => {
+        site.percentage = total > 0 ? (site.value / total) * 100 : 0;
+      });
+
+      return sitesInCategory.sort((a, b) => b.value - a.value);
+    }, [sourceTypeCategoryFilter, topCitedSources]);
+
     // Calculate brand website citations with URL details
     const brandWebsiteCitations = useMemo(() => {
       const brandDomain = runStatus?.brand?.toLowerCase().replace(/\s+/g, '') || '';
@@ -5132,14 +5157,26 @@ export default function ResultsPage() {
 
                 {/* Source Category Breakdown */}
                 <div className="flex flex-col h-full">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Source Types</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-gray-700">Source Types</h3>
+                    <select
+                      value={sourceTypeCategoryFilter}
+                      onChange={(e) => setSourceTypeCategoryFilter(e.target.value)}
+                      className="px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      <option value="all">All Categories</option>
+                      {sourceCategoryData.map((cat) => (
+                        <option key={cat.name} value={cat.name}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   {sourceCategoryData.length > 0 ? (
                     <div className="flex flex-col items-center flex-1 pt-2">
                       <div className="h-[180px] w-[180px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={sourceCategoryData}
+                              data={categoryFilteredSiteData || sourceCategoryData}
                               cx="50%"
                               cy="50%"
                               innerRadius={45}
@@ -5149,29 +5186,46 @@ export default function ResultsPage() {
                               nameKey="name"
                               isAnimationActive={false}
                             >
-                              {sourceCategoryData.map((entry) => (
-                                <Cell key={`cell-${entry.name}`} fill={CATEGORY_COLORS[entry.name] || CATEGORY_COLORS['Other']} />
+                              {(categoryFilteredSiteData || sourceCategoryData).map((entry, index) => (
+                                <Cell
+                                  key={`cell-${entry.name}`}
+                                  fill={categoryFilteredSiteData
+                                    ? `hsl(${150 + index * 25}, 45%, ${45 + index * 5}%)`
+                                    : (CATEGORY_COLORS[entry.name] || CATEGORY_COLORS['Other'])
+                                  }
+                                />
                               ))}
                             </Pie>
                             <Tooltip
                               formatter={(value, name) => {
                                 const numValue = typeof value === 'number' ? value : 0;
-                                const categoryData = sourceCategoryData.find(s => s.name === name);
-                                return [`${numValue} citations (${categoryData?.percentage.toFixed(0) || 0}%)`, String(name)];
+                                const data = categoryFilteredSiteData || sourceCategoryData;
+                                const itemData = data.find(s => s.name === name);
+                                return [`${numValue} citations (${itemData?.percentage.toFixed(0) || 0}%)`, String(name)];
                               }}
                             />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-4 text-xs px-2">
-                        {sourceCategoryData.map((item) => (
+                      <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-4 text-xs px-2 max-h-[100px] overflow-y-auto">
+                        {(categoryFilteredSiteData || sourceCategoryData).map((item, index) => (
                           <div key={item.name} className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: CATEGORY_COLORS[item.name] || CATEGORY_COLORS['Other'] }} />
-                            <span className="text-gray-700">{item.name}</span>
+                            <div
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{
+                                backgroundColor: categoryFilteredSiteData
+                                  ? `hsl(${150 + index * 25}, 45%, ${45 + index * 5}%)`
+                                  : (CATEGORY_COLORS[item.name] || CATEGORY_COLORS['Other'])
+                              }}
+                            />
+                            <span className="text-gray-700 truncate max-w-[100px]" title={item.name}>{item.name}</span>
                             <span className="text-gray-400">{item.percentage.toFixed(0)}%</span>
                           </div>
                         ))}
                       </div>
+                      {categoryFilteredSiteData && categoryFilteredSiteData.length === 0 && (
+                        <p className="text-sm text-gray-500 text-center py-4">No sites in this category</p>
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500 text-center py-4">No data available</p>
