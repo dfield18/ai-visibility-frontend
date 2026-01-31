@@ -3504,7 +3504,7 @@ export default function ResultsPage() {
                             {result.competitors_mentioned.length > 2 && (
                               <span className="relative group">
                                 <span className="text-[#4A7C59] cursor-pointer hover:underline"> +{result.competitors_mentioned.length - 2}</span>
-                                <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap z-10 shadow-lg">
+                                <span className="absolute right-0 top-full mt-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap z-50 shadow-lg">
                                   {result.competitors_mentioned.slice(2).join(', ')}
                                 </span>
                               </span>
