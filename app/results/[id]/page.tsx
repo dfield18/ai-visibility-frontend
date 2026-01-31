@@ -891,6 +891,7 @@ export default function ResultsPage() {
   // State for competitive landscape filters
   const [brandBreakdownLlmFilter, setBrandBreakdownLlmFilter] = useState<string>('all');
   const [brandBreakdownPromptFilter, setBrandBreakdownPromptFilter] = useState<string>('all');
+  const [expandedBrandBreakdownRows, setExpandedBrandBreakdownRows] = useState<Set<string>>(new Set());
 
   // Calculate brand breakdown stats for competitive landscape
   const brandBreakdownStats = useMemo(() => {
@@ -1005,6 +1006,38 @@ export default function ResultsPage() {
         avgSentimentScore = sentimentSum / sentimentResults.length;
       }
 
+      // Track per-prompt stats for this brand
+      const promptStats: Record<string, { mentioned: number; total: number; sentiment: string | null }> = {};
+      results.forEach(r => {
+        if (!promptStats[r.prompt]) {
+          promptStats[r.prompt] = { mentioned: 0, total: 0, sentiment: null };
+        }
+        promptStats[r.prompt].total++;
+
+        const isMentioned = isSearchedBrand ? r.brand_mentioned : r.competitors_mentioned?.includes(brand);
+        if (isMentioned) {
+          promptStats[r.prompt].mentioned++;
+          // Get sentiment for this prompt
+          if (isSearchedBrand && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned') {
+            promptStats[r.prompt].sentiment = r.brand_sentiment;
+          } else if (!isSearchedBrand && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned') {
+            promptStats[r.prompt].sentiment = r.competitor_sentiments[brand];
+          }
+        }
+      });
+
+      // Convert to array of prompts with stats
+      const promptsWithStats = Object.entries(promptStats)
+        .map(([prompt, stats]) => ({
+          prompt,
+          mentioned: stats.mentioned,
+          total: stats.total,
+          rate: stats.total > 0 ? (stats.mentioned / stats.total) * 100 : 0,
+          sentiment: stats.sentiment,
+        }))
+        .filter(p => p.mentioned > 0) // Only include prompts where brand is mentioned
+        .sort((a, b) => b.rate - a.rate);
+
       return {
         brand,
         isSearchedBrand,
@@ -1015,6 +1048,7 @@ export default function ResultsPage() {
         firstPositionRate,
         avgRank,
         avgSentimentScore,
+        promptsWithStats,
       };
     });
 
@@ -7308,48 +7342,131 @@ export default function ResultsPage() {
                           return 'text-gray-400';
                         };
 
+                        const getPromptSentimentLabel = (sentiment: string | null): string => {
+                          if (!sentiment) return '-';
+                          const labels: Record<string, string> = {
+                            'strong_endorsement': 'Strong',
+                            'positive_endorsement': 'Positive',
+                            'neutral_mention': 'Neutral',
+                            'conditional': 'Conditional',
+                            'negative_comparison': 'Negative',
+                          };
+                          return labels[sentiment] || sentiment;
+                        };
+
+                        const getPromptSentimentColor = (sentiment: string | null): string => {
+                          if (!sentiment) return 'text-gray-400';
+                          const colors: Record<string, string> = {
+                            'strong_endorsement': 'text-green-600',
+                            'positive_endorsement': 'text-lime-600',
+                            'neutral_mention': 'text-gray-600',
+                            'conditional': 'text-orange-500',
+                            'negative_comparison': 'text-red-500',
+                          };
+                          return colors[sentiment] || 'text-gray-400';
+                        };
+
+                        const isExpanded = expandedBrandBreakdownRows.has(stat.brand);
+
                         return (
-                          <tr key={stat.brand} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                            <td className="py-3 px-3">
-                              <div className="flex items-center gap-2">
-                                <span className={`font-medium ${stat.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-900'}`}>
-                                  {stat.brand}
+                          <React.Fragment key={stat.brand}>
+                            <tr
+                              className={`${index % 2 === 0 ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
+                              onClick={() => {
+                                const newExpanded = new Set(expandedBrandBreakdownRows);
+                                if (isExpanded) {
+                                  newExpanded.delete(stat.brand);
+                                } else {
+                                  newExpanded.add(stat.brand);
+                                }
+                                setExpandedBrandBreakdownRows(newExpanded);
+                              }}
+                            >
+                              <td className="py-3 px-3">
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                  )}
+                                  <span className={`font-medium ${stat.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-900'}`}>
+                                    {stat.brand}
+                                  </span>
+                                  {stat.isSearchedBrand && (
+                                    <span className="text-xs px-1.5 py-0.5 bg-[#E8F0E8] text-[#4A7C59] rounded">searched</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className={`font-medium ${stat.visibilityScore >= 50 ? 'text-green-600' : stat.visibilityScore >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                  {stat.visibilityScore.toFixed(0)}%
                                 </span>
-                                {stat.isSearchedBrand && (
-                                  <span className="text-xs px-1.5 py-0.5 bg-[#E8F0E8] text-[#4A7C59] rounded">searched</span>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className={`font-medium ${stat.shareOfVoice >= 50 ? 'text-green-600' : stat.shareOfVoice >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                  {stat.shareOfVoice.toFixed(0)}%
+                                </span>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className={`font-medium ${stat.firstPositionRate >= 50 ? 'text-green-600' : stat.firstPositionRate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                  {stat.firstPositionRate.toFixed(0)}%
+                                </span>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                {stat.avgRank !== null ? (
+                                  <span className={`font-medium ${stat.avgRank <= 1.5 ? 'text-green-600' : stat.avgRank <= 3 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                    #{stat.avgRank.toFixed(1)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">-</span>
                                 )}
-                              </div>
-                            </td>
-                            <td className="text-center py-3 px-3">
-                              <span className={`font-medium ${stat.visibilityScore >= 50 ? 'text-green-600' : stat.visibilityScore >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                                {stat.visibilityScore.toFixed(0)}%
-                              </span>
-                            </td>
-                            <td className="text-center py-3 px-3">
-                              <span className={`font-medium ${stat.shareOfVoice >= 50 ? 'text-green-600' : stat.shareOfVoice >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                                {stat.shareOfVoice.toFixed(0)}%
-                              </span>
-                            </td>
-                            <td className="text-center py-3 px-3">
-                              <span className={`font-medium ${stat.firstPositionRate >= 50 ? 'text-green-600' : stat.firstPositionRate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                                {stat.firstPositionRate.toFixed(0)}%
-                              </span>
-                            </td>
-                            <td className="text-center py-3 px-3">
-                              {stat.avgRank !== null ? (
-                                <span className={`font-medium ${stat.avgRank <= 1.5 ? 'text-green-600' : stat.avgRank <= 3 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                                  #{stat.avgRank.toFixed(1)}
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className={`font-medium ${getSentimentColor(stat.avgSentimentScore)}`}>
+                                  {getSentimentLabel(stat.avgSentimentScore)}
                                 </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-                            <td className="text-center py-3 px-3">
-                              <span className={`font-medium ${getSentimentColor(stat.avgSentimentScore)}`}>
-                                {getSentimentLabel(stat.avgSentimentScore)}
-                              </span>
-                            </td>
-                          </tr>
+                              </td>
+                            </tr>
+                            {isExpanded && stat.promptsWithStats.length > 0 && (
+                              <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                                <td colSpan={6} className="py-2 px-3 pl-10">
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                    <p className="text-xs font-medium text-gray-500 mb-2">
+                                      Prompts mentioning {stat.brand} ({stat.promptsWithStats.length})
+                                    </p>
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                      {stat.promptsWithStats.map((promptStat, promptIdx) => (
+                                        <div
+                                          key={promptIdx}
+                                          className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 last:border-0"
+                                        >
+                                          <p className="text-sm text-gray-700 flex-1">
+                                            {promptStat.prompt}
+                                          </p>
+                                          <div className="flex items-center gap-4 flex-shrink-0">
+                                            <div className="text-center">
+                                              <span className={`text-sm font-medium ${promptStat.rate >= 50 ? 'text-green-600' : promptStat.rate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                                {promptStat.rate.toFixed(0)}%
+                                              </span>
+                                              <p className="text-xs text-gray-400">visibility</p>
+                                            </div>
+                                            {promptStat.sentiment && (
+                                              <div className="text-center min-w-[70px]">
+                                                <span className={`text-sm font-medium ${getPromptSentimentColor(promptStat.sentiment)}`}>
+                                                  {getPromptSentimentLabel(promptStat.sentiment)}
+                                                </span>
+                                                <p className="text-xs text-gray-400">sentiment</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         );
                       })}
                     </tbody>
