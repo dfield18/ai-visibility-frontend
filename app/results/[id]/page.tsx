@@ -2439,9 +2439,6 @@ export default function ResultsPage() {
           <p className="text-2xl font-bold text-gray-900">
             {overviewMetrics?.top1Rate?.toFixed(0) || 0}%
           </p>
-          <p className="text-xs text-gray-400">
-            {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.responsesWhereMentioned || 0} answers
-          </p>
           {(() => {
             const interpretation = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null);
             return (
