@@ -1841,24 +1841,9 @@ export default function ResultsPage() {
     }
     const overallVisibility = results.length > 0 ? (mentionedCount / results.length) * 100 : 0;
 
-    // Top position count (brand mentioned first)
-    let topPositionCount = 0;
-    for (const result of results) {
-      if (!result.response_text) continue;
-
-      // Use all_brands_mentioned if available (includes all detected brands)
-      const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-        ? result.all_brands_mentioned
-        : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
-
-      // First brand in the ordered list is the top position
-      if (allBrands.length > 0 && selectedBrand && allBrands[0].toLowerCase() === selectedBrand.toLowerCase()) {
-        topPositionCount++;
-      }
-    }
-
-    // Average rank
+    // Average rank and top position count
     const ranks: number[] = [];
+    let topPositionCount = 0;
     for (const result of results) {
       if (!result.response_text) continue;
 
@@ -1893,7 +1878,10 @@ export default function ResultsPage() {
           rank = brandsBeforeCount + 1;
         }
 
-        if (rank > 0) ranks.push(rank);
+        if (rank > 0) {
+          ranks.push(rank);
+          if (rank === 1) topPositionCount++;
+        }
       }
     }
     const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
