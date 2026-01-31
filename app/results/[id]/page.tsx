@@ -1022,6 +1022,116 @@ export default function ResultsPage() {
     return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
   }, [runStatus, globallyFilteredResults, brandBreakdownLlmFilter, brandBreakdownPromptFilter]);
 
+  // Source Gap Analysis - comparing brand vs competitor citation rates per source
+  const sourceGapAnalysis = useMemo(() => {
+    if (!runStatus) return [];
+
+    const searchedBrand = runStatus.brand;
+
+    // Get results with sources
+    const resultsWithSources = globallyFilteredResults.filter(
+      (r: Result) => !r.error && r.sources && r.sources.length > 0
+    );
+
+    if (resultsWithSources.length === 0) return [];
+
+    // Track per-source stats
+    const sourceStats: Record<string, {
+      domain: string;
+      totalCitations: number; // Number of responses citing this source
+      brandCitations: number; // Number of responses where brand is mentioned AND this source is cited
+      competitorCitations: Record<string, number>; // Per-competitor citation counts
+    }> = {};
+
+    // Process each result
+    resultsWithSources.forEach((r: Result) => {
+      if (!r.sources) return;
+
+      // Get unique domains in this response
+      const domainsInResponse = new Set<string>();
+      r.sources.forEach((source: Source) => {
+        if (!source.url) return;
+        try {
+          const hostname = new URL(source.url).hostname.replace(/^www\./, '');
+          domainsInResponse.add(hostname);
+        } catch {
+          // Skip invalid URLs
+        }
+      });
+
+      // For each domain, track brand and competitor mentions
+      domainsInResponse.forEach(domain => {
+        if (!sourceStats[domain]) {
+          sourceStats[domain] = {
+            domain,
+            totalCitations: 0,
+            brandCitations: 0,
+            competitorCitations: {},
+          };
+        }
+
+        sourceStats[domain].totalCitations += 1;
+
+        // Check if searched brand is mentioned
+        if (r.brand_mentioned) {
+          sourceStats[domain].brandCitations += 1;
+        }
+
+        // Check competitors mentioned
+        if (r.competitors_mentioned) {
+          r.competitors_mentioned.forEach(competitor => {
+            if (!sourceStats[domain].competitorCitations[competitor]) {
+              sourceStats[domain].competitorCitations[competitor] = 0;
+            }
+            sourceStats[domain].competitorCitations[competitor] += 1;
+          });
+        }
+      });
+    });
+
+    // Convert to array with calculated metrics
+    return Object.values(sourceStats)
+      .filter(stat => stat.totalCitations >= 2) // Only include sources with at least 2 citations
+      .map(stat => {
+        const brandRate = (stat.brandCitations / stat.totalCitations) * 100;
+
+        // Find top competitor for this source
+        let topCompetitor = '';
+        let topCompetitorCount = 0;
+        Object.entries(stat.competitorCitations).forEach(([competitor, count]) => {
+          if (count > topCompetitorCount) {
+            topCompetitor = competitor;
+            topCompetitorCount = count;
+          }
+        });
+
+        const topCompetitorRate = stat.totalCitations > 0
+          ? (topCompetitorCount / stat.totalCitations) * 100
+          : 0;
+
+        // Gap: positive means competitor is cited more, negative means brand is cited more
+        const gap = topCompetitorRate - brandRate;
+
+        // Opportunity Score: Higher when gap is large AND source is frequently cited
+        // Normalize by total citations to weight more important sources higher
+        const opportunityScore = gap > 0
+          ? (gap / 100) * Math.log10(stat.totalCitations + 1) * 100
+          : 0;
+
+        return {
+          domain: stat.domain,
+          totalCitations: stat.totalCitations,
+          brandRate,
+          topCompetitor,
+          topCompetitorRate,
+          gap,
+          opportunityScore,
+        };
+      })
+      .filter(stat => stat.gap > 0) // Only show sources where competitors have an advantage
+      .sort((a, b) => b.opportunityScore - a.opportunityScore);
+  }, [runStatus, globallyFilteredResults]);
+
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
@@ -7050,6 +7160,97 @@ export default function ResultsPage() {
                       })}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {/* Source Gap Analysis Table */}
+            {sourceGapAnalysis.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="mb-4">
+                  <h2 className="text-base font-semibold text-gray-900">Source Gap Analysis</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Sources where competitors are cited more often than {runStatus?.brand || 'your brand'}
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>{runStatus?.brand || 'Brand'} Rate</div>
+                          <div className="text-xs text-gray-400 font-normal">% when source cited</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>Top Competitor</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>Competitor Rate</div>
+                          <div className="text-xs text-gray-400 font-normal">% when source cited</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>Gap</div>
+                          <div className="text-xs text-gray-400 font-normal">competitor advantage</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>Opportunity</div>
+                          <div className="text-xs text-gray-400 font-normal">priority score</div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sourceGapAnalysis.slice(0, 20).map((row, index) => (
+                        <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[#4A7C59] font-medium">{row.domain}</span>
+                              <span className="text-xs text-gray-400">({row.totalCitations} citations)</span>
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-3">
+                            <span className={`font-medium ${row.brandRate >= 50 ? 'text-green-600' : row.brandRate >= 25 ? 'text-yellow-600' : 'text-red-500'}`}>
+                              {row.brandRate.toFixed(0)}%
+                            </span>
+                          </td>
+                          <td className="text-center py-3 px-3">
+                            <span className="text-gray-700 font-medium">{row.topCompetitor || '-'}</span>
+                          </td>
+                          <td className="text-center py-3 px-3">
+                            <span className="font-medium text-gray-700">
+                              {row.topCompetitorRate.toFixed(0)}%
+                            </span>
+                          </td>
+                          <td className="text-center py-3 px-3">
+                            <div className="flex items-center justify-center gap-2">
+                              <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-red-400 rounded-full"
+                                  style={{ width: `${Math.min(row.gap, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-red-600 font-medium min-w-[40px]">+{row.gap.toFixed(0)}%</span>
+                            </div>
+                          </td>
+                          <td className="text-center py-3 px-3">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              row.opportunityScore >= 30 ? 'bg-red-100 text-red-700' :
+                              row.opportunityScore >= 15 ? 'bg-orange-100 text-orange-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {row.opportunityScore >= 30 ? 'High' :
+                               row.opportunityScore >= 15 ? 'Medium' : 'Low'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {sourceGapAnalysis.length > 20 && (
+                    <p className="text-sm text-gray-500 text-center mt-3">
+                      Showing top 20 of {sourceGapAnalysis.length} sources with competitor advantage
+                    </p>
+                  )}
                 </div>
               </div>
             )}
