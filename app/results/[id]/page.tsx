@@ -5572,7 +5572,7 @@ export default function ResultsPage() {
                       <div className="text-xs font-normal text-gray-400">per response</div>
                     </th>
                     <th className="text-center py-3 px-3 font-medium text-gray-600">Type</th>
-                    <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
+                    <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment for {runStatus?.brand || 'Brand'}</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-600">Brands</th>
                   </tr>
                 </thead>
