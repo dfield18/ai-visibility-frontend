@@ -784,11 +784,18 @@ export default function ResultsPage() {
     return providerStats;
   }, [runStatus, globallyFilteredResults, llmBreakdownBrandFilter, llmBreakdownBrands]);
 
+  // State for prompt breakdown LLM filter
+  const [promptBreakdownLlmFilter, setPromptBreakdownLlmFilter] = useState<string>('all');
+
   // Calculate prompt breakdown stats for the searched brand
   const promptBreakdownStats = useMemo(() => {
     if (!runStatus) return [];
 
-    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    const results = globallyFilteredResults.filter((r: Result) => {
+      if (r.error) return false;
+      if (promptBreakdownLlmFilter !== 'all' && r.provider !== promptBreakdownLlmFilter) return false;
+      return true;
+    });
     const searchedBrand = runStatus.brand;
 
     // Group results by prompt
@@ -879,7 +886,7 @@ export default function ResultsPage() {
 
     // Sort by visibility score descending
     return promptStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
-  }, [runStatus, globallyFilteredResults]);
+  }, [runStatus, globallyFilteredResults, promptBreakdownLlmFilter]);
 
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
@@ -3006,9 +3013,21 @@ export default function ResultsPage() {
       {/* Prompt Breakdown Table */}
       {promptBreakdownStats.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-gray-900">Prompt Breakdown</h2>
-            <p className="text-sm text-gray-500 mt-1">Performance metrics for {runStatus?.brand} across all prompts</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Prompt Breakdown</h2>
+              <p className="text-sm text-gray-500 mt-1">Performance metrics for {runStatus?.brand} across all prompts</p>
+            </div>
+            <select
+              value={promptBreakdownLlmFilter}
+              onChange={(e) => setPromptBreakdownLlmFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+            >
+              <option value="all">All LLMs</option>
+              {availableProviders.map((provider) => (
+                <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+              ))}
+            </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
