@@ -2000,7 +2000,7 @@ export default function ResultsPage() {
             {overviewMetrics?.topPositionCount || 0}
             <span className="text-sm font-normal text-gray-400">/{overviewMetrics?.totalResponses || 0}</span>
           </p>
-          <p className="text-xs text-gray-400 mt-1">Responses where brand is ranked first</p>
+          <p className="text-xs text-gray-400 mt-1">Responses where brand is mentioned first</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
           <p className="text-sm font-medium text-gray-600 mb-1">Avg. Rank</p>
