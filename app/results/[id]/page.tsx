@@ -1041,6 +1041,23 @@ export default function ResultsPage() {
 
     if (resultsWithSources.length === 0) return [];
 
+    // Helper function to extract snippet around a brand mention
+    const extractSnippet = (text: string, brandName: string, contextChars: number = 80): string | null => {
+      const lowerText = text.toLowerCase();
+      const lowerBrand = brandName.toLowerCase();
+      const index = lowerText.indexOf(lowerBrand);
+      if (index === -1) return null;
+
+      const start = Math.max(0, index - contextChars);
+      const end = Math.min(text.length, index + brandName.length + contextChars);
+
+      let snippet = text.substring(start, end);
+      if (start > 0) snippet = '...' + snippet;
+      if (end < text.length) snippet = snippet + '...';
+
+      return snippet;
+    };
+
     // Track per-source stats
     const sourceStats: Record<string, {
       domain: string;
@@ -1048,6 +1065,7 @@ export default function ResultsPage() {
       brandCitations: number; // Number of responses where brand is mentioned AND this source is cited
       competitorCitations: Record<string, number>; // Per-competitor citation counts
       urls: Map<string, { url: string; title: string; count: number }>; // Individual URLs
+      snippets: Array<{ brand: string; snippet: string; isBrand: boolean; provider: string; prompt: string }>; // Response snippets
     }> = {};
 
     // Process each result
@@ -1078,6 +1096,7 @@ export default function ResultsPage() {
             brandCitations: 0,
             competitorCitations: {},
             urls: new Map(),
+            snippets: [],
           };
         }
 
@@ -1095,18 +1114,40 @@ export default function ResultsPage() {
             }
           });
 
-        // Check if searched brand is mentioned
-        if (r.brand_mentioned) {
+        // Check if searched brand is mentioned and extract snippet
+        if (r.brand_mentioned && r.response_text) {
           sourceStats[domain].brandCitations += 1;
+          const snippet = extractSnippet(r.response_text, searchedBrand);
+          if (snippet) {
+            sourceStats[domain].snippets.push({
+              brand: searchedBrand,
+              snippet,
+              isBrand: true,
+              provider: r.provider,
+              prompt: r.prompt,
+            });
+          }
         }
 
-        // Check competitors mentioned
-        if (r.competitors_mentioned) {
+        // Check competitors mentioned and extract snippets
+        if (r.competitors_mentioned && r.response_text) {
+          const responseText = r.response_text; // Capture for TypeScript narrowing
           r.competitors_mentioned.forEach(competitor => {
             if (!sourceStats[domain].competitorCitations[competitor]) {
               sourceStats[domain].competitorCitations[competitor] = 0;
             }
             sourceStats[domain].competitorCitations[competitor] += 1;
+
+            const snippet = extractSnippet(responseText, competitor);
+            if (snippet) {
+              sourceStats[domain].snippets.push({
+                brand: competitor,
+                snippet,
+                isBrand: false,
+                provider: r.provider,
+                prompt: r.prompt,
+              });
+            }
           });
         }
       });
@@ -1154,6 +1195,7 @@ export default function ResultsPage() {
           gap,
           opportunityScore,
           urls: urlDetails,
+          snippets: stat.snippets,
         };
       })
       .filter(stat => stat.gap > 0) // Only show sources where competitors have an advantage
@@ -7335,29 +7377,81 @@ export default function ResultsPage() {
                                 </span>
                               </td>
                             </tr>
-                            {isExpanded && row.urls.length > 0 && (
+                            {isExpanded && (row.urls.length > 0 || row.snippets.length > 0) && (
                               <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
                                 <td colSpan={6} className="py-2 px-3 pl-10">
-                                  <div className="bg-white border border-gray-200 rounded-lg p-3">
-                                    <p className="text-xs font-medium text-gray-500 mb-2">Individual URLs ({row.urls.length})</p>
-                                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                                      {row.urls.map((urlInfo, urlIdx) => (
-                                        <a
-                                          key={urlIdx}
-                                          href={urlInfo.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="flex items-start gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline group"
-                                        >
-                                          <ExternalLink className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                                          <span className="break-all">
-                                            {urlInfo.title || urlInfo.url}
-                                            <span className="text-gray-400 ml-1">({urlInfo.count} {urlInfo.count === 1 ? 'citation' : 'citations'})</span>
-                                          </span>
-                                        </a>
-                                      ))}
-                                    </div>
+                                  <div className="space-y-3">
+                                    {/* Response Snippets */}
+                                    {row.snippets.length > 0 && (
+                                      <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                        <p className="text-xs font-medium text-gray-500 mb-2">
+                                          How brands appear when this source is cited ({row.snippets.length} mentions)
+                                        </p>
+                                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                                          {row.snippets.slice(0, 10).map((snippetInfo, snippetIdx) => {
+                                            // Highlight the brand name in the snippet
+                                            const parts = snippetInfo.snippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
+                                            return (
+                                              <div
+                                                key={snippetIdx}
+                                                className="text-sm border-l-2 pl-3 py-1"
+                                                style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
+                                              >
+                                                <div className="flex items-center gap-2 mb-1">
+                                                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                    {snippetInfo.brand}
+                                                  </span>
+                                                  <span className="text-xs text-gray-400">
+                                                    via {getProviderLabel(snippetInfo.provider)}
+                                                  </span>
+                                                </div>
+                                                <p className="text-gray-600 text-sm leading-relaxed">
+                                                  {parts.map((part, i) =>
+                                                    part.toLowerCase() === snippetInfo.brand.toLowerCase() ? (
+                                                      <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-[#4A7C59]' : 'text-blue-600'}`}>
+                                                        {part}
+                                                      </span>
+                                                    ) : (
+                                                      <span key={i}>{part}</span>
+                                                    )
+                                                  )}
+                                                </p>
+                                              </div>
+                                            );
+                                          })}
+                                          {row.snippets.length > 10 && (
+                                            <p className="text-xs text-gray-400 mt-2">
+                                              Showing 10 of {row.snippets.length} mentions
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Individual URLs */}
+                                    {row.urls.length > 0 && (
+                                      <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                        <p className="text-xs font-medium text-gray-500 mb-2">Individual URLs ({row.urls.length})</p>
+                                        <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                          {row.urls.map((urlInfo, urlIdx) => (
+                                            <a
+                                              key={urlIdx}
+                                              href={urlInfo.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              onClick={(e) => e.stopPropagation()}
+                                              className="flex items-start gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline group"
+                                            >
+                                              <ExternalLink className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                              <span className="break-all">
+                                                {urlInfo.title || urlInfo.url}
+                                                <span className="text-gray-400 ml-1">({urlInfo.count} {urlInfo.count === 1 ? 'citation' : 'citations'})</span>
+                                              </span>
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </td>
                               </tr>
