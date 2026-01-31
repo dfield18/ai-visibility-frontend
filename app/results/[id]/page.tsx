@@ -2542,7 +2542,7 @@ export default function ResultsPage() {
               <div>
                   <div className="h-[450px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 50 }}>
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 50 }}>
                       {/* Horizontal band shading - green gradient (darker = better ranking) */}
                       <ReferenceArea y1={-0.5} y2={0.5} fill="#86efac" fillOpacity={0.5} />
                       <ReferenceArea y1={0.5} y2={1.5} fill="#bbf7d0" fillOpacity={0.5} />
@@ -2726,7 +2726,7 @@ export default function ResultsPage() {
 
               {/* Legend for All Answers view - shows sentiment when toggle is on */}
               {showSentimentColors && (
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-2">
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 -mt-4">
                   <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
@@ -2777,7 +2777,7 @@ export default function ResultsPage() {
                 }
 
                 return (
-                  <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 mt-1">
+                  <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 -mt-2">
                     <p className="text-sm text-gray-600">
                       <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
                     </p>
@@ -3599,7 +3599,7 @@ export default function ResultsPage() {
             </select>
           </div>
           {llmBreakdownTakeaway && (
-            <div className="inline-block text-sm text-gray-600 mb-4 bg-[#FAFAF8] rounded-lg px-3 py-2">
+            <div className="inline-block text-sm text-gray-600 mb-6 bg-[#FAFAF8] rounded-lg px-3 py-2">
               <span className="font-medium text-gray-700">Key takeaway:</span> {llmBreakdownTakeaway}
             </div>
           )}
