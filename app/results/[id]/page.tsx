@@ -2419,14 +2419,14 @@ export default function ResultsPage() {
           })()}
         </div>
 
-        {/* #1 Rate Card (formerly First Position) */}
+        {/* Top Result Rate Card (formerly First Position) */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-gray-600">#1 Rate</p>
+            <p className="text-sm font-medium text-gray-600">Top Result Rate</p>
             <div className="relative group">
               <button
                 className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Learn more about #1 Rate"
+                aria-label="Learn more about Top Result Rate"
                 tabIndex={0}
               >
                 <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
