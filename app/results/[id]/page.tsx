@@ -2788,7 +2788,8 @@ export default function ResultsPage() {
           {/* Performance Range Chart */}
           {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
             <>
-              <div className="flex items-center justify-end mb-1">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-gray-400">Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.</p>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500">Show sentiment</span>
                   <button
@@ -2805,9 +2806,6 @@ export default function ResultsPage() {
                   </button>
                 </label>
               </div>
-              <p className="text-xs text-gray-400 mb-3">
-                Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.
-              </p>
 
                 <div>
                   {/* Chart elements legend - above chart */}
@@ -2815,7 +2813,7 @@ export default function ResultsPage() {
                     // Check if any provider has more than 1 response
                     const hasMultipleResponses = rangeChartData.some(d => d.promptsAnalyzed > 1);
                     return (
-                      <div className="flex items-center justify-center flex-wrap gap-4 pl-[10px] mb-2">
+                      <div className="flex items-center justify-center flex-wrap gap-4 pl-[10px] mb-0">
                         {!showSentimentColors && (
                           <div className="flex items-center gap-2">
                             <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-70" />
@@ -2897,7 +2895,7 @@ export default function ResultsPage() {
                                   x={x}
                                   y={y}
                                   textAnchor="end"
-                                  fill="#374151"
+                                  fill="#6b7280"
                                   fontSize={12}
                                 >
                                   <tspan x={x} dy="-2">Google AI</tspan>
@@ -2912,7 +2910,7 @@ export default function ResultsPage() {
                                 y={y}
                                 dy={4}
                                 textAnchor="end"
-                                fill="#374151"
+                                fill="#6b7280"
                                 fontSize={12}
                               >
                                 {label}
@@ -2921,6 +2919,7 @@ export default function ResultsPage() {
                           }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
+                          width={100}
                         />
                         <XAxis
                           type="number"
