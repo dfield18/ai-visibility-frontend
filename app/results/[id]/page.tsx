@@ -3599,9 +3599,9 @@ export default function ResultsPage() {
             </select>
           </div>
           {llmBreakdownTakeaway && (
-            <p className="text-sm text-gray-600 mb-4 bg-[#FAFAF8] rounded-lg px-3 py-2">
-              {llmBreakdownTakeaway}
-            </p>
+            <div className="inline-block text-sm text-gray-600 mb-4 bg-[#FAFAF8] rounded-lg px-3 py-2">
+              <span className="font-medium text-gray-700">Key takeaway:</span> {llmBreakdownTakeaway}
+            </div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Object.entries(llmBreakdownStats).map(([provider, stats]) => {
