@@ -2493,7 +2493,7 @@ export default function ResultsPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              Where {runStatus?.brand || 'Brand'} Appears
+              {runStatus?.brand || 'Brand'}'s Ranking in AI Results
             </button>
             <button
               onClick={() => setChartTab('performanceRange')}
@@ -2539,7 +2539,7 @@ export default function ResultsPage() {
                 </label>
               </div>
               <p className="text-xs text-gray-400 mb-3">
-                Each dot is one answer to one prompt. Lower numbers mean your brand is shown earlier.
+                Each dot represents one AI response. Dots higher on the chart mean your brand was recommended earlier.
               </p>
 
               {/* Key takeaway */}
@@ -2612,12 +2612,12 @@ export default function ResultsPage() {
                   <div className="h-72 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 50 }}>
-                      {/* Horizontal band shading - lighter than Range view for detail scatter feel */}
-                      <ReferenceArea y1={-0.5} y2={0.5} fill="#bbf7d0" fillOpacity={0.45} />
-                      <ReferenceArea y1={0.5} y2={1.5} fill="#fef08a" fillOpacity={0.3} />
-                      <ReferenceArea y1={1.5} y2={2.5} fill="#fef08a" fillOpacity={0.2} />
-                      <ReferenceArea y1={2.5} y2={3.5} fill="#fed7aa" fillOpacity={0.25} />
-                      <ReferenceArea y1={3.5} y2={4.5} fill="#fecaca" fillOpacity={0.25} />
+                      {/* Horizontal band shading - green gradient (darker = better ranking) */}
+                      <ReferenceArea y1={-0.5} y2={0.5} fill="#86efac" fillOpacity={0.5} />
+                      <ReferenceArea y1={0.5} y2={1.5} fill="#bbf7d0" fillOpacity={0.5} />
+                      <ReferenceArea y1={1.5} y2={2.5} fill="#dcfce7" fillOpacity={0.5} />
+                      <ReferenceArea y1={2.5} y2={3.5} fill="#ecfdf5" fillOpacity={0.5} />
+                      <ReferenceArea y1={3.5} y2={4.5} fill="#f0fdf4" fillOpacity={0.5} />
                       <ReferenceArea y1={4.5} y2={5.5} fill="#e5e7eb" fillOpacity={0.3} />
                       {/* Divider line above "Not mentioned" band */}
                       <ReferenceLine y={4.5} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 4" />
