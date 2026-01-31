@@ -2866,18 +2866,18 @@ export default function ResultsPage() {
                         layout="vertical"
                         margin={{ top: 20, right: 30, bottom: 50, left: 50 }}
                       >
-                        {/* Background color bands - green for top ranks, yellow for mid, red for low, gray for not mentioned */}
-                        <ReferenceArea x1={-0.5} x2={0.5} fill="#bbf7d0" fillOpacity={0.4} /> {/* 1 */}
-                        <ReferenceArea x1={0.5} x2={1.5} fill="#bbf7d0" fillOpacity={0.3} /> {/* 2 */}
-                        <ReferenceArea x1={1.5} x2={2.5} fill="#bbf7d0" fillOpacity={0.2} /> {/* 3 */}
-                        <ReferenceArea x1={2.5} x2={3.5} fill="#fef08a" fillOpacity={0.2} /> {/* 4 */}
-                        <ReferenceArea x1={3.5} x2={4.5} fill="#fef08a" fillOpacity={0.15} /> {/* 5 */}
-                        <ReferenceArea x1={4.5} x2={5.5} fill="#fed7aa" fillOpacity={0.2} /> {/* 6 */}
-                        <ReferenceArea x1={5.5} x2={6.5} fill="#fed7aa" fillOpacity={0.15} /> {/* 7 */}
-                        <ReferenceArea x1={6.5} x2={7.5} fill="#fecaca" fillOpacity={0.15} /> {/* 8 */}
-                        <ReferenceArea x1={7.5} x2={8.5} fill="#fecaca" fillOpacity={0.2} /> {/* 9 */}
-                        <ReferenceArea x1={8.5} x2={9.5} fill="#fecaca" fillOpacity={0.25} /> {/* 10+ */}
-                        <ReferenceArea x1={9.5} x2={10.5} fill="#f3f4f6" fillOpacity={0.5} /> {/* Not mentioned */}
+                        {/* Background color bands - green gradient (darker = better ranking) */}
+                        <ReferenceArea x1={-0.5} x2={0.5} fill="#86efac" fillOpacity={0.5} /> {/* 1 */}
+                        <ReferenceArea x1={0.5} x2={1.5} fill="#bbf7d0" fillOpacity={0.5} /> {/* 2 */}
+                        <ReferenceArea x1={1.5} x2={2.5} fill="#bbf7d0" fillOpacity={0.4} /> {/* 3 */}
+                        <ReferenceArea x1={2.5} x2={3.5} fill="#dcfce7" fillOpacity={0.5} /> {/* 4 */}
+                        <ReferenceArea x1={3.5} x2={4.5} fill="#dcfce7" fillOpacity={0.4} /> {/* 5 */}
+                        <ReferenceArea x1={4.5} x2={5.5} fill="#ecfdf5" fillOpacity={0.5} /> {/* 6 */}
+                        <ReferenceArea x1={5.5} x2={6.5} fill="#ecfdf5" fillOpacity={0.4} /> {/* 7 */}
+                        <ReferenceArea x1={6.5} x2={7.5} fill="#f0fdf4" fillOpacity={0.5} /> {/* 8 */}
+                        <ReferenceArea x1={7.5} x2={8.5} fill="#f0fdf4" fillOpacity={0.4} /> {/* 9 */}
+                        <ReferenceArea x1={8.5} x2={9.5} fill="#f0fdf4" fillOpacity={0.3} /> {/* 10+ */}
+                        <ReferenceArea x1={9.5} x2={10.5} fill="#e5e7eb" fillOpacity={0.3} /> {/* Not mentioned */}
                         {/* Divider line before "Not mentioned" */}
                         <ReferenceLine x={9.5} stroke="#d1d5db" strokeWidth={1} />
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} vertical={true} />
@@ -2919,7 +2919,6 @@ export default function ResultsPage() {
                           }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
-                          width={100}
                         />
                         <XAxis
                           type="number"
