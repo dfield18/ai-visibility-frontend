@@ -2520,8 +2520,8 @@ export default function ResultsPage() {
           {/* All Answers Chart */}
           {chartTab === 'allAnswers' && (
             <>
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-sm text-gray-500">Where your brand shows up in individual AI answers</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-gray-500">Each dot is one AI response. Higher dots mean earlier recommendations.</p>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500">Show sentiment</span>
                   <button
@@ -2538,9 +2538,6 @@ export default function ResultsPage() {
                   </button>
                 </label>
               </div>
-              <p className="text-sm text-gray-500 mb-3">
-                Each dot represents one AI response. Dots higher on the chart mean your brand was recommended earlier.
-              </p>
 
               <div>
                   {/* Legend for All Answers view - shows sentiment when toggle is on */}
