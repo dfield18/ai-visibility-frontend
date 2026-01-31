@@ -48,7 +48,7 @@ import {
   getRateColor,
   truncate,
 } from '@/lib/utils';
-import { Result } from '@/lib/types';
+import { Result, Source } from '@/lib/types';
 
 type FilterType = 'all' | 'mentioned' | 'not_mentioned';
 type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports';
