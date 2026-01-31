@@ -892,16 +892,6 @@ export default function ResultsPage() {
   const [brandBreakdownLlmFilter, setBrandBreakdownLlmFilter] = useState<string>('all');
   const [brandBreakdownPromptFilter, setBrandBreakdownPromptFilter] = useState<string>('all');
 
-  // Get unique prompts for the filter dropdown
-  const availablePrompts = useMemo(() => {
-    if (!runStatus) return [];
-    const prompts = new Set<string>();
-    globallyFilteredResults.forEach((r: Result) => {
-      if (!r.error) prompts.add(r.prompt);
-    });
-    return Array.from(prompts).sort();
-  }, [runStatus, globallyFilteredResults]);
-
   // Calculate brand breakdown stats for competitive landscape
   const brandBreakdownStats = useMemo(() => {
     if (!runStatus) return [];
