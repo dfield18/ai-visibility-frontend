@@ -1202,6 +1202,193 @@ export default function ResultsPage() {
       .sort((a, b) => b.opportunityScore - a.opportunityScore);
   }, [runStatus, globallyFilteredResults, sourceGapProviderFilter, sourceGapPromptFilter]);
 
+  // State for Source Sentiment Gap Analysis filters
+  const [sourceSentimentGapProviderFilter, setSourceSentimentGapProviderFilter] = useState<string>('all');
+  const [sourceSentimentGapPromptFilter, setSourceSentimentGapPromptFilter] = useState<string>('all');
+  const [expandedSentimentGapSources, setExpandedSentimentGapSources] = useState<Set<string>>(new Set());
+
+  // Source Sentiment Gap Analysis - comparing brand vs competitor sentiment per source
+  const sourceSentimentGapAnalysis = useMemo(() => {
+    if (!runStatus) return [];
+
+    const searchedBrand = runStatus.brand;
+
+    const sentimentScoreMap: Record<string, number> = {
+      'strong_endorsement': 5,
+      'positive_endorsement': 4,
+      'neutral_mention': 3,
+      'conditional': 2,
+      'negative_comparison': 1,
+      'not_mentioned': 0,
+    };
+
+    const sentimentLabelMap: Record<number, string> = {
+      5: 'Strong',
+      4: 'Positive',
+      3: 'Neutral',
+      2: 'Conditional',
+      1: 'Negative',
+      0: 'Not Mentioned',
+    };
+
+    // Helper function to extract snippet around a brand mention
+    const extractSnippet = (text: string, brandName: string, contextChars: number = 80): string | null => {
+      const lowerText = text.toLowerCase();
+      const lowerBrand = brandName.toLowerCase();
+      const index = lowerText.indexOf(lowerBrand);
+      if (index === -1) return null;
+
+      const start = Math.max(0, index - contextChars);
+      const end = Math.min(text.length, index + brandName.length + contextChars);
+
+      let snippet = text.substring(start, end);
+      if (start > 0) snippet = '...' + snippet;
+      if (end < text.length) snippet = snippet + '...';
+
+      return snippet;
+    };
+
+    // Get results with sources and sentiment data, optionally filtered
+    const resultsWithSources = globallyFilteredResults.filter(
+      (r: Result) => !r.error && r.sources && r.sources.length > 0 &&
+        (sourceSentimentGapProviderFilter === 'all' || r.provider === sourceSentimentGapProviderFilter) &&
+        (sourceSentimentGapPromptFilter === 'all' || r.prompt === sourceSentimentGapPromptFilter)
+    );
+
+    if (resultsWithSources.length === 0) return [];
+
+    // Track per-source sentiment stats
+    const sourceStats: Record<string, {
+      domain: string;
+      brandSentiments: number[]; // Array of sentiment scores for brand
+      competitorSentiments: Record<string, number[]>; // Per-competitor sentiment scores
+      snippets: Array<{ brand: string; snippet: string; sentiment: string; sentimentScore: number; isBrand: boolean; provider: string; prompt: string }>;
+    }> = {};
+
+    // Process each result
+    resultsWithSources.forEach((r: Result) => {
+      if (!r.sources) return;
+
+      // Get unique domains in this response
+      const domainsInResponse = new Set<string>();
+      r.sources.forEach((source: Source) => {
+        if (!source.url) return;
+        try {
+          const hostname = new URL(source.url).hostname.replace(/^www\./, '');
+          domainsInResponse.add(hostname);
+        } catch {
+          // Skip invalid URLs
+        }
+      });
+
+      // For each domain, track sentiment
+      domainsInResponse.forEach(domain => {
+        if (!sourceStats[domain]) {
+          sourceStats[domain] = {
+            domain,
+            brandSentiments: [],
+            competitorSentiments: {},
+            snippets: [],
+          };
+        }
+
+        // Track brand sentiment
+        if (r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned') {
+          const score = sentimentScoreMap[r.brand_sentiment] || 0;
+          sourceStats[domain].brandSentiments.push(score);
+
+          if (r.response_text) {
+            const snippet = extractSnippet(r.response_text, searchedBrand);
+            if (snippet) {
+              sourceStats[domain].snippets.push({
+                brand: searchedBrand,
+                snippet,
+                sentiment: r.brand_sentiment,
+                sentimentScore: score,
+                isBrand: true,
+                provider: r.provider,
+                prompt: r.prompt,
+              });
+            }
+          }
+        }
+
+        // Track competitor sentiments
+        if (r.competitors_mentioned && r.competitor_sentiments) {
+          const responseText = r.response_text;
+          r.competitors_mentioned.forEach(competitor => {
+            const sentiment = r.competitor_sentiments?.[competitor];
+            if (sentiment && sentiment !== 'not_mentioned') {
+              const score = sentimentScoreMap[sentiment] || 0;
+              if (!sourceStats[domain].competitorSentiments[competitor]) {
+                sourceStats[domain].competitorSentiments[competitor] = [];
+              }
+              sourceStats[domain].competitorSentiments[competitor].push(score);
+
+              if (responseText) {
+                const snippet = extractSnippet(responseText, competitor);
+                if (snippet) {
+                  sourceStats[domain].snippets.push({
+                    brand: competitor,
+                    snippet,
+                    sentiment,
+                    sentimentScore: score,
+                    isBrand: false,
+                    provider: r.provider,
+                    prompt: r.prompt,
+                  });
+                }
+              }
+            }
+          });
+        }
+      });
+    });
+
+    // Convert to array with calculated metrics
+    return Object.values(sourceStats)
+      .filter(stat => stat.brandSentiments.length >= 1) // Only include sources where brand has sentiment data
+      .map(stat => {
+        const avgBrandSentiment = stat.brandSentiments.length > 0
+          ? stat.brandSentiments.reduce((a, b) => a + b, 0) / stat.brandSentiments.length
+          : 0;
+
+        // Find competitor with best average sentiment for this source
+        let topCompetitor = '';
+        let topCompetitorAvgSentiment = 0;
+        Object.entries(stat.competitorSentiments).forEach(([competitor, scores]) => {
+          if (scores.length > 0) {
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+            if (avg > topCompetitorAvgSentiment) {
+              topCompetitor = competitor;
+              topCompetitorAvgSentiment = avg;
+            }
+          }
+        });
+
+        // Gap: positive means competitor has better sentiment
+        const sentimentGap = topCompetitorAvgSentiment - avgBrandSentiment;
+
+        // Opportunity Score: Higher when gap is large
+        const opportunityScore = sentimentGap > 0 ? sentimentGap * 20 : 0;
+
+        return {
+          domain: stat.domain,
+          totalMentions: stat.brandSentiments.length + Object.values(stat.competitorSentiments).flat().length,
+          avgBrandSentiment,
+          brandSentimentLabel: sentimentLabelMap[Math.round(avgBrandSentiment)] || 'Unknown',
+          topCompetitor,
+          topCompetitorAvgSentiment,
+          competitorSentimentLabel: sentimentLabelMap[Math.round(topCompetitorAvgSentiment)] || 'Unknown',
+          sentimentGap,
+          opportunityScore,
+          snippets: stat.snippets,
+        };
+      })
+      .filter(stat => stat.sentimentGap > 0) // Only show sources where competitors have better sentiment
+      .sort((a, b) => b.sentimentGap - a.sentimentGap);
+  }, [runStatus, globallyFilteredResults, sourceSentimentGapProviderFilter, sourceSentimentGapPromptFilter]);
+
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
@@ -7471,6 +7658,280 @@ export default function ResultsPage() {
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <p>No source gap data available for the selected model.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Source Sentiment Gap Analysis Chart & Table */}
+            {sourceSentimentGapAnalysis.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">Source Sentiment Gap</h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Sources where competitors are mentioned more positively than {runStatus?.brand || 'your brand'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={sourceSentimentGapPromptFilter}
+                      onChange={(e) => setSourceSentimentGapPromptFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+                    >
+                      <option value="all">All Prompts</option>
+                      {availablePrompts.map((prompt) => (
+                        <option key={prompt} value={prompt} title={prompt}>
+                          {prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={sourceSentimentGapProviderFilter}
+                      onChange={(e) => setSourceSentimentGapProviderFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      <option value="all">All Models</option>
+                      {availableProviders.map((provider) => (
+                        <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Visual Chart */}
+                {sourceSentimentGapAnalysis.length > 0 ? (
+                <>
+                <div className="mb-6">
+                  <div className="flex items-center justify-center gap-6 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm bg-[#4A7C59]"></div>
+                      <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'} Sentiment</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                      <span className="text-sm text-gray-600">Top Competitor Sentiment</span>
+                    </div>
+                  </div>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={sourceSentimentGapAnalysis.slice(0, 10).map(row => ({
+                          domain: row.domain.length > 20 ? row.domain.substring(0, 18) + '...' : row.domain,
+                          fullDomain: row.domain,
+                          brandSentiment: row.avgBrandSentiment,
+                          competitorSentiment: row.topCompetitorAvgSentiment,
+                          competitor: row.topCompetitor,
+                          gap: row.sentimentGap,
+                        }))}
+                        layout="vertical"
+                        margin={{ top: 10, right: 30, bottom: 10, left: 120 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                        <XAxis
+                          type="number"
+                          domain={[0, 5]}
+                          ticks={[1, 2, 3, 4, 5]}
+                          tickFormatter={(value) => ['', 'Neg', 'Cond', 'Neut', 'Pos', 'Strong'][value] || ''}
+                          tick={{ fill: '#6b7280', fontSize: 11 }}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="domain"
+                          tick={{ fill: '#374151', fontSize: 12 }}
+                          width={115}
+                        />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length > 0) {
+                              const data = payload[0].payload;
+                              const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
+                              return (
+                                <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
+                                  <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
+                                  <p className="text-[#4A7C59]">
+                                    {runStatus?.brand || 'Brand'}: {sentimentLabels[Math.round(data.brandSentiment)] || 'Unknown'} ({data.brandSentiment.toFixed(1)})
+                                  </p>
+                                  <p className="text-blue-500">
+                                    {data.competitor}: {sentimentLabels[Math.round(data.competitorSentiment)] || 'Unknown'} ({data.competitorSentiment.toFixed(1)})
+                                  </p>
+                                  <p className="text-gray-500 mt-1">
+                                    Gap: +{data.gap.toFixed(1)} points
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar
+                          dataKey="brandSentiment"
+                          fill="#4A7C59"
+                          name={runStatus?.brand || 'Brand'}
+                          radius={[0, 4, 4, 0]}
+                        />
+                        <Bar
+                          dataKey="competitorSentiment"
+                          fill="#3b82f6"
+                          name="Top Competitor"
+                          radius={[0, 4, 4, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>{runStatus?.brand || 'Brand'} Sentiment</div>
+                          <div className="text-xs text-gray-400 font-normal">avg score</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>Top Competitor</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>Competitor Sentiment</div>
+                          <div className="text-xs text-gray-400 font-normal">avg score</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>Gap</div>
+                          <div className="text-xs text-gray-400 font-normal">sentiment difference</div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sourceSentimentGapAnalysis.slice(0, 20).map((row, index) => {
+                        const isExpanded = expandedSentimentGapSources.has(row.domain);
+                        return (
+                          <React.Fragment key={row.domain}>
+                            <tr
+                              className={`${index % 2 === 0 ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
+                              onClick={() => {
+                                const newExpanded = new Set(expandedSentimentGapSources);
+                                if (isExpanded) {
+                                  newExpanded.delete(row.domain);
+                                } else {
+                                  newExpanded.add(row.domain);
+                                }
+                                setExpandedSentimentGapSources(newExpanded);
+                              }}
+                            >
+                              <td className="py-3 px-3">
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                  )}
+                                  <span className="text-[#4A7C59] font-medium">{row.domain}</span>
+                                  <span className="text-xs text-gray-400">({row.totalMentions} mentions)</span>
+                                </div>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className={`font-medium ${row.avgBrandSentiment >= 4 ? 'text-green-600' : row.avgBrandSentiment >= 3 ? 'text-yellow-600' : 'text-red-500'}`}>
+                                  {row.brandSentimentLabel}
+                                </span>
+                                <span className="text-xs text-gray-400 ml-1">({row.avgBrandSentiment.toFixed(1)})</span>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className="text-gray-700 font-medium">{row.topCompetitor || '-'}</span>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className={`font-medium ${row.topCompetitorAvgSentiment >= 4 ? 'text-green-600' : row.topCompetitorAvgSentiment >= 3 ? 'text-yellow-600' : 'text-red-500'}`}>
+                                  {row.competitorSentimentLabel}
+                                </span>
+                                <span className="text-xs text-gray-400 ml-1">({row.topCompetitorAvgSentiment.toFixed(1)})</span>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-blue-400 rounded-full"
+                                      style={{ width: `${Math.min((row.sentimentGap / 4) * 100, 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-blue-600 font-medium min-w-[40px]">+{row.sentimentGap.toFixed(1)}</span>
+                                </div>
+                              </td>
+                            </tr>
+                            {isExpanded && row.snippets.length > 0 && (
+                              <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                                <td colSpan={5} className="py-2 px-3 pl-10">
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                    <p className="text-xs font-medium text-gray-500 mb-2">
+                                      How brands are described when this source is cited ({row.snippets.length} mentions)
+                                    </p>
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                      {row.snippets.slice(0, 10).map((snippetInfo, snippetIdx) => {
+                                        // Highlight the brand name in the snippet
+                                        const parts = snippetInfo.snippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
+                                        const sentimentColors: Record<string, string> = {
+                                          'strong_endorsement': 'bg-green-100 text-green-700',
+                                          'positive_endorsement': 'bg-green-50 text-green-600',
+                                          'neutral_mention': 'bg-gray-100 text-gray-600',
+                                          'conditional': 'bg-yellow-100 text-yellow-700',
+                                          'negative_comparison': 'bg-red-100 text-red-700',
+                                        };
+                                        return (
+                                          <div
+                                            key={snippetIdx}
+                                            className="text-sm border-l-2 pl-3 py-1"
+                                            style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
+                                          >
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                {snippetInfo.brand}
+                                              </span>
+                                              <span className={`text-xs px-1.5 py-0.5 rounded ${sentimentColors[snippetInfo.sentiment] || 'bg-gray-100 text-gray-600'}`}>
+                                                {snippetInfo.sentiment.replace(/_/g, ' ')}
+                                              </span>
+                                              <span className="text-xs text-gray-400">
+                                                via {getProviderLabel(snippetInfo.provider)}
+                                              </span>
+                                            </div>
+                                            <p className="text-gray-600 text-sm leading-relaxed">
+                                              {parts.map((part, i) =>
+                                                part.toLowerCase() === snippetInfo.brand.toLowerCase() ? (
+                                                  <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-[#4A7C59]' : 'text-blue-600'}`}>
+                                                    {part}
+                                                  </span>
+                                                ) : (
+                                                  <span key={i}>{part}</span>
+                                                )
+                                              )}
+                                            </p>
+                                          </div>
+                                        );
+                                      })}
+                                      {row.snippets.length > 10 && (
+                                        <p className="text-xs text-gray-400 mt-2">
+                                          Showing 10 of {row.snippets.length} mentions
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {sourceSentimentGapAnalysis.length > 20 && (
+                    <p className="text-sm text-gray-500 text-center mt-3">
+                      Showing top 20 of {sourceSentimentGapAnalysis.length} sources with competitor sentiment advantage
+                    </p>
+                  )}
+                </div>
+                </>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No sentiment gap data available for the selected filters.</p>
                   </div>
                 )}
               </div>
