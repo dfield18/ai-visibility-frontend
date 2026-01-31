@@ -3519,7 +3519,7 @@ export default function ResultsPage() {
                     <div className="whitespace-nowrap">Avg. Position</div>
                     <div className="text-xs text-gray-400 font-normal">position when shown</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">Avg. Sentiment</th>
                 </tr>
               </thead>
               <tbody>
@@ -7290,7 +7290,7 @@ export default function ResultsPage() {
                           <div className="whitespace-nowrap">Avg. Position</div>
                           <div className="text-xs text-gray-400 font-normal">position when shown</div>
                         </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">Avg. Sentiment</th>
                       </tr>
                     </thead>
                     <tbody>
