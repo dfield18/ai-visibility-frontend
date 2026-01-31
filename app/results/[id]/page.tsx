@@ -2788,7 +2788,8 @@ export default function ResultsPage() {
           {/* Performance Range Chart */}
           {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
             <>
-              <div className="flex items-center justify-end mb-3">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-gray-400 invisible">Placeholder</p>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500">Show sentiment</span>
                   <button
@@ -2812,7 +2813,7 @@ export default function ResultsPage() {
                       <ComposedChart
                         data={rangeChartData}
                         layout="vertical"
-                        margin={{ top: 20, right: 30, bottom: 50, left: 50 }}
+                        margin={{ top: 20, right: 20, bottom: 20, left: 50 }}
                       >
                         {/* Background color bands - green gradient (darker = better ranking) */}
                         <ReferenceArea x1={-0.5} x2={0.5} fill="#86efac" fillOpacity={0.5} /> {/* 1 */}
@@ -2914,7 +2915,7 @@ export default function ResultsPage() {
                             value: 'Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.',
                             position: 'bottom',
                             offset: 5,
-                            style: { fontSize: 11, fill: '#9ca3af' }
+                            style: { fontSize: 13, fill: '#9ca3af' }
                           }}
                         />
                         <Tooltip
