@@ -2545,26 +2545,26 @@ export default function ResultsPage() {
               <div>
                   {/* Legend for All Answers view - shows sentiment when toggle is on */}
                   {showSentimentColors && (
-                    <div className="flex items-center justify-center gap-4 pl-[140px] mb-[-14px]">
+                    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pl-[140px] mb-[-14px]">
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Highly Recommended</span>
+                        <span className="text-xs text-gray-500">Highly Recommended <span className="text-gray-400">(top choice)</span></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Recommended</span>
+                        <span className="text-xs text-gray-500">Recommended <span className="text-gray-400">(positive mention)</span></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                        <span className="text-xs text-gray-500">Mentioned</span>
+                        <span className="text-xs text-gray-500">Mentioned <span className="text-gray-400">(neutral)</span></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                        <span className="text-xs text-gray-500">With Caveats</span>
+                        <span className="text-xs text-gray-500">With Caveats <span className="text-gray-400">(qualified)</span></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                        <span className="text-xs text-gray-500">Not Recommended</span>
+                        <span className="text-xs text-gray-500">Not Recommended <span className="text-gray-400">(negative)</span></span>
                       </div>
                     </div>
                   )}
@@ -2909,27 +2909,27 @@ export default function ResultsPage() {
 
                   {/* Sentiment legend - above chart on one line, only when sentiment is on */}
                   {showSentimentColors && (
-                    <div className="flex items-center justify-center gap-3 pl-[10px] mb-2">
+                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pl-[10px] mb-2">
                       <span className="text-xs text-gray-500 font-medium">Sentiment:</span>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Highly Recommended</span>
+                        <span className="text-xs text-gray-500">Highly Recommended <span className="text-gray-400">(top choice)</span></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Recommended</span>
+                        <span className="text-xs text-gray-500">Recommended <span className="text-gray-400">(positive mention)</span></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                        <span className="text-xs text-gray-500">Mentioned</span>
+                        <span className="text-xs text-gray-500">Mentioned <span className="text-gray-400">(neutral)</span></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                        <span className="text-xs text-gray-500">With Caveats</span>
+                        <span className="text-xs text-gray-500">With Caveats <span className="text-gray-400">(qualified)</span></span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                        <span className="text-xs text-gray-500">Not Recommended</span>
+                        <span className="text-xs text-gray-500">Not Recommended <span className="text-gray-400">(negative)</span></span>
                       </div>
                     </div>
                   )}
