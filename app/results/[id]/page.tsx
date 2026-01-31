@@ -2483,8 +2483,8 @@ export default function ResultsPage() {
       {/* Charts Section with Tabs */}
       {scatterPlotData.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          {/* Key takeaway - shown above tabs for Ranking in AI Results */}
-          {chartTab === 'allAnswers' && (() => {
+          {/* Key takeaway - shown above tabs for Ranking in AI Results and Performance Range */}
+          {(chartTab === 'allAnswers' || chartTab === 'performanceRange') && (() => {
             const totalAnswers = scatterPlotData.length;
             const mentionedCount = scatterPlotData.filter(d => d.isMentioned).length;
             const notMentionedCount = totalAnswers - mentionedCount;
@@ -2539,22 +2539,12 @@ export default function ResultsPage() {
             >
               Performance Range
             </button>
-            <button
-              onClick={() => setChartTab('shareOfVoice')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                chartTab === 'shareOfVoice'
-                  ? 'border-[#4A7C59] text-[#4A7C59]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Share of Voice
-            </button>
-          </div>
+                      </div>
 
           {/* All Answers Chart */}
           {chartTab === 'allAnswers' && (
             <>
-              <p className="text-sm text-gray-500 mb-1">Where your brand appears in AI-generated answers</p>
+              <p className="text-base text-gray-600 mb-1">Where your brand appears in AI-generated answers</p>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs text-gray-400">Each dot is one AI response. Higher dots mean earlier mentions of {runStatus?.brand || 'your brand'}.</p>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -2761,7 +2751,7 @@ export default function ResultsPage() {
 
               {/* Legend for All Answers view - shows sentiment when toggle is on */}
               {showSentimentColors && (
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 -mt-4">
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-2">
                   <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
@@ -2862,38 +2852,10 @@ export default function ResultsPage() {
                     );
                   })()}
 
-                  {/* Sentiment legend - above chart on one line, only when sentiment is on */}
-                  {showSentimentColors && (
-                    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 pl-[10px] mb-2">
-                      <span className="text-xs text-gray-500 font-medium">Sentiment:</span>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Highly Recommended</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Recommended</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                        <span className="text-xs text-gray-500">Neutral</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                        <span className="text-xs text-gray-500">With Caveats</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                        <span className="text-xs text-gray-500">Not Recommended</span>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Chart container */}
                   <div>
                     <div
-                      className="relative flex-1 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
-                      style={{ height: Math.max(250, rangeChartData.length * 60 + 80) }}
+                      className="h-[450px] relative flex-1 [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none"
                     >
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
@@ -3294,134 +3256,33 @@ export default function ResultsPage() {
                     </div>
                   </div>
                 </div>
-            </>
-          )}
 
-          {/* Share of Voice Chart */}
-          {chartTab === 'shareOfVoice' && shareOfVoiceData.length > 0 && (
-            <>
-              {/* Title and subtitle */}
-              <div className="mb-4">
-                <p className="text-sm text-gray-500 mb-0.5">Share of voice across AI answers</p>
-                <p className="text-xs text-gray-400">Percent of all brand mentions by brand</p>
-              </div>
-
-              {/* Key takeaway */}
-              {(() => {
-                const topBrand = shareOfVoiceData.find(d => !d.isOther);
-                const otherData = shareOfVoiceData.find(d => d.isOther);
-                const topBrandsTotal = shareOfVoiceData.filter(d => !d.isOther).reduce((sum, d) => sum + d.percentage, 0);
-                const selectedBrand = runStatus?.brand;
-                const selectedData = shareOfVoiceData.find(d => d.name === selectedBrand);
-
-                let takeaway = '';
-                if (otherData && otherData.percentage > 50) {
-                  takeaway = 'Mentions are spread across many brands—no single brand dominates.';
-                } else if (topBrand && topBrand.percentage > 30) {
-                  takeaway = `${topBrand.name} leads with ${topBrand.percentage.toFixed(0)}% of all mentions.`;
-                } else if (selectedData && selectedData.percentage > 0) {
-                  const rank = shareOfVoiceData.filter(d => !d.isOther && d.percentage > selectedData.percentage).length + 1;
-                  takeaway = `${selectedBrand} has ${selectedData.percentage.toFixed(1)}% share of voice (ranked #${rank}).`;
-                } else if (topBrandsTotal > 70) {
-                  takeaway = 'The top brands capture most of the mentions.';
-                } else {
-                  takeaway = 'Brand mentions are relatively evenly distributed.';
-                }
-
-                return (
-                  <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 mb-4">
-                    <p className="text-xs text-gray-600">
-                      <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
-                    </p>
+              {/* Legend for Performance Range view - shows sentiment when toggle is on */}
+              {showSentimentColors && (
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-2">
+                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Highly Recommended</span>
                   </div>
-                );
-              })()}
-
-              {/* Filters */}
-              <div className="flex items-center justify-end gap-2 mb-4">
-                <select
-                  value={brandMentionsProviderFilter}
-                  onChange={(e) => setBrandMentionsProviderFilter(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                >
-                  <option value="all">All Models</option>
-                  {availableProviders.map((provider) => (
-                    <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                  ))}
-                </select>
-                <select
-                  value={shareOfVoiceFilter}
-                  onChange={(e) => setShareOfVoiceFilter(e.target.value as 'all' | 'tracked')}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                >
-                  <option value="tracked">Tracked Brands Only</option>
-                  <option value="all">All Brands</option>
-                </select>
-              </div>
-
-              {/* Horizontal Bar Chart */}
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={shareOfVoiceData}
-                    layout="vertical"
-                    margin={{ top: 5, right: 50, bottom: 5, left: 50 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={true} vertical={false} />
-                    <XAxis
-                      type="number"
-                      domain={[0, 'auto']}
-                      tickFormatter={(value) => `${value}%`}
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      tick={{ fontSize: 12, fill: '#374151' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                      width={95}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'rgba(0, 0, 0, 0.04)' }}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                              <p className="text-sm font-medium text-gray-900 mb-1">{data.name}</p>
-                              <p className="text-sm text-gray-700">
-                                Share of voice: {data.percentage.toFixed(1)}%
-                              </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {data.value} mentions
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar
-                      dataKey="percentage"
-                      radius={[0, 4, 4, 0]}
-                      label={{
-                        position: 'right',
-                        formatter: (value) => typeof value === 'number' ? `${value.toFixed(1)}%` : '',
-                        fontSize: 11,
-                        fill: '#6b7280',
-                      }}
-                    >
-                      {shareOfVoiceData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Helper text */}
-              <p className="text-xs text-gray-400 text-center mt-2">Higher % = mentioned more often</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                    <span className="text-xs text-gray-500">With Caveats</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                    <span className="text-xs text-gray-500">Not Recommended</span>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
