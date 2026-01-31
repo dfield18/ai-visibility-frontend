@@ -3034,17 +3034,21 @@ export default function ResultsPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-3 font-medium text-gray-600">Prompt</th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600 whitespace-nowrap">
-                    <span title="Percentage of responses where the brand was mentioned">Visibility Score</span>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                    <div className="whitespace-nowrap">Visibility Score</div>
+                    <div className="text-xs text-gray-400 font-normal">% mentioned</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600 whitespace-nowrap">
-                    <span title="Brand mentions as percentage of all brand mentions (including competitors)">Share of Voice</span>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                    <div className="whitespace-nowrap">Share of Voice</div>
+                    <div className="text-xs text-gray-400 font-normal">% of brand mentions</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600 whitespace-nowrap">
-                    <span title="Percentage of mentions where brand appeared first">First Position</span>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                    <div className="whitespace-nowrap">First Position</div>
+                    <div className="text-xs text-gray-400 font-normal">% ranked #1</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600 whitespace-nowrap">
-                    <span title="Average ranking position when mentioned">Avg. Rank</span>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                    <div className="whitespace-nowrap">Avg. Rank</div>
+                    <div className="text-xs text-gray-400 font-normal">position when shown</div>
                   </th>
                   <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
                 </tr>
