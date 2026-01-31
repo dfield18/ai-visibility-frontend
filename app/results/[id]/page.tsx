@@ -4944,6 +4944,7 @@ export default function ResultsPage() {
         totalCitations: number;
         sentimentScores: number[];
         brands: Set<string>;
+        providers: Set<string>;
       }> = {};
 
       // Process each result to collect domain stats
@@ -4975,6 +4976,7 @@ export default function ResultsPage() {
                 totalCitations: 0,
                 sentimentScores: [],
                 brands: new Set(),
+                providers: new Set(),
               };
             }
             domainStats[hostname].totalCitations += 1;
@@ -4983,11 +4985,13 @@ export default function ResultsPage() {
           }
         });
 
-        // Count unique responses per domain, capture sentiment, and track brands
+        // Count unique responses per domain, capture sentiment, track brands and providers
         domainsInResponse.forEach(domain => {
           domainStats[domain].responsesWithDomain += 1;
           // Add brands mentioned in this response to the domain's brand set
           brandsInResponse.forEach(brand => domainStats[domain].brands.add(brand));
+          // Track which provider cited this domain
+          domainStats[domain].providers.add(r.provider);
           // Use brand sentiment if available (convert to numeric)
           if (r.brand_sentiment) {
             const sentimentScore = getSentimentScore(r.brand_sentiment);
@@ -5028,6 +5032,7 @@ export default function ResultsPage() {
             totalCitations: stat.totalCitations,
             responsesWithDomain: stat.responsesWithDomain,
             brands: sortedBrands,
+            providers: Array.from(stat.providers),
           };
         })
         .sort((a, b) => b.usedPercent - a.usedPercent);
@@ -5573,6 +5578,7 @@ export default function ResultsPage() {
                     </th>
                     <th className="text-center py-3 px-3 font-medium text-gray-600">Type</th>
                     <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment for {runStatus?.brand || 'Brand'}</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-600">LLMs</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-600">Brands</th>
                   </tr>
                 </thead>
@@ -5620,9 +5626,25 @@ export default function ResultsPage() {
                         )}
                       </td>
                       <td className="py-2.5 px-3">
+                        {row.providers.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {row.providers.map((provider) => (
+                              <span
+                                key={provider}
+                                className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700"
+                              >
+                                {getProviderLabel(provider)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3">
                         {row.brands.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {row.brands.map((brand, idx) => (
+                            {row.brands.map((brand) => (
                               <span
                                 key={brand}
                                 className={`text-xs px-2 py-0.5 rounded-full ${
