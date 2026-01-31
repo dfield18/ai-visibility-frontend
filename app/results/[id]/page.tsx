@@ -3506,6 +3506,83 @@ export default function ResultsPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Export and Share Options */}
+        <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+          <button
+            onClick={() => {
+              // Generate CSV content
+              const headers = ['Prompt', 'LLM', 'Position', 'Brand Mentioned', 'Sentiment', 'Competitors'];
+              const rows = sortedResults.map((result: Result) => {
+                // Calculate position
+                let position: number | string = '-';
+                if (result.response_text && !result.error) {
+                  const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
+                  const brandLower = (selectedBrand || '').toLowerCase();
+                  const isMentioned = isCategory
+                    ? result.competitors_mentioned?.includes(selectedBrand || '')
+                    : result.brand_mentioned;
+
+                  if (isMentioned && brandLower) {
+                    const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                      ? result.all_brands_mentioned
+                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+                    let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+                    if (foundIndex === -1) {
+                      foundIndex = allBrands.findIndex(b =>
+                        b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+                      );
+                    }
+                    if (foundIndex >= 0) position = foundIndex + 1;
+                  }
+                }
+
+                const sentimentLabel = result.brand_sentiment === 'strong_endorsement' ? 'Very Favorable' :
+                  result.brand_sentiment === 'positive_endorsement' ? 'Favorable' :
+                  result.brand_sentiment === 'conditional' ? 'Conditional' :
+                  result.brand_sentiment === 'negative_comparison' ? 'Negative' :
+                  result.brand_sentiment === 'neutral_mention' ? 'Neutral' : 'Not mentioned';
+
+                return [
+                  `"${result.prompt.replace(/"/g, '""')}"`,
+                  getProviderLabel(result.provider),
+                  position,
+                  result.error ? 'Error' : result.brand_mentioned ? 'Yes' : 'No',
+                  sentimentLabel,
+                  `"${(result.competitors_mentioned || []).join(', ')}"`
+                ].join(',');
+              });
+
+              const csv = [headers.join(','), ...rows].join('\n');
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${runStatus?.brand || 'results'}-all-results.csv`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+          <button
+            onClick={() => {
+              const url = window.location.href;
+              navigator.clipboard.writeText(url).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              });
+            }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Link2 className="w-4 h-4" />
+            {copied ? 'Link Copied!' : 'Share Link'}
+          </button>
+        </div>
       </div>
     </div>
   );
