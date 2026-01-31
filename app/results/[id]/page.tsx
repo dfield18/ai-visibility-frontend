@@ -2137,7 +2137,7 @@ export default function ResultsPage() {
           <p className="text-xs text-gray-400 mt-1">Responses where brand is mentioned first</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-          <p className="text-sm font-medium text-gray-600 mb-1">Avg. Rank</p>
+          <p className="text-sm font-medium text-gray-600 mb-1">Avg. Position</p>
           <p className="text-2xl font-bold text-gray-900">
             {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
           </p>
@@ -3181,7 +3181,7 @@ export default function ResultsPage() {
                     <div className="text-xs text-gray-400 font-normal">% ranked #1</div>
                   </th>
                   <th className="text-center py-3 px-3 font-medium text-gray-600">
-                    <div className="whitespace-nowrap">Avg. Rank</div>
+                    <div className="whitespace-nowrap">Avg. Position</div>
                     <div className="text-xs text-gray-400 font-normal">position when shown</div>
                   </th>
                   <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
@@ -6665,7 +6665,7 @@ export default function ResultsPage() {
                           <div className="text-xs text-gray-400 font-normal">% ranked #1</div>
                         </th>
                         <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div className="whitespace-nowrap">Avg. Rank</div>
+                          <div className="whitespace-nowrap">Avg. Position</div>
                           <div className="text-xs text-gray-400 font-normal">position when shown</div>
                         </th>
                         <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
