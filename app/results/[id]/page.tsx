@@ -5148,6 +5148,43 @@ export default function ResultsPage() {
         .sort((a, b) => b.usedPercent - a.usedPercent);
     }, [runStatus, globallyFilteredResults, aiCategorizations]);
 
+    // Export Domain Breakdown to CSV
+    const handleExportDomainBreakdownCSV = () => {
+      if (!runStatus || domainTableData.length === 0) return;
+
+      const headers = [
+        'Domain',
+        'Used (%)',
+        'Avg. Citation',
+        'Type',
+        'Sentiment',
+        'LLMs',
+        'Brands',
+      ];
+
+      const rows = domainTableData.map(row => [
+        row.domain,
+        row.usedPercent.toFixed(1),
+        row.avgCitation.toFixed(2),
+        row.category,
+        row.avgSentiment !== null ? getSentimentLabel(row.avgSentiment) : '',
+        row.providers.map(p => getProviderLabel(p)).join('; '),
+        row.brands.join('; '),
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${runStatus.brand}-domain-breakdown-${runStatus.run_id}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    };
+
     const CATEGORY_COLORS: Record<string, string> = {
       'Social Media': '#4A7C59',      // Primary green
       'Video': '#6B9E7A',             // Medium green
@@ -5780,6 +5817,22 @@ export default function ResultsPage() {
                   Showing top 25 of {domainTableData.length} domains
                 </p>
               )}
+              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                <button
+                  onClick={handleExportDomainBreakdownCSV}
+                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                >
+                  <Link2 className="w-4 h-4" />
+                  {copied ? 'Copied!' : 'Share'}
+                </button>
+              </div>
             </div>
           </div>
         )}
