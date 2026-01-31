@@ -1041,19 +1041,23 @@ export default function ResultsPage() {
       totalCitations: number; // Number of responses citing this source
       brandCitations: number; // Number of responses where brand is mentioned AND this source is cited
       competitorCitations: Record<string, number>; // Per-competitor citation counts
+      urls: Map<string, { url: string; title: string; count: number }>; // Individual URLs
     }> = {};
 
     // Process each result
     resultsWithSources.forEach((r: Result) => {
       if (!r.sources) return;
 
-      // Get unique domains in this response
+      // Get unique domains in this response and track URLs
       const domainsInResponse = new Set<string>();
+      const urlsInResponse: { domain: string; url: string; title: string }[] = [];
+
       r.sources.forEach((source: Source) => {
         if (!source.url) return;
         try {
           const hostname = new URL(source.url).hostname.replace(/^www\./, '');
           domainsInResponse.add(hostname);
+          urlsInResponse.push({ domain: hostname, url: source.url, title: source.title || '' });
         } catch {
           // Skip invalid URLs
         }
@@ -1067,10 +1071,23 @@ export default function ResultsPage() {
             totalCitations: 0,
             brandCitations: 0,
             competitorCitations: {},
+            urls: new Map(),
           };
         }
 
         sourceStats[domain].totalCitations += 1;
+
+        // Track URLs for this domain
+        urlsInResponse
+          .filter(u => u.domain === domain)
+          .forEach(u => {
+            const existing = sourceStats[domain].urls.get(u.url);
+            if (existing) {
+              existing.count += 1;
+            } else {
+              sourceStats[domain].urls.set(u.url, { url: u.url, title: u.title, count: 1 });
+            }
+          });
 
         // Check if searched brand is mentioned
         if (r.brand_mentioned) {
@@ -1118,6 +1135,10 @@ export default function ResultsPage() {
           ? (gap / 100) * Math.log10(stat.totalCitations + 1) * 100
           : 0;
 
+        // Convert URLs map to sorted array
+        const urlDetails = Array.from(stat.urls.values())
+          .sort((a, b) => b.count - a.count);
+
         return {
           domain: stat.domain,
           totalCitations: stat.totalCitations,
@@ -1126,6 +1147,7 @@ export default function ResultsPage() {
           topCompetitorRate,
           gap,
           opportunityScore,
+          urls: urlDetails,
         };
       })
       .filter(stat => stat.gap > 0) // Only show sources where competitors have an advantage
@@ -1138,6 +1160,7 @@ export default function ResultsPage() {
   const [heatmapProviderFilter, setHeatmapProviderFilter] = useState<string>('all');
   const [heatmapShowSentiment, setHeatmapShowSentiment] = useState<boolean>(false);
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
+  const [expandedGapSources, setExpandedGapSources] = useState<Set<string>>(new Set());
   const [aiCategorizations, setAiCategorizations] = useState<Record<string, string>>({});
   const [categorizationLoading, setCategorizationLoading] = useState(false);
   const sourcesListRef = useRef<HTMLDivElement>(null);
@@ -7253,50 +7276,98 @@ export default function ResultsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sourceGapAnalysis.slice(0, 20).map((row, index) => (
-                        <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                          <td className="py-3 px-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-[#4A7C59] font-medium">{row.domain}</span>
-                              <span className="text-xs text-gray-400">({row.totalCitations} citations)</span>
-                            </div>
-                          </td>
-                          <td className="text-center py-3 px-3">
-                            <span className={`font-medium ${row.brandRate >= 50 ? 'text-green-600' : row.brandRate >= 25 ? 'text-yellow-600' : 'text-red-500'}`}>
-                              {row.brandRate.toFixed(0)}%
-                            </span>
-                          </td>
-                          <td className="text-center py-3 px-3">
-                            <span className="text-gray-700 font-medium">{row.topCompetitor || '-'}</span>
-                          </td>
-                          <td className="text-center py-3 px-3">
-                            <span className="font-medium text-gray-700">
-                              {row.topCompetitorRate.toFixed(0)}%
-                            </span>
-                          </td>
-                          <td className="text-center py-3 px-3">
-                            <div className="flex items-center justify-center gap-2">
-                              <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-red-400 rounded-full"
-                                  style={{ width: `${Math.min(row.gap, 100)}%` }}
-                                />
-                              </div>
-                              <span className="text-red-600 font-medium min-w-[40px]">+{row.gap.toFixed(0)}%</span>
-                            </div>
-                          </td>
-                          <td className="text-center py-3 px-3">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              row.opportunityScore >= 30 ? 'bg-red-100 text-red-700' :
-                              row.opportunityScore >= 15 ? 'bg-orange-100 text-orange-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>
-                              {row.opportunityScore >= 30 ? 'High' :
-                               row.opportunityScore >= 15 ? 'Medium' : 'Low'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                      {sourceGapAnalysis.slice(0, 20).map((row, index) => {
+                        const isExpanded = expandedGapSources.has(row.domain);
+                        return (
+                          <React.Fragment key={row.domain}>
+                            <tr
+                              className={`${index % 2 === 0 ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
+                              onClick={() => {
+                                const newExpanded = new Set(expandedGapSources);
+                                if (isExpanded) {
+                                  newExpanded.delete(row.domain);
+                                } else {
+                                  newExpanded.add(row.domain);
+                                }
+                                setExpandedGapSources(newExpanded);
+                              }}
+                            >
+                              <td className="py-3 px-3">
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                  )}
+                                  <span className="text-[#4A7C59] font-medium">{row.domain}</span>
+                                  <span className="text-xs text-gray-400">({row.totalCitations} citations)</span>
+                                </div>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className={`font-medium ${row.brandRate >= 50 ? 'text-green-600' : row.brandRate >= 25 ? 'text-yellow-600' : 'text-red-500'}`}>
+                                  {row.brandRate.toFixed(0)}%
+                                </span>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className="text-gray-700 font-medium">{row.topCompetitor || '-'}</span>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className="font-medium text-gray-700">
+                                  {row.topCompetitorRate.toFixed(0)}%
+                                </span>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-red-400 rounded-full"
+                                      style={{ width: `${Math.min(row.gap, 100)}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-red-600 font-medium min-w-[40px]">+{row.gap.toFixed(0)}%</span>
+                                </div>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  row.opportunityScore >= 30 ? 'bg-red-100 text-red-700' :
+                                  row.opportunityScore >= 15 ? 'bg-orange-100 text-orange-700' :
+                                  'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                  {row.opportunityScore >= 30 ? 'High' :
+                                   row.opportunityScore >= 15 ? 'Medium' : 'Low'}
+                                </span>
+                              </td>
+                            </tr>
+                            {isExpanded && row.urls.length > 0 && (
+                              <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                                <td colSpan={6} className="py-2 px-3 pl-10">
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                    <p className="text-xs font-medium text-gray-500 mb-2">Individual URLs ({row.urls.length})</p>
+                                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                      {row.urls.map((urlInfo, urlIdx) => (
+                                        <a
+                                          key={urlIdx}
+                                          href={urlInfo.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="flex items-start gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline group"
+                                        >
+                                          <ExternalLink className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                          <span className="break-all">
+                                            {urlInfo.title || urlInfo.url}
+                                            <span className="text-gray-400 ml-1">({urlInfo.count} {urlInfo.count === 1 ? 'citation' : 'citations'})</span>
+                                          </span>
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                   {sourceGapAnalysis.length > 20 && (
