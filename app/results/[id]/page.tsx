@@ -2775,7 +2775,7 @@ export default function ResultsPage() {
                 }
 
                 return (
-                  <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 mt-4">
+                  <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 mt-1">
                     <p className="text-sm text-gray-600">
                       <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
                     </p>
