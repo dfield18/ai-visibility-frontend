@@ -784,46 +784,6 @@ export default function ResultsPage() {
     return providerStats;
   }, [runStatus, globallyFilteredResults, llmBreakdownBrandFilter, llmBreakdownBrands]);
 
-  // Generate LLM breakdown key takeaway
-  const llmBreakdownTakeaway = useMemo(() => {
-    const entries = Object.entries(llmBreakdownStats);
-    if (entries.length === 0) return null;
-
-    const selectedBrand = llmBreakdownBrandFilter || llmBreakdownBrands[0] || runStatus?.brand || 'your brand';
-
-    // Sort by mention rate to find best and worst
-    const sorted = [...entries].sort((a, b) => b[1].rate - a[1].rate);
-    const best = sorted[0];
-    const worst = sorted[sorted.length - 1];
-
-    // Check if all rates are similar (within 10%)
-    const allSimilar = sorted.length > 1 && (best[1].rate - worst[1].rate) < 0.10;
-
-    if (allSimilar) {
-      const avgRate = entries.reduce((sum, [, stats]) => sum + stats.rate, 0) / entries.length;
-      return `${selectedBrand} is mentioned consistently across all Models at around ${Math.round(avgRate * 100)}%.`;
-    }
-
-    if (sorted.length === 1) {
-      return `${getProviderLabel(best[0])} mentions ${selectedBrand} ${Math.round(best[1].rate * 100)}% of the time.`;
-    }
-
-    // Find any Models with 0% mentions
-    const zeroMentions = sorted.filter(([, stats]) => stats.rate === 0);
-    if (zeroMentions.length > 0 && zeroMentions.length < sorted.length) {
-      const zeroNames = zeroMentions.map(([p]) => getProviderLabel(p)).join(' and ');
-      return `${getProviderLabel(best[0])} mentions ${selectedBrand} most often (${Math.round(best[1].rate * 100)}%), while ${zeroNames} ${zeroMentions.length === 1 ? 'does' : 'do'} not mention it at all.`;
-    }
-
-    // Standard comparison between best and worst
-    const diff = Math.round((best[1].rate - worst[1].rate) * 100);
-    if (diff >= 20) {
-      return `${getProviderLabel(best[0])} mentions ${selectedBrand} most often (${Math.round(best[1].rate * 100)}%), ${diff} percentage points higher than ${getProviderLabel(worst[0])} (${Math.round(worst[1].rate * 100)}%).`;
-    }
-
-    return `${getProviderLabel(best[0])} leads with ${Math.round(best[1].rate * 100)}% mentions of ${selectedBrand}, compared to ${Math.round(worst[1].rate * 100)}% from ${getProviderLabel(worst[0])}.`;
-  }, [llmBreakdownStats, llmBreakdownBrandFilter, llmBreakdownBrands, runStatus]);
-
   // State for prompt breakdown LLM filter
   const [promptBreakdownLlmFilter, setPromptBreakdownLlmFilter] = useState<string>('all');
 
@@ -2235,6 +2195,46 @@ export default function ResultsPage() {
       default: return provider;
     }
   };
+
+  // Generate LLM breakdown key takeaway
+  const llmBreakdownTakeaway = useMemo(() => {
+    const entries = Object.entries(llmBreakdownStats);
+    if (entries.length === 0) return null;
+
+    const selectedBrand = llmBreakdownBrandFilter || llmBreakdownBrands[0] || runStatus?.brand || 'your brand';
+
+    // Sort by mention rate to find best and worst
+    const sorted = [...entries].sort((a, b) => b[1].rate - a[1].rate);
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
+
+    // Check if all rates are similar (within 10%)
+    const allSimilar = sorted.length > 1 && (best[1].rate - worst[1].rate) < 0.10;
+
+    if (allSimilar) {
+      const avgRate = entries.reduce((sum, [, stats]) => sum + stats.rate, 0) / entries.length;
+      return `${selectedBrand} is mentioned consistently across all Models at around ${Math.round(avgRate * 100)}%.`;
+    }
+
+    if (sorted.length === 1) {
+      return `${getProviderLabel(best[0])} mentions ${selectedBrand} ${Math.round(best[1].rate * 100)}% of the time.`;
+    }
+
+    // Find any Models with 0% mentions
+    const zeroMentions = sorted.filter(([, stats]) => stats.rate === 0);
+    if (zeroMentions.length > 0 && zeroMentions.length < sorted.length) {
+      const zeroNames = zeroMentions.map(([p]) => getProviderLabel(p)).join(' and ');
+      return `${getProviderLabel(best[0])} mentions ${selectedBrand} most often (${Math.round(best[1].rate * 100)}%), while ${zeroNames} ${zeroMentions.length === 1 ? 'does' : 'do'} not mention it at all.`;
+    }
+
+    // Standard comparison between best and worst
+    const diff = Math.round((best[1].rate - worst[1].rate) * 100);
+    if (diff >= 20) {
+      return `${getProviderLabel(best[0])} mentions ${selectedBrand} most often (${Math.round(best[1].rate * 100)}%), ${diff} percentage points higher than ${getProviderLabel(worst[0])} (${Math.round(worst[1].rate * 100)}%).`;
+    }
+
+    return `${getProviderLabel(best[0])} leads with ${Math.round(best[1].rate * 100)}% mentions of ${selectedBrand}, compared to ${Math.round(worst[1].rate * 100)}% from ${getProviderLabel(worst[0])}.`;
+  }, [llmBreakdownStats, llmBreakdownBrandFilter, llmBreakdownBrands, runStatus]);
 
   const getSentimentScore = (sentiment: string): number => {
     const scoreMap: Record<string, number> = {
