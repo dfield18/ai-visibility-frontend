@@ -5135,15 +5135,15 @@ export default function ResultsPage() {
                   <h3 className="text-sm font-semibold text-gray-700 mb-4">Source Types</h3>
                   {sourceCategoryData.length > 0 ? (
                     <div className="flex flex-col items-center flex-1 pt-2">
-                      <div className="h-[220px] w-[220px]">
+                      <div className="h-[180px] w-[180px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={sourceCategoryData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={55}
-                              outerRadius={94}
+                              innerRadius={45}
+                              outerRadius={76}
                               paddingAngle={2}
                               dataKey="value"
                               nameKey="name"
