@@ -2868,6 +2868,7 @@ export default function ResultsPage() {
                           }}
                           axisLine={{ stroke: '#e5e7eb' }}
                           tickLine={false}
+                          width={80}
                         />
                         <XAxis
                           type="number"
@@ -2975,7 +2976,7 @@ export default function ResultsPage() {
                     {rangeViewDots.length > 0 && (() => {
                       // Chart margins matching ComposedChart margin prop
                       const margin = { top: 20, right: 20, bottom: 20, left: 50 };
-                      const yAxisWidth = 55; // Estimated YAxis width for labels like "Google AI Overviews"
+                      const yAxisWidth = 80; // Matches YAxis width prop
                       const xAxisHeight = 25; // Estimated height of X-axis with labels
                       const numProviders = rangeChartData.length;
 
@@ -7030,21 +7031,24 @@ export default function ResultsPage() {
                         <th className="text-left py-3 px-3 font-medium text-gray-600">Brand</th>
                         <th className="text-center py-3 px-3 font-medium text-gray-600">
                           <div className="whitespace-nowrap">AI Visibility</div>
-                          <div className="text-xs text-gray-400 font-normal">% mentioned</div>
+                          <div className="text-xs text-gray-400 font-normal">How often brand appears</div>
                         </th>
                         <th className="text-center py-3 px-3 font-medium text-gray-600">
                           <div className="whitespace-nowrap">Share of Voice</div>
-                          <div className="text-xs text-gray-400 font-normal">% of brand mentions</div>
+                          <div className="text-xs text-gray-400 font-normal">Brand's share of mentions</div>
                         </th>
                         <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div className="whitespace-nowrap">First Position</div>
-                          <div className="text-xs text-gray-400 font-normal">% ranked #1</div>
+                          <div className="whitespace-nowrap">Top Result Rate</div>
+                          <div className="text-xs text-gray-400 font-normal">How often brand is #1</div>
                         </th>
                         <th className="text-center py-3 px-3 font-medium text-gray-600">
                           <div className="whitespace-nowrap">Avg. Position</div>
-                          <div className="text-xs text-gray-400 font-normal">position when shown</div>
+                          <div className="text-xs text-gray-400 font-normal">Avg. ranking when mentioned</div>
                         </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">Avg. Sentiment</th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div className="whitespace-nowrap">Avg. Sentiment</div>
+                          <div className="text-xs text-gray-400 font-normal">How AI presents brand</div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -7119,7 +7123,7 @@ export default function ResultsPage() {
               </div>
             )}
 
-            {/* Source Gap Analysis Table */}
+            {/* Source Gap Analysis Chart & Table */}
             {sourceGapAnalysis.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="mb-4">
@@ -7128,6 +7132,86 @@ export default function ResultsPage() {
                     Sources where competitors are cited more often than {runStatus?.brand || 'your brand'}
                   </p>
                 </div>
+
+                {/* Visual Chart */}
+                <div className="mb-6">
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={sourceGapAnalysis.slice(0, 10).map(row => ({
+                          domain: row.domain.length > 20 ? row.domain.substring(0, 18) + '...' : row.domain,
+                          fullDomain: row.domain,
+                          brandRate: row.brandRate,
+                          competitorRate: row.topCompetitorRate,
+                          competitor: row.topCompetitor,
+                          gap: row.gap,
+                          citations: row.totalCitations,
+                        }))}
+                        layout="vertical"
+                        margin={{ top: 10, right: 30, bottom: 10, left: 120 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                        <XAxis
+                          type="number"
+                          domain={[0, 100]}
+                          tickFormatter={(value) => `${value}%`}
+                          tick={{ fill: '#6b7280', fontSize: 12 }}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="domain"
+                          tick={{ fill: '#374151', fontSize: 12 }}
+                          width={115}
+                        />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length > 0) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
+                                  <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
+                                  <p className="text-[#4A7C59]">
+                                    {runStatus?.brand || 'Brand'}: {data.brandRate.toFixed(1)}%
+                                  </p>
+                                  <p className="text-red-500">
+                                    {data.competitor}: {data.competitorRate.toFixed(1)}%
+                                  </p>
+                                  <p className="text-gray-500 mt-1">
+                                    Gap: +{data.gap.toFixed(1)}% ({data.citations} citations)
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar
+                          dataKey="brandRate"
+                          fill="#4A7C59"
+                          name={runStatus?.brand || 'Brand'}
+                          radius={[0, 4, 4, 0]}
+                        />
+                        <Bar
+                          dataKey="competitorRate"
+                          fill="#ef4444"
+                          name="Top Competitor"
+                          radius={[0, 4, 4, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex items-center justify-center gap-6 mt-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm bg-[#4A7C59]"></div>
+                      <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm bg-red-500"></div>
+                      <span className="text-sm text-gray-600">Top Competitor</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
