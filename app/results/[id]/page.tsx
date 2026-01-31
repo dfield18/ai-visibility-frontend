@@ -2538,7 +2538,7 @@ export default function ResultsPage() {
                   </button>
                 </label>
               </div>
-              <p className="text-xs text-gray-400 mb-3">
+              <p className="text-sm text-gray-500 mb-3">
                 Each dot represents one AI response. Dots higher on the chart mean your brand was recommended earlier.
               </p>
 
