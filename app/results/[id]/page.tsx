@@ -888,6 +888,150 @@ export default function ResultsPage() {
     return promptStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
   }, [runStatus, globallyFilteredResults, promptBreakdownLlmFilter]);
 
+  // State for competitive landscape filters
+  const [brandBreakdownLlmFilter, setBrandBreakdownLlmFilter] = useState<string>('all');
+  const [brandBreakdownPromptFilter, setBrandBreakdownPromptFilter] = useState<string>('all');
+
+  // Get unique prompts for the filter dropdown
+  const availablePrompts = useMemo(() => {
+    if (!runStatus) return [];
+    const prompts = new Set<string>();
+    globallyFilteredResults.forEach((r: Result) => {
+      if (!r.error) prompts.add(r.prompt);
+    });
+    return Array.from(prompts).sort();
+  }, [runStatus, globallyFilteredResults]);
+
+  // Calculate brand breakdown stats for competitive landscape
+  const brandBreakdownStats = useMemo(() => {
+    if (!runStatus) return [];
+
+    const results = globallyFilteredResults.filter((r: Result) => {
+      if (r.error) return false;
+      if (brandBreakdownLlmFilter !== 'all' && r.provider !== brandBreakdownLlmFilter) return false;
+      if (brandBreakdownPromptFilter !== 'all' && r.prompt !== brandBreakdownPromptFilter) return false;
+      return true;
+    });
+
+    const searchedBrand = runStatus.brand;
+
+    // Get all brands: searched brand + competitors
+    const allBrands = new Set<string>([searchedBrand]);
+    results.forEach(r => {
+      if (r.competitors_mentioned) {
+        r.competitors_mentioned.forEach(c => allBrands.add(c));
+      }
+    });
+
+    const sentimentScoreMap: Record<string, number> = {
+      'strong_endorsement': 5,
+      'positive_endorsement': 4,
+      'neutral_mention': 3,
+      'conditional': 2,
+      'negative_comparison': 1,
+      'not_mentioned': 0,
+    };
+
+    const brandStats = Array.from(allBrands).map(brand => {
+      const isSearchedBrand = brand === searchedBrand;
+      const total = results.length;
+
+      // Count mentions for this brand
+      const mentioned = results.filter(r => {
+        if (isSearchedBrand) {
+          return r.brand_mentioned;
+        } else {
+          return r.competitors_mentioned?.includes(brand);
+        }
+      }).length;
+
+      const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
+
+      // Share of Voice: this brand's mentions / total brand mentions across all results
+      let totalBrandMentions = 0;
+      let thisBrandMentions = 0;
+      results.forEach(r => {
+        if (r.brand_mentioned) totalBrandMentions++;
+        if (r.competitors_mentioned) totalBrandMentions += r.competitors_mentioned.length;
+
+        if (isSearchedBrand && r.brand_mentioned) {
+          thisBrandMentions++;
+        } else if (!isSearchedBrand && r.competitors_mentioned?.includes(brand)) {
+          thisBrandMentions++;
+        }
+      });
+      const shareOfVoice = totalBrandMentions > 0 ? (thisBrandMentions / totalBrandMentions) * 100 : 0;
+
+      // First Position and Avg Rank
+      let firstPositionCount = 0;
+      const ranks: number[] = [];
+
+      results.forEach(r => {
+        const isMentioned = isSearchedBrand ? r.brand_mentioned : r.competitors_mentioned?.includes(brand);
+        if (!isMentioned) return;
+
+        const allBrandsInResponse = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+          ? r.all_brands_mentioned
+          : [searchedBrand, ...(r.competitors_mentioned || [])].filter(Boolean);
+
+        const brandLower = brand.toLowerCase();
+        let foundIndex = allBrandsInResponse.findIndex(b => b.toLowerCase() === brandLower);
+
+        if (foundIndex === -1) {
+          foundIndex = allBrandsInResponse.findIndex(b =>
+            b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+          );
+        }
+
+        const rank = foundIndex >= 0 ? foundIndex + 1 : allBrandsInResponse.length + 1;
+        ranks.push(rank);
+
+        if (rank === 1) {
+          firstPositionCount++;
+        }
+      });
+
+      const firstPositionRate = mentioned > 0 ? (firstPositionCount / mentioned) * 100 : 0;
+      const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
+
+      // Average sentiment
+      const sentimentResults = results.filter(r => {
+        if (isSearchedBrand) {
+          return r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned';
+        } else {
+          return r.competitors_mentioned?.includes(brand) && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned';
+        }
+      });
+
+      let avgSentimentScore: number | null = null;
+      if (sentimentResults.length > 0) {
+        const sentimentSum = sentimentResults.reduce((sum, r) => {
+          if (isSearchedBrand) {
+            return sum + (sentimentScoreMap[r.brand_sentiment || ''] || 0);
+          } else {
+            return sum + (sentimentScoreMap[r.competitor_sentiments?.[brand] || ''] || 0);
+          }
+        }, 0);
+        avgSentimentScore = sentimentSum / sentimentResults.length;
+      }
+
+      return {
+        brand,
+        isSearchedBrand,
+        total,
+        mentioned,
+        visibilityScore,
+        shareOfVoice,
+        firstPositionRate,
+        avgRank,
+        avgSentimentScore,
+      };
+    });
+
+    // Sort by visibility score descending
+    return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
+  }, [runStatus, globallyFilteredResults, brandBreakdownLlmFilter, brandBreakdownPromptFilter]);
+
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
@@ -6479,10 +6623,136 @@ export default function ResultsPage() {
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'reference' && <ReferenceTab />}
         {activeTab === 'competitive' && (
-          <PlaceholderTab
-            title="Competitive Landscape"
-            description="Compare your brand's visibility against competitors across different LLMs. Coming soon."
-          />
+          <div className="space-y-6">
+            {/* Brand Breakdown Table */}
+            {brandBreakdownStats.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">Brand Breakdown</h2>
+                    <p className="text-sm text-gray-500 mt-1">Performance comparison across all brands</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={brandBreakdownPromptFilter}
+                      onChange={(e) => setBrandBreakdownPromptFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+                    >
+                      <option value="all">All Prompts</option>
+                      {availablePrompts.map((prompt) => (
+                        <option key={prompt} value={prompt} title={prompt}>
+                          {prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={brandBreakdownLlmFilter}
+                      onChange={(e) => setBrandBreakdownLlmFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      <option value="all">All LLMs</option>
+                      {availableProviders.map((provider) => (
+                        <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-3 font-medium text-gray-600">Brand</th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div className="whitespace-nowrap">Visibility Score</div>
+                          <div className="text-xs text-gray-400 font-normal">% mentioned</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div className="whitespace-nowrap">Share of Voice</div>
+                          <div className="text-xs text-gray-400 font-normal">% of brand mentions</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div className="whitespace-nowrap">First Position</div>
+                          <div className="text-xs text-gray-400 font-normal">% ranked #1</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div className="whitespace-nowrap">Avg. Rank</div>
+                          <div className="text-xs text-gray-400 font-normal">position when shown</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {brandBreakdownStats.map((stat, index) => {
+                        const getSentimentLabel = (score: number | null): string => {
+                          if (score === null) return '-';
+                          if (score >= 4.5) return 'Very Favorable';
+                          if (score >= 3.5) return 'Favorable';
+                          if (score >= 2.5) return 'Neutral';
+                          if (score >= 1.5) return 'Conditional';
+                          if (score >= 0.5) return 'Negative';
+                          return '-';
+                        };
+
+                        const getSentimentColor = (score: number | null): string => {
+                          if (score === null) return 'text-gray-400';
+                          if (score >= 4.5) return 'text-green-600';
+                          if (score >= 3.5) return 'text-lime-600';
+                          if (score >= 2.5) return 'text-gray-600';
+                          if (score >= 1.5) return 'text-orange-500';
+                          if (score >= 0.5) return 'text-red-500';
+                          return 'text-gray-400';
+                        };
+
+                        return (
+                          <tr key={stat.brand} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                            <td className="py-3 px-3">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium ${stat.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-900'}`}>
+                                  {stat.brand}
+                                </span>
+                                {stat.isSearchedBrand && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-[#E8F0E8] text-[#4A7C59] rounded">searched</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="text-center py-3 px-3">
+                              <span className={`font-medium ${stat.visibilityScore >= 50 ? 'text-green-600' : stat.visibilityScore >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                {stat.visibilityScore.toFixed(0)}%
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-3">
+                              <span className={`font-medium ${stat.shareOfVoice >= 50 ? 'text-green-600' : stat.shareOfVoice >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                {stat.shareOfVoice.toFixed(0)}%
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-3">
+                              <span className={`font-medium ${stat.firstPositionRate >= 50 ? 'text-green-600' : stat.firstPositionRate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                {stat.firstPositionRate.toFixed(0)}%
+                              </span>
+                            </td>
+                            <td className="text-center py-3 px-3">
+                              {stat.avgRank !== null ? (
+                                <span className={`font-medium ${stat.avgRank <= 1.5 ? 'text-green-600' : stat.avgRank <= 3 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                  #{stat.avgRank.toFixed(1)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="text-center py-3 px-3">
+                              <span className={`font-medium ${getSentimentColor(stat.avgSentimentScore)}`}>
+                                {getSentimentLabel(stat.avgSentimentScore)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
         )}
         {activeTab === 'sentiment' && <SentimentTab />}
         {activeTab === 'sources' && <SourcesTab />}
