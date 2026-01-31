@@ -7135,6 +7135,16 @@ export default function ResultsPage() {
 
                 {/* Visual Chart */}
                 <div className="mb-6">
+                  <div className="flex items-center justify-center gap-6 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm bg-[#4A7C59]"></div>
+                      <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                      <span className="text-sm text-gray-600">Top Competitor</span>
+                    </div>
+                  </div>
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
@@ -7199,16 +7209,6 @@ export default function ResultsPage() {
                         />
                       </BarChart>
                     </ResponsiveContainer>
-                  </div>
-                  <div className="flex items-center justify-center gap-6 mt-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm bg-[#4A7C59]"></div>
-                      <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-                      <span className="text-sm text-gray-600">Top Competitor</span>
-                    </div>
                   </div>
                 </div>
 
