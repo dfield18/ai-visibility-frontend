@@ -3581,11 +3581,11 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* LLM Breakdown */}
+      {/* LLM Model Breakdown */}
       {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">LLM Breakdown</h2>
+            <h2 className="text-base font-semibold text-gray-900">LLM Model Breakdown</h2>
             <select
               value={llmBreakdownBrandFilter || llmBreakdownBrands[0] || ''}
               onChange={(e) => setLlmBreakdownBrandFilter(e.target.value)}
