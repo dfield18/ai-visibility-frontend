@@ -4393,7 +4393,10 @@ export default function ResultsPage() {
     // Calculate brand website citations with URL details
     const brandWebsiteCitations = useMemo(() => {
       const brandDomain = runStatus?.brand?.toLowerCase().replace(/\s+/g, '') || '';
-      const allBrandsToTrack = [runStatus?.brand || '', ...Array.from(trackedBrands)].filter(Boolean);
+      const searchedBrandLower = runStatus?.brand?.toLowerCase() || '';
+      // Filter out the searched brand from trackedBrands to avoid duplicates (trackedBrands stores lowercase)
+      const competitorsOnly = Array.from(trackedBrands).filter(b => b.toLowerCase() !== searchedBrandLower);
+      const allBrandsToTrack = [runStatus?.brand || '', ...competitorsOnly].filter(Boolean);
 
       // Structure to hold citation data per brand
       const brandCitationData: Record<string, {
