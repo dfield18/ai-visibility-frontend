@@ -784,6 +784,103 @@ export default function ResultsPage() {
     return providerStats;
   }, [runStatus, globallyFilteredResults, llmBreakdownBrandFilter, llmBreakdownBrands]);
 
+  // Calculate prompt breakdown stats for the searched brand
+  const promptBreakdownStats = useMemo(() => {
+    if (!runStatus) return [];
+
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    const searchedBrand = runStatus.brand;
+
+    // Group results by prompt
+    const promptGroups: Record<string, Result[]> = {};
+    for (const result of results) {
+      if (!promptGroups[result.prompt]) {
+        promptGroups[result.prompt] = [];
+      }
+      promptGroups[result.prompt].push(result);
+    }
+
+    const sentimentScoreMap: Record<string, number> = {
+      'strong_endorsement': 5,
+      'positive_endorsement': 4,
+      'neutral_mention': 3,
+      'conditional': 2,
+      'negative_comparison': 1,
+      'not_mentioned': 0,
+    };
+
+    const promptStats = Object.entries(promptGroups).map(([prompt, promptResults]) => {
+      const total = promptResults.length;
+      const mentioned = promptResults.filter(r => r.brand_mentioned).length;
+      const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
+
+      // Share of Voice: brand mentions / total brand mentions (including competitors)
+      let totalBrandMentions = 0;
+      let searchedBrandMentions = 0;
+      promptResults.forEach(r => {
+        if (r.brand_mentioned) {
+          searchedBrandMentions++;
+          totalBrandMentions++;
+        }
+        if (r.competitors_mentioned) {
+          totalBrandMentions += r.competitors_mentioned.length;
+        }
+      });
+      const shareOfVoice = totalBrandMentions > 0 ? (searchedBrandMentions / totalBrandMentions) * 100 : 0;
+
+      // First Position: how often brand appears first
+      let firstPositionCount = 0;
+      const ranks: number[] = [];
+
+      promptResults.forEach(r => {
+        if (!r.brand_mentioned) return;
+
+        const allBrands = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+          ? r.all_brands_mentioned
+          : [searchedBrand, ...(r.competitors_mentioned || [])].filter(Boolean);
+
+        const brandLower = searchedBrand.toLowerCase();
+        let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+        if (foundIndex === -1) {
+          foundIndex = allBrands.findIndex(b =>
+            b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+          );
+        }
+
+        const rank = foundIndex >= 0 ? foundIndex + 1 : allBrands.length + 1;
+        ranks.push(rank);
+
+        if (rank === 1) {
+          firstPositionCount++;
+        }
+      });
+
+      const firstPositionRate = mentioned > 0 ? (firstPositionCount / mentioned) * 100 : 0;
+      const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
+
+      // Average sentiment
+      const sentimentResults = promptResults.filter(r => r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned');
+      const avgSentimentScore = sentimentResults.length > 0
+        ? sentimentResults.reduce((sum, r) => sum + (sentimentScoreMap[r.brand_sentiment || ''] || 0), 0) / sentimentResults.length
+        : null;
+
+      return {
+        prompt,
+        total,
+        mentioned,
+        visibilityScore,
+        shareOfVoice,
+        firstPositionRate,
+        avgRank,
+        avgSentimentScore,
+      };
+    });
+
+    // Sort by visibility score descending
+    return promptStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
+  }, [runStatus, globallyFilteredResults]);
+
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
@@ -2906,6 +3003,99 @@ export default function ResultsPage() {
         </div>
       )}
 
+      {/* Prompt Breakdown Table */}
+      {promptBreakdownStats.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="mb-4">
+            <h2 className="text-base font-semibold text-gray-900">Prompt Breakdown</h2>
+            <p className="text-sm text-gray-500 mt-1">Performance metrics for {runStatus?.brand} across all prompts</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-3 font-medium text-gray-600">Prompt</th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600 whitespace-nowrap">
+                    <span title="Percentage of responses where the brand was mentioned">Visibility Score</span>
+                  </th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600 whitespace-nowrap">
+                    <span title="Brand mentions as percentage of all brand mentions (including competitors)">Share of Voice</span>
+                  </th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600 whitespace-nowrap">
+                    <span title="Percentage of mentions where brand appeared first">First Position</span>
+                  </th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600 whitespace-nowrap">
+                    <span title="Average ranking position when mentioned">Avg. Rank</span>
+                  </th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {promptBreakdownStats.map((stat, index) => {
+                  const getSentimentLabel = (score: number | null): string => {
+                    if (score === null) return '-';
+                    if (score >= 4.5) return 'Very Favorable';
+                    if (score >= 3.5) return 'Favorable';
+                    if (score >= 2.5) return 'Neutral';
+                    if (score >= 1.5) return 'Conditional';
+                    if (score >= 0.5) return 'Negative';
+                    return '-';
+                  };
+
+                  const getSentimentColor = (score: number | null): string => {
+                    if (score === null) return 'text-gray-400';
+                    if (score >= 4.5) return 'text-green-600';
+                    if (score >= 3.5) return 'text-lime-600';
+                    if (score >= 2.5) return 'text-gray-600';
+                    if (score >= 1.5) return 'text-orange-500';
+                    if (score >= 0.5) return 'text-red-500';
+                    return 'text-gray-400';
+                  };
+
+                  return (
+                    <tr key={stat.prompt} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                      <td className="py-3 px-3 max-w-[300px]">
+                        <span className="text-gray-900 line-clamp-2" title={stat.prompt}>
+                          {stat.prompt}
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${stat.visibilityScore >= 50 ? 'text-green-600' : stat.visibilityScore >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                          {stat.visibilityScore.toFixed(0)}%
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${stat.shareOfVoice >= 50 ? 'text-green-600' : stat.shareOfVoice >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                          {stat.shareOfVoice.toFixed(0)}%
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${stat.firstPositionRate >= 50 ? 'text-green-600' : stat.firstPositionRate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                          {stat.firstPositionRate.toFixed(0)}%
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        {stat.avgRank !== null ? (
+                          <span className={`font-medium ${stat.avgRank <= 1.5 ? 'text-green-600' : stat.avgRank <= 3 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                            #{stat.avgRank.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${getSentimentColor(stat.avgSentimentScore)}`}>
+                          {getSentimentLabel(stat.avgSentimentScore)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* LLM Breakdown */}
       {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
