@@ -2545,23 +2545,23 @@ export default function ResultsPage() {
                     <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pl-[140px] mb-[-14px]">
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Highly Recommended <span className="text-gray-400">(top choice)</span></span>
+                        <span className="text-xs text-gray-500">Highly Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Recommended <span className="text-gray-400">(positive mention)</span></span>
+                        <span className="text-xs text-gray-500">Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                        <span className="text-xs text-gray-500">Mentioned <span className="text-gray-400">(neutral)</span></span>
+                        <span className="text-xs text-gray-500">Mentioned</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                        <span className="text-xs text-gray-500">With Caveats <span className="text-gray-400">(qualified)</span></span>
+                        <span className="text-xs text-gray-500">With Caveats</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                        <span className="text-xs text-gray-500">Not Recommended <span className="text-gray-400">(negative)</span></span>
+                        <span className="text-xs text-gray-500">Not Recommended</span>
                       </div>
                     </div>
                   )}
@@ -2910,23 +2910,23 @@ export default function ResultsPage() {
                       <span className="text-xs text-gray-500 font-medium">Sentiment:</span>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Highly Recommended <span className="text-gray-400">(top choice)</span></span>
+                        <span className="text-xs text-gray-500">Highly Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                        <span className="text-xs text-gray-500">Recommended <span className="text-gray-400">(positive mention)</span></span>
+                        <span className="text-xs text-gray-500">Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                        <span className="text-xs text-gray-500">Mentioned <span className="text-gray-400">(neutral)</span></span>
+                        <span className="text-xs text-gray-500">Mentioned</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                        <span className="text-xs text-gray-500">With Caveats <span className="text-gray-400">(qualified)</span></span>
+                        <span className="text-xs text-gray-500">With Caveats</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                        <span className="text-xs text-gray-500">Not Recommended <span className="text-gray-400">(negative)</span></span>
+                        <span className="text-xs text-gray-500">Not Recommended</span>
                       </div>
                     </div>
                   )}
