@@ -3750,6 +3750,180 @@ export default function ResultsPage() {
     </div>
   );
 
+  // Sentiment score mapping for heatmap calculations (main scope for modal access)
+  const sentimentScores: Record<string, number> = {
+    'strong_endorsement': 5,
+    'positive_endorsement': 4,
+    'neutral_mention': 3,
+    'conditional': 2,
+    'negative_comparison': 1,
+    'not_mentioned': 0,
+  };
+
+  const getSentimentLabelFromScore = (score: number): string => {
+    if (score >= 4.5) return 'Very Favorable';
+    if (score >= 3.5) return 'Favorable';
+    if (score >= 2.5) return 'Neutral';
+    if (score >= 1.5) return 'Conditional';
+    if (score >= 0.5) return 'Negative';
+    return 'N/A';
+  };
+
+  // Brand-Source Heatmap data (main scope for modal access)
+  const brandSourceHeatmap = useMemo(() => {
+    if (!runStatus) return { brands: [], sources: [], data: [], brandTotals: {} as Record<string, number>, searchedBrand: '', sentimentData: {} as Record<string, Record<string, { total: number; sum: number; avg: number }>> };
+
+    const sourceBrandCounts: Record<string, Record<string, number>> = {};
+    const sourceBrandSentiments: Record<string, Record<string, { total: number; sum: number }>> = {};
+    const brandTotalMentions: Record<string, number> = {};
+
+    // Process all results to get per-brand citation counts per source
+    const results = globallyFilteredResults.filter((r: Result) => {
+      if (r.error || !r.sources || r.sources.length === 0) return false;
+      if (heatmapProviderFilter !== 'all' && r.provider !== heatmapProviderFilter) return false;
+      return true;
+    });
+
+    for (const result of results) {
+      if (!result.sources) continue;
+
+      // Get all brands mentioned in this result with their sentiments
+      const brandsInResult: Array<{ brand: string; sentiment: string | null }> = [];
+      if (result.brand_mentioned && runStatus.brand) {
+        brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
+      }
+      if (result.competitors_mentioned) {
+        result.competitors_mentioned.forEach(comp => {
+          brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null });
+        });
+      }
+
+      // Count brand mentions for sorting
+      brandsInResult.forEach(({ brand }) => {
+        brandTotalMentions[brand] = (brandTotalMentions[brand] || 0) + 1;
+      });
+
+      if (brandsInResult.length === 0) continue;
+
+      const seenDomains = new Set<string>();
+      for (const source of result.sources) {
+        if (!source.url) continue;
+        const domain = getDomain(source.url);
+
+        // Count each domain only once per response
+        if (seenDomains.has(domain)) continue;
+        seenDomains.add(domain);
+
+        if (!sourceBrandCounts[domain]) {
+          sourceBrandCounts[domain] = {};
+          sourceBrandSentiments[domain] = {};
+        }
+
+        // Associate this source with all brands mentioned in the response
+        brandsInResult.forEach(({ brand, sentiment }) => {
+          sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
+
+          // Track sentiment
+          if (!sourceBrandSentiments[domain][brand]) {
+            sourceBrandSentiments[domain][brand] = { total: 0, sum: 0 };
+          }
+          if (sentiment && sentimentScores[sentiment] !== undefined) {
+            sourceBrandSentiments[domain][brand].total += 1;
+            sourceBrandSentiments[domain][brand].sum += sentimentScores[sentiment];
+          }
+        });
+      }
+    }
+
+    // Get top 10 sources by total citations
+    const topSources = Object.entries(sourceBrandCounts)
+      .map(([domain, brands]) => ({
+        domain,
+        total: Object.values(brands).reduce((sum, count) => sum + count, 0),
+        brands,
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+
+    // Sort brands: searched brand first, then by total mentions
+    const searchedBrand = runStatus.brand;
+    const brandList = Object.keys(brandTotalMentions)
+      .sort((a, b) => {
+        if (a === searchedBrand) return -1;
+        if (b === searchedBrand) return 1;
+        return brandTotalMentions[b] - brandTotalMentions[a];
+      });
+
+    // Build heatmap data with counts
+    const heatmapData: Array<{ domain: string; total: number; [key: string]: string | number }> = topSources.map(source => ({
+      domain: source.domain,
+      total: source.total,
+      ...brandList.reduce((acc, brand) => {
+        acc[brand] = source.brands[brand] || 0;
+        return acc;
+      }, {} as Record<string, number>),
+    }));
+
+    // Build sentiment data
+    const sentimentData: Record<string, Record<string, { total: number; sum: number; avg: number }>> = {};
+    topSources.forEach(source => {
+      sentimentData[source.domain] = {};
+      brandList.forEach(brand => {
+        const data = sourceBrandSentiments[source.domain]?.[brand];
+        if (data && data.total > 0) {
+          sentimentData[source.domain][brand] = {
+            ...data,
+            avg: data.sum / data.total,
+          };
+        } else {
+          sentimentData[source.domain][brand] = { total: 0, sum: 0, avg: 0 };
+        }
+      });
+    });
+
+    return {
+      brands: brandList,
+      sources: topSources.map(s => s.domain),
+      data: heatmapData,
+      brandTotals: brandTotalMentions,
+      searchedBrand,
+      sentimentData,
+    };
+  }, [runStatus, globallyFilteredResults, heatmapProviderFilter]);
+
+  // Handler for heatmap cell double-click - find matching results
+  const handleHeatmapCellClick = useCallback((domain: string, brand: string) => {
+    if (!runStatus) return;
+
+    // Find results that:
+    // 1. Have the specified domain in their sources
+    // 2. Mention the specified brand
+    const matchingResults = globallyFilteredResults.filter((result: Result) => {
+      if (result.error || !result.sources || result.sources.length === 0) return false;
+      if (heatmapProviderFilter !== 'all' && result.provider !== heatmapProviderFilter) return false;
+
+      // Check if source domain is cited
+      const hasDomain = result.sources.some((source: Source) => {
+        if (!source.url) return false;
+        return getDomain(source.url) === domain;
+      });
+      if (!hasDomain) return false;
+
+      // Check if brand is mentioned
+      if (brand === runStatus.brand) {
+        return result.brand_mentioned;
+      } else {
+        return result.competitors_mentioned?.includes(brand);
+      }
+    });
+
+    if (matchingResults.length === 1) {
+      setSelectedResult(matchingResults[0]);
+    } else if (matchingResults.length > 1) {
+      setHeatmapResultsList({ results: matchingResults, domain, brand });
+    }
+  }, [runStatus, globallyFilteredResults, heatmapProviderFilter]);
+
   // Sources Tab Content
   const SourcesTab = () => {
     // Helper to extract domain from URL
@@ -4279,194 +4453,6 @@ export default function ResultsPage() {
         .sort((a, b) => b.value - a.value);
     }, [topCitedSources, aiCategorizations]);
 
-    // Sentiment score mapping for calculations
-    const sentimentScores: Record<string, number> = {
-      'strong_endorsement': 5,
-      'positive_endorsement': 4,
-      'neutral_mention': 3,
-      'conditional': 2,
-      'negative_comparison': 1,
-      'not_mentioned': 0,
-    };
-
-    const sentimentLabels: Record<number, string> = {
-      5: 'Very Favorable',
-      4: 'Favorable',
-      3: 'Neutral',
-      2: 'Conditional',
-      1: 'Negative',
-      0: 'N/A',
-    };
-
-    const getSentimentLabel = (score: number): string => {
-      if (score >= 4.5) return 'Very Favorable';
-      if (score >= 3.5) return 'Favorable';
-      if (score >= 2.5) return 'Neutral';
-      if (score >= 1.5) return 'Conditional';
-      if (score >= 0.5) return 'Negative';
-      return 'N/A';
-    };
-
-    // Brand-Source Heatmap data (sources by brand mentioned)
-    const brandSourceHeatmap = useMemo(() => {
-      if (!runStatus) return { brands: [], sources: [], data: [], brandTotals: {} as Record<string, number>, sentimentData: {} as Record<string, Record<string, { total: number; sum: number; avg: number }>> };
-
-      const sourceBrandCounts: Record<string, Record<string, number>> = {};
-      const sourceBrandSentiments: Record<string, Record<string, { total: number; sum: number }>> = {};
-      const brandTotalMentions: Record<string, number> = {};
-
-      // Process all results to get per-brand citation counts per source
-      const results = globallyFilteredResults.filter((r: Result) => {
-        if (r.error || !r.sources || r.sources.length === 0) return false;
-        if (heatmapProviderFilter !== 'all' && r.provider !== heatmapProviderFilter) return false;
-        return true;
-      });
-
-      for (const result of results) {
-        if (!result.sources) continue;
-
-        // Get all brands mentioned in this result with their sentiments
-        const brandsInResult: Array<{ brand: string; sentiment: string | null }> = [];
-        if (result.brand_mentioned && runStatus.brand) {
-          brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
-        }
-        if (result.competitors_mentioned) {
-          result.competitors_mentioned.forEach(comp => {
-            brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null });
-          });
-        }
-
-        // Count brand mentions for sorting
-        brandsInResult.forEach(({ brand }) => {
-          brandTotalMentions[brand] = (brandTotalMentions[brand] || 0) + 1;
-        });
-
-        if (brandsInResult.length === 0) continue;
-
-        const seenDomains = new Set<string>();
-        for (const source of result.sources) {
-          if (!source.url) continue;
-          const domain = getDomain(source.url);
-
-          // Count each domain only once per response
-          if (seenDomains.has(domain)) continue;
-          seenDomains.add(domain);
-
-          if (!sourceBrandCounts[domain]) {
-            sourceBrandCounts[domain] = {};
-            sourceBrandSentiments[domain] = {};
-          }
-
-          // Associate this source with all brands mentioned in the response
-          brandsInResult.forEach(({ brand, sentiment }) => {
-            sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
-
-            // Track sentiment
-            if (!sourceBrandSentiments[domain][brand]) {
-              sourceBrandSentiments[domain][brand] = { total: 0, sum: 0 };
-            }
-            if (sentiment && sentimentScores[sentiment] !== undefined) {
-              sourceBrandSentiments[domain][brand].total += 1;
-              sourceBrandSentiments[domain][brand].sum += sentimentScores[sentiment];
-            }
-          });
-        }
-      }
-
-      // Get top 10 sources by total citations
-      const topSources = Object.entries(sourceBrandCounts)
-        .map(([domain, brands]) => ({
-          domain,
-          total: Object.values(brands).reduce((sum, count) => sum + count, 0),
-          brands,
-        }))
-        .sort((a, b) => b.total - a.total)
-        .slice(0, 10);
-
-      // Sort brands: searched brand first, then by total mentions
-      const searchedBrand = runStatus.brand;
-      const brandList = Object.keys(brandTotalMentions)
-        .sort((a, b) => {
-          if (a === searchedBrand) return -1;
-          if (b === searchedBrand) return 1;
-          return brandTotalMentions[b] - brandTotalMentions[a];
-        });
-
-      // Build heatmap data with counts
-      const heatmapData: Array<{ domain: string; total: number; [key: string]: string | number }> = topSources.map(source => ({
-        domain: source.domain,
-        total: source.total,
-        ...brandList.reduce((acc, brand) => {
-          acc[brand] = source.brands[brand] || 0;
-          return acc;
-        }, {} as Record<string, number>),
-      }));
-
-      // Build sentiment data
-      const sentimentData: Record<string, Record<string, { total: number; sum: number; avg: number }>> = {};
-      topSources.forEach(source => {
-        sentimentData[source.domain] = {};
-        brandList.forEach(brand => {
-          const data = sourceBrandSentiments[source.domain]?.[brand];
-          if (data && data.total > 0) {
-            sentimentData[source.domain][brand] = {
-              ...data,
-              avg: data.sum / data.total,
-            };
-          } else {
-            sentimentData[source.domain][brand] = { total: 0, sum: 0, avg: 0 };
-          }
-        });
-      });
-
-      return {
-        brands: brandList,
-        sources: topSources.map(s => s.domain),
-        data: heatmapData,
-        brandTotals: brandTotalMentions,
-        searchedBrand,
-        sentimentData,
-      };
-    }, [runStatus, globallyFilteredResults, heatmapProviderFilter]);
-
-    // Handler for heatmap cell double-click - find matching results
-    const handleHeatmapCellClick = useCallback((domain: string, brand: string) => {
-      if (!runStatus) return;
-
-      // Find results that:
-      // 1. Have the specified domain in their sources
-      // 2. Mention the specified brand (either as main brand or competitor)
-      const matchingResults = globallyFilteredResults.filter((result: Result) => {
-        if (result.error || !result.sources || result.sources.length === 0) return false;
-
-        // Check if this source domain is cited
-        const hasDomain = result.sources.some(source => {
-          if (!source.url) return false;
-          const sourceDomain = getDomain(source.url);
-          return sourceDomain === domain;
-        });
-        if (!hasDomain) return false;
-
-        // Check if the brand is mentioned
-        const isBrandMentioned = (
-          (brand === runStatus.brand && result.brand_mentioned) ||
-          (result.competitors_mentioned && result.competitors_mentioned.includes(brand))
-        );
-
-        return isBrandMentioned;
-      });
-
-      if (matchingResults.length === 0) return;
-
-      if (matchingResults.length === 1) {
-        // Single result - open directly
-        setSelectedResult(matchingResults[0]);
-      } else {
-        // Multiple results - show list modal
-        setHeatmapResultsList({ results: matchingResults, domain, brand });
-      }
-    }, [runStatus, globallyFilteredResults]);
-
     const CATEGORY_COLORS: Record<string, string> = {
       'Social Media': '#4A7C59',      // Primary green
       'Video': '#6B9E7A',             // Medium green
@@ -4890,7 +4876,7 @@ export default function ResultsPage() {
                               {count > 0 ? (
                                 heatmapShowSentiment ? (
                                   <span className={avgSentiment >= 3.5 && intensity > 0.5 ? 'text-white font-medium' : 'text-gray-700'}>
-                                    {getSentimentLabel(avgSentiment)}
+                                    {getSentimentLabelFromScore(avgSentiment)}
                                   </span>
                                 ) : (
                                   <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
@@ -6361,7 +6347,7 @@ export default function ResultsPage() {
                       const avgSentiment = sentimentInfo.avg;
                       return (
                         <span className="ml-2">
-                          — {getSentimentLabel(avgSentiment)} ({heatmapResultsList.results.length} citation{heatmapResultsList.results.length !== 1 ? 's' : ''})
+                          — {getSentimentLabelFromScore(avgSentiment)} ({heatmapResultsList.results.length} citation{heatmapResultsList.results.length !== 1 ? 's' : ''})
                         </span>
                       );
                     }
