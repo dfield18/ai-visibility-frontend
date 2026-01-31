@@ -7260,6 +7260,109 @@ export default function ResultsPage() {
         {activeTab === 'reference' && <ReferenceTab />}
         {activeTab === 'competitive' && (
           <div className="space-y-6">
+            {/* Brand Positioning Chart - Mentions vs Sentiment */}
+            {brandBreakdownStats.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="mb-4">
+                  <h2 className="text-base font-semibold text-gray-900">Brand Positioning</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    How brands compare by mention frequency and sentiment
+                  </p>
+                </div>
+                <div className="h-[400px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 20, right: 30, bottom: 60, left: 60 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        type="number"
+                        dataKey="sentiment"
+                        name="Avg. Sentiment"
+                        domain={[0, 5]}
+                        ticks={[1, 2, 3, 4, 5]}
+                        tickFormatter={(value) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][value] || ''}
+                        tick={{ fill: '#6b7280', fontSize: 11 }}
+                        label={{ value: 'Average Sentiment', position: 'bottom', offset: 40, style: { fill: '#6b7280', fontSize: 12 } }}
+                      />
+                      <YAxis
+                        type="number"
+                        dataKey="mentions"
+                        name="Mentions"
+                        tick={{ fill: '#6b7280', fontSize: 11 }}
+                        label={{ value: 'Number of Mentions', angle: -90, position: 'insideLeft', offset: -10, style: { fill: '#6b7280', fontSize: 12, textAnchor: 'middle' } }}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length > 0) {
+                            const data = payload[0].payload;
+                            const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
+                            return (
+                              <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
+                                <p className="font-medium text-gray-900 mb-1">{data.brand}</p>
+                                <p className="text-gray-600">Mentions: {data.mentions}</p>
+                                <p className="text-gray-600">
+                                  Sentiment: {sentimentLabels[Math.round(data.sentiment)] || 'N/A'} ({data.sentiment.toFixed(1)})
+                                </p>
+                                <p className="text-gray-600">Visibility: {data.visibility.toFixed(0)}%</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Scatter
+                        data={brandBreakdownStats
+                          .filter(stat => stat.avgSentimentScore !== null && stat.mentioned > 0)
+                          .map(stat => ({
+                            brand: stat.brand,
+                            mentions: stat.mentioned,
+                            sentiment: stat.avgSentimentScore || 0,
+                            visibility: stat.visibilityScore,
+                            isSearchedBrand: stat.isSearchedBrand,
+                          }))}
+                        shape={(props: any) => {
+                          const { cx, cy, payload } = props;
+                          const isSearched = payload.isSearchedBrand;
+                          return (
+                            <g>
+                              <circle
+                                cx={cx}
+                                cy={cy}
+                                r={isSearched ? 10 : 7}
+                                fill={isSearched ? '#4A7C59' : '#3b82f6'}
+                                stroke={isSearched ? '#3d6649' : '#2563eb'}
+                                strokeWidth={2}
+                                opacity={0.8}
+                              />
+                              <text
+                                x={cx}
+                                y={cy - (isSearched ? 14 : 11)}
+                                textAnchor="middle"
+                                fill={isSearched ? '#4A7C59' : '#3b82f6'}
+                                fontSize={isSearched ? 12 : 11}
+                                fontWeight={isSearched ? 600 : 500}
+                              >
+                                {payload.brand.length > 15 ? payload.brand.substring(0, 13) + '...' : payload.brand}
+                              </text>
+                            </g>
+                          );
+                        }}
+                      />
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex items-center justify-center gap-6 mt-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#4A7C59]"></div>
+                    <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <span className="text-sm text-gray-600">Competitors</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Brand Breakdown Table */}
             {brandBreakdownStats.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
