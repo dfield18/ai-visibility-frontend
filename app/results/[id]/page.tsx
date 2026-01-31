@@ -2521,7 +2521,7 @@ export default function ResultsPage() {
           {chartTab === 'allAnswers' && (
             <>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-sm text-gray-500">Each dot is one AI response. Higher dots mean earlier recommendations.</p>
+                <p className="text-sm text-gray-500">Each dot is one AI response. Higher dots mean earlier mentions of {runStatus?.brand || 'your brand'}.</p>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500">Show sentiment</span>
                   <button
