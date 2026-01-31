@@ -1933,6 +1933,10 @@ export default function ResultsPage() {
       }
     }
 
+    // Calculate #1 rate
+    const responsesWhereMentioned = mentionedCount;
+    const top1Rate = responsesWhereMentioned > 0 ? (topPositionCount / responsesWhereMentioned) * 100 : 0;
+
     return {
       overallVisibility,
       shareOfVoice,
@@ -1942,6 +1946,13 @@ export default function ResultsPage() {
       uniqueSourcesCount: uniqueSources.size,
       totalCost: runStatus.actual_cost,
       selectedBrand,
+      // Additional fields for KPI tooltips
+      mentionedCount,
+      selectedBrandMentions,
+      totalBrandMentions,
+      responsesWhereMentioned,
+      top1Rate,
+      ranksCount: ranks.length,
     };
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
 
@@ -2205,6 +2216,59 @@ export default function ResultsPage() {
     return 'Negative';
   };
 
+  // KPI Interpretation types and helper
+  type InterpretationTone = 'success' | 'neutral' | 'warn';
+
+  interface KPIInterpretation {
+    label: string;
+    tone: InterpretationTone;
+  }
+
+  const getKPIInterpretation = (
+    metricKey: 'visibility' | 'shareOfVoice' | 'top1Rate' | 'avgPosition',
+    value: number | null
+  ): KPIInterpretation => {
+    if (value === null) {
+      return { label: 'No data', tone: 'neutral' };
+    }
+
+    switch (metricKey) {
+      case 'visibility':
+        if (value >= 80) return { label: 'High visibility', tone: 'success' };
+        if (value >= 50) return { label: 'Moderate visibility', tone: 'neutral' };
+        return { label: 'Low visibility', tone: 'warn' };
+
+      case 'shareOfVoice':
+        if (value >= 30) return { label: 'Leading brand', tone: 'success' };
+        if (value >= 15) return { label: 'Competitive', tone: 'neutral' };
+        return { label: 'Low share of voice', tone: 'warn' };
+
+      case 'top1Rate':
+        if (value >= 50) return { label: 'Strong top ranking', tone: 'success' };
+        if (value >= 25) return { label: 'Often top-ranked', tone: 'neutral' };
+        return { label: 'Rarely #1', tone: 'warn' };
+
+      case 'avgPosition':
+        if (value <= 1.5) return { label: 'Excellent', tone: 'success' };
+        if (value <= 3.0) return { label: 'Good', tone: 'neutral' };
+        return { label: 'Needs improvement', tone: 'warn' };
+
+      default:
+        return { label: '', tone: 'neutral' };
+    }
+  };
+
+  const getToneStyles = (tone: InterpretationTone): string => {
+    switch (tone) {
+      case 'success':
+        return 'bg-green-50 text-green-700 border-green-200';
+      case 'warn':
+        return 'bg-orange-50 text-orange-700 border-orange-200';
+      default:
+        return 'bg-gray-50 text-gray-600 border-gray-200';
+    }
+  };
+
   const getProviderShortLabel = (provider: string) => {
     switch (provider) {
       case 'openai': return 'GPT';
@@ -2267,34 +2331,127 @@ export default function ResultsPage() {
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Visibility Score Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-          <p className="text-sm font-medium text-gray-600 mb-1">Visibility Score</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium text-gray-600">Visibility Score</p>
+            <div className="relative group">
+              <button
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Learn more about Visibility Score"
+                tabIndex={0}
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+              </button>
+              <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                Mentioned in {overviewMetrics?.mentionedCount || 0} of {overviewMetrics?.totalResponses || 0} AI answers (across selected models/prompts).
+              </div>
+            </div>
+          </div>
           <p className={`text-2xl font-bold ${getMentionRateColor(overviewMetrics?.overallVisibility ? overviewMetrics.overallVisibility / 100 : 0)}`}>
             {overviewMetrics?.overallVisibility?.toFixed(1) || 0}%
           </p>
-          <p className="text-xs text-gray-400 mt-1">Percent of prompts where brand is mentioned</p>
+          {(() => {
+            const interpretation = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null);
+            return (
+              <span className={`inline-block mt-1.5 px-2 py-0.5 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                {interpretation.label}
+              </span>
+            );
+          })()}
         </div>
+
+        {/* Share of Voice Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-          <p className="text-sm font-medium text-gray-600 mb-1">Share of Voice</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium text-gray-600">Share of Voice</p>
+            <div className="relative group">
+              <button
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Learn more about Share of Voice"
+                tabIndex={0}
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+              </button>
+              <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                {overviewMetrics?.selectedBrand || 'Your brand'} accounts for {overviewMetrics?.shareOfVoice?.toFixed(1) || 0}% of all brand mentions ({overviewMetrics?.selectedBrandMentions || 0} of {overviewMetrics?.totalBrandMentions || 0} mentions).
+              </div>
+            </div>
+          </div>
           <p className="text-2xl font-bold text-gray-900">
             {overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%
           </p>
-          <p className="text-xs text-gray-400 mt-1">Percent of brand mentions that are yours</p>
+          {(() => {
+            const interpretation = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null);
+            return (
+              <span className={`inline-block mt-1.5 px-2 py-0.5 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                {interpretation.label}
+              </span>
+            );
+          })()}
         </div>
+
+        {/* #1 Rate Card (formerly First Position) */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-          <p className="text-sm font-medium text-gray-600 mb-1">First Position</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium text-gray-600">#1 Rate</p>
+            <div className="relative group">
+              <button
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Learn more about #1 Rate"
+                tabIndex={0}
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+              </button>
+              <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                Ranked #1 in {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.responsesWhereMentioned || 0} AI answers where {overviewMetrics?.selectedBrand || 'your brand'} appears.
+              </div>
+            </div>
+          </div>
           <p className="text-2xl font-bold text-gray-900">
-            {overviewMetrics?.topPositionCount || 0}
-            <span className="text-sm font-normal text-gray-400">/{overviewMetrics?.totalResponses || 0}</span>
+            {overviewMetrics?.top1Rate?.toFixed(0) || 0}%
           </p>
-          <p className="text-xs text-gray-400 mt-1">Responses where brand is mentioned first</p>
+          <p className="text-xs text-gray-400">
+            {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.responsesWhereMentioned || 0} answers
+          </p>
+          {(() => {
+            const interpretation = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null);
+            return (
+              <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                {interpretation.label}
+              </span>
+            );
+          })()}
         </div>
+
+        {/* Avg. Position Card */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-          <p className="text-sm font-medium text-gray-600 mb-1">Avg. Position</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-sm font-medium text-gray-600">Avg. Position</p>
+            <div className="relative group">
+              <button
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Learn more about Average Position"
+                tabIndex={0}
+              >
+                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+              </button>
+              <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                Average rank when {overviewMetrics?.selectedBrand || 'your brand'} is shown: {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on {overviewMetrics?.ranksCount || 0} responses.
+              </div>
+            </div>
+          </div>
           <p className="text-2xl font-bold text-gray-900">
             {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
           </p>
-          <p className="text-xs text-gray-400 mt-1">Average position when brand is mentioned</p>
+          {(() => {
+            const interpretation = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null);
+            return (
+              <span className={`inline-block mt-1.5 px-2 py-0.5 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                {interpretation.label}
+              </span>
+            );
+          })()}
         </div>
       </div>
 
