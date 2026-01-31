@@ -2239,7 +2239,7 @@ export default function ResultsPage() {
   const getSentimentLabel = (score: number): string => {
     if (score >= 4.5) return 'Highly Recommended';
     if (score >= 3.5) return 'Recommended';
-    if (score >= 2.5) return 'Mentioned';
+    if (score >= 2.5) return 'Neutral';
     if (score >= 1.5) return 'With Caveats';
     return 'Not Recommended';
   };
@@ -2520,6 +2520,40 @@ export default function ResultsPage() {
           {/* All Answers Chart */}
           {chartTab === 'allAnswers' && (
             <>
+              {/* Key takeaway */}
+              {(() => {
+                const totalAnswers = scatterPlotData.length;
+                const mentionedCount = scatterPlotData.filter(d => d.isMentioned).length;
+                const notMentionedCount = totalAnswers - mentionedCount;
+                const topPositionCount = scatterPlotData.filter(d => d.rank === 1).length;
+                const top3Count = scatterPlotData.filter(d => d.rank >= 1 && d.rank <= 3).length;
+                const mentionRate = totalAnswers > 0 ? (mentionedCount / totalAnswers) * 100 : 0;
+                const topPositionRate = mentionedCount > 0 ? (topPositionCount / mentionedCount) * 100 : 0;
+
+                let takeaway = '';
+                if (mentionRate < 30) {
+                  takeaway = `Your brand appears in only ${mentionRate.toFixed(0)}% of AI answers—there's room to improve visibility.`;
+                } else if (topPositionRate > 50 && mentionRate > 50) {
+                  takeaway = `Strong performance: your brand is the top result in ${topPositionRate.toFixed(0)}% of answers where it appears.`;
+                } else if (topPositionCount > 0 && top3Count > mentionedCount * 0.6) {
+                  takeaway = `Your brand typically appears in the top 3 positions when mentioned.`;
+                } else if (notMentionedCount > mentionedCount) {
+                  takeaway = `Your brand is not shown in ${notMentionedCount} of ${totalAnswers} answers—consider optimizing for AI visibility.`;
+                } else if (mentionRate > 70) {
+                  takeaway = `Good visibility: your brand appears in ${mentionRate.toFixed(0)}% of AI answers.`;
+                } else {
+                  takeaway = `Your brand appears in ${mentionedCount} of ${totalAnswers} AI answers across all platforms.`;
+                }
+
+                return (
+                  <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 mb-4">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
+                    </p>
+                  </div>
+                );
+              })()}
+
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm text-gray-500">Each dot is one AI response. Higher dots mean earlier mentions of {runStatus?.brand || 'your brand'}.</p>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -2654,7 +2688,7 @@ export default function ResultsPage() {
                                   }`}>
                                     {data.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
                                      data.sentiment === 'positive_endorsement' ? 'Recommended' :
-                                     data.sentiment === 'neutral_mention' ? 'Mentioned' :
+                                     data.sentiment === 'neutral_mention' ? 'Neutral' :
                                      data.sentiment === 'conditional' ? 'With Caveats' :
                                      data.sentiment === 'negative_comparison' ? 'Not Recommended' : ''}
                                   </p>
@@ -2738,7 +2772,7 @@ export default function ResultsPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-500">Mentioned</span>
+                    <span className="text-xs text-gray-500">Neutral</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
@@ -2751,39 +2785,6 @@ export default function ResultsPage() {
                 </div>
               )}
 
-              {/* Key takeaway */}
-              {(() => {
-                const totalAnswers = scatterPlotData.length;
-                const mentionedCount = scatterPlotData.filter(d => d.isMentioned).length;
-                const notMentionedCount = totalAnswers - mentionedCount;
-                const topPositionCount = scatterPlotData.filter(d => d.rank === 1).length;
-                const top3Count = scatterPlotData.filter(d => d.rank >= 1 && d.rank <= 3).length;
-                const mentionRate = totalAnswers > 0 ? (mentionedCount / totalAnswers) * 100 : 0;
-                const topPositionRate = mentionedCount > 0 ? (topPositionCount / mentionedCount) * 100 : 0;
-
-                let takeaway = '';
-                if (mentionRate < 30) {
-                  takeaway = `Your brand appears in only ${mentionRate.toFixed(0)}% of AI answers—there's room to improve visibility.`;
-                } else if (topPositionRate > 50 && mentionRate > 50) {
-                  takeaway = `Strong performance: your brand is the top result in ${topPositionRate.toFixed(0)}% of answers where it appears.`;
-                } else if (topPositionCount > 0 && top3Count > mentionedCount * 0.6) {
-                  takeaway = `Your brand typically appears in the top 3 positions when mentioned.`;
-                } else if (notMentionedCount > mentionedCount) {
-                  takeaway = `Your brand is not shown in ${notMentionedCount} of ${totalAnswers} answers—consider optimizing for AI visibility.`;
-                } else if (mentionRate > 70) {
-                  takeaway = `Good visibility: your brand appears in ${mentionRate.toFixed(0)}% of AI answers.`;
-                } else {
-                  takeaway = `Your brand appears in ${mentionedCount} of ${totalAnswers} AI answers across all platforms.`;
-                }
-
-                return (
-                  <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 -mt-2">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
-                    </p>
-                  </div>
-                );
-              })()}
             </>
           )}
 
@@ -2920,7 +2921,7 @@ export default function ResultsPage() {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                        <span className="text-xs text-gray-500">Mentioned</span>
+                        <span className="text-xs text-gray-500">Neutral</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
@@ -3218,7 +3219,7 @@ export default function ResultsPage() {
                                       }`}>
                                         {dot.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
                                          dot.sentiment === 'positive_endorsement' ? 'Recommended' :
-                                         dot.sentiment === 'neutral_mention' ? 'Mentioned' :
+                                         dot.sentiment === 'neutral_mention' ? 'Neutral' :
                                          dot.sentiment === 'conditional' ? 'With Caveats' :
                                          dot.sentiment === 'negative_comparison' ? 'Not Recommended' : ''}
                                       </p>
@@ -3520,7 +3521,7 @@ export default function ResultsPage() {
                     if (score === null) return '-';
                     if (score >= 4.5) return 'Highly Recommended';
                     if (score >= 3.5) return 'Recommended';
-                    if (score >= 2.5) return 'Mentioned';
+                    if (score >= 2.5) return 'Neutral';
                     if (score >= 1.5) return 'With Caveats';
                     if (score >= 0.5) return 'Not Recommended';
                     return '-';
@@ -4457,7 +4458,7 @@ export default function ResultsPage() {
   const getSentimentLabelFromScore = (score: number): string => {
     if (score >= 4.5) return 'Highly Recommended';
     if (score >= 3.5) return 'Recommended';
-    if (score >= 2.5) return 'Mentioned';
+    if (score >= 2.5) return 'Neutral';
     if (score >= 1.5) return 'With Caveats';
     if (score >= 0.5) return 'Not Recommended';
     return 'N/A';
@@ -6124,7 +6125,7 @@ export default function ResultsPage() {
       switch (sentiment) {
         case 'strong_endorsement': return 'Highly Recommended';
         case 'positive_endorsement': return 'Recommended';
-        case 'neutral_mention': return 'Mentioned';
+        case 'neutral_mention': return 'Neutral';
         case 'conditional': return 'With Caveats';
         case 'negative_comparison': return 'Not Recommended';
         case 'not_mentioned': return 'Not Mentioned';
@@ -7291,7 +7292,7 @@ export default function ResultsPage() {
                           if (score === null) return '-';
                           if (score >= 4.5) return 'Highly Recommended';
                           if (score >= 3.5) return 'Recommended';
-                          if (score >= 2.5) return 'Mentioned';
+                          if (score >= 2.5) return 'Neutral';
                           if (score >= 1.5) return 'With Caveats';
                           if (score >= 0.5) return 'Not Recommended';
                           return '-';
@@ -7634,7 +7635,7 @@ export default function ResultsPage() {
                       }`}>
                         {selectedResult.brand_sentiment === 'strong_endorsement' ? 'Highly Recommended' :
                          selectedResult.brand_sentiment === 'positive_endorsement' ? 'Recommended' :
-                         selectedResult.brand_sentiment === 'neutral_mention' ? 'Mentioned' :
+                         selectedResult.brand_sentiment === 'neutral_mention' ? 'Neutral' :
                          selectedResult.brand_sentiment === 'conditional' ? 'With Caveats' :
                          selectedResult.brand_sentiment === 'negative_comparison' ? 'Not Recommended' :
                          'Unknown'}
