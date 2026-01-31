@@ -54,7 +54,7 @@ type FilterType = 'all' | 'mentioned' | 'not_mentioned';
 type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports';
 
 const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
-  { id: 'overview', label: 'Overview', icon: <LayoutGrid className="w-4 h-4" /> },
+  { id: 'overview', label: 'Visibility', icon: <LayoutGrid className="w-4 h-4" /> },
   { id: 'reference', label: 'Reference', icon: <FileText className="w-4 h-4" /> },
   { id: 'competitive', label: 'Competitive Landscape', icon: <TrendingUp className="w-4 h-4" /> },
   { id: 'sentiment', label: 'Sentiment & Framing', icon: <MessageSquare className="w-4 h-4" /> },
