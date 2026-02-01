@@ -7477,7 +7477,20 @@ export default function ResultsPage() {
             )}
 
             {/* Brand Positioning Chart - Mentions vs Sentiment */}
-            {brandBreakdownStats.length > 0 && (
+            {brandBreakdownStats.length > 0 && (() => {
+              // Calculate dynamic x-axis range based on actual sentiment values
+              const sentimentData = brandBreakdownStats
+                .filter(stat => stat.avgSentimentScore !== null && stat.mentioned > 0)
+                .map(stat => stat.avgSentimentScore || 0);
+              const minSentiment = sentimentData.length > 0 ? Math.min(...sentimentData) : 1;
+              const maxSentiment = sentimentData.length > 0 ? Math.max(...sentimentData) : 5;
+              // Floor min to nearest integer, add 0.5 padding
+              const xMin = Math.max(0, Math.floor(minSentiment) - 0.5);
+              const xMax = Math.min(5.5, Math.ceil(maxSentiment) + 0.5);
+              // Generate ticks for values within range
+              const xTicks = [1, 2, 3, 4, 5].filter(t => t >= xMin && t <= xMax);
+
+              return (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="mb-4">
                   <h2 className="text-base font-semibold text-gray-900">Brand Positioning</h2>
@@ -7493,8 +7506,8 @@ export default function ResultsPage() {
                         type="number"
                         dataKey="sentiment"
                         name="Avg. Sentiment"
-                        domain={[0, 5]}
-                        ticks={[1, 2, 3, 4, 5]}
+                        domain={[xMin, xMax]}
+                        ticks={xTicks}
                         tickFormatter={(value) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][value] || ''}
                         tick={{ fill: '#6b7280', fontSize: 11 }}
                         label={{ value: 'Average Sentiment', position: 'bottom', offset: 40, style: { fill: '#6b7280', fontSize: 12 } }}
@@ -7577,7 +7590,8 @@ export default function ResultsPage() {
                   </div>
                 </div>
               </div>
-            )}
+              );
+            })()}
 
             {/* Source Gap Analysis Chart & Table */}
             {sourceGapAnalysis.length > 0 && (
