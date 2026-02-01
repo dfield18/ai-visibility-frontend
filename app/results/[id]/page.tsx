@@ -1056,6 +1056,211 @@ export default function ResultsPage() {
     return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
   }, [runStatus, globallyFilteredResults, brandBreakdownLlmFilter, brandBreakdownPromptFilter]);
 
+  // Prompt Performance Matrix - brands vs prompts heatmap data
+  const promptPerformanceMatrix = useMemo(() => {
+    if (!runStatus) return { brands: [], prompts: [], matrix: [] };
+
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    if (results.length === 0) return { brands: [], prompts: [], matrix: [] };
+
+    const searchedBrand = runStatus.brand;
+    const prompts = Array.from(new Set(results.map(r => r.prompt)));
+
+    // Get all brands mentioned
+    const allBrands = new Set<string>([searchedBrand]);
+    results.forEach(r => {
+      if (r.competitors_mentioned) {
+        r.competitors_mentioned.forEach(c => allBrands.add(c));
+      }
+    });
+    const brands = Array.from(allBrands);
+
+    // Build matrix: for each brand and prompt, calculate visibility rate
+    const matrix = brands.map(brand => {
+      const isSearchedBrand = brand === searchedBrand;
+      return prompts.map(prompt => {
+        const promptResults = results.filter(r => r.prompt === prompt);
+        const mentioned = promptResults.filter(r => {
+          if (isSearchedBrand) return r.brand_mentioned;
+          return r.competitors_mentioned?.includes(brand);
+        }).length;
+        return promptResults.length > 0 ? (mentioned / promptResults.length) * 100 : 0;
+      });
+    });
+
+    return { brands, prompts, matrix };
+  }, [runStatus, globallyFilteredResults]);
+
+  // Model Preference Analysis - which LLMs favor which brands
+  const modelPreferenceData = useMemo(() => {
+    if (!runStatus) return [];
+
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    if (results.length === 0) return [];
+
+    const searchedBrand = runStatus.brand;
+    const providers = Array.from(new Set(results.map(r => r.provider)));
+
+    // Get top brands (searched + top competitors by mention count)
+    const brandCounts: Record<string, number> = { [searchedBrand]: 0 };
+    results.forEach(r => {
+      if (r.brand_mentioned) brandCounts[searchedBrand]++;
+      if (r.competitors_mentioned) {
+        r.competitors_mentioned.forEach(c => {
+          brandCounts[c] = (brandCounts[c] || 0) + 1;
+        });
+      }
+    });
+    const topBrands = Object.entries(brandCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([brand]) => brand);
+
+    // For each provider, calculate visibility rate for each brand
+    return providers.map(provider => {
+      const providerResults = results.filter(r => r.provider === provider);
+      const brandRates: Record<string, number> = {};
+
+      topBrands.forEach(brand => {
+        const isSearchedBrand = brand === searchedBrand;
+        const mentioned = providerResults.filter(r => {
+          if (isSearchedBrand) return r.brand_mentioned;
+          return r.competitors_mentioned?.includes(brand);
+        }).length;
+        brandRates[brand] = providerResults.length > 0 ? (mentioned / providerResults.length) * 100 : 0;
+      });
+
+      return { provider, ...brandRates };
+    });
+  }, [runStatus, globallyFilteredResults]);
+
+  // Brand Co-occurrence Analysis - which brands are mentioned together
+  const brandCooccurrence = useMemo(() => {
+    if (!runStatus) return [];
+
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    if (results.length === 0) return [];
+
+    const searchedBrand = runStatus.brand;
+    const cooccurrenceCounts: Record<string, { brand1: string; brand2: string; count: number }> = {};
+
+    results.forEach(r => {
+      // Get all brands mentioned in this response
+      const brandsInResponse: string[] = [];
+      if (r.brand_mentioned) brandsInResponse.push(searchedBrand);
+      if (r.competitors_mentioned) {
+        r.competitors_mentioned.forEach(c => brandsInResponse.push(c));
+      }
+
+      // Count co-occurrences
+      for (let i = 0; i < brandsInResponse.length; i++) {
+        for (let j = i + 1; j < brandsInResponse.length; j++) {
+          const brand1 = brandsInResponse[i];
+          const brand2 = brandsInResponse[j];
+          const key = [brand1, brand2].sort().join('|||');
+
+          if (!cooccurrenceCounts[key]) {
+            cooccurrenceCounts[key] = { brand1, brand2, count: 0 };
+          }
+          cooccurrenceCounts[key].count++;
+        }
+      }
+    });
+
+    // Convert to array and sort by count
+    return Object.values(cooccurrenceCounts)
+      .map(item => ({
+        brand1: item.brand1,
+        brand2: item.brand2,
+        count: item.count,
+        percentage: (item.count / results.length) * 100,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+  }, [runStatus, globallyFilteredResults]);
+
+  // Competitive Insights Summary - auto-generated key findings
+  const competitiveInsights = useMemo(() => {
+    if (!runStatus || brandBreakdownStats.length === 0) return [];
+
+    const insights: string[] = [];
+    const searchedBrand = runStatus.brand;
+    const searchedBrandStats = brandBreakdownStats.find(s => s.isSearchedBrand);
+    const competitors = brandBreakdownStats.filter(s => !s.isSearchedBrand);
+
+    if (!searchedBrandStats) return [];
+
+    // 1. Overall visibility ranking
+    const visibilityRank = brandBreakdownStats.findIndex(s => s.isSearchedBrand) + 1;
+    if (visibilityRank === 1) {
+      insights.push(`${searchedBrand} leads in AI visibility with ${searchedBrandStats.visibilityScore.toFixed(0)}% mention rate`);
+    } else if (visibilityRank <= 3) {
+      const leader = brandBreakdownStats[0];
+      insights.push(`${searchedBrand} ranks #${visibilityRank} in visibility (${searchedBrandStats.visibilityScore.toFixed(0)}%), behind ${leader.brand} (${leader.visibilityScore.toFixed(0)}%)`);
+    } else {
+      insights.push(`${searchedBrand} has low visibility at ${searchedBrandStats.visibilityScore.toFixed(0)}%, ranking #${visibilityRank} of ${brandBreakdownStats.length} brands`);
+    }
+
+    // 2. Sentiment comparison
+    if (searchedBrandStats.avgSentimentScore !== null) {
+      const betterSentimentCompetitors = competitors.filter(c =>
+        c.avgSentimentScore !== null && c.avgSentimentScore > searchedBrandStats.avgSentimentScore!
+      );
+      if (betterSentimentCompetitors.length === 0) {
+        insights.push(`${searchedBrand} has the most positive sentiment among all tracked brands`);
+      } else if (betterSentimentCompetitors.length <= 2) {
+        insights.push(`${betterSentimentCompetitors.map(c => c.brand).join(' and ')} ${betterSentimentCompetitors.length === 1 ? 'has' : 'have'} better sentiment than ${searchedBrand}`);
+      }
+    }
+
+    // 3. First position analysis
+    if (searchedBrandStats.firstPositionRate > 0) {
+      const topPositionLeader = [...brandBreakdownStats].sort((a, b) => b.firstPositionRate - a.firstPositionRate)[0];
+      if (topPositionLeader.isSearchedBrand) {
+        insights.push(`${searchedBrand} wins the #1 position ${searchedBrandStats.firstPositionRate.toFixed(0)}% of the time - more than any competitor`);
+      } else {
+        insights.push(`${topPositionLeader.brand} leads in #1 positions (${topPositionLeader.firstPositionRate.toFixed(0)}%) vs ${searchedBrand} (${searchedBrandStats.firstPositionRate.toFixed(0)}%)`);
+      }
+    }
+
+    // 4. Model preference insight
+    if (modelPreferenceData.length > 0) {
+      let bestModel = '';
+      let bestRate = 0;
+      let worstModel = '';
+      let worstRate = 100;
+
+      modelPreferenceData.forEach(data => {
+        const rate = (data as Record<string, string | number>)[searchedBrand] as number || 0;
+        if (rate > bestRate) {
+          bestRate = rate;
+          bestModel = data.provider;
+        }
+        if (rate < worstRate) {
+          worstRate = rate;
+          worstModel = data.provider;
+        }
+      });
+
+      if (bestModel && worstModel && bestModel !== worstModel && (bestRate - worstRate) > 10) {
+        insights.push(`${searchedBrand} performs best on ${bestModel} (${bestRate.toFixed(0)}%) and worst on ${worstModel} (${worstRate.toFixed(0)}%)`);
+      }
+    }
+
+    // 5. Co-occurrence insight
+    if (brandCooccurrence.length > 0) {
+      const topCooccurrence = brandCooccurrence.find(c =>
+        c.brand1 === searchedBrand || c.brand2 === searchedBrand
+      );
+      if (topCooccurrence) {
+        const otherBrand = topCooccurrence.brand1 === searchedBrand ? topCooccurrence.brand2 : topCooccurrence.brand1;
+        insights.push(`${searchedBrand} is most often mentioned alongside ${otherBrand} (${topCooccurrence.count} times)`);
+      }
+    }
+
+    return insights.slice(0, 5);
+  }, [runStatus, brandBreakdownStats, modelPreferenceData, brandCooccurrence]);
+
   // State for Source Gap Analysis filters
   const [sourceGapProviderFilter, setSourceGapProviderFilter] = useState<string>('all');
   const [sourceGapPromptFilter, setSourceGapPromptFilter] = useState<string>('all');
@@ -7261,6 +7466,26 @@ export default function ResultsPage() {
         {activeTab === 'reference' && <ReferenceTab />}
         {activeTab === 'competitive' && (
           <div className="space-y-6">
+            {/* Competitive Insights Summary */}
+            {competitiveInsights.length > 0 && (
+              <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Lightbulb className="w-5 h-5 text-blue-600" />
+                  <h2 className="text-base font-semibold text-gray-900">Key Competitive Insights</h2>
+                </div>
+                <ul className="space-y-3">
+                  {competitiveInsights.map((insight, idx) => (
+                    <li key={idx} className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
+                        {idx + 1}
+                      </div>
+                      <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {/* Brand Breakdown Table */}
             {brandBreakdownStats.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -7592,6 +7817,220 @@ export default function ResultsPage() {
               </div>
               );
             })()}
+
+            {/* Prompt Performance Matrix (Heatmap) */}
+            {promptPerformanceMatrix.brands.length > 0 && promptPerformanceMatrix.prompts.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="mb-4">
+                  <h2 className="text-base font-semibold text-gray-900">Prompt Performance Matrix</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Visibility rates for each brand across different prompts
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-2 font-medium text-gray-600 sticky left-0 bg-white min-w-[120px]">Brand</th>
+                        {promptPerformanceMatrix.prompts.map((prompt, idx) => (
+                          <th
+                            key={idx}
+                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[80px]"
+                            title={prompt}
+                          >
+                            <span className="text-xs">P{idx + 1}</span>
+                          </th>
+                        ))}
+                        <th className="text-center py-3 px-2 font-medium text-gray-600 min-w-[80px]">Avg</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {promptPerformanceMatrix.brands.map((brand, brandIdx) => {
+                        const isSearchedBrand = brand === runStatus?.brand;
+                        const rowAvg = promptPerformanceMatrix.matrix[brandIdx].reduce((a, b) => a + b, 0) / promptPerformanceMatrix.matrix[brandIdx].length;
+                        return (
+                          <tr key={brand} className={brandIdx % 2 === 0 ? 'bg-gray-50' : ''}>
+                            <td className={`py-2 px-2 sticky left-0 ${brandIdx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                              <span className={`font-medium ${isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-900'}`}>
+                                {brand.length > 15 ? brand.substring(0, 13) + '...' : brand}
+                              </span>
+                              {isSearchedBrand && (
+                                <span className="text-xs px-1 ml-1 bg-[#E8F0E8] text-[#4A7C59] rounded">you</span>
+                              )}
+                            </td>
+                            {promptPerformanceMatrix.matrix[brandIdx].map((rate, promptIdx) => {
+                              // Color intensity based on rate
+                              const intensity = rate / 100;
+                              const bgColor = rate === 0
+                                ? 'bg-gray-100'
+                                : intensity >= 0.7
+                                  ? 'bg-green-500 text-white'
+                                  : intensity >= 0.4
+                                    ? 'bg-green-300'
+                                    : intensity >= 0.1
+                                      ? 'bg-green-100'
+                                      : 'bg-gray-100';
+                              return (
+                                <td key={promptIdx} className="text-center py-2 px-2">
+                                  <div
+                                    className={`inline-flex items-center justify-center w-12 h-8 rounded text-xs font-medium ${bgColor}`}
+                                    title={`${brand} - ${promptPerformanceMatrix.prompts[promptIdx]}: ${rate.toFixed(0)}%`}
+                                  >
+                                    {rate.toFixed(0)}%
+                                  </div>
+                                </td>
+                              );
+                            })}
+                            <td className="text-center py-2 px-2">
+                              <span className={`font-semibold ${rowAvg >= 50 ? 'text-green-600' : rowAvg >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                {rowAvg.toFixed(0)}%
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 text-xs text-gray-500">
+                  <p className="mb-2">Prompt Legend:</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 max-h-32 overflow-y-auto">
+                    {promptPerformanceMatrix.prompts.map((prompt, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <span className="font-medium text-gray-700">P{idx + 1}:</span>
+                        <span className="truncate">{prompt}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Model Preference Analysis */}
+            {modelPreferenceData.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="mb-4">
+                  <h2 className="text-base font-semibold text-gray-900">Model Preference Analysis</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    How each AI model mentions different brands
+                  </p>
+                </div>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={modelPreferenceData.map(d => ({
+                        ...d,
+                        providerLabel: d.provider === 'openai' ? 'GPT' :
+                                       d.provider === 'anthropic' ? 'Claude' :
+                                       d.provider === 'perplexity' ? 'Perplexity' :
+                                       d.provider === 'google' ? 'Gemini' : d.provider
+                      }))}
+                      layout="horizontal"
+                      margin={{ top: 20, right: 30, bottom: 40, left: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="providerLabel"
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        tickFormatter={(value) => `${value}%`}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                        label={{ value: 'Visibility Rate', angle: -90, position: 'insideLeft', offset: -10, style: { fill: '#6b7280', fontSize: 12, textAnchor: 'middle' } }}
+                      />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length > 0) {
+                            return (
+                              <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
+                                <p className="font-medium text-gray-900 mb-2">{label}</p>
+                                {payload.map((entry: any, idx: number) => (
+                                  <p key={idx} style={{ color: entry.fill }}>
+                                    {entry.name}: {entry.value?.toFixed(1)}%
+                                  </p>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: 10 }} />
+                      {Object.keys(modelPreferenceData[0] || {})
+                        .filter(key => key !== 'provider' && key !== 'providerLabel')
+                        .map((brand, idx) => {
+                          const isSearchedBrand = brand === runStatus?.brand;
+                          const colors = ['#4A7C59', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6'];
+                          return (
+                            <Bar
+                              key={brand}
+                              dataKey={brand}
+                              fill={isSearchedBrand ? '#4A7C59' : colors[(idx % (colors.length - 1)) + 1]}
+                              name={brand}
+                              radius={[4, 4, 0, 0]}
+                            />
+                          );
+                        })}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Brand Co-occurrence Analysis */}
+            {brandCooccurrence.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="mb-4">
+                  <h2 className="text-base font-semibold text-gray-900">Brand Co-occurrence Analysis</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Brands that are frequently mentioned together in AI responses
+                  </p>
+                </div>
+                <div className="space-y-3">
+                  {brandCooccurrence.map((pair, idx) => {
+                    const maxCount = brandCooccurrence[0]?.count || 1;
+                    const widthPercent = (pair.count / maxCount) * 100;
+                    const isYourBrand = pair.brand1 === runStatus?.brand || pair.brand2 === runStatus?.brand;
+                    return (
+                      <div key={idx} className="flex items-center gap-4">
+                        <div className="w-48 flex-shrink-0">
+                          <div className="flex items-center gap-1 text-sm">
+                            <span className={pair.brand1 === runStatus?.brand ? 'font-semibold text-[#4A7C59]' : 'text-gray-700'}>
+                              {pair.brand1.length > 12 ? pair.brand1.substring(0, 10) + '...' : pair.brand1}
+                            </span>
+                            <span className="text-gray-400">+</span>
+                            <span className={pair.brand2 === runStatus?.brand ? 'font-semibold text-[#4A7C59]' : 'text-gray-700'}>
+                              {pair.brand2.length > 12 ? pair.brand2.substring(0, 10) + '...' : pair.brand2}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${isYourBrand ? 'bg-[#4A7C59]' : 'bg-blue-400'}`}
+                            style={{ width: `${widthPercent}%` }}
+                          />
+                        </div>
+                        <div className="w-24 text-right">
+                          <span className="text-sm font-medium text-gray-900">{pair.count}x</span>
+                          <span className="text-xs text-gray-500 ml-1">({pair.percentage.toFixed(1)}%)</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#4A7C59]"></div>
+                    <span>Includes {runStatus?.brand || 'your brand'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-400"></div>
+                    <span>Competitors only</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Source Gap Analysis Chart & Table */}
             {sourceGapAnalysis.length > 0 && (
