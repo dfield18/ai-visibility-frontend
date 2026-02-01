@@ -3154,6 +3154,7 @@ export default function ResultsPage() {
                           );
                         }}
                         axisLine={{ stroke: '#e5e7eb' }}
+                        tickLine={false}
                         ticks={RANK_BANDS.map((_, i) => i)}
                         interval={0}
                         width={80}
