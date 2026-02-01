@@ -8338,9 +8338,9 @@ export default function ResultsPage() {
                             cx="300"
                             cy="240"
                             r="70"
-                            fill="#4A7C59"
+                            fill="#7C6992"
                             fillOpacity="0.25"
-                            stroke="#4A7C59"
+                            stroke="#7C6992"
                             strokeWidth="2"
                           />
 
@@ -8454,25 +8454,25 @@ export default function ResultsPage() {
                   </div>
                 </div>
 
-                {/* Visual Chart */}
+                {/* Visual Chart - Dumbbell Chart */}
                 {sourceGapAnalysis.length > 0 ? (
                 <>
                 <div className="mb-6">
                   <div className="flex items-center justify-center gap-6 mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm bg-[#4A7C59]"></div>
+                      <div className="w-3 h-3 rounded-full bg-[#4A7C59]"></div>
                       <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                       <span className="text-sm text-gray-600">Top Competitor</span>
                     </div>
                   </div>
-                  <div className="h-[300px]">
+                  <div className="h-[350px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
+                      <ComposedChart
                         data={sourceGapAnalysis.slice(0, 10).map(row => ({
-                          domain: row.domain.length > 20 ? row.domain.substring(0, 18) + '...' : row.domain,
+                          domain: row.domain.length > 25 ? row.domain.substring(0, 23) + '...' : row.domain,
                           fullDomain: row.domain,
                           brandRate: row.brandRate,
                           competitorRate: row.topCompetitorRate,
@@ -8481,21 +8481,26 @@ export default function ResultsPage() {
                           citations: row.totalCitations,
                         }))}
                         layout="vertical"
-                        margin={{ top: 10, right: 30, bottom: 10, left: 120 }}
+                        margin={{ top: 10, right: 50, bottom: 10, left: 140 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#e5e7eb" />
                         <XAxis
                           type="number"
                           domain={[0, 100]}
+                          ticks={[0, 25, 50, 75, 100]}
                           tickFormatter={(value) => `${value}%`}
-                          tick={{ fill: '#6b7280', fontSize: 12 }}
+                          tick={{ fill: '#6b7280', fontSize: 11 }}
+                          axisLine={{ stroke: '#d1d5db' }}
                         />
                         <YAxis
                           type="category"
                           dataKey="domain"
-                          tick={{ fill: '#374151', fontSize: 12 }}
-                          width={115}
+                          tick={{ fill: '#374151', fontSize: 11 }}
+                          width={135}
+                          axisLine={false}
+                          tickLine={false}
                         />
+                        <ReferenceLine x={50} stroke="#d1d5db" strokeDasharray="3 3" />
                         <Tooltip
                           content={({ active, payload }) => {
                             if (active && payload && payload.length > 0) {
@@ -8507,30 +8512,97 @@ export default function ResultsPage() {
                                     {runStatus?.brand || 'Brand'}: {data.brandRate.toFixed(1)}%
                                   </p>
                                   <p className="text-blue-500">
-                                    {data.competitor}: {data.competitorRate.toFixed(1)}%
+                                    {data.competitor || 'Top Competitor'}: {data.competitorRate.toFixed(1)}%
                                   </p>
                                   <p className="text-gray-500 mt-1">
-                                    Gap: +{data.gap.toFixed(1)}% ({data.citations} citations)
+                                    Gap: {data.gap >= 0 ? '+' : ''}{data.gap.toFixed(1)} pts ({data.citations} citations)
                                   </p>
                                 </div>
                               );
                             }
                             return null;
                           }}
+                          cursor={{ fill: 'transparent' }}
                         />
-                        <Bar
+                        {/* Invisible scatter points for tooltip triggering */}
+                        <Scatter
                           dataKey="brandRate"
-                          fill="#4A7C59"
-                          name={runStatus?.brand || 'Brand'}
-                          radius={[0, 4, 4, 0]}
+                          fill="transparent"
+                          shape={() => null}
                         />
-                        <Bar
-                          dataKey="competitorRate"
-                          fill="#3b82f6"
-                          name="Top Competitor"
-                          radius={[0, 4, 4, 0]}
+                        {/* Custom dumbbell rendering */}
+                        <Customized
+                          component={(props: { formattedGraphicalItems?: Array<{ props?: { points?: Array<{ x: number; y: number; payload: { brandRate: number; competitorRate: number; fullDomain: string } }> } }>; xAxisMap?: Record<string, { scale: (value: number) => number }>; offset?: { left: number; top: number; width: number; height: number } }) => {
+                            const { formattedGraphicalItems, xAxisMap, offset } = props;
+                            if (!formattedGraphicalItems || !xAxisMap || !offset) return null;
+
+                            const xAxis = Object.values(xAxisMap)[0];
+                            if (!xAxis) return null;
+
+                            const scatterItem = formattedGraphicalItems[0];
+                            if (!scatterItem?.props?.points) return null;
+
+                            const points = scatterItem.props.points;
+
+                            return (
+                              <g>
+                                {points.map((point, index) => {
+                                  const { y, payload } = point;
+                                  const brandX = xAxis.scale(payload.brandRate);
+                                  const compX = xAxis.scale(payload.competitorRate);
+                                  const minX = Math.min(brandX, compX);
+                                  const maxX = Math.max(brandX, compX);
+
+                                  return (
+                                    <g
+                                      key={index}
+                                      style={{ cursor: 'pointer' }}
+                                      onClick={() => {
+                                        const domain = payload.fullDomain;
+                                        const newExpanded = new Set(expandedGapSources);
+                                        if (expandedGapSources.has(domain)) {
+                                          newExpanded.delete(domain);
+                                        } else {
+                                          newExpanded.add(domain);
+                                        }
+                                        setExpandedGapSources(newExpanded);
+                                      }}
+                                    >
+                                      {/* Connector line */}
+                                      <line
+                                        x1={minX}
+                                        y1={y}
+                                        x2={maxX}
+                                        y2={y}
+                                        stroke="#9ca3af"
+                                        strokeWidth={2}
+                                      />
+                                      {/* Brand dot (green) */}
+                                      <circle
+                                        cx={brandX}
+                                        cy={y}
+                                        r={6}
+                                        fill="#4A7C59"
+                                        stroke="#fff"
+                                        strokeWidth={1.5}
+                                      />
+                                      {/* Competitor dot (blue) */}
+                                      <circle
+                                        cx={compX}
+                                        cy={y}
+                                        r={6}
+                                        fill="#3b82f6"
+                                        stroke="#fff"
+                                        strokeWidth={1.5}
+                                      />
+                                    </g>
+                                  );
+                                })}
+                              </g>
+                            );
+                          }}
                         />
-                      </BarChart>
+                      </ComposedChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
