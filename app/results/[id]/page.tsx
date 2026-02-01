@@ -5514,8 +5514,8 @@ export default function ResultsPage() {
         }))
         .sort((a, b) => b.value - a.value);
 
-      // Group items under 5% into "Other"
-      const threshold = 5;
+      // Group items under 10% into "Other"
+      const threshold = 10;
       const mainItems = rawData.filter(item => item.percentage >= threshold);
       const otherItems = rawData.filter(item => item.percentage < threshold);
 
@@ -5966,9 +5966,9 @@ export default function ResultsPage() {
                               nameKey="name"
                               isAnimationActive={false}
                               label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                                // Only show label for items over 20%
+                                // Only show label for items 10% and above
                                 const pct = (percent || 0) * 100;
-                                if (pct < 20) return null;
+                                if (pct < 10) return null;
                                 const RADIAN = Math.PI / 180;
                                 const angle = midAngle || 0;
                                 const inner = innerRadius || 0;
@@ -7277,27 +7277,9 @@ export default function ResultsPage() {
 
         {/* Individual Results with Sentiment */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
-              <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleExportSentimentCSV}
-                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-              >
-                <Download className="w-4 h-4" />
-                Export CSV
-              </button>
-              <button
-                onClick={handleCopyLink}
-                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-              >
-                <Link2 className="w-4 h-4" />
-                {copied ? 'Copied!' : 'Share'}
-              </button>
-            </div>
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
+            <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
           </div>
 
           {/* Sentiment Legend */}
@@ -7454,6 +7436,24 @@ export default function ResultsPage() {
               Showing 20 of {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results
             </p>
           )}
+
+          {/* Export and Share buttons */}
+          <div className="flex justify-center gap-2 mt-4 pt-4 border-t border-gray-100">
+            <button
+              onClick={handleExportSentimentCSV}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Link2 className="w-4 h-4" />
+              {copied ? 'Copied!' : 'Share'}
+            </button>
+          </div>
         </div>
       </div>
     );
