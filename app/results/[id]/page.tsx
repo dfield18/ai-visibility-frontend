@@ -2744,6 +2744,21 @@ export default function ResultsPage() {
     }
   };
 
+  // Strip markdown formatting from text for preview display
+  const stripMarkdown = (text: string): string => {
+    return text
+      .replace(/\*\*([^*]+)\*\*/g, '$1')  // Remove bold **text**
+      .replace(/\*([^*]+)\*/g, '$1')       // Remove italic *text*
+      .replace(/^[\s]*[-*+]\s+/gm, '')     // Remove bullet points
+      .replace(/^[\s]*\d+\.\s+/gm, '')     // Remove numbered lists
+      .replace(/^#+\s+/gm, '')             // Remove headings
+      .replace(/`([^`]+)`/g, '$1')         // Remove inline code
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Remove links, keep text
+      .replace(/\n+/g, ' ')                // Replace newlines with spaces
+      .replace(/\s+/g, ' ')                // Normalize whitespace
+      .trim();
+  };
+
   // Generate LLM breakdown key takeaway
   const llmBreakdownTakeaway = useMemo(() => {
     const entries = Object.entries(llmBreakdownStats);
@@ -8470,8 +8485,9 @@ export default function ResultsPage() {
                                         </p>
                                         <div className="space-y-2 max-h-64 overflow-y-auto">
                                           {row.snippets.slice(0, 10).map((snippetInfo, snippetIdx) => {
-                                            // Highlight the brand name in the snippet
-                                            const parts = snippetInfo.snippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
+                                            // Strip markdown and highlight the brand name in the snippet
+                                            const cleanSnippet = stripMarkdown(snippetInfo.snippet);
+                                            const parts = cleanSnippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
                                             return (
                                               <div
                                                 key={snippetIdx}
@@ -8633,7 +8649,7 @@ export default function ResultsPage() {
                           competitor: row.topCompetitor,
                         }))}
                         layout="vertical"
-                        margin={{ top: 10, right: 30, bottom: 10, left: 120 }}
+                        margin={{ top: 10, right: 30, bottom: 10, left: 180 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                         <XAxis
@@ -8650,8 +8666,23 @@ export default function ResultsPage() {
                         <YAxis
                           type="category"
                           dataKey="domain"
-                          tick={{ fill: '#374151', fontSize: 12 }}
-                          width={115}
+                          tick={(props) => {
+                            const { x, y, payload, index } = props;
+                            const dataItem = sourceSentimentGapAnalysis[index];
+                            const competitor = dataItem?.topCompetitor || '';
+                            const shortCompetitor = competitor.length > 12 ? competitor.substring(0, 10) + '...' : competitor;
+                            return (
+                              <g transform={`translate(${x},${y})`}>
+                                <text x={-5} y={-6} textAnchor="end" fill="#374151" fontSize={11}>
+                                  {payload.value}
+                                </text>
+                                <text x={-5} y={8} textAnchor="end" fill="#3b82f6" fontSize={10}>
+                                  vs {shortCompetitor}
+                                </text>
+                              </g>
+                            );
+                          }}
+                          width={175}
                         />
                         <ReferenceLine x={0} stroke="#9ca3af" strokeWidth={1} />
                         <Tooltip
@@ -8771,8 +8802,9 @@ export default function ResultsPage() {
                                     </p>
                                     <div className="space-y-2 max-h-64 overflow-y-auto">
                                       {row.snippets.slice(0, 10).map((snippetInfo, snippetIdx) => {
-                                        // Highlight the brand name in the snippet
-                                        const parts = snippetInfo.snippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
+                                        // Strip markdown and highlight the brand name in the snippet
+                                        const cleanSnippet = stripMarkdown(snippetInfo.snippet);
+                                        const parts = cleanSnippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
                                         const sentimentColors: Record<string, string> = {
                                           'strong_endorsement': 'bg-green-100 text-green-700',
                                           'positive_endorsement': 'bg-green-50 text-green-600',
