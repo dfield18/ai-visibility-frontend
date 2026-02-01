@@ -7792,6 +7792,7 @@ export default function ResultsPage() {
                         label={{ value: 'Number of Mentions', angle: -90, position: 'insideLeft', offset: -10, style: { fill: '#6b7280', fontSize: 12, textAnchor: 'middle' } }}
                       />
                       <Tooltip
+                        cursor={false}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length > 0) {
                             const data = payload[0].payload;
