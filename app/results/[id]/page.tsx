@@ -2923,6 +2923,7 @@ export default function ResultsPage() {
                         axisLine={{ stroke: '#e5e7eb' }}
                         ticks={RANK_BANDS.map((_, i) => i)}
                         interval={0}
+                        width={80}
                       />
                       <Tooltip
                         cursor={false}
