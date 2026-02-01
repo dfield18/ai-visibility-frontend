@@ -9135,17 +9135,29 @@ export default function ResultsPage() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
                     <p className="text-sm text-gray-500">Which sources are cited when each brand is mentioned</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setHeatmapShowSentiment(!heatmapShowSentiment)}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                        heatmapShowSentiment
-                          ? 'bg-[#4A7C59] text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {heatmapShowSentiment ? 'Showing Sentiment' : 'Show Sentiment'}
-                    </button>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1 border-b border-gray-200">
+                      <button
+                        onClick={() => setHeatmapShowSentiment(false)}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                          !heatmapShowSentiment
+                            ? 'border-[#4A7C59] text-[#4A7C59]'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Citations
+                      </button>
+                      <button
+                        onClick={() => setHeatmapShowSentiment(true)}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                          heatmapShowSentiment
+                            ? 'border-[#4A7C59] text-[#4A7C59]'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Sentiment
+                      </button>
+                    </div>
                     <select
                       value={heatmapProviderFilter}
                       onChange={(e) => setHeatmapProviderFilter(e.target.value)}
