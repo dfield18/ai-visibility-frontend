@@ -1225,6 +1225,18 @@ export default function ResultsPage() {
 
     // 4. Model preference insight
     if (modelPreferenceData.length > 0) {
+      const formatModelName = (provider: string): string => {
+        switch (provider) {
+          case 'openai': return 'GPT-4o';
+          case 'anthropic': return 'Claude';
+          case 'perplexity': return 'Perplexity';
+          case 'ai_overviews': return 'Google AI Overviews';
+          case 'gemini': return 'Gemini';
+          case 'google': return 'Gemini';
+          default: return provider;
+        }
+      };
+
       let bestModel = '';
       let bestRate = 0;
       let worstModel = '';
@@ -1243,7 +1255,7 @@ export default function ResultsPage() {
       });
 
       if (bestModel && worstModel && bestModel !== worstModel && (bestRate - worstRate) > 10) {
-        insights.push(`${searchedBrand} performs best on ${bestModel} (${bestRate.toFixed(0)}%) and worst on ${worstModel} (${worstRate.toFixed(0)}%)`);
+        insights.push(`${searchedBrand} performs best on ${formatModelName(bestModel)} (${bestRate.toFixed(0)}%) and worst on ${formatModelName(worstModel)} (${worstRate.toFixed(0)}%)`);
       }
     }
 
