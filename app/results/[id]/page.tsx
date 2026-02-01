@@ -7727,6 +7727,41 @@ export default function ResultsPage() {
               // Generate ticks for values within range
               const xTicks = [1, 2, 3, 4, 5].filter(t => t >= xMin && t <= xMax);
 
+              // Pre-process data to handle overlapping points
+              const rawData = brandBreakdownStats
+                .filter(stat => stat.avgSentimentScore !== null && stat.mentioned > 0)
+                .map(stat => ({
+                  brand: stat.brand,
+                  mentions: stat.mentioned,
+                  sentiment: stat.avgSentimentScore || 0,
+                  visibility: stat.visibilityScore,
+                  isSearchedBrand: stat.isSearchedBrand,
+                }));
+
+              // Group points by their position (same mentions and similar sentiment)
+              const positionGroups: Record<string, typeof rawData> = {};
+              rawData.forEach(point => {
+                // Round sentiment to 1 decimal for grouping
+                const key = `${point.mentions}-${point.sentiment.toFixed(1)}`;
+                if (!positionGroups[key]) {
+                  positionGroups[key] = [];
+                }
+                positionGroups[key].push(point);
+              });
+
+              // Add offset information to each point
+              const processedData = rawData.map(point => {
+                const key = `${point.mentions}-${point.sentiment.toFixed(1)}`;
+                const group = positionGroups[key];
+                const indexInGroup = group.findIndex(p => p.brand === point.brand);
+                const groupSize = group.length;
+                return {
+                  ...point,
+                  groupSize,
+                  indexInGroup,
+                };
+              });
+
               return (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="mb-4">
@@ -7776,32 +7811,39 @@ export default function ResultsPage() {
                         }}
                       />
                       <Scatter
-                        data={brandBreakdownStats
-                          .filter(stat => stat.avgSentimentScore !== null && stat.mentioned > 0)
-                          .map(stat => ({
-                            brand: stat.brand,
-                            mentions: stat.mentioned,
-                            sentiment: stat.avgSentimentScore || 0,
-                            visibility: stat.visibilityScore,
-                            isSearchedBrand: stat.isSearchedBrand,
-                          }))}
+                        data={processedData}
                         shape={(props: any) => {
                           const { cx, cy, payload } = props;
                           const isSearched = payload.isSearchedBrand;
+                          const groupSize = payload.groupSize || 1;
+                          const indexInGroup = payload.indexInGroup || 0;
+
+                          // Calculate horizontal offset for overlapping points
+                          const circleRadius = isSearched ? 10 : 7;
+                          const spacing = 20; // Space between circles
+                          const totalWidth = (groupSize - 1) * spacing;
+                          const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
+
+                          // Alternate label position for overlapping points
+                          const labelAbove = groupSize <= 1 || indexInGroup % 2 === 0;
+                          const labelYOffset = labelAbove
+                            ? -(isSearched ? 14 : 11)
+                            : (isSearched ? 22 : 18);
+
                           return (
                             <g>
                               <circle
-                                cx={cx}
+                                cx={cx + xOffset}
                                 cy={cy}
-                                r={isSearched ? 10 : 7}
+                                r={circleRadius}
                                 fill={isSearched ? '#4A7C59' : '#3b82f6'}
                                 stroke={isSearched ? '#3d6649' : '#2563eb'}
                                 strokeWidth={2}
                                 opacity={0.8}
                               />
                               <text
-                                x={cx}
-                                y={cy - (isSearched ? 14 : 11)}
+                                x={cx + xOffset}
+                                y={cy + labelYOffset}
                                 textAnchor="middle"
                                 fill={isSearched ? '#4A7C59' : '#3b82f6'}
                                 fontSize={isSearched ? 12 : 11}
