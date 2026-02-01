@@ -5803,57 +5803,61 @@ export default function ResultsPage() {
               {keyInfluencers.map((source) => {
                 const isExpanded = expandedInfluencers.has(source.domain);
                 return (
-                  <div key={source.domain} className="flex flex-col">
-                    <div
-                      onClick={() => {
-                        const newExpanded = new Set(expandedInfluencers);
-                        if (isExpanded) {
-                          newExpanded.delete(source.domain);
-                        } else {
-                          newExpanded.add(source.domain);
-                        }
-                        setExpandedInfluencers(newExpanded);
-                      }}
-                      className="inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200 hover:border-[#4A7C59] hover:shadow-sm transition-all cursor-pointer group"
-                    >
-                      {isExpanded ? (
-                        <ChevronUp className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
-                      )}
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-[#4A7C59]">{source.domain}</span>
-                      <span className="text-xs text-gray-400">{source.providers.length} Models · {source.count} {source.count === 1 ? 'citation' : 'citations'}</span>
-                    </div>
-                    {isExpanded && (
-                      <div className="mt-1 ml-2 p-2 bg-white rounded-lg border border-gray-200 space-y-1">
-                        {source.urlDetails.map((urlDetail, idx) => {
-                          const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
-                          const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
-                          return (
-                            <a
-                              key={idx}
-                              href={urlDetail.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                            >
-                              <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                              <span className="truncate">
-                                <span className="font-medium">{source.domain}</span>
-                                {displayTitle && displayTitle !== source.domain && (
-                                  <span className="text-gray-600"> · {displayTitle}</span>
-                                )}
-                                <span className="text-gray-400"> ({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
-                              </span>
-                            </a>
-                          );
-                        })}
-                      </div>
+                  <div
+                    key={source.domain}
+                    onClick={() => {
+                      const newExpanded = new Set(expandedInfluencers);
+                      if (isExpanded) {
+                        newExpanded.delete(source.domain);
+                      } else {
+                        // Close all others and open this one
+                        newExpanded.clear();
+                        newExpanded.add(source.domain);
+                      }
+                      setExpandedInfluencers(newExpanded);
+                    }}
+                    className={`inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border hover:border-[#4A7C59] hover:shadow-sm transition-all cursor-pointer group ${isExpanded ? 'border-[#4A7C59] shadow-sm' : 'border-gray-200'}`}
+                  >
+                    {isExpanded ? (
+                      <ChevronUp className="w-3.5 h-3.5 text-[#4A7C59]" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
                     )}
+                    <span className={`text-sm font-medium ${isExpanded ? 'text-[#4A7C59]' : 'text-gray-700 group-hover:text-[#4A7C59]'}`}>{source.domain}</span>
+                    <span className="text-xs text-gray-400">{source.providers.length} Models · {source.count} {source.count === 1 ? 'citation' : 'citations'}</span>
                   </div>
                 );
               })}
             </div>
+            {/* Expanded content rendered separately below all items */}
+            {keyInfluencers.filter(source => expandedInfluencers.has(source.domain)).map((source) => (
+              <div key={`expanded-${source.domain}`} className="mt-3 p-3 bg-white rounded-lg border border-[#4A7C59]/30 space-y-1.5">
+                <p className="text-xs font-medium text-gray-500 mb-2">{source.domain} — {source.urlDetails.length} {source.urlDetails.length === 1 ? 'page' : 'pages'} cited:</p>
+                {source.urlDetails.map((urlDetail, idx) => {
+                  const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
+                  const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
+                  return (
+                    <a
+                      key={idx}
+                      href={urlDetail.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">
+                        <span className="font-medium">{source.domain}</span>
+                        {displayTitle && displayTitle !== source.domain && (
+                          <span className="text-gray-600"> · {displayTitle}</span>
+                        )}
+                        <span className="text-gray-400"> ({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
+                      </span>
+                    </a>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         )}
 
@@ -6274,6 +6278,143 @@ export default function ResultsPage() {
           </div>
         )}
 
+        {/* Brand Website Citations */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Website Citations</h3>
+              <p className="text-sm text-gray-500">How often AI models cite your brand's and competitors' own websites as sources</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={brandCitationsBrandFilter}
+                onChange={(e) => setBrandCitationsBrandFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Brands</option>
+                {runStatus?.brand && (
+                  <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
+                )}
+                {Array.from(trackedBrands).filter(b => b !== runStatus?.brand).map((brand) => (
+                  <option key={brand} value={brand}>{brand}</option>
+                ))}
+              </select>
+              <select
+                value={brandCitationsProviderFilter}
+                onChange={(e) => setBrandCitationsProviderFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Models</option>
+                {availableProviders.map((provider) => (
+                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {brandWebsiteCitations.citations.length > 0 ? (
+            <div className="space-y-2" style={{ overflowAnchor: 'none' }}>
+              {brandWebsiteCitations.citations.map((citation, index) => {
+                const isExpanded = expandedBrandCitations.has(citation.brand);
+                return (
+                  <div key={citation.brand} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
+                    <div
+                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const newExpanded = new Set(expandedBrandCitations);
+                        if (isExpanded) {
+                          newExpanded.delete(citation.brand);
+                        } else {
+                          newExpanded.add(citation.brand);
+                        }
+                        setExpandedBrandCitations(newExpanded);
+                      }}
+                    >
+                      <span className="text-sm font-medium text-gray-400 w-6">{index + 1}.</span>
+                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
+                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
+                        {citation.brand}'s website
+                        {citation.isSearchedBrand && (
+                          <span className="text-xs px-1.5 py-0.5 bg-[#4A7C59] text-white rounded">searched</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex gap-1">
+                          {citation.providers.map((provider) => (
+                            <span key={provider} className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
+                              {getProviderShortLabel(provider)}
+                            </span>
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-500 w-24 text-right">
+                          {citation.count} {citation.count === 1 ? 'citation' : 'citations'}
+                          <span className="text-xs text-gray-400 ml-1">({citation.rate.toFixed(0)}%)</span>
+                        </span>
+                      </div>
+                    </div>
+                    {isExpanded && citation.urls.length > 0 && (
+                      <div className="px-3 pb-3 pt-1 border-t border-gray-200 ml-9">
+                        <p className="text-xs text-gray-500 mb-2">
+                          {citation.urls.length} unique {citation.urls.length === 1 ? 'page' : 'pages'} cited:
+                        </p>
+                        <div className="space-y-1.5">
+                          {citation.urls.map((urlDetail, idx) => {
+                            const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
+                            const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
+                            return (
+                              <a
+                                key={idx}
+                                href={urlDetail.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  <span className="font-medium">{extractDomain(urlDetail.url)}</span>
+                                  {displayTitle && displayTitle !== extractDomain(urlDetail.url) && (
+                                    <span className="text-gray-600"> · {displayTitle}</span>
+                                  )}
+                                </span>
+                                <span className="text-gray-400 text-xs flex-shrink-0">({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-gray-500">No brand or competitor websites were cited as sources.</p>
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg inline-block">
+                <p className="text-xs text-yellow-800">
+                  <strong>Opportunity:</strong> Consider improving your website's SEO and creating authoritative content that Models might cite.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Summary Stats */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="flex flex-wrap gap-6 text-sm">
+              <div>
+                <span className="text-gray-500">Total responses with sources: </span>
+                <span className="font-medium text-gray-900">{brandWebsiteCitations.totalResultsWithSources}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">Brands with citations: </span>
+                <span className="font-medium text-gray-900">{brandWebsiteCitations.totalBrandsWithCitations}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Domain Breakdown Table */}
         {domainTableData.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -6466,143 +6607,6 @@ export default function ResultsPage() {
             </div>
           </div>
         )}
-
-        {/* Brand Website Citations */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Website Citations</h3>
-              <p className="text-sm text-gray-500">How often AI models cite your brand's and competitors' own websites as sources</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={brandCitationsBrandFilter}
-                onChange={(e) => setBrandCitationsBrandFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-              >
-                <option value="all">All Brands</option>
-                {runStatus?.brand && (
-                  <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
-                )}
-                {Array.from(trackedBrands).filter(b => b !== runStatus?.brand).map((brand) => (
-                  <option key={brand} value={brand}>{brand}</option>
-                ))}
-              </select>
-              <select
-                value={brandCitationsProviderFilter}
-                onChange={(e) => setBrandCitationsProviderFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-              >
-                <option value="all">All Models</option>
-                {availableProviders.map((provider) => (
-                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {brandWebsiteCitations.citations.length > 0 ? (
-            <div className="space-y-2" style={{ overflowAnchor: 'none' }}>
-              {brandWebsiteCitations.citations.map((citation, index) => {
-                const isExpanded = expandedBrandCitations.has(citation.brand);
-                return (
-                  <div key={citation.brand} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
-                    <div
-                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const newExpanded = new Set(expandedBrandCitations);
-                        if (isExpanded) {
-                          newExpanded.delete(citation.brand);
-                        } else {
-                          newExpanded.add(citation.brand);
-                        }
-                        setExpandedBrandCitations(newExpanded);
-                      }}
-                    >
-                      <span className="text-sm font-medium text-gray-400 w-6">{index + 1}.</span>
-                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
-                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
-                        {citation.brand}'s website
-                        {citation.isSearchedBrand && (
-                          <span className="text-xs px-1.5 py-0.5 bg-[#4A7C59] text-white rounded">searched</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex gap-1">
-                          {citation.providers.map((provider) => (
-                            <span key={provider} className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
-                              {getProviderShortLabel(provider)}
-                            </span>
-                          ))}
-                        </div>
-                        <span className="text-sm text-gray-500 w-24 text-right">
-                          {citation.count} {citation.count === 1 ? 'citation' : 'citations'}
-                          <span className="text-xs text-gray-400 ml-1">({citation.rate.toFixed(0)}%)</span>
-                        </span>
-                      </div>
-                    </div>
-                    {isExpanded && citation.urls.length > 0 && (
-                      <div className="px-3 pb-3 pt-1 border-t border-gray-200 ml-9">
-                        <p className="text-xs text-gray-500 mb-2">
-                          {citation.urls.length} unique {citation.urls.length === 1 ? 'page' : 'pages'} cited:
-                        </p>
-                        <div className="space-y-1.5">
-                          {citation.urls.map((urlDetail, idx) => {
-                            const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
-                            const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
-                            return (
-                              <a
-                                key={idx}
-                                href={urlDetail.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate">
-                                  <span className="font-medium">{extractDomain(urlDetail.url)}</span>
-                                  {displayTitle && displayTitle !== extractDomain(urlDetail.url) && (
-                                    <span className="text-gray-600"> · {displayTitle}</span>
-                                  )}
-                                </span>
-                                <span className="text-gray-400 text-xs flex-shrink-0">({urlDetail.count} {urlDetail.count === 1 ? 'citation' : 'citations'})</span>
-                              </a>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-500">No brand or competitor websites were cited as sources.</p>
-              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg inline-block">
-                <p className="text-xs text-yellow-800">
-                  <strong>Opportunity:</strong> Consider improving your website's SEO and creating authoritative content that Models might cite.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Summary Stats */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="flex flex-wrap gap-6 text-sm">
-              <div>
-                <span className="text-gray-500">Total responses with sources: </span>
-                <span className="font-medium text-gray-900">{brandWebsiteCitations.totalResultsWithSources}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Brands with citations: </span>
-                <span className="font-medium text-gray-900">{brandWebsiteCitations.totalBrandsWithCitations}</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     );
   };
