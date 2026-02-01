@@ -8025,6 +8025,114 @@ export default function ResultsPage() {
                     <span>Competitors only</span>
                   </div>
                 </div>
+
+                {/* Venn Diagram Visualization */}
+                {(() => {
+                  // Get pairs involving the searched brand
+                  const searchedBrand = runStatus?.brand || '';
+                  const brandPairs = brandCooccurrence.filter(
+                    pair => pair.brand1 === searchedBrand || pair.brand2 === searchedBrand
+                  ).slice(0, 4); // Top 4 co-occurring brands
+
+                  if (brandPairs.length === 0) return null;
+
+                  // Extract the other brands and their co-occurrence counts
+                  const cooccurringBrands = brandPairs.map(pair => ({
+                    brand: pair.brand1 === searchedBrand ? pair.brand2 : pair.brand1,
+                    count: pair.count,
+                    percentage: pair.percentage,
+                  }));
+
+                  const maxCount = Math.max(...cooccurringBrands.map(b => b.count));
+
+                  // Colors for competitor circles
+                  const colors = ['#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
+
+                  return (
+                    <div className="mt-6 pt-6 border-t border-gray-100">
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">Co-occurrence with {searchedBrand}</h3>
+                      <div className="flex justify-center">
+                        <svg width="400" height="250" viewBox="0 0 400 250">
+                          {/* Central brand circle */}
+                          <circle
+                            cx="200"
+                            cy="125"
+                            r="60"
+                            fill="#4A7C59"
+                            fillOpacity="0.3"
+                            stroke="#4A7C59"
+                            strokeWidth="2"
+                          />
+                          <text
+                            x="200"
+                            y="125"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fill="#4A7C59"
+                            fontSize="11"
+                            fontWeight="600"
+                          >
+                            {searchedBrand.length > 10 ? searchedBrand.substring(0, 8) + '...' : searchedBrand}
+                          </text>
+
+                          {/* Overlapping competitor circles */}
+                          {cooccurringBrands.map((item, idx) => {
+                            // Position circles around the center
+                            const angle = (idx * (360 / cooccurringBrands.length) - 90) * (Math.PI / 180);
+                            const distance = 55; // How far from center
+                            const cx = 200 + Math.cos(angle) * distance;
+                            const cy = 125 + Math.sin(angle) * distance;
+                            // Size based on co-occurrence count
+                            const minRadius = 35;
+                            const maxRadius = 55;
+                            const radius = minRadius + ((item.count / maxCount) * (maxRadius - minRadius));
+
+                            return (
+                              <g key={idx}>
+                                <circle
+                                  cx={cx}
+                                  cy={cy}
+                                  r={radius}
+                                  fill={colors[idx % colors.length]}
+                                  fillOpacity="0.25"
+                                  stroke={colors[idx % colors.length]}
+                                  strokeWidth="2"
+                                />
+                                {/* Brand name - positioned outside the circle */}
+                                <text
+                                  x={cx + Math.cos(angle) * (radius + 15)}
+                                  y={cy + Math.sin(angle) * (radius + 15)}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill={colors[idx % colors.length]}
+                                  fontSize="10"
+                                  fontWeight="500"
+                                >
+                                  {item.brand.length > 12 ? item.brand.substring(0, 10) + '...' : item.brand}
+                                </text>
+                                {/* Count in overlap area */}
+                                <text
+                                  x={200 + Math.cos(angle) * 30}
+                                  y={125 + Math.sin(angle) * 30}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  fill="#374151"
+                                  fontSize="10"
+                                  fontWeight="600"
+                                >
+                                  {item.count}x
+                                </text>
+                              </g>
+                            );
+                          })}
+                        </svg>
+                      </div>
+                      <p className="text-xs text-gray-400 text-center mt-2">
+                        Circle size represents co-occurrence frequency. Numbers show times mentioned together.
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
