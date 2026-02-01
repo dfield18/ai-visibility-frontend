@@ -1473,6 +1473,7 @@ export default function ResultsPage() {
 
     const searchedBrand = runStatus.brand;
 
+    // Ordinal sentiment scale (1-5, higher = more positive)
     const sentimentScoreMap: Record<string, number> = {
       'strong_endorsement': 5,
       'positive_endorsement': 4,
@@ -1489,6 +1490,14 @@ export default function ResultsPage() {
       2: 'Conditional',
       1: 'Negative',
       0: 'Not Mentioned',
+    };
+
+    // Helper to get magnitude label from absolute delta
+    const getMagnitudeLabel = (absDelta: number): string => {
+      if (absDelta === 0) return 'No advantage';
+      if (absDelta === 1) return 'Slight';
+      if (absDelta === 2) return 'Moderate';
+      return 'Strong';
     };
 
     // Helper function to extract snippet around a brand mention
@@ -1617,45 +1626,77 @@ export default function ResultsPage() {
     return Object.values(sourceStats)
       .filter(stat => stat.brandSentiments.length >= 1) // Only include sources where brand has sentiment data
       .map(stat => {
-        const avgBrandSentiment = stat.brandSentiments.length > 0
+        // Get dominant (most frequent or highest) sentiment for brand - use mode or round of average
+        const avgBrandScore = stat.brandSentiments.length > 0
           ? stat.brandSentiments.reduce((a, b) => a + b, 0) / stat.brandSentiments.length
           : 0;
+        const brandSentimentIndex = Math.round(avgBrandScore);
 
-        // Find competitor with best average sentiment for this source
+        // Find competitor with best sentiment for this source
         let topCompetitor = '';
-        let topCompetitorAvgSentiment = 0;
+        let topCompetitorIndex = 0;
+        let topCompetitorAvgScore = 0;
         Object.entries(stat.competitorSentiments).forEach(([competitor, scores]) => {
           if (scores.length > 0) {
             const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-            if (avg > topCompetitorAvgSentiment) {
+            if (avg > topCompetitorAvgScore) {
               topCompetitor = competitor;
-              topCompetitorAvgSentiment = avg;
+              topCompetitorAvgScore = avg;
+              topCompetitorIndex = Math.round(avg);
             }
           }
         });
 
-        // Gap: positive means competitor has better sentiment
-        const sentimentGap = topCompetitorAvgSentiment - avgBrandSentiment;
+        // Compute categorical gap (ordinal difference)
+        const delta = topCompetitorIndex - brandSentimentIndex;
+        const absDelta = Math.abs(delta);
 
-        // Opportunity Score: Higher when gap is large
-        const opportunityScore = sentimentGap > 0 ? sentimentGap * 20 : 0;
+        // Direction: who has the advantage
+        const direction: 'competitor' | 'brand' | 'tie' =
+          delta > 0 ? 'competitor' : delta < 0 ? 'brand' : 'tie';
+
+        // Magnitude label
+        const magnitudeLabel = getMagnitudeLabel(absDelta);
+
+        // Human-readable label
+        let labelText: string;
+        if (direction === 'competitor') {
+          labelText = `${magnitudeLabel} competitor advantage`;
+        } else if (direction === 'brand') {
+          labelText = `${magnitudeLabel} ${searchedBrand} advantage`;
+        } else {
+          labelText = 'Even';
+        }
+
+        // Shift summary for tooltip (categorical, no numbers)
+        const brandLabel = sentimentLabelMap[brandSentimentIndex] || 'Unknown';
+        const competitorLabel = sentimentLabelMap[topCompetitorIndex] || 'Unknown';
+        const shiftSummary = `${searchedBrand}: ${brandLabel} → ${topCompetitor || 'Competitor'}: ${competitorLabel}`;
+
+        // Bar value for rendering (-3 to +3 scale, capped)
+        const clampedDelta = Math.min(Math.max(absDelta, 0), 3);
+        const signedValue = direction === 'competitor' ? clampedDelta : direction === 'brand' ? -clampedDelta : 0;
 
         return {
           domain: stat.domain,
           totalMentions: stat.brandSentiments.length + Object.values(stat.competitorSentiments).flat().length,
-          avgBrandSentiment,
-          brandSentimentLabel: sentimentLabelMap[Math.round(avgBrandSentiment)] || 'Unknown',
+          brandSentimentIndex,
+          brandSentimentLabel: brandLabel,
           topCompetitor,
-          topCompetitorAvgSentiment,
-          competitorSentimentLabel: sentimentLabelMap[Math.round(topCompetitorAvgSentiment)] || 'Unknown',
-          sentimentGap,
-          opportunityScore,
+          topCompetitorIndex,
+          competitorSentimentLabel: competitorLabel,
+          delta,
+          direction,
+          magnitudeLabel,
+          labelText,
+          shiftSummary,
+          signedValue,
           snippets: stat.snippets,
           providers: Array.from(stat.providers),
         };
       })
-      .filter(stat => stat.sentimentGap > 0) // Only show sources where competitors have better sentiment
-      .sort((a, b) => b.sentimentGap - a.sentimentGap);
+      .filter(stat => stat.delta !== 0) // Show sources where there's any difference
+      .sort((a, b) => b.signedValue - a.signedValue); // Sort by strongest competitor advantage first
   }, [runStatus, globallyFilteredResults, sourceSentimentGapProviderFilter, sourceSentimentGapPromptFilter]);
 
   // State for sources filters
@@ -8093,39 +8134,28 @@ export default function ResultsPage() {
                     <div className="mt-6 pt-6 border-t border-gray-100">
                       <h3 className="text-sm font-medium text-gray-700 mb-3">Co-occurrence with {searchedBrand}</h3>
                       <div className="flex justify-center">
-                        <svg width="550" height="380" viewBox="0 0 550 380">
+                        <svg width="600" height="420" viewBox="0 0 600 420">
                           {/* Central brand circle */}
                           <circle
-                            cx="275"
-                            cy="190"
-                            r="85"
+                            cx="300"
+                            cy="210"
+                            r="70"
                             fill="#4A7C59"
-                            fillOpacity="0.3"
+                            fillOpacity="0.25"
                             stroke="#4A7C59"
                             strokeWidth="2"
                           />
-                          <text
-                            x="275"
-                            y="190"
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            fill="#4A7C59"
-                            fontSize="14"
-                            fontWeight="600"
-                          >
-                            {searchedBrand.length > 12 ? searchedBrand.substring(0, 10) + '...' : searchedBrand}
-                          </text>
 
                           {/* Overlapping competitor circles */}
                           {cooccurringBrands.map((item, idx) => {
-                            // Position circles around the center
+                            // Position circles around the center - more spread out
                             const angle = (idx * (360 / cooccurringBrands.length) - 90) * (Math.PI / 180);
-                            const distance = 80; // How far from center
-                            const cx = 275 + Math.cos(angle) * distance;
-                            const cy = 190 + Math.sin(angle) * distance;
-                            // Size based on co-occurrence count
-                            const minRadius = 50;
-                            const maxRadius = 80;
+                            const distance = 110; // Increased distance from center
+                            const cx = 300 + Math.cos(angle) * distance;
+                            const cy = 210 + Math.sin(angle) * distance;
+                            // Size based on co-occurrence count - smaller range
+                            const minRadius = 45;
+                            const maxRadius = 65;
                             const radius = minRadius + ((item.count / maxCount) * (maxRadius - minRadius));
 
                             return (
@@ -8135,14 +8165,14 @@ export default function ResultsPage() {
                                   cy={cy}
                                   r={radius}
                                   fill={colors[idx % colors.length]}
-                                  fillOpacity="0.25"
+                                  fillOpacity="0.2"
                                   stroke={colors[idx % colors.length]}
                                   strokeWidth="2"
                                 />
                                 {/* Brand name - positioned outside the circle */}
                                 <text
-                                  x={cx + Math.cos(angle) * (radius + 20)}
-                                  y={cy + Math.sin(angle) * (radius + 20)}
+                                  x={cx + Math.cos(angle) * (radius + 18)}
+                                  y={cy + Math.sin(angle) * (radius + 18)}
                                   textAnchor="middle"
                                   dominantBaseline="middle"
                                   fill={colors[idx % colors.length]}
@@ -8153,12 +8183,12 @@ export default function ResultsPage() {
                                 </text>
                                 {/* Count in overlap area */}
                                 <text
-                                  x={275 + Math.cos(angle) * 42}
-                                  y={190 + Math.sin(angle) * 42}
+                                  x={300 + Math.cos(angle) * 55}
+                                  y={210 + Math.sin(angle) * 55}
                                   textAnchor="middle"
                                   dominantBaseline="middle"
                                   fill="#374151"
-                                  fontSize="13"
+                                  fontSize="12"
                                   fontWeight="600"
                                 >
                                   {item.count}x
@@ -8166,6 +8196,19 @@ export default function ResultsPage() {
                               </g>
                             );
                           })}
+                          {/* Center brand name - rendered last to appear on top */}
+                          <text
+                            x="300"
+                            y="210"
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fill="#1f2937"
+                            fontSize="16"
+                            fontWeight="700"
+                            style={{ textShadow: '0 0 8px white, 0 0 8px white, 0 0 8px white' }}
+                          >
+                            {searchedBrand.length > 12 ? searchedBrand.substring(0, 10) + '...' : searchedBrand}
+                          </text>
                         </svg>
                       </div>
                       <p className="text-xs text-gray-400 text-center mt-2">
@@ -8495,9 +8538,9 @@ export default function ResultsPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-base font-semibold text-gray-900">Source Sentiment Gap</h2>
+                    <h2 className="text-base font-semibold text-gray-900">Relative Sentiment Advantage</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Sources where competitors are mentioned more positively than {runStatus?.brand || 'your brand'}
+                      Comparing how sources portray {runStatus?.brand || 'your brand'} vs. competitors
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -8533,11 +8576,15 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-center gap-6 mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm bg-[#4A7C59]"></div>
-                      <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'} Sentiment</span>
+                      <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'} Advantage</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm bg-gray-300"></div>
+                      <span className="text-sm text-gray-600">Even</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-                      <span className="text-sm text-gray-600">Top Competitor Sentiment</span>
+                      <span className="text-sm text-gray-600">Competitor Advantage</span>
                     </div>
                   </div>
                   <div className="h-[300px]">
@@ -8546,10 +8593,13 @@ export default function ResultsPage() {
                         data={sourceSentimentGapAnalysis.slice(0, 10).map(row => ({
                           domain: row.domain.length > 20 ? row.domain.substring(0, 18) + '...' : row.domain,
                           fullDomain: row.domain,
-                          brandSentiment: row.avgBrandSentiment,
-                          competitorSentiment: row.topCompetitorAvgSentiment,
+                          signedValue: row.signedValue,
+                          direction: row.direction,
+                          labelText: row.labelText,
+                          shiftSummary: row.shiftSummary,
+                          brandLabel: row.brandSentimentLabel,
+                          competitorLabel: row.competitorSentimentLabel,
                           competitor: row.topCompetitor,
-                          gap: row.sentimentGap,
                         }))}
                         layout="vertical"
                         margin={{ top: 10, right: 30, bottom: 10, left: 120 }}
@@ -8557,10 +8607,14 @@ export default function ResultsPage() {
                         <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                         <XAxis
                           type="number"
-                          domain={[0, 5]}
-                          ticks={[1, 2, 3, 4, 5]}
-                          tickFormatter={(value) => ['', 'Neg', 'Cond', 'Neut', 'Pos', 'Strong'][value] || ''}
-                          tick={{ fill: '#6b7280', fontSize: 11 }}
+                          domain={[-3, 3]}
+                          ticks={[-3, -2, -1, 0, 1, 2, 3]}
+                          tickFormatter={(value) => {
+                            if (value === 0) return '0';
+                            if (value < 0) return `${runStatus?.brand?.substring(0, 6) || 'Brand'} +${Math.abs(value)}`;
+                            return `Comp +${value}`;
+                          }}
+                          tick={{ fill: '#6b7280', fontSize: 10 }}
                         />
                         <YAxis
                           type="category"
@@ -8568,22 +8622,22 @@ export default function ResultsPage() {
                           tick={{ fill: '#374151', fontSize: 12 }}
                           width={115}
                         />
+                        <ReferenceLine x={0} stroke="#9ca3af" strokeWidth={1} />
                         <Tooltip
                           content={({ active, payload }) => {
                             if (active && payload && payload.length > 0) {
                               const data = payload[0].payload;
-                              const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
                               return (
                                 <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
                                   <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
-                                  <p className="text-[#4A7C59]">
-                                    {runStatus?.brand || 'Brand'}: {sentimentLabels[Math.round(data.brandSentiment)] || 'Unknown'} ({data.brandSentiment.toFixed(1)})
+                                  <p className="text-gray-600 mb-1">
+                                    {runStatus?.brand || 'Brand'}: <span className="font-medium text-[#4A7C59]">{data.brandLabel}</span>
                                   </p>
-                                  <p className="text-blue-500">
-                                    {data.competitor}: {sentimentLabels[Math.round(data.competitorSentiment)] || 'Unknown'} ({data.competitorSentiment.toFixed(1)})
+                                  <p className="text-gray-600 mb-2">
+                                    {data.competitor || 'Competitor'}: <span className="font-medium text-blue-600">{data.competitorLabel}</span>
                                   </p>
-                                  <p className="text-gray-500 mt-1">
-                                    Gap: +{data.gap.toFixed(1)} points
+                                  <p className={`font-medium ${data.direction === 'brand' ? 'text-[#4A7C59]' : data.direction === 'competitor' ? 'text-blue-600' : 'text-gray-500'}`}>
+                                    {data.labelText}
                                   </p>
                                 </div>
                               );
@@ -8592,17 +8646,17 @@ export default function ResultsPage() {
                           }}
                         />
                         <Bar
-                          dataKey="brandSentiment"
+                          dataKey="signedValue"
+                          radius={[4, 4, 4, 4]}
                           fill="#4A7C59"
-                          name={runStatus?.brand || 'Brand'}
-                          radius={[0, 4, 4, 0]}
-                        />
-                        <Bar
-                          dataKey="competitorSentiment"
-                          fill="#3b82f6"
-                          name="Top Competitor"
-                          radius={[0, 4, 4, 0]}
-                        />
+                        >
+                          {sourceSentimentGapAnalysis.slice(0, 10).map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.direction === 'brand' ? '#4A7C59' : entry.direction === 'competitor' ? '#3b82f6' : '#d1d5db'}
+                            />
+                          ))}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -8613,24 +8667,10 @@ export default function ResultsPage() {
                     <thead>
                       <tr className="border-b border-gray-200">
                         <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>Models</div>
-                        </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>{runStatus?.brand || 'Brand'} Sentiment</div>
-                          <div className="text-xs text-gray-400 font-normal">avg score</div>
-                        </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>Top Competitor</div>
-                        </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>Competitor Sentiment</div>
-                          <div className="text-xs text-gray-400 font-normal">avg score</div>
-                        </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>Gap</div>
-                          <div className="text-xs text-gray-400 font-normal">sentiment difference</div>
-                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">Models</th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">{runStatus?.brand || 'Brand'}</th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">Top Competitor</th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">Advantage</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -8671,35 +8711,29 @@ export default function ResultsPage() {
                                 </div>
                               </td>
                               <td className="text-center py-3 px-3">
-                                <span className={`font-medium ${row.avgBrandSentiment >= 4 ? 'text-green-600' : row.avgBrandSentiment >= 3 ? 'text-yellow-600' : 'text-red-500'}`}>
+                                <span className={`font-medium ${row.brandSentimentIndex >= 4 ? 'text-green-600' : row.brandSentimentIndex >= 3 ? 'text-yellow-600' : 'text-red-500'}`}>
                                   {row.brandSentimentLabel}
                                 </span>
-                                <span className="text-xs text-gray-400 ml-1">({row.avgBrandSentiment.toFixed(1)})</span>
                               </td>
                               <td className="text-center py-3 px-3">
-                                <span className="text-gray-700 font-medium">{row.topCompetitor || '-'}</span>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <span className={`font-medium ${row.topCompetitorAvgSentiment >= 4 ? 'text-green-600' : row.topCompetitorAvgSentiment >= 3 ? 'text-yellow-600' : 'text-red-500'}`}>
-                                  {row.competitorSentimentLabel}
-                                </span>
-                                <span className="text-xs text-gray-400 ml-1">({row.topCompetitorAvgSentiment.toFixed(1)})</span>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <div className="flex items-center justify-center gap-2">
-                                  <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-blue-400 rounded-full"
-                                      style={{ width: `${Math.min((row.sentimentGap / 4) * 100, 100)}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-blue-600 font-medium min-w-[40px]">+{row.sentimentGap.toFixed(1)}</span>
+                                <div className="flex flex-col items-center">
+                                  <span className="text-gray-700 font-medium">{row.topCompetitor || '-'}</span>
+                                  {row.topCompetitor && (
+                                    <span className={`text-xs ${row.topCompetitorIndex >= 4 ? 'text-green-600' : row.topCompetitorIndex >= 3 ? 'text-yellow-600' : 'text-red-500'}`}>
+                                      {row.competitorSentimentLabel}
+                                    </span>
+                                  )}
                                 </div>
+                              </td>
+                              <td className="text-center py-3 px-3">
+                                <span className={`font-medium text-sm ${row.direction === 'brand' ? 'text-[#4A7C59]' : row.direction === 'competitor' ? 'text-blue-600' : 'text-gray-500'}`}>
+                                  {row.labelText}
+                                </span>
                               </td>
                             </tr>
                             {isExpanded && row.snippets.length > 0 && (
                               <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                                <td colSpan={6} className="py-2 px-3 pl-10">
+                                <td colSpan={5} className="py-2 px-3 pl-10">
                                   <div className="bg-white border border-gray-200 rounded-lg p-3">
                                     <p className="text-xs font-medium text-gray-500 mb-2">
                                       How brands are described when this source is cited ({row.snippets.length} mentions)
@@ -8810,8 +8844,8 @@ export default function ResultsPage() {
           <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Full Response</h2>
-                <p className="text-sm text-gray-500">{getProviderLabel(snippetDetailModal.provider)}</p>
+                <h2 className="text-lg font-semibold text-gray-900">{getProviderLabel(snippetDetailModal.provider)}</h2>
+                <p className="text-sm text-gray-500">Full Response</p>
               </div>
               <button
                 onClick={() => setSnippetDetailModal(null)}
@@ -8824,45 +8858,55 @@ export default function ResultsPage() {
               <p className="text-xs text-gray-500 mb-1">Prompt</p>
               <p className="text-sm text-gray-900">{snippetDetailModal.prompt}</p>
             </div>
-            <div className="p-4 border-b border-gray-100 bg-blue-50">
-              <p className="text-xs text-blue-600 mb-1">Highlighted brand: <span className="font-semibold">{snippetDetailModal.brand}</span></p>
-              <p className="text-xs text-gray-500">Scroll down to see the highlighted sentences</p>
-            </div>
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {(() => {
-                  const text = snippetDetailModal.responseText;
-                  const brand = snippetDetailModal.brand;
-                  const brandRegex = new RegExp(brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-
-                  // Split text into sentences while preserving delimiters
-                  // This regex captures sentence-ending punctuation along with following whitespace
-                  const sentenceRegex = /([^.!?\n]+[.!?]*[\n]*)/g;
-                  const sentences = text.match(sentenceRegex) || [text];
-
-                  let firstHighlightRendered = false;
-
-                  return sentences.map((sentence, i) => {
-                    const containsBrand = brandRegex.test(sentence);
-                    // Reset lastIndex after test() since we're using the same regex
-                    brandRegex.lastIndex = 0;
-
-                    if (containsBrand) {
-                      const isFirst = !firstHighlightRendered;
-                      firstHighlightRendered = true;
-                      return (
-                        <span
-                          key={i}
-                          ref={isFirst ? snippetDetailRef : undefined}
-                          className="bg-yellow-100 border-l-4 border-yellow-400 pl-2 -ml-2 block my-1"
-                        >
-                          {sentence}
-                        </span>
-                      );
-                    }
-                    return <span key={i}>{sentence}</span>;
-                  });
-                })()}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-blue-50 text-blue-700">
+                  Highlighting: {snippetDetailModal.brand}
+                </span>
+              </div>
+              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    a: ({ href, children }) => (
+                      <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+                    ),
+                    table: ({ children }) => (
+                      <div className="overflow-x-auto mb-3">
+                        <table className="min-w-full">{children}</table>
+                      </div>
+                    ),
+                    p: ({ children }) => {
+                      // Check if this paragraph contains the brand name and highlight if so
+                      const text = String(children);
+                      const brand = snippetDetailModal.brand;
+                      const brandRegex = new RegExp(brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                      if (brandRegex.test(text)) {
+                        return (
+                          <p className="mb-3 leading-relaxed bg-yellow-50 border-l-4 border-yellow-400 pl-3 py-1 -ml-3">
+                            {children}
+                          </p>
+                        );
+                      }
+                      return <p className="mb-3 leading-relaxed">{children}</p>;
+                    },
+                    li: ({ children }) => {
+                      const text = String(children);
+                      const brand = snippetDetailModal.brand;
+                      const brandRegex = new RegExp(brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+                      if (brandRegex.test(text)) {
+                        return (
+                          <li className="mb-1 bg-yellow-50 border-l-4 border-yellow-400 pl-2 -ml-2 py-0.5">
+                            {children}
+                          </li>
+                        );
+                      }
+                      return <li className="mb-1">{children}</li>;
+                    },
+                  }}
+                >
+                  {formatResponseText(snippetDetailModal.responseText)}
+                </ReactMarkdown>
               </div>
             </div>
           </div>
