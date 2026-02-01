@@ -8067,11 +8067,41 @@ export default function ResultsPage() {
                           const totalWidth = (groupSize - 1) * spacing;
                           const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
-                          // Alternate label position for overlapping points
-                          const labelAbove = groupSize <= 1 || indexInGroup % 2 === 0;
-                          const labelYOffset = labelAbove
-                            ? -(isSearched ? 14 : 11)
-                            : (isSearched ? 22 : 18);
+                          // Calculate label offset - spread labels for 3+ items
+                          let labelXOffset = 0;
+                          let labelYOffset = -(isSearched ? 14 : 11); // Default: above
+                          let textAnchor: 'start' | 'middle' | 'end' = 'middle';
+
+                          if (groupSize === 1) {
+                            // Single item: label above center
+                            labelXOffset = 0;
+                            labelYOffset = -(isSearched ? 14 : 11);
+                          } else if (groupSize === 2) {
+                            // Two items: alternate above/below
+                            labelYOffset = indexInGroup === 0
+                              ? -(isSearched ? 14 : 11)
+                              : (isSearched ? 22 : 18);
+                          } else {
+                            // 3+ items: spread labels in different directions
+                            // Position labels at different angles around the cluster
+                            const labelDistance = isSearched ? 18 : 15;
+                            const angles = [
+                              -90,   // top
+                              150,   // bottom-left
+                              30,    // bottom-right
+                              -45,   // top-right
+                              -135,  // top-left
+                              90,    // bottom
+                            ];
+                            const angle = angles[indexInGroup % angles.length];
+                            const radians = (angle * Math.PI) / 180;
+                            labelXOffset = Math.cos(radians) * labelDistance;
+                            labelYOffset = Math.sin(radians) * labelDistance;
+
+                            // Adjust text anchor based on horizontal position
+                            if (labelXOffset < -5) textAnchor = 'end';
+                            else if (labelXOffset > 5) textAnchor = 'start';
+                          }
 
                           return (
                             <g>
@@ -8085,9 +8115,9 @@ export default function ResultsPage() {
                                 opacity={0.8}
                               />
                               <text
-                                x={cx + xOffset}
+                                x={cx + xOffset + labelXOffset}
                                 y={cy + labelYOffset}
-                                textAnchor="middle"
+                                textAnchor={textAnchor}
                                 fill={isSearched ? '#4A7C59' : '#3b82f6'}
                                 fontSize={isSearched ? 12 : 11}
                                 fontWeight={isSearched ? 600 : 500}
