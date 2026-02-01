@@ -1522,7 +1522,8 @@ export default function ResultsPage() {
       domain: string;
       brandSentiments: number[]; // Array of sentiment scores for brand
       competitorSentiments: Record<string, number[]>; // Per-competitor sentiment scores
-      snippets: Array<{ brand: string; snippet: string; sentiment: string; sentimentScore: number; isBrand: boolean; provider: string; prompt: string }>;
+      snippets: Array<{ brand: string; snippet: string; sentiment: string; sentimentScore: number; isBrand: boolean; provider: string; prompt: string; responseText: string; resultId: string }>;
+      providers: Set<string>; // Track which providers cite this source
     }> = {};
 
     // Process each result
@@ -1549,8 +1550,11 @@ export default function ResultsPage() {
             brandSentiments: [],
             competitorSentiments: {},
             snippets: [],
+            providers: new Set(),
           };
         }
+        // Track provider for this source
+        sourceStats[domain].providers.add(r.provider);
 
         // Track brand sentiment
         if (r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned') {
@@ -1568,6 +1572,8 @@ export default function ResultsPage() {
                 isBrand: true,
                 provider: r.provider,
                 prompt: r.prompt,
+                responseText: r.response_text,
+                resultId: r.id,
               });
             }
           }
@@ -1596,6 +1602,8 @@ export default function ResultsPage() {
                     isBrand: false,
                     provider: r.provider,
                     prompt: r.prompt,
+                    responseText,
+                    resultId: r.id,
                   });
                 }
               }
@@ -1643,6 +1651,7 @@ export default function ResultsPage() {
           sentimentGap,
           opportunityScore,
           snippets: stat.snippets,
+          providers: Array.from(stat.providers),
         };
       })
       .filter(stat => stat.sentimentGap > 0) // Only show sources where competitors have better sentiment
@@ -7942,11 +7951,14 @@ export default function ResultsPage() {
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
-                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[140px] max-w-[180px]"
+                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[140px] max-w-[180px] relative group"
                           >
-                            <span className="text-xs block truncate" title={prompt}>
+                            <span className="text-xs block truncate cursor-help">
                               {prompt.length > 40 ? prompt.substring(0, 38) + '...' : prompt}
                             </span>
+                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg py-2 px-3 max-w-[300px] whitespace-normal text-left z-50 shadow-lg">
+                              {prompt}
+                            </div>
                           </th>
                         ))}
                         <th className="text-center py-3 px-2 font-medium text-gray-600 min-w-[80px]">Avg</th>
@@ -8602,6 +8614,9 @@ export default function ResultsPage() {
                       <tr className="border-b border-gray-200">
                         <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
                         <th className="text-center py-3 px-3 font-medium text-gray-600">
+                          <div>Models</div>
+                        </th>
+                        <th className="text-center py-3 px-3 font-medium text-gray-600">
                           <div>{runStatus?.brand || 'Brand'} Sentiment</div>
                           <div className="text-xs text-gray-400 font-normal">avg score</div>
                         </th>
@@ -8647,6 +8662,15 @@ export default function ResultsPage() {
                                 </div>
                               </td>
                               <td className="text-center py-3 px-3">
+                                <div className="flex flex-wrap justify-center gap-1">
+                                  {row.providers.map((provider: string) => (
+                                    <span key={provider} className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                                      {getProviderLabel(provider).split(' ')[0]}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                              <td className="text-center py-3 px-3">
                                 <span className={`font-medium ${row.avgBrandSentiment >= 4 ? 'text-green-600' : row.avgBrandSentiment >= 3 ? 'text-yellow-600' : 'text-red-500'}`}>
                                   {row.brandSentimentLabel}
                                 </span>
@@ -8675,7 +8699,7 @@ export default function ResultsPage() {
                             </tr>
                             {isExpanded && row.snippets.length > 0 && (
                               <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                                <td colSpan={5} className="py-2 px-3 pl-10">
+                                <td colSpan={6} className="py-2 px-3 pl-10">
                                   <div className="bg-white border border-gray-200 rounded-lg p-3">
                                     <p className="text-xs font-medium text-gray-500 mb-2">
                                       How brands are described when this source is cited ({row.snippets.length} mentions)
@@ -8694,8 +8718,14 @@ export default function ResultsPage() {
                                         return (
                                           <div
                                             key={snippetIdx}
-                                            className="text-sm border-l-2 pl-3 py-2"
+                                            className="text-sm border-l-2 pl-3 py-2 cursor-pointer hover:bg-gray-50 rounded-r transition-colors"
                                             style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
+                                            onClick={() => setSnippetDetailModal({
+                                              brand: snippetInfo.brand,
+                                              responseText: snippetInfo.responseText,
+                                              provider: snippetInfo.provider,
+                                              prompt: snippetInfo.prompt,
+                                            })}
                                           >
                                             <div className="flex items-center gap-2 mb-1">
                                               <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
@@ -8707,6 +8737,7 @@ export default function ResultsPage() {
                                               <span className="text-xs text-gray-400">
                                                 via {getProviderLabel(snippetInfo.provider)}
                                               </span>
+                                              <span className="text-xs text-[#4A7C59] ml-auto">Click to view full response →</span>
                                             </div>
                                             <div className="bg-gray-50 rounded px-2 py-1.5 mb-1.5">
                                               <p className="text-xs text-gray-500 mb-0.5">Prompt</p>
