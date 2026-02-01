@@ -7880,10 +7880,12 @@ export default function ResultsPage() {
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
-                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[80px]"
+                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[100px] max-w-[120px] cursor-help"
                             title={prompt}
                           >
-                            <span className="text-xs">P{idx + 1}</span>
+                            <span className="text-xs block truncate">
+                              {prompt.length > 20 ? prompt.substring(0, 18) + '...' : prompt}
+                            </span>
                           </th>
                         ))}
                         <th className="text-center py-3 px-2 font-medium text-gray-600 min-w-[80px]">Avg</th>
@@ -7936,17 +7938,6 @@ export default function ResultsPage() {
                       })}
                     </tbody>
                   </table>
-                </div>
-                <div className="mt-4 text-xs text-gray-500">
-                  <p className="mb-2">Prompt Legend:</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-1 max-h-32 overflow-y-auto">
-                    {promptPerformanceMatrix.prompts.map((prompt, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <span className="font-medium text-gray-700">P{idx + 1}:</span>
-                        <span className="truncate">{prompt}</span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
             )}
