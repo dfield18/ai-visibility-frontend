@@ -5861,6 +5861,7 @@ export default function ResultsPage() {
 
     if (matchingResults.length === 1) {
       setSelectedResult(matchingResults[0]);
+      setSelectedResultHighlight({ brand, domain });
     } else if (matchingResults.length > 1) {
       setHeatmapResultsList({ results: matchingResults, domain, brand });
     }
@@ -9410,7 +9411,10 @@ export default function ResultsPage() {
                 <p className="text-sm text-gray-500">
                   Temperature: {selectedResult.temperature}
                   {selectedResultHighlight && (
-                    <span className="ml-2 text-[#4A7C59]">• Highlighting mentions of {selectedResultHighlight.brand}</span>
+                    <span className="ml-2 text-[#4A7C59]">
+                      • Highlighting mentions of {selectedResultHighlight.brand}
+                      {selectedResultHighlight.domain && <> from {selectedResultHighlight.domain}</>}
+                    </span>
                   )}
                 </p>
               </div>
@@ -9518,18 +9522,24 @@ export default function ResultsPage() {
                       <div className="space-y-1.5">
                         {selectedResult.sources.map((source, idx) => {
                           const { domain, subtitle } = formatSourceDisplay(source.url, source.title);
+                          const isHighlightedDomain = selectedResultHighlight?.domain &&
+                            domain.toLowerCase().includes(selectedResultHighlight.domain.toLowerCase());
                           return (
                             <a
                               key={idx}
                               href={source.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                              className={`flex items-center gap-2 text-sm hover:underline ${
+                                isHighlightedDomain
+                                  ? 'text-yellow-700 bg-yellow-100 px-2 py-1 rounded -mx-2 border-l-4 border-yellow-400'
+                                  : 'text-[#4A7C59] hover:text-[#3d6649]'
+                              }`}
                             >
                               <ExternalLink className="w-3 h-3 flex-shrink-0" />
                               <span className="truncate">
                                 <span className="font-medium">{domain}</span>
-                                {subtitle && <span className="text-gray-500"> · {subtitle}</span>}
+                                {subtitle && <span className={isHighlightedDomain ? 'text-yellow-600' : 'text-gray-500'}> · {subtitle}</span>}
                               </span>
                             </a>
                           );
