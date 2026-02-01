@@ -1278,6 +1278,9 @@ export default function ResultsPage() {
     return insights.slice(0, 5);
   }, [runStatus, brandBreakdownStats, modelPreferenceData, brandCooccurrence]);
 
+  // State for Brand Co-occurrence view
+  const [cooccurrenceView, setCooccurrenceView] = useState<'pairs' | 'venn'>('pairs');
+
   // State for Source Gap Analysis filters
   const [sourceGapProviderFilter, setSourceGapProviderFilter] = useState<string>('all');
   const [sourceGapPromptFilter, setSourceGapPromptFilter] = useState<string>('all');
@@ -8059,12 +8062,39 @@ export default function ResultsPage() {
             {/* Brand Co-occurrence Analysis */}
             {brandCooccurrence.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="mb-4">
-                  <h2 className="text-base font-semibold text-gray-900">Brand Co-occurrence Analysis</h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Brands that are frequently mentioned together in AI responses
-                  </p>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">Brand Co-occurrence Analysis</h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Brands that are frequently mentioned together in AI responses
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setCooccurrenceView('pairs')}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        cooccurrenceView === 'pairs'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Pairs
+                    </button>
+                    <button
+                      onClick={() => setCooccurrenceView('venn')}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                        cooccurrenceView === 'venn'
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Venn Diagram
+                    </button>
+                  </div>
                 </div>
+
+                {cooccurrenceView === 'pairs' && (
+                <>
                 <div className="space-y-3">
                   {brandCooccurrence.map((pair, idx) => {
                     const maxCount = brandCooccurrence[0]?.count || 1;
@@ -8107,9 +8137,11 @@ export default function ResultsPage() {
                     <span>Competitors only</span>
                   </div>
                 </div>
+                </>
+                )}
 
                 {/* Venn Diagram Visualization */}
-                {(() => {
+                {cooccurrenceView === 'venn' && (() => {
                   // Get pairs involving the searched brand
                   const searchedBrand = runStatus?.brand || '';
                   const brandPairs = brandCooccurrence.filter(
@@ -8131,8 +8163,7 @@ export default function ResultsPage() {
                   const colors = ['#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
 
                   return (
-                    <div className="mt-6 pt-6 border-t border-gray-100">
-                      <h3 className="text-sm font-medium text-gray-700 mb-3">Co-occurrence with {searchedBrand}</h3>
+                    <div>
                       <div className="flex justify-center">
                         <svg width="600" height="420" viewBox="0 0 600 420">
                           {/* Central brand circle */}
@@ -8153,9 +8184,9 @@ export default function ResultsPage() {
                             const distance = 110; // Increased distance from center
                             const cx = 300 + Math.cos(angle) * distance;
                             const cy = 210 + Math.sin(angle) * distance;
-                            // Size based on co-occurrence count - smaller range
-                            const minRadius = 45;
-                            const maxRadius = 65;
+                            // Size based on co-occurrence count - more pronounced range
+                            const minRadius = 35;
+                            const maxRadius = 80;
                             const radius = minRadius + ((item.count / maxCount) * (maxRadius - minRadius));
 
                             return (
