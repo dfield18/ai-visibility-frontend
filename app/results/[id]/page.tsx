@@ -3316,21 +3316,21 @@ export default function ResultsPage() {
                             if (isGoogleAI) {
                               return (
                                 <text
-                                  x={x}
+                                  x={x - 8}
                                   y={y}
                                   textAnchor="end"
                                   fill="#6b7280"
                                   fontSize={12}
                                 >
-                                  <tspan x={x} dy="-2">Google AI</tspan>
-                                  <tspan x={x} dy="14">Overviews</tspan>
+                                  <tspan x={x - 8} dy="-2">Google AI</tspan>
+                                  <tspan x={x - 8} dy="14">Overviews</tspan>
                                 </text>
                               );
                             }
 
                             return (
                               <text
-                                x={x}
+                                x={x - 8}
                                 y={y}
                                 dy={4}
                                 textAnchor="end"
