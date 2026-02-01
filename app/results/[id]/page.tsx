@@ -2562,7 +2562,7 @@ export default function ResultsPage() {
       'Provider',
       'Model',
       'Position',
-      'Brand Sentiment',
+      `${runStatus.brand} Sentiment`,
       'Competitor Sentiments',
       'All Brands Mentioned',
       'Response',
@@ -5438,13 +5438,30 @@ export default function ResultsPage() {
 
       const total = Object.values(categoryCounts).reduce((sum, count) => sum + count, 0);
 
-      return Object.entries(categoryCounts)
+      const rawData = Object.entries(categoryCounts)
         .map(([category, count]) => ({
           name: category,
           value: count,
           percentage: total > 0 ? (count / total) * 100 : 0
         }))
         .sort((a, b) => b.value - a.value);
+
+      // Group items under 5% into "Other"
+      const threshold = 5;
+      const mainItems = rawData.filter(item => item.percentage >= threshold);
+      const otherItems = rawData.filter(item => item.percentage < threshold);
+
+      if (otherItems.length > 0) {
+        const otherValue = otherItems.reduce((sum, item) => sum + item.value, 0);
+        const otherPercentage = otherItems.reduce((sum, item) => sum + item.percentage, 0);
+        mainItems.push({
+          name: 'Other',
+          value: otherValue,
+          percentage: otherPercentage
+        });
+      }
+
+      return mainItems;
     }, [topCitedSources, aiCategorizations]);
 
     // Calculate domain table data with additional metrics
@@ -5867,19 +5884,42 @@ export default function ResultsPage() {
                   </div>
                   {sourceCategoryData.length > 0 ? (
                     <div className="flex flex-col items-center flex-1 pt-2">
-                      <div className="h-[180px] w-[180px]">
+                      <div className="h-[260px] w-[260px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
                               data={categoryFilteredSiteData || sourceCategoryData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={45}
-                              outerRadius={76}
+                              innerRadius={60}
+                              outerRadius={100}
                               paddingAngle={2}
                               dataKey="value"
                               nameKey="name"
                               isAnimationActive={false}
+                              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                                // Only show label for items over 20%
+                                const pct = (percent || 0) * 100;
+                                if (pct < 20) return null;
+                                const RADIAN = Math.PI / 180;
+                                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                                const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                                return (
+                                  <text
+                                    x={x}
+                                    y={y}
+                                    fill="white"
+                                    textAnchor="middle"
+                                    dominantBaseline="central"
+                                    fontSize={11}
+                                    fontWeight={600}
+                                  >
+                                    {`${pct.toFixed(0)}%`}
+                                  </text>
+                                );
+                              }}
+                              labelLine={false}
                             >
                               {(categoryFilteredSiteData || sourceCategoryData).map((entry, index) => (
                                 <Cell
@@ -6685,29 +6725,14 @@ export default function ResultsPage() {
           {isHovered && matchingResults.length > 0 && (
             <div
               data-sentiment-popup
-              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[320px] text-left ${
+              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[350px] text-left ${
                 popupPosition === 'top'
                   ? 'bottom-full mb-2 left-0'
                   : 'top-full mt-2 left-0'
               }`}
-              style={{ maxHeight: '350px' }}
               onWheel={(e) => e.stopPropagation()}
             >
-              <div
-                className="overflow-y-auto overscroll-contain"
-                style={{ maxHeight: '350px' }}
-                onScroll={(e) => e.stopPropagation()}
-                onWheel={(e) => {
-                  const target = e.currentTarget;
-                  const { scrollTop, scrollHeight, clientHeight } = target;
-                  const isAtTop = scrollTop === 0;
-                  const isAtBottom = scrollTop + clientHeight >= scrollHeight;
-                  if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
-                    e.preventDefault();
-                  }
-                  e.stopPropagation();
-                }}
-              >
+              <div>
                 {matchingResults.map((result, idx) => {
                   const truncatedPrompt = result.prompt.length > 70
                     ? result.prompt.substring(0, 70) + '...'
@@ -7221,7 +7246,7 @@ export default function ResultsPage() {
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Prompt</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Position</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Brand Sentiment</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">{runStatus?.brand || 'Brand'} Sentiment</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor Sentiments</th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Response</th>
                 </tr>
@@ -8666,7 +8691,7 @@ export default function ResultsPage() {
                                         return (
                                           <div
                                             key={snippetIdx}
-                                            className="text-sm border-l-2 pl-3 py-1"
+                                            className="text-sm border-l-2 pl-3 py-2"
                                             style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
                                           >
                                             <div className="flex items-center gap-2 mb-1">
@@ -8679,6 +8704,10 @@ export default function ResultsPage() {
                                               <span className="text-xs text-gray-400">
                                                 via {getProviderLabel(snippetInfo.provider)}
                                               </span>
+                                            </div>
+                                            <div className="bg-gray-50 rounded px-2 py-1.5 mb-1.5">
+                                              <p className="text-xs text-gray-500 mb-0.5">Prompt</p>
+                                              <p className="text-sm text-gray-900">{snippetInfo.prompt}</p>
                                             </div>
                                             <p className="text-gray-600 text-sm leading-relaxed">
                                               {parts.map((part, i) =>
