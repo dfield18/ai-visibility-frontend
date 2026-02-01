@@ -7881,6 +7881,9 @@ export default function ResultsPage() {
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
+                <p className="text-xs text-gray-400 mt-3">
+                  Average Sentiment: 1 = Negative, 2 = Conditional, 3 = Neutral, 4 = Positive, 5 = Strong Endorsement
+                </p>
               </div>
               );
             })()}
