@@ -127,6 +127,11 @@ export default function ResultsPage() {
     window.history.replaceState(null, '', newUrl);
   }, [activeTab, globalBrandFilter, globalLlmFilter, globalPromptFilter]);
 
+  // Scroll to top when switching tabs
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [activeTab]);
+
   // Close sentiment badge hover popup on scroll/wheel - track scroll position
   const lastScrollY = React.useRef(0);
   const lastScrollX = React.useRef(0);
