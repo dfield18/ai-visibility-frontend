@@ -8656,68 +8656,6 @@ export default function ResultsPage() {
                 )}
               </div>
             )}
-
-            {/* Brand Mentions */}
-            {Object.keys(filteredBrandMentions).length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-semibold text-gray-900">Brand Mentions</h2>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={brandMentionsTrackingFilter}
-                      onChange={(e) => setBrandMentionsTrackingFilter(e.target.value as 'all' | 'tracked')}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                    >
-                      <option value="all">All Brands</option>
-                      <option value="tracked">Tracked Only</option>
-                    </select>
-                    <select
-                      value={brandMentionsProviderFilter}
-                      onChange={(e) => setBrandMentionsProviderFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                    >
-                      <option value="all">All Models</option>
-                      {availableProviders.map((provider) => (
-                        <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className={`space-y-3 ${Object.keys(filteredBrandMentions).length > 10 ? 'max-h-[400px] overflow-y-auto pr-2' : ''}`}>
-                  {Object.entries(filteredBrandMentions)
-                    .sort((a, b) => b[1].rate - a[1].rate)
-                    .map(([brandName, stats]) => {
-                      const isSearchedBrand = brandName === runStatus?.brand;
-                      const isUntracked = !stats.isTracked;
-                      return (
-                        <div key={brandName} className="flex items-center gap-4">
-                          <span className={`w-40 text-sm font-medium truncate ${isSearchedBrand ? 'text-blue-600' : isUntracked ? 'text-orange-600' : 'text-gray-700'}`}>
-                            {brandName}
-                            {isSearchedBrand && <span className="text-xs ml-1">(searched)</span>}
-                            {isUntracked && <span className="text-xs ml-1 text-orange-500">(discovered)</span>}
-                          </span>
-                          <div className="flex-1">
-                            <div className="h-5 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all flex items-center justify-end pr-2 ${isSearchedBrand ? 'bg-blue-500' : isUntracked ? 'bg-orange-400' : 'bg-[#5B7B5D]'}`}
-                                style={{ width: `${Math.max(stats.rate * 100, 10)}%` }}
-                              >
-                                {stats.rate > 0.15 && (
-                                  <span className="text-xs font-medium text-white">{formatPercent(stats.rate)}</span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          {stats.rate <= 0.15 && (
-                            <span className="text-sm text-gray-600 w-12 text-right">{formatPercent(stats.rate)}</span>
-                          )}
-                          <span className="text-xs text-gray-400 w-16 text-right">({stats.count} times)</span>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            )}
           </div>
         )}
         {activeTab === 'sentiment' && <SentimentTab />}
