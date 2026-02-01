@@ -4960,6 +4960,714 @@ export default function ResultsPage() {
         </div>
       </div>
 
+      {/* Source Gap Analysis Chart & Table */}
+      {sourceGapAnalysis.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Source Gap Analysis</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Sources where competitors are cited more often than {runStatus?.brand || 'your brand'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={sourceGapPromptFilter}
+                onChange={(e) => setSourceGapPromptFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+              >
+                <option value="all">All Prompts</option>
+                {availablePrompts.map((prompt) => (
+                  <option key={prompt} value={prompt} title={prompt}>
+                    {prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={sourceGapProviderFilter}
+                onChange={(e) => setSourceGapProviderFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Models</option>
+                {availableProviders.map((provider) => (
+                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Visual Chart - Dumbbell Chart */}
+          {sourceGapAnalysis.length > 0 ? (
+          <>
+          <div className="mb-6">
+            <div className="flex items-center justify-center gap-6 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#4A7C59]"></div>
+                <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span className="text-sm text-gray-600">Top Competitor</span>
+              </div>
+            </div>
+            <div className="h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={sourceGapAnalysis.slice(0, 10).map(row => ({
+                    domain: row.domain.length > 25 ? row.domain.substring(0, 23) + '...' : row.domain,
+                    fullDomain: row.domain,
+                    brandRate: row.brandRate,
+                    competitorRate: row.topCompetitorRate,
+                    competitor: row.topCompetitor,
+                    gap: row.gap,
+                    citations: row.totalCitations,
+                  }))}
+                  layout="vertical"
+                  margin={{ top: 10, right: 50, bottom: 10, left: 140 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#e5e7eb" />
+                  <XAxis
+                    type="number"
+                    domain={[0, 100]}
+                    ticks={[0, 25, 50, 75, 100]}
+                    tickFormatter={(value) => `${value}%`}
+                    tick={{ fill: '#6b7280', fontSize: 11 }}
+                    axisLine={{ stroke: '#d1d5db' }}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="domain"
+                    tick={{ fill: '#374151', fontSize: 11 }}
+                    width={135}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <ReferenceLine x={50} stroke="#d1d5db" strokeDasharray="3 3" />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length > 0) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
+                            <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
+                            <p className="text-[#4A7C59]">
+                              {runStatus?.brand || 'Brand'}: {data.brandRate.toFixed(1)}%
+                            </p>
+                            <p className="text-blue-500">
+                              {data.competitor || 'Top Competitor'}: {data.competitorRate.toFixed(1)}%
+                            </p>
+                            <p className="text-gray-500 mt-1">
+                              Gap: {data.gap >= 0 ? '+' : ''}{data.gap.toFixed(1)} pts ({data.citations} citations)
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                    cursor={{ fill: 'transparent' }}
+                  />
+                  {/* Custom dumbbell rendering */}
+                  <Customized
+                    component={(props: { xAxisMap?: Record<string, { scale: (value: number) => number }>; yAxisMap?: Record<string, { scale: (value: string) => number; bandwidth?: () => number }>; offset?: { left: number; top: number; width: number; height: number } }) => {
+                      const { xAxisMap, yAxisMap } = props;
+                      if (!xAxisMap || !yAxisMap) return null;
+
+                      const xAxis = Object.values(xAxisMap)[0];
+                      const yAxis = Object.values(yAxisMap)[0];
+                      if (!xAxis || !yAxis) return null;
+
+                      const chartData = sourceGapAnalysis.slice(0, 10).map(row => ({
+                        domain: row.domain.length > 25 ? row.domain.substring(0, 23) + '...' : row.domain,
+                        fullDomain: row.domain,
+                        brandRate: row.brandRate,
+                        competitorRate: row.topCompetitorRate,
+                      }));
+
+                      // Get bandwidth for category spacing
+                      const bandwidth = yAxis.bandwidth ? yAxis.bandwidth() : 30;
+                      const yOffset = bandwidth / 2;
+
+                      return (
+                        <g>
+                          {chartData.map((item, index) => {
+                            const yPos = yAxis.scale(item.domain) + yOffset;
+                            const brandX = xAxis.scale(item.brandRate);
+                            const compX = xAxis.scale(item.competitorRate);
+                            const minX = Math.min(brandX, compX);
+                            const maxX = Math.max(brandX, compX);
+
+                            if (isNaN(yPos) || isNaN(brandX) || isNaN(compX)) return null;
+
+                            return (
+                              <g
+                                key={index}
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => {
+                                  const domain = item.fullDomain;
+                                  const newExpanded = new Set(expandedGapSources);
+                                  if (expandedGapSources.has(domain)) {
+                                    newExpanded.delete(domain);
+                                  } else {
+                                    newExpanded.add(domain);
+                                  }
+                                  setExpandedGapSources(newExpanded);
+                                }}
+                              >
+                                {/* Connector line */}
+                                <line
+                                  x1={minX}
+                                  y1={yPos}
+                                  x2={maxX}
+                                  y2={yPos}
+                                  stroke="#9ca3af"
+                                  strokeWidth={2}
+                                />
+                                {/* Brand dot (green) */}
+                                <circle
+                                  cx={brandX}
+                                  cy={yPos}
+                                  r={6}
+                                  fill="#4A7C59"
+                                  stroke="#fff"
+                                  strokeWidth={1.5}
+                                />
+                                {/* Competitor dot (blue) */}
+                                <circle
+                                  cx={compX}
+                                  cy={yPos}
+                                  r={6}
+                                  fill="#3b82f6"
+                                  stroke="#fff"
+                                  strokeWidth={1.5}
+                                />
+                              </g>
+                            );
+                          })}
+                        </g>
+                      );
+                    }}
+                  />
+                  {/* Invisible bar for tooltip triggering */}
+                  <Bar dataKey="brandRate" fill="transparent" />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <p className="text-xs text-gray-400 mb-2">Click on a row to see specific mentions from AI responses</p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                    <div>{runStatus?.brand || 'Brand'} Rate</div>
+                    <div className="text-xs text-gray-400 font-normal">% when source cited</div>
+                  </th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                    <div>Top Competitor</div>
+                  </th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                    <div>Competitor Rate</div>
+                    <div className="text-xs text-gray-400 font-normal">% when source cited</div>
+                  </th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                    <div>Gap</div>
+                    <div className="text-xs text-gray-400 font-normal">competitor advantage</div>
+                  </th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                    <div>Opportunity</div>
+                    <div className="text-xs text-gray-400 font-normal">priority score</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sourceGapAnalysis.slice(0, 20).map((row, index) => {
+                  const isExpanded = expandedGapSources.has(row.domain);
+                  return (
+                    <React.Fragment key={row.domain}>
+                      <tr
+                        className={`${index % 2 === 0 ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
+                        onClick={() => {
+                          const newExpanded = new Set(expandedGapSources);
+                          if (isExpanded) {
+                            newExpanded.delete(row.domain);
+                          } else {
+                            newExpanded.add(row.domain);
+                          }
+                          setExpandedGapSources(newExpanded);
+                        }}
+                      >
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            )}
+                            <span className="text-[#4A7C59] font-medium">{row.domain}</span>
+                            <span className="text-xs text-gray-400">({row.totalCitations} citations)</span>
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <span className={`font-medium ${row.brandRate >= 50 ? 'text-green-600' : row.brandRate >= 25 ? 'text-yellow-600' : 'text-red-500'}`}>
+                            {row.brandRate.toFixed(0)}%
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <span className="text-gray-700 font-medium">{row.topCompetitor || '-'}</span>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <span className="font-medium text-gray-700">
+                            {row.topCompetitorRate.toFixed(0)}%
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-400 rounded-full"
+                                style={{ width: `${Math.min(row.gap, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-blue-600 font-medium min-w-[40px]">+{row.gap.toFixed(0)}%</span>
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            row.opportunityScore >= 30 ? 'bg-blue-100 text-blue-700' :
+                            row.opportunityScore >= 15 ? 'bg-blue-50 text-blue-600' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {row.opportunityScore >= 30 ? 'High' :
+                             row.opportunityScore >= 15 ? 'Medium' : 'Low'}
+                          </span>
+                        </td>
+                      </tr>
+                      {isExpanded && (row.urls.length > 0 || row.snippets.length > 0) && (
+                        <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                          <td colSpan={6} className="py-2 px-3 pl-10">
+                            <div className="space-y-3">
+                              {/* Response Snippets */}
+                              {row.snippets.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                  <p className="text-xs font-medium text-gray-500 mb-2">
+                                    How brands appear when this source is cited ({row.snippets.length} mentions)
+                                  </p>
+                                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {row.snippets.slice(0, 10).map((snippetInfo, snippetIdx) => {
+                                      // Strip markdown and highlight the brand name in the snippet
+                                      const cleanSnippet = stripMarkdown(snippetInfo.snippet);
+                                      const parts = cleanSnippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
+                                      return (
+                                        <div
+                                          key={snippetIdx}
+                                          className="text-sm border-l-2 pl-3 py-1 cursor-pointer hover:bg-gray-50 rounded-r transition-colors"
+                                          style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
+                                          onClick={() => setSnippetDetailModal({
+                                            brand: snippetInfo.brand,
+                                            responseText: snippetInfo.responseText,
+                                            provider: snippetInfo.provider,
+                                            prompt: snippetInfo.prompt,
+                                          })}
+                                        >
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                              {snippetInfo.brand}
+                                            </span>
+                                            <span className="text-xs text-gray-400">
+                                              via {getProviderLabel(snippetInfo.provider)}
+                                            </span>
+                                            <span className="text-xs text-blue-500 ml-auto">Click to view full response</span>
+                                          </div>
+                                          <p className="text-gray-600 text-sm leading-relaxed">
+                                            {parts.map((part, i) =>
+                                              part.toLowerCase() === snippetInfo.brand.toLowerCase() ? (
+                                                <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-[#4A7C59]' : 'text-blue-600'}`}>
+                                                  {part}
+                                                </span>
+                                              ) : (
+                                                <span key={i}>{part}</span>
+                                              )
+                                            )}
+                                          </p>
+                                        </div>
+                                      );
+                                    })}
+                                    {row.snippets.length > 10 && (
+                                      <p className="text-xs text-gray-400 mt-2">
+                                        Showing 10 of {row.snippets.length} mentions
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Individual URLs */}
+                              {row.urls.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-lg p-3">
+                                  <p className="text-xs font-medium text-gray-500 mb-2">Individual URLs ({row.urls.length})</p>
+                                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                                    {row.urls.map((urlInfo, urlIdx) => (
+                                      <a
+                                        key={urlIdx}
+                                        href={urlInfo.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="flex items-start gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline group"
+                                      >
+                                        <ExternalLink className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                        <span className="break-all">
+                                          {urlInfo.title || urlInfo.url}
+                                          <span className="text-gray-400 ml-1">({urlInfo.count} {urlInfo.count === 1 ? 'citation' : 'citations'})</span>
+                                        </span>
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+            {sourceGapAnalysis.length > 20 && (
+              <p className="text-sm text-gray-500 text-center mt-3">
+                Showing top 20 of {sourceGapAnalysis.length} sources with competitor advantage
+              </p>
+            )}
+          </div>
+          </>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>No source gap data available for the selected model.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Source Sentiment Gap Analysis Chart & Table */}
+      {sourceSentimentGapAnalysis.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Relative Sentiment Advantage</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Comparing how sources portray {sentimentComparisonBrand || runStatus?.brand || 'your brand'} vs. other brands
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={sentimentComparisonBrand}
+                onChange={(e) => setSentimentComparisonBrand(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="">{runStatus?.brand || 'Your Brand'}</option>
+                {availableBrands.filter(b => b !== runStatus?.brand).map((brand) => (
+                  <option key={brand} value={brand}>
+                    {brand.length > 20 ? brand.substring(0, 18) + '...' : brand}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={sourceSentimentGapPromptFilter}
+                onChange={(e) => setSourceSentimentGapPromptFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+              >
+                <option value="all">All Prompts</option>
+                {availablePrompts.map((prompt) => (
+                  <option key={prompt} value={prompt} title={prompt}>
+                    {prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={sourceSentimentGapProviderFilter}
+                onChange={(e) => setSourceSentimentGapProviderFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Models</option>
+                {availableProviders.map((provider) => (
+                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Visual Chart */}
+          {sourceSentimentGapAnalysis.length > 0 ? (
+          <>
+          <div className="mb-6">
+            <div className="flex items-center justify-center gap-6 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#4A7C59]"></div>
+                <span className="text-sm text-gray-600">Presented more positively</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span className="text-sm text-gray-600">{sourceSentimentGapAnalysis[0]?.topCompetitor || 'Top Competitor'} Presented more positively</span>
+              </div>
+            </div>
+            <div className="h-[350px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={sourceSentimentGapAnalysis.slice(0, 10).map(row => ({
+                    domain: row.domain.length > 20 ? row.domain.substring(0, 18) + '...' : row.domain,
+                    fullDomain: row.domain,
+                    signedValue: row.signedValue,
+                    avgDifference: Math.abs(row.delta),
+                    brandSentiment: row.brandSentimentIndex,
+                    competitorSentiment: row.topCompetitorIndex,
+                    competitor: row.topCompetitor,
+                    direction: row.direction,
+                    labelText: row.labelText,
+                    brandLabel: row.brandSentimentLabel,
+                    competitorLabel: row.competitorSentimentLabel,
+                    comparisonBrand: row.comparisonBrand,
+                  }))}
+                  layout="vertical"
+                  margin={{ top: 10, right: 50, bottom: 10, left: 140 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#e5e7eb" />
+                  <XAxis
+                    type="number"
+                    domain={[-4, 4]}
+                    ticks={[-4, -2, 0, 2, 4]}
+                    tickFormatter={(value) => value === 0 ? '0' : value > 0 ? `+${value}` : `${value}`}
+                    tick={{ fill: '#6b7280', fontSize: 11 }}
+                    axisLine={{ stroke: '#d1d5db' }}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="domain"
+                    tick={{ fill: '#374151', fontSize: 11 }}
+                    width={135}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <ReferenceLine x={0} stroke="#374151" strokeWidth={1} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length > 0) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
+                            <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
+                            <p className="text-gray-600 mb-1">
+                              {data.comparisonBrand || 'Brand'}: <span className="font-medium text-[#4A7C59]">{data.brandLabel}</span>
+                            </p>
+                            <p className="text-gray-600 mb-2">
+                              {data.competitor || 'Other'}: <span className="font-medium text-blue-600">{data.competitorLabel}</span>
+                            </p>
+                            <p className={`font-medium ${data.direction === 'brand' ? 'text-[#4A7C59]' : data.direction === 'competitor' ? 'text-blue-600' : 'text-gray-500'}`}>
+                              {data.labelText}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar
+                    dataKey="signedValue"
+                    radius={[4, 4, 4, 4]}
+                    fill="#4A7C59"
+                  >
+                    {sourceSentimentGapAnalysis.slice(0, 10).map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.direction === 'brand' ? '#4A7C59' : entry.direction === 'competitor' ? '#3b82f6' : '#d1d5db'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">Models</th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">{runStatus?.brand || 'Brand'}</th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">Top Competitor</th>
+                  <th className="text-center py-3 px-3 font-medium text-gray-600">Advantage</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sourceSentimentGapAnalysis.slice(0, 20).map((row, index) => {
+                  const isExpanded = expandedSentimentGapSources.has(row.domain);
+                  return (
+                    <React.Fragment key={row.domain}>
+                      <tr
+                        className={`${index % 2 === 0 ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
+                        onClick={() => {
+                          const newExpanded = new Set(expandedSentimentGapSources);
+                          if (isExpanded) {
+                            newExpanded.delete(row.domain);
+                          } else {
+                            newExpanded.add(row.domain);
+                          }
+                          setExpandedSentimentGapSources(newExpanded);
+                        }}
+                      >
+                        <td className="py-3 px-3">
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            )}
+                            <span className="text-[#4A7C59] font-medium">{row.domain}</span>
+                            <span className="text-xs text-gray-400">({row.totalMentions} mentions)</span>
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <div className="flex flex-wrap justify-center gap-1">
+                            {row.providers.map((provider: string) => (
+                              <span key={provider} className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                                {getProviderLabel(provider).split(' ')[0]}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <div className="flex flex-col items-center">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              row.brandSentimentIndex >= 4 ? 'bg-green-100 text-green-700' :
+                              row.brandSentimentIndex >= 3 ? 'bg-green-50 text-green-600' :
+                              row.brandSentimentIndex >= 2 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {row.brandSentimentLabel}
+                            </span>
+                            <span className="text-[10px] text-gray-400 mt-0.5">{row.brandSentimentIndex}/5</span>
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <div className="flex flex-col items-center">
+                            <span className="text-gray-700 font-medium text-xs">{row.topCompetitor || '-'}</span>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-0.5 ${
+                              row.topCompetitorIndex >= 4 ? 'bg-blue-100 text-blue-700' :
+                              row.topCompetitorIndex >= 3 ? 'bg-blue-50 text-blue-600' :
+                              row.topCompetitorIndex >= 2 ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {row.competitorSentimentLabel}
+                            </span>
+                            <span className="text-[10px] text-gray-400 mt-0.5">{row.topCompetitorIndex}/5</span>
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            row.direction === 'brand' ? 'bg-green-100 text-green-700' :
+                            row.direction === 'competitor' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {row.direction === 'brand' ? `+${Math.abs(row.delta)} pts` :
+                             row.direction === 'competitor' ? `-${Math.abs(row.delta)} pts` :
+                             'Equal'}
+                          </span>
+                        </td>
+                      </tr>
+                      {isExpanded && row.snippets.length > 0 && (
+                        <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                          <td colSpan={5} className="py-2 px-3 pl-10">
+                            <div className="bg-white border border-gray-200 rounded-lg p-3">
+                              <p className="text-xs font-medium text-gray-500 mb-2">
+                                How brands are described when this source is cited ({row.snippets.length} mentions)
+                              </p>
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {row.snippets.slice(0, 10).map((snippetInfo, snippetIdx) => {
+                                  // Strip markdown and highlight the brand name in the snippet
+                                  const cleanSnippet = stripMarkdown(snippetInfo.snippet);
+                                  const parts = cleanSnippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
+                                  const sentimentColors: Record<string, string> = {
+                                    'strong_endorsement': 'bg-green-100 text-green-700',
+                                    'positive_endorsement': 'bg-green-50 text-green-600',
+                                    'neutral_mention': 'bg-gray-100 text-gray-600',
+                                    'conditional': 'bg-yellow-100 text-yellow-700',
+                                    'negative_comparison': 'bg-red-100 text-red-700',
+                                  };
+                                  return (
+                                    <div
+                                      key={snippetIdx}
+                                      className="text-sm border-l-2 pl-3 py-2 cursor-pointer hover:bg-gray-50 rounded-r transition-colors"
+                                      style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
+                                      onClick={() => setSnippetDetailModal({
+                                        brand: snippetInfo.brand,
+                                        responseText: snippetInfo.responseText,
+                                        provider: snippetInfo.provider,
+                                        prompt: snippetInfo.prompt,
+                                      })}
+                                    >
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                          {snippetInfo.brand}
+                                        </span>
+                                        <span className={`text-xs px-1.5 py-0.5 rounded ${sentimentColors[snippetInfo.sentiment] || 'bg-gray-100 text-gray-600'}`}>
+                                          {snippetInfo.sentiment.replace(/_/g, ' ')}
+                                        </span>
+                                        <span className="text-xs text-gray-400">
+                                          via {getProviderLabel(snippetInfo.provider)}
+                                        </span>
+                                        <span className="text-xs text-[#4A7C59] ml-auto">Click to view full response →</span>
+                                      </div>
+                                      <div className="bg-gray-50 rounded px-2 py-1.5 mb-1.5">
+                                        <p className="text-xs text-gray-500 mb-0.5">Prompt</p>
+                                        <p className="text-sm text-gray-900">{snippetInfo.prompt}</p>
+                                      </div>
+                                      <p className="text-gray-600 text-sm leading-relaxed">
+                                        {parts.map((part, i) =>
+                                          part.toLowerCase() === snippetInfo.brand.toLowerCase() ? (
+                                            <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-[#4A7C59]' : 'text-blue-600'}`}>
+                                              {part}
+                                            </span>
+                                          ) : (
+                                            <span key={i}>{part}</span>
+                                          )
+                                        )}
+                                      </p>
+                                    </div>
+                                  );
+                                })}
+                                {row.snippets.length > 10 && (
+                                  <p className="text-xs text-gray-400 mt-2">
+                                    Showing 10 of {row.snippets.length} mentions
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+            {sourceSentimentGapAnalysis.length > 20 && (
+              <p className="text-sm text-gray-500 text-center mt-3">
+                Showing top 20 of {sourceSentimentGapAnalysis.length} sources with competitor sentiment advantage
+              </p>
+            )}
+          </div>
+          </>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>No sentiment gap data available for the selected filters.</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Cost Summary Footer */}
       <div className="bg-[#FAFAF8] rounded-xl border border-gray-200 p-4">
         <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
@@ -8417,721 +9125,6 @@ export default function ResultsPage() {
               </div>
             )}
 
-            {/* Source Gap Analysis Chart & Table */}
-            {sourceGapAnalysis.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h2 className="text-base font-semibold text-gray-900">Source Gap Analysis</h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Sources where competitors are cited more often than {runStatus?.brand || 'your brand'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={sourceGapPromptFilter}
-                      onChange={(e) => setSourceGapPromptFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
-                    >
-                      <option value="all">All Prompts</option>
-                      {availablePrompts.map((prompt) => (
-                        <option key={prompt} value={prompt} title={prompt}>
-                          {prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={sourceGapProviderFilter}
-                      onChange={(e) => setSourceGapProviderFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                    >
-                      <option value="all">All Models</option>
-                      {availableProviders.map((provider) => (
-                        <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Visual Chart - Dumbbell Chart */}
-                {sourceGapAnalysis.length > 0 ? (
-                <>
-                <div className="mb-6">
-                  <div className="flex items-center justify-center gap-6 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-[#4A7C59]"></div>
-                      <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                      <span className="text-sm text-gray-600">Top Competitor</span>
-                    </div>
-                  </div>
-                  <div className="h-[350px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart
-                        data={sourceGapAnalysis.slice(0, 10).map(row => ({
-                          domain: row.domain.length > 25 ? row.domain.substring(0, 23) + '...' : row.domain,
-                          fullDomain: row.domain,
-                          brandRate: row.brandRate,
-                          competitorRate: row.topCompetitorRate,
-                          competitor: row.topCompetitor,
-                          gap: row.gap,
-                          citations: row.totalCitations,
-                        }))}
-                        layout="vertical"
-                        margin={{ top: 10, right: 50, bottom: 10, left: 140 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#e5e7eb" />
-                        <XAxis
-                          type="number"
-                          domain={[0, 100]}
-                          ticks={[0, 25, 50, 75, 100]}
-                          tickFormatter={(value) => `${value}%`}
-                          tick={{ fill: '#6b7280', fontSize: 11 }}
-                          axisLine={{ stroke: '#d1d5db' }}
-                        />
-                        <YAxis
-                          type="category"
-                          dataKey="domain"
-                          tick={{ fill: '#374151', fontSize: 11 }}
-                          width={135}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <ReferenceLine x={50} stroke="#d1d5db" strokeDasharray="3 3" />
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length > 0) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
-                                  <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
-                                  <p className="text-[#4A7C59]">
-                                    {runStatus?.brand || 'Brand'}: {data.brandRate.toFixed(1)}%
-                                  </p>
-                                  <p className="text-blue-500">
-                                    {data.competitor || 'Top Competitor'}: {data.competitorRate.toFixed(1)}%
-                                  </p>
-                                  <p className="text-gray-500 mt-1">
-                                    Gap: {data.gap >= 0 ? '+' : ''}{data.gap.toFixed(1)} pts ({data.citations} citations)
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                          cursor={{ fill: 'transparent' }}
-                        />
-                        {/* Custom dumbbell rendering */}
-                        <Customized
-                          component={(props: { xAxisMap?: Record<string, { scale: (value: number) => number }>; yAxisMap?: Record<string, { scale: (value: string) => number; bandwidth?: () => number }>; offset?: { left: number; top: number; width: number; height: number } }) => {
-                            const { xAxisMap, yAxisMap } = props;
-                            if (!xAxisMap || !yAxisMap) return null;
-
-                            const xAxis = Object.values(xAxisMap)[0];
-                            const yAxis = Object.values(yAxisMap)[0];
-                            if (!xAxis || !yAxis) return null;
-
-                            const chartData = sourceGapAnalysis.slice(0, 10).map(row => ({
-                              domain: row.domain.length > 25 ? row.domain.substring(0, 23) + '...' : row.domain,
-                              fullDomain: row.domain,
-                              brandRate: row.brandRate,
-                              competitorRate: row.topCompetitorRate,
-                            }));
-
-                            // Get bandwidth for category spacing
-                            const bandwidth = yAxis.bandwidth ? yAxis.bandwidth() : 30;
-                            const yOffset = bandwidth / 2;
-
-                            return (
-                              <g>
-                                {chartData.map((item, index) => {
-                                  const yPos = yAxis.scale(item.domain) + yOffset;
-                                  const brandX = xAxis.scale(item.brandRate);
-                                  const compX = xAxis.scale(item.competitorRate);
-                                  const minX = Math.min(brandX, compX);
-                                  const maxX = Math.max(brandX, compX);
-
-                                  if (isNaN(yPos) || isNaN(brandX) || isNaN(compX)) return null;
-
-                                  return (
-                                    <g
-                                      key={index}
-                                      style={{ cursor: 'pointer' }}
-                                      onClick={() => {
-                                        const domain = item.fullDomain;
-                                        const newExpanded = new Set(expandedGapSources);
-                                        if (expandedGapSources.has(domain)) {
-                                          newExpanded.delete(domain);
-                                        } else {
-                                          newExpanded.add(domain);
-                                        }
-                                        setExpandedGapSources(newExpanded);
-                                      }}
-                                    >
-                                      {/* Connector line */}
-                                      <line
-                                        x1={minX}
-                                        y1={yPos}
-                                        x2={maxX}
-                                        y2={yPos}
-                                        stroke="#9ca3af"
-                                        strokeWidth={2}
-                                      />
-                                      {/* Brand dot (green) */}
-                                      <circle
-                                        cx={brandX}
-                                        cy={yPos}
-                                        r={6}
-                                        fill="#4A7C59"
-                                        stroke="#fff"
-                                        strokeWidth={1.5}
-                                      />
-                                      {/* Competitor dot (blue) */}
-                                      <circle
-                                        cx={compX}
-                                        cy={yPos}
-                                        r={6}
-                                        fill="#3b82f6"
-                                        stroke="#fff"
-                                        strokeWidth={1.5}
-                                      />
-                                    </g>
-                                  );
-                                })}
-                              </g>
-                            );
-                          }}
-                        />
-                        {/* Invisible bar for tooltip triggering */}
-                        <Bar dataKey="brandRate" fill="transparent" />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <p className="text-xs text-gray-400 mb-2">Click on a row to see specific mentions from AI responses</p>
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>{runStatus?.brand || 'Brand'} Rate</div>
-                          <div className="text-xs text-gray-400 font-normal">% when source cited</div>
-                        </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>Top Competitor</div>
-                        </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>Competitor Rate</div>
-                          <div className="text-xs text-gray-400 font-normal">% when source cited</div>
-                        </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>Gap</div>
-                          <div className="text-xs text-gray-400 font-normal">competitor advantage</div>
-                        </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
-                          <div>Opportunity</div>
-                          <div className="text-xs text-gray-400 font-normal">priority score</div>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sourceGapAnalysis.slice(0, 20).map((row, index) => {
-                        const isExpanded = expandedGapSources.has(row.domain);
-                        return (
-                          <React.Fragment key={row.domain}>
-                            <tr
-                              className={`${index % 2 === 0 ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
-                              onClick={() => {
-                                const newExpanded = new Set(expandedGapSources);
-                                if (isExpanded) {
-                                  newExpanded.delete(row.domain);
-                                } else {
-                                  newExpanded.add(row.domain);
-                                }
-                                setExpandedGapSources(newExpanded);
-                              }}
-                            >
-                              <td className="py-3 px-3">
-                                <div className="flex items-center gap-2">
-                                  {isExpanded ? (
-                                    <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                  ) : (
-                                    <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                  )}
-                                  <span className="text-[#4A7C59] font-medium">{row.domain}</span>
-                                  <span className="text-xs text-gray-400">({row.totalCitations} citations)</span>
-                                </div>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <span className={`font-medium ${row.brandRate >= 50 ? 'text-green-600' : row.brandRate >= 25 ? 'text-yellow-600' : 'text-red-500'}`}>
-                                  {row.brandRate.toFixed(0)}%
-                                </span>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <span className="text-gray-700 font-medium">{row.topCompetitor || '-'}</span>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <span className="font-medium text-gray-700">
-                                  {row.topCompetitorRate.toFixed(0)}%
-                                </span>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <div className="flex items-center justify-center gap-2">
-                                  <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-blue-400 rounded-full"
-                                      style={{ width: `${Math.min(row.gap, 100)}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-blue-600 font-medium min-w-[40px]">+{row.gap.toFixed(0)}%</span>
-                                </div>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                  row.opportunityScore >= 30 ? 'bg-blue-100 text-blue-700' :
-                                  row.opportunityScore >= 15 ? 'bg-blue-50 text-blue-600' :
-                                  'bg-gray-100 text-gray-600'
-                                }`}>
-                                  {row.opportunityScore >= 30 ? 'High' :
-                                   row.opportunityScore >= 15 ? 'Medium' : 'Low'}
-                                </span>
-                              </td>
-                            </tr>
-                            {isExpanded && (row.urls.length > 0 || row.snippets.length > 0) && (
-                              <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                                <td colSpan={6} className="py-2 px-3 pl-10">
-                                  <div className="space-y-3">
-                                    {/* Response Snippets */}
-                                    {row.snippets.length > 0 && (
-                                      <div className="bg-white border border-gray-200 rounded-lg p-3">
-                                        <p className="text-xs font-medium text-gray-500 mb-2">
-                                          How brands appear when this source is cited ({row.snippets.length} mentions)
-                                        </p>
-                                        <div className="space-y-2 max-h-64 overflow-y-auto">
-                                          {row.snippets.slice(0, 10).map((snippetInfo, snippetIdx) => {
-                                            // Strip markdown and highlight the brand name in the snippet
-                                            const cleanSnippet = stripMarkdown(snippetInfo.snippet);
-                                            const parts = cleanSnippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
-                                            return (
-                                              <div
-                                                key={snippetIdx}
-                                                className="text-sm border-l-2 pl-3 py-1 cursor-pointer hover:bg-gray-50 rounded-r transition-colors"
-                                                style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
-                                                onClick={() => setSnippetDetailModal({
-                                                  brand: snippetInfo.brand,
-                                                  responseText: snippetInfo.responseText,
-                                                  provider: snippetInfo.provider,
-                                                  prompt: snippetInfo.prompt,
-                                                })}
-                                              >
-                                                <div className="flex items-center gap-2 mb-1">
-                                                  <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                    {snippetInfo.brand}
-                                                  </span>
-                                                  <span className="text-xs text-gray-400">
-                                                    via {getProviderLabel(snippetInfo.provider)}
-                                                  </span>
-                                                  <span className="text-xs text-blue-500 ml-auto">Click to view full response</span>
-                                                </div>
-                                                <p className="text-gray-600 text-sm leading-relaxed">
-                                                  {parts.map((part, i) =>
-                                                    part.toLowerCase() === snippetInfo.brand.toLowerCase() ? (
-                                                      <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-[#4A7C59]' : 'text-blue-600'}`}>
-                                                        {part}
-                                                      </span>
-                                                    ) : (
-                                                      <span key={i}>{part}</span>
-                                                    )
-                                                  )}
-                                                </p>
-                                              </div>
-                                            );
-                                          })}
-                                          {row.snippets.length > 10 && (
-                                            <p className="text-xs text-gray-400 mt-2">
-                                              Showing 10 of {row.snippets.length} mentions
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-
-                                    {/* Individual URLs */}
-                                    {row.urls.length > 0 && (
-                                      <div className="bg-white border border-gray-200 rounded-lg p-3">
-                                        <p className="text-xs font-medium text-gray-500 mb-2">Individual URLs ({row.urls.length})</p>
-                                        <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                                          {row.urls.map((urlInfo, urlIdx) => (
-                                            <a
-                                              key={urlIdx}
-                                              href={urlInfo.url}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              onClick={(e) => e.stopPropagation()}
-                                              className="flex items-start gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline group"
-                                            >
-                                              <ExternalLink className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                                              <span className="break-all">
-                                                {urlInfo.title || urlInfo.url}
-                                                <span className="text-gray-400 ml-1">({urlInfo.count} {urlInfo.count === 1 ? 'citation' : 'citations'})</span>
-                                              </span>
-                                            </a>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  {sourceGapAnalysis.length > 20 && (
-                    <p className="text-sm text-gray-500 text-center mt-3">
-                      Showing top 20 of {sourceGapAnalysis.length} sources with competitor advantage
-                    </p>
-                  )}
-                </div>
-                </>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No source gap data available for the selected model.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Source Sentiment Gap Analysis Chart & Table */}
-            {sourceSentimentGapAnalysis.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h2 className="text-base font-semibold text-gray-900">Relative Sentiment Advantage</h2>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Comparing how sources portray {sentimentComparisonBrand || runStatus?.brand || 'your brand'} vs. other brands
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={sentimentComparisonBrand}
-                      onChange={(e) => setSentimentComparisonBrand(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                    >
-                      <option value="">{runStatus?.brand || 'Your Brand'}</option>
-                      {availableBrands.filter(b => b !== runStatus?.brand).map((brand) => (
-                        <option key={brand} value={brand}>
-                          {brand.length > 20 ? brand.substring(0, 18) + '...' : brand}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={sourceSentimentGapPromptFilter}
-                      onChange={(e) => setSourceSentimentGapPromptFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
-                    >
-                      <option value="all">All Prompts</option>
-                      {availablePrompts.map((prompt) => (
-                        <option key={prompt} value={prompt} title={prompt}>
-                          {prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={sourceSentimentGapProviderFilter}
-                      onChange={(e) => setSourceSentimentGapProviderFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                    >
-                      <option value="all">All Models</option>
-                      {availableProviders.map((provider) => (
-                        <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Visual Chart */}
-                {sourceSentimentGapAnalysis.length > 0 ? (
-                <>
-                <div className="mb-6">
-                  {(() => {
-                    // Find the top competitor with advantage (first item with positive signedValue)
-                    const topCompetitorWithAdvantage = sourceSentimentGapAnalysis.find(item => item.signedValue > 0);
-                    const competitorName = topCompetitorWithAdvantage?.topCompetitor || 'Competitor';
-                    return (
-                      <div className="flex items-center justify-center gap-6 mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-sm bg-[#4A7C59]"></div>
-                          <span className="text-sm text-gray-600">{sentimentComparisonBrand || runStatus?.brand || 'Your Brand'} Presented more positively</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-sm bg-gray-300"></div>
-                          <span className="text-sm text-gray-600">Even</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-                          <span className="text-sm text-gray-600">{competitorName} Presented more positively</span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={sourceSentimentGapAnalysis.slice(0, 10).map(row => ({
-                          domain: row.domain.length > 20 ? row.domain.substring(0, 18) + '...' : row.domain,
-                          fullDomain: row.domain,
-                          signedValue: row.signedValue,
-                          direction: row.direction,
-                          labelText: row.labelText,
-                          shiftSummary: row.shiftSummary,
-                          brandLabel: row.brandSentimentLabel,
-                          competitorLabel: row.competitorSentimentLabel,
-                          competitor: row.topCompetitor,
-                          comparisonBrand: row.comparisonBrand,
-                        }))}
-                        layout="vertical"
-                        margin={{ top: 10, right: 30, bottom: 10, left: 180 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                        <XAxis
-                          type="number"
-                          domain={[-3, 3]}
-                          ticks={[-3, -2, -1, 0, 1, 2, 3]}
-                          tickFormatter={(value) => {
-                            const brandName = sentimentComparisonBrand || runStatus?.brand || 'Brand';
-                            if (value === 0) return '0';
-                            if (value < 0) return `${brandName.substring(0, 6)} +${Math.abs(value)}`;
-                            return `Other +${value}`;
-                          }}
-                          tick={{ fill: '#6b7280', fontSize: 10 }}
-                        />
-                        <YAxis
-                          type="category"
-                          dataKey="domain"
-                          tick={(props) => {
-                            const { x, y, payload, index } = props;
-                            const dataItem = sourceSentimentGapAnalysis[index];
-                            const competitor = dataItem?.topCompetitor || '';
-                            const shortCompetitor = competitor.length > 12 ? competitor.substring(0, 10) + '...' : competitor;
-                            return (
-                              <g transform={`translate(${x},${y})`}>
-                                <text x={-5} y={-6} textAnchor="end" fill="#374151" fontSize={11}>
-                                  {payload.value}
-                                </text>
-                                <text x={-5} y={8} textAnchor="end" fill="#3b82f6" fontSize={10}>
-                                  vs {shortCompetitor}
-                                </text>
-                              </g>
-                            );
-                          }}
-                          width={175}
-                        />
-                        <ReferenceLine x={0} stroke="#9ca3af" strokeWidth={1} />
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length > 0) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
-                                  <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
-                                  <p className="text-gray-600 mb-1">
-                                    {data.comparisonBrand || 'Brand'}: <span className="font-medium text-[#4A7C59]">{data.brandLabel}</span>
-                                  </p>
-                                  <p className="text-gray-600 mb-2">
-                                    {data.competitor || 'Other'}: <span className="font-medium text-blue-600">{data.competitorLabel}</span>
-                                  </p>
-                                  <p className={`font-medium ${data.direction === 'brand' ? 'text-[#4A7C59]' : data.direction === 'competitor' ? 'text-blue-600' : 'text-gray-500'}`}>
-                                    {data.labelText}
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Bar
-                          dataKey="signedValue"
-                          radius={[4, 4, 4, 4]}
-                          fill="#4A7C59"
-                        >
-                          {sourceSentimentGapAnalysis.slice(0, 10).map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={entry.direction === 'brand' ? '#4A7C59' : entry.direction === 'competitor' ? '#3b82f6' : '#d1d5db'}
-                            />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">Models</th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">{runStatus?.brand || 'Brand'}</th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">Top Competitor</th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">Advantage</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sourceSentimentGapAnalysis.slice(0, 20).map((row, index) => {
-                        const isExpanded = expandedSentimentGapSources.has(row.domain);
-                        return (
-                          <React.Fragment key={row.domain}>
-                            <tr
-                              className={`${index % 2 === 0 ? 'bg-gray-50' : ''} cursor-pointer hover:bg-gray-100 transition-colors`}
-                              onClick={() => {
-                                const newExpanded = new Set(expandedSentimentGapSources);
-                                if (isExpanded) {
-                                  newExpanded.delete(row.domain);
-                                } else {
-                                  newExpanded.add(row.domain);
-                                }
-                                setExpandedSentimentGapSources(newExpanded);
-                              }}
-                            >
-                              <td className="py-3 px-3">
-                                <div className="flex items-center gap-2">
-                                  {isExpanded ? (
-                                    <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                  ) : (
-                                    <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                  )}
-                                  <span className="text-[#4A7C59] font-medium">{row.domain}</span>
-                                  <span className="text-xs text-gray-400">({row.totalMentions} mentions)</span>
-                                </div>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <div className="flex flex-wrap justify-center gap-1">
-                                  {row.providers.map((provider: string) => (
-                                    <span key={provider} className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
-                                      {getProviderLabel(provider).split(' ')[0]}
-                                    </span>
-                                  ))}
-                                </div>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <span className={`font-medium ${row.brandSentimentIndex >= 4 ? 'text-green-600' : row.brandSentimentIndex >= 3 ? 'text-yellow-600' : 'text-red-500'}`}>
-                                  {row.brandSentimentLabel}
-                                </span>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <div className="flex flex-col items-center">
-                                  <span className="text-gray-700 font-medium">{row.topCompetitor || '-'}</span>
-                                  {row.topCompetitor && (
-                                    <span className={`text-xs ${row.topCompetitorIndex >= 4 ? 'text-green-600' : row.topCompetitorIndex >= 3 ? 'text-yellow-600' : 'text-red-500'}`}>
-                                      {row.competitorSentimentLabel}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="text-center py-3 px-3">
-                                <span className={`font-medium text-sm ${row.direction === 'brand' ? 'text-[#4A7C59]' : row.direction === 'competitor' ? 'text-blue-600' : 'text-gray-500'}`}>
-                                  {row.labelText}
-                                </span>
-                              </td>
-                            </tr>
-                            {isExpanded && row.snippets.length > 0 && (
-                              <tr className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                                <td colSpan={5} className="py-2 px-3 pl-10">
-                                  <div className="bg-white border border-gray-200 rounded-lg p-3">
-                                    <p className="text-xs font-medium text-gray-500 mb-2">
-                                      How brands are described when this source is cited ({row.snippets.length} mentions)
-                                    </p>
-                                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                                      {row.snippets.slice(0, 10).map((snippetInfo, snippetIdx) => {
-                                        // Strip markdown and highlight the brand name in the snippet
-                                        const cleanSnippet = stripMarkdown(snippetInfo.snippet);
-                                        const parts = cleanSnippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
-                                        const sentimentColors: Record<string, string> = {
-                                          'strong_endorsement': 'bg-green-100 text-green-700',
-                                          'positive_endorsement': 'bg-green-50 text-green-600',
-                                          'neutral_mention': 'bg-gray-100 text-gray-600',
-                                          'conditional': 'bg-yellow-100 text-yellow-700',
-                                          'negative_comparison': 'bg-red-100 text-red-700',
-                                        };
-                                        return (
-                                          <div
-                                            key={snippetIdx}
-                                            className="text-sm border-l-2 pl-3 py-2 cursor-pointer hover:bg-gray-50 rounded-r transition-colors"
-                                            style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
-                                            onClick={() => setSnippetDetailModal({
-                                              brand: snippetInfo.brand,
-                                              responseText: snippetInfo.responseText,
-                                              provider: snippetInfo.provider,
-                                              prompt: snippetInfo.prompt,
-                                            })}
-                                          >
-                                            <div className="flex items-center gap-2 mb-1">
-                                              <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                {snippetInfo.brand}
-                                              </span>
-                                              <span className={`text-xs px-1.5 py-0.5 rounded ${sentimentColors[snippetInfo.sentiment] || 'bg-gray-100 text-gray-600'}`}>
-                                                {snippetInfo.sentiment.replace(/_/g, ' ')}
-                                              </span>
-                                              <span className="text-xs text-gray-400">
-                                                via {getProviderLabel(snippetInfo.provider)}
-                                              </span>
-                                              <span className="text-xs text-[#4A7C59] ml-auto">Click to view full response →</span>
-                                            </div>
-                                            <div className="bg-gray-50 rounded px-2 py-1.5 mb-1.5">
-                                              <p className="text-xs text-gray-500 mb-0.5">Prompt</p>
-                                              <p className="text-sm text-gray-900">{snippetInfo.prompt}</p>
-                                            </div>
-                                            <p className="text-gray-600 text-sm leading-relaxed">
-                                              {parts.map((part, i) =>
-                                                part.toLowerCase() === snippetInfo.brand.toLowerCase() ? (
-                                                  <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-[#4A7C59]' : 'text-blue-600'}`}>
-                                                    {part}
-                                                  </span>
-                                                ) : (
-                                                  <span key={i}>{part}</span>
-                                                )
-                                              )}
-                                            </p>
-                                          </div>
-                                        );
-                                      })}
-                                      {row.snippets.length > 10 && (
-                                        <p className="text-xs text-gray-400 mt-2">
-                                          Showing 10 of {row.snippets.length} mentions
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  {sourceSentimentGapAnalysis.length > 20 && (
-                    <p className="text-sm text-gray-500 text-center mt-3">
-                      Showing top 20 of {sourceSentimentGapAnalysis.length} sources with competitor sentiment advantage
-                    </p>
-                  )}
-                </div>
-                </>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <p>No sentiment gap data available for the selected filters.</p>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Brand-Source Heatmap */}
             {brandSourceHeatmap.sources.length > 0 && (
