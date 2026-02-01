@@ -8762,32 +8762,41 @@ export default function ResultsPage() {
             </div>
             <div className="p-4 border-b border-gray-100 bg-blue-50">
               <p className="text-xs text-blue-600 mb-1">Highlighted brand: <span className="font-semibold">{snippetDetailModal.brand}</span></p>
-              <p className="text-xs text-gray-500">Scroll down to see the highlighted mention</p>
+              <p className="text-xs text-gray-500">Scroll down to see the highlighted sentences</p>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                 {(() => {
                   const text = snippetDetailModal.responseText;
                   const brand = snippetDetailModal.brand;
-                  const regex = new RegExp(`(${brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                  const parts = text.split(regex);
+                  const brandRegex = new RegExp(brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+
+                  // Split text into sentences while preserving delimiters
+                  // This regex captures sentence-ending punctuation along with following whitespace
+                  const sentenceRegex = /([^.!?\n]+[.!?]*[\n]*)/g;
+                  const sentences = text.match(sentenceRegex) || [text];
+
                   let firstHighlightRendered = false;
 
-                  return parts.map((part, i) => {
-                    if (part.toLowerCase() === brand.toLowerCase()) {
+                  return sentences.map((sentence, i) => {
+                    const containsBrand = brandRegex.test(sentence);
+                    // Reset lastIndex after test() since we're using the same regex
+                    brandRegex.lastIndex = 0;
+
+                    if (containsBrand) {
                       const isFirst = !firstHighlightRendered;
                       firstHighlightRendered = true;
                       return (
                         <span
                           key={i}
                           ref={isFirst ? snippetDetailRef : undefined}
-                          className="bg-yellow-200 text-yellow-900 font-semibold px-1 rounded"
+                          className="bg-yellow-100 border-l-4 border-yellow-400 pl-2 -ml-2 block my-1"
                         >
-                          {part}
+                          {sentence}
                         </span>
                       );
                     }
-                    return <span key={i}>{part}</span>;
+                    return <span key={i}>{sentence}</span>;
                   });
                 })()}
               </div>
