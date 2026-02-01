@@ -7782,7 +7782,7 @@ export default function ResultsPage() {
                         ticks={xTicks}
                         tickFormatter={(value) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][value] || ''}
                         tick={{ fill: '#6b7280', fontSize: 11 }}
-                        label={{ value: 'Average Sentiment', position: 'bottom', offset: 40, style: { fill: '#6b7280', fontSize: 12 } }}
+                        label={{ value: 'Average Sentiment', position: 'bottom', offset: 20, style: { fill: '#6b7280', fontSize: 12 } }}
                       />
                       <YAxis
                         type="number"
