@@ -1470,11 +1470,14 @@ export default function ResultsPage() {
   const [sourceSentimentGapProviderFilter, setSourceSentimentGapProviderFilter] = useState<string>('all');
   const [sourceSentimentGapPromptFilter, setSourceSentimentGapPromptFilter] = useState<string>('all');
   const [expandedSentimentGapSources, setExpandedSentimentGapSources] = useState<Set<string>>(new Set());
+  const [sentimentComparisonBrand, setSentimentComparisonBrand] = useState<string>(''); // Empty means use searched brand
 
   // Source Sentiment Gap Analysis - comparing brand vs competitor sentiment per source
   const sourceSentimentGapAnalysis = useMemo(() => {
     if (!runStatus) return [];
 
+    // Use selected brand or default to searched brand
+    const comparisonBrand = sentimentComparisonBrand || runStatus.brand;
     const searchedBrand = runStatus.brand;
 
     // Ordinal sentiment scale (1-5, higher = more positive)
@@ -1530,11 +1533,10 @@ export default function ResultsPage() {
 
     if (resultsWithSources.length === 0) return [];
 
-    // Track per-source sentiment stats
+    // Track per-source sentiment stats for ALL brands (not just searched brand vs competitors)
     const sourceStats: Record<string, {
       domain: string;
-      brandSentiments: number[]; // Array of sentiment scores for brand
-      competitorSentiments: Record<string, number[]>; // Per-competitor sentiment scores
+      allBrandSentiments: Record<string, number[]>; // Sentiment scores for each brand
       snippets: Array<{ brand: string; snippet: string; sentiment: string; sentimentScore: number; isBrand: boolean; provider: string; prompt: string; responseText: string; resultId: string }>;
       providers: Set<string>; // Track which providers cite this source
     }> = {};
@@ -1555,13 +1557,12 @@ export default function ResultsPage() {
         }
       });
 
-      // For each domain, track sentiment
+      // For each domain, track sentiment for ALL brands
       domainsInResponse.forEach(domain => {
         if (!sourceStats[domain]) {
           sourceStats[domain] = {
             domain,
-            brandSentiments: [],
-            competitorSentiments: {},
+            allBrandSentiments: {},
             snippets: [],
             providers: new Set(),
           };
@@ -1569,10 +1570,13 @@ export default function ResultsPage() {
         // Track provider for this source
         sourceStats[domain].providers.add(r.provider);
 
-        // Track brand sentiment
+        // Track searched brand sentiment
         if (r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned') {
           const score = sentimentScoreMap[r.brand_sentiment] || 0;
-          sourceStats[domain].brandSentiments.push(score);
+          if (!sourceStats[domain].allBrandSentiments[searchedBrand]) {
+            sourceStats[domain].allBrandSentiments[searchedBrand] = [];
+          }
+          sourceStats[domain].allBrandSentiments[searchedBrand].push(score);
 
           if (r.response_text) {
             const snippet = extractSnippet(r.response_text, searchedBrand);
@@ -1592,17 +1596,17 @@ export default function ResultsPage() {
           }
         }
 
-        // Track competitor sentiments
+        // Track all competitor sentiments
         if (r.competitors_mentioned && r.competitor_sentiments) {
           const responseText = r.response_text;
           r.competitors_mentioned.forEach(competitor => {
             const sentiment = r.competitor_sentiments?.[competitor];
             if (sentiment && sentiment !== 'not_mentioned') {
               const score = sentimentScoreMap[sentiment] || 0;
-              if (!sourceStats[domain].competitorSentiments[competitor]) {
-                sourceStats[domain].competitorSentiments[competitor] = [];
+              if (!sourceStats[domain].allBrandSentiments[competitor]) {
+                sourceStats[domain].allBrandSentiments[competitor] = [];
               }
-              sourceStats[domain].competitorSentiments[competitor].push(score);
+              sourceStats[domain].allBrandSentiments[competitor].push(score);
 
               if (responseText) {
                 const snippet = extractSnippet(responseText, competitor);
@@ -1626,25 +1630,30 @@ export default function ResultsPage() {
       });
     });
 
-    // Convert to array with calculated metrics
+    // Convert to array with calculated metrics based on selected comparison brand
     return Object.values(sourceStats)
-      .filter(stat => stat.brandSentiments.length >= 1) // Only include sources where brand has sentiment data
+      .filter(stat => {
+        // Only include sources where the comparison brand has sentiment data
+        const brandScores = stat.allBrandSentiments[comparisonBrand];
+        return brandScores && brandScores.length >= 1;
+      })
       .map(stat => {
-        // Get dominant (most frequent or highest) sentiment for brand - use mode or round of average
-        const avgBrandScore = stat.brandSentiments.length > 0
-          ? stat.brandSentiments.reduce((a, b) => a + b, 0) / stat.brandSentiments.length
+        // Get sentiment for the comparison brand
+        const brandScores = stat.allBrandSentiments[comparisonBrand] || [];
+        const avgBrandScore = brandScores.length > 0
+          ? brandScores.reduce((a, b) => a + b, 0) / brandScores.length
           : 0;
         const brandSentimentIndex = Math.round(avgBrandScore);
 
-        // Find competitor with best sentiment for this source
+        // Find the other brand with best sentiment for this source (excluding comparison brand)
         let topCompetitor = '';
         let topCompetitorIndex = 0;
         let topCompetitorAvgScore = 0;
-        Object.entries(stat.competitorSentiments).forEach(([competitor, scores]) => {
-          if (scores.length > 0) {
+        Object.entries(stat.allBrandSentiments).forEach(([brand, scores]) => {
+          if (brand !== comparisonBrand && scores.length > 0) {
             const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
             if (avg > topCompetitorAvgScore) {
-              topCompetitor = competitor;
+              topCompetitor = brand;
               topCompetitorAvgScore = avg;
               topCompetitorIndex = Math.round(avg);
             }
@@ -1667,7 +1676,7 @@ export default function ResultsPage() {
         if (direction === 'competitor') {
           labelText = `${magnitudeLabel} competitor advantage`;
         } else if (direction === 'brand') {
-          labelText = `${magnitudeLabel} ${searchedBrand} advantage`;
+          labelText = `${magnitudeLabel} ${comparisonBrand} advantage`;
         } else {
           labelText = 'Even';
         }
@@ -1675,7 +1684,7 @@ export default function ResultsPage() {
         // Shift summary for tooltip (categorical, no numbers)
         const brandLabel = sentimentLabelMap[brandSentimentIndex] || 'Unknown';
         const competitorLabel = sentimentLabelMap[topCompetitorIndex] || 'Unknown';
-        const shiftSummary = `${searchedBrand}: ${brandLabel} → ${topCompetitor || 'Competitor'}: ${competitorLabel}`;
+        const shiftSummary = `${comparisonBrand}: ${brandLabel} → ${topCompetitor || 'Competitor'}: ${competitorLabel}`;
 
         // Bar value for rendering (-3 to +3 scale, capped)
         const clampedDelta = Math.min(Math.max(absDelta, 0), 3);
@@ -1683,7 +1692,7 @@ export default function ResultsPage() {
 
         return {
           domain: stat.domain,
-          totalMentions: stat.brandSentiments.length + Object.values(stat.competitorSentiments).flat().length,
+          totalMentions: Object.values(stat.allBrandSentiments).flat().length,
           brandSentimentIndex,
           brandSentimentLabel: brandLabel,
           topCompetitor,
@@ -1697,11 +1706,12 @@ export default function ResultsPage() {
           signedValue,
           snippets: stat.snippets,
           providers: Array.from(stat.providers),
+          comparisonBrand, // Include which brand was used for comparison
         };
       })
       .filter(stat => stat.delta !== 0) // Show sources where there's any difference
       .sort((a, b) => b.signedValue - a.signedValue); // Sort by strongest competitor advantage first
-  }, [runStatus, globallyFilteredResults, sourceSentimentGapProviderFilter, sourceSentimentGapPromptFilter]);
+  }, [runStatus, globallyFilteredResults, sourceSentimentGapProviderFilter, sourceSentimentGapPromptFilter, sentimentComparisonBrand]);
 
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
@@ -8316,17 +8326,17 @@ export default function ResultsPage() {
 
                   const maxCount = Math.max(...cooccurringBrands.map(b => b.count));
 
-                  // Colors for competitor circles
-                  const colors = ['#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'];
+                  // Colors for competitor circles - green and blue variants
+                  const colors = ['#4A7C59', '#3b82f6', '#6B9B7A', '#60a5fa'];
 
                   return (
                     <div>
                       <div className="flex justify-center">
-                        <svg width="600" height="420" viewBox="0 0 600 420">
+                        <svg width="600" height="480" viewBox="0 0 600 480">
                           {/* Central brand circle */}
                           <circle
                             cx="300"
-                            cy="210"
+                            cy="240"
                             r="70"
                             fill="#4A7C59"
                             fillOpacity="0.25"
@@ -8340,7 +8350,7 @@ export default function ResultsPage() {
                             const angle = (idx * (360 / cooccurringBrands.length) - 90) * (Math.PI / 180);
                             const distance = 110; // Increased distance from center
                             const cx = 300 + Math.cos(angle) * distance;
-                            const cy = 210 + Math.sin(angle) * distance;
+                            const cy = 240 + Math.sin(angle) * distance;
                             // Size based on co-occurrence count - more pronounced range
                             const minRadius = 35;
                             const maxRadius = 80;
@@ -8372,7 +8382,7 @@ export default function ResultsPage() {
                                 {/* Count in overlap area */}
                                 <text
                                   x={300 + Math.cos(angle) * 55}
-                                  y={210 + Math.sin(angle) * 55}
+                                  y={240 + Math.sin(angle) * 55}
                                   textAnchor="middle"
                                   dominantBaseline="middle"
                                   fill="#374151"
@@ -8387,7 +8397,7 @@ export default function ResultsPage() {
                           {/* Center brand name - rendered last to appear on top */}
                           <text
                             x="300"
-                            y="210"
+                            y="240"
                             textAnchor="middle"
                             dominantBaseline="middle"
                             fill="#1f2937"
@@ -8729,10 +8739,22 @@ export default function ResultsPage() {
                   <div>
                     <h2 className="text-base font-semibold text-gray-900">Relative Sentiment Advantage</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Comparing how sources portray {runStatus?.brand || 'your brand'} vs. competitors
+                      Comparing how sources portray {sentimentComparisonBrand || runStatus?.brand || 'your brand'} vs. other brands
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <select
+                      value={sentimentComparisonBrand}
+                      onChange={(e) => setSentimentComparisonBrand(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      <option value="">{runStatus?.brand || 'Your Brand'}</option>
+                      {availableBrands.filter(b => b !== runStatus?.brand).map((brand) => (
+                        <option key={brand} value={brand}>
+                          {brand.length > 20 ? brand.substring(0, 18) + '...' : brand}
+                        </option>
+                      ))}
+                    </select>
                     <select
                       value={sourceSentimentGapPromptFilter}
                       onChange={(e) => setSourceSentimentGapPromptFilter(e.target.value)}
@@ -8762,20 +8784,27 @@ export default function ResultsPage() {
                 {sourceSentimentGapAnalysis.length > 0 ? (
                 <>
                 <div className="mb-6">
-                  <div className="flex items-center justify-center gap-6 mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm bg-[#4A7C59]"></div>
-                      <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'} Advantage</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm bg-gray-300"></div>
-                      <span className="text-sm text-gray-600">Even</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-                      <span className="text-sm text-gray-600">Competitor Advantage</span>
-                    </div>
-                  </div>
+                  {(() => {
+                    // Find the top competitor with advantage (first item with positive signedValue)
+                    const topCompetitorWithAdvantage = sourceSentimentGapAnalysis.find(item => item.signedValue > 0);
+                    const competitorName = topCompetitorWithAdvantage?.topCompetitor || 'Competitor';
+                    return (
+                      <div className="flex items-center justify-center gap-6 mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm bg-[#4A7C59]"></div>
+                          <span className="text-sm text-gray-600">{sentimentComparisonBrand || runStatus?.brand || 'Your Brand'} Presented more positively</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm bg-gray-300"></div>
+                          <span className="text-sm text-gray-600">Even</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                          <span className="text-sm text-gray-600">{competitorName} Presented more positively</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
@@ -8789,6 +8818,7 @@ export default function ResultsPage() {
                           brandLabel: row.brandSentimentLabel,
                           competitorLabel: row.competitorSentimentLabel,
                           competitor: row.topCompetitor,
+                          comparisonBrand: row.comparisonBrand,
                         }))}
                         layout="vertical"
                         margin={{ top: 10, right: 30, bottom: 10, left: 180 }}
@@ -8799,9 +8829,10 @@ export default function ResultsPage() {
                           domain={[-3, 3]}
                           ticks={[-3, -2, -1, 0, 1, 2, 3]}
                           tickFormatter={(value) => {
+                            const brandName = sentimentComparisonBrand || runStatus?.brand || 'Brand';
                             if (value === 0) return '0';
-                            if (value < 0) return `${runStatus?.brand?.substring(0, 6) || 'Brand'} +${Math.abs(value)}`;
-                            return `Comp +${value}`;
+                            if (value < 0) return `${brandName.substring(0, 6)} +${Math.abs(value)}`;
+                            return `Other +${value}`;
                           }}
                           tick={{ fill: '#6b7280', fontSize: 10 }}
                         />
@@ -8835,10 +8866,10 @@ export default function ResultsPage() {
                                 <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
                                   <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
                                   <p className="text-gray-600 mb-1">
-                                    {runStatus?.brand || 'Brand'}: <span className="font-medium text-[#4A7C59]">{data.brandLabel}</span>
+                                    {data.comparisonBrand || 'Brand'}: <span className="font-medium text-[#4A7C59]">{data.brandLabel}</span>
                                   </p>
                                   <p className="text-gray-600 mb-2">
-                                    {data.competitor || 'Competitor'}: <span className="font-medium text-blue-600">{data.competitorLabel}</span>
+                                    {data.competitor || 'Other'}: <span className="font-medium text-blue-600">{data.competitorLabel}</span>
                                   </p>
                                   <p className={`font-medium ${data.direction === 'brand' ? 'text-[#4A7C59]' : data.direction === 'competitor' ? 'text-blue-600' : 'text-gray-500'}`}>
                                     {data.labelText}
