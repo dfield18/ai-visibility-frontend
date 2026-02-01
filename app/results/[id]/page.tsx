@@ -63,6 +63,187 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
   { id: 'reports', label: 'Automated Reports', icon: <FileBarChart className="w-4 h-4" /> },
 ];
 
+// Category colors for source types
+const CATEGORY_COLORS: Record<string, string> = {
+  'Social Media': '#4A7C59',      // Primary green
+  'Video': '#6B9E7A',             // Medium green
+  'Reference': '#3D6B4D',         // Dark green
+  'News & Media': '#5BA3C0',      // Light blue
+  'E-commerce': '#8BB5A2',        // Sage green
+  'Reviews': '#7FBCD4',           // Sky blue
+  'Forums & Q&A': '#2D5A3D',      // Deep green
+  'Government': '#4A90A4',        // Teal blue
+  'Blogs': '#A8C5B5',             // Pale green
+  'Travel': '#6BA3A0',            // Teal green
+  'Finance': '#5B8FA8',           // Steel blue
+  'Other': '#B8C9BE'              // Light gray-green
+};
+
+// Categorize a domain into a source type
+const categorizeDomain = (domain: string): string => {
+  const d = domain.toLowerCase();
+
+  // Social Media
+  const socialMediaSites = [
+    'reddit.com', 'twitter.com', 'x.com', 'facebook.com', 'fb.com', 'instagram.com', 'tiktok.com',
+    'linkedin.com', 'pinterest.com', 'snapchat.com', 'discord.com', 'discord.gg',
+    'whatsapp.com', 'telegram.org', 't.me', 'signal.org',
+    'threads.net', 'mastodon.social', 'mastodon.online', 'bsky.app', 'bluesky', 'bereal.com',
+    'lemon8-app.com', 'clubhouse.com', 'nextdoor.com',
+    'flickr.com', 'imgur.com', 'giphy.com', '500px.com', 'deviantart.com',
+    'vk.com', 'weibo.com', 'weixin.qq.com', 'wechat.com', 'line.me', 'kakaotalk',
+    'behance.net', 'dribbble.com', 'goodreads.com', 'letterboxd.com', 'untappd.com', 'strava.com'
+  ];
+  if (socialMediaSites.some(s => d.includes(s))) return 'Social Media';
+
+  // Video
+  const videoSites = [
+    'youtube.com', 'youtu.be', 'vimeo.com', 'twitch.tv', 'dailymotion.com',
+    'netflix.com', 'hulu.com', 'disneyplus.com', 'hbomax.com', 'max.com', 'peacocktv.com',
+    'paramountplus.com', 'appletv.com', 'primevideo.com', 'crunchyroll.com', 'funimation.com',
+    'wistia.com', 'brightcove.com', 'vidyard.com', 'loom.com', 'streamable.com',
+    'rumble.com', 'bitchute.com', 'odysee.com', 'd.tube',
+    'ted.com', 'masterclass.com', 'skillshare.com', 'udemy.com', 'coursera.org', 'edx.org',
+    'khanacademy.org', 'lynda.com', 'pluralsight.com'
+  ];
+  if (videoSites.some(s => d.includes(s))) return 'Video';
+
+  // Reference
+  const referenceSites = [
+    'wikipedia.org', 'wikimedia.org', 'wiktionary.org', 'wikihow.com', 'fandom.com',
+    'britannica.com', 'encyclopedia.com', 'scholarpedia.org', 'citizendium.org',
+    'merriam-webster.com', 'dictionary.com', 'thesaurus.com', 'oxforddictionaries.com',
+    'cambridge.org', 'collinsdictionary.com', 'wordreference.com', 'linguee.com',
+    'scholar.google.com', 'researchgate.net', 'academia.edu', 'jstor.org', 'pubmed.gov',
+    'ncbi.nlm.nih.gov', 'arxiv.org', 'ssrn.com', 'sciencedirect.com', 'springer.com',
+    'nature.com', 'science.org', 'ieee.org', 'acm.org', 'plos.org',
+    '.edu', 'instructables.com', 'howstuffworks.com', 'lifehacker.com', 'makeuseof.com',
+    'investopedia.com', 'healthline.com', 'webmd.com', 'mayoclinic.org', 'nih.gov'
+  ];
+  if (referenceSites.some(s => d.includes(s))) return 'Reference';
+
+  // News & Media
+  const majorNewsOutlets = [
+    'nytimes.com', 'wsj.com', 'washingtonpost.com', 'usatoday.com', 'latimes.com', 'chicagotribune.com',
+    'nypost.com', 'nydailynews.com', 'sfchronicle.com', 'bostonglobe.com', 'dallasnews.com',
+    'cnn.com', 'foxnews.com', 'msnbc.com', 'nbcnews.com', 'abcnews.go.com', 'cbsnews.com', 'pbs.org', 'npr.org',
+    'bbc.com', 'bbc.co.uk', 'theguardian.com', 'telegraph.co.uk', 'dailymail.co.uk', 'independent.co.uk',
+    'mirror.co.uk', 'thesun.co.uk', 'express.co.uk', 'metro.co.uk', 'standard.co.uk', 'sky.com',
+    'reuters.com', 'apnews.com', 'afp.com', 'aljazeera.com', 'dw.com', 'france24.com', 'rt.com',
+    'scmp.com', 'straitstimes.com', 'theaustralian.com.au', 'abc.net.au', 'cbc.ca', 'globalnews.ca',
+    'forbes.com', 'bloomberg.com', 'businessinsider.com', 'cnbc.com', 'marketwatch.com', 'ft.com',
+    'economist.com', 'fortune.com', 'inc.com', 'entrepreneur.com', 'fastcompany.com', 'qz.com',
+    'techcrunch.com', 'wired.com', 'theverge.com', 'engadget.com', 'arstechnica.com', 'mashable.com',
+    'gizmodo.com', 'cnet.com', 'zdnet.com', 'venturebeat.com', 'thenextweb.com', 'recode.net',
+    'techradar.com', 'tomshardware.com', 'anandtech.com', '9to5mac.com', '9to5google.com', 'macrumors.com',
+    'variety.com', 'hollywoodreporter.com', 'deadline.com', 'ew.com', 'people.com', 'tmz.com',
+    'rollingstone.com', 'billboard.com', 'pitchfork.com', 'ign.com', 'gamespot.com', 'kotaku.com', 'polygon.com',
+    'espn.com', 'sports.yahoo.com', 'bleacherreport.com', 'si.com', 'cbssports.com', 'theathletic.com',
+    'huffpost.com', 'buzzfeednews.com', 'vox.com', 'theatlantic.com', 'newyorker.com', 'slate.com',
+    'salon.com', 'thedailybeast.com', 'axios.com', 'politico.com', 'thehill.com', 'realclearpolitics.com'
+  ];
+  const newsPatterns = ['news', 'daily', 'times', 'post', 'herald', 'tribune', 'journal', 'gazette',
+    'observer', 'chronicle', 'examiner', 'inquirer', 'dispatch', 'sentinel', 'courier', 'press',
+    'register', 'record', 'reporter', 'bulletin', 'beacon', 'argus', 'banner', 'ledger', 'star',
+    'sun', 'mirror', 'express', 'mail', 'telegraph', 'monitor', 'insider', 'today'];
+  if (majorNewsOutlets.some(s => d.includes(s)) || newsPatterns.some(p => d.includes(p))) return 'News & Media';
+
+  // E-commerce
+  const ecommerceSites = [
+    'amazon.com', 'amazon.co.uk', 'amazon.ca', 'amazon.de', 'ebay.com', 'ebay.co.uk',
+    'walmart.com', 'target.com', 'costco.com', 'samsclub.com', 'kohls.com', 'macys.com',
+    'nordstrom.com', 'jcpenney.com', 'homedepot.com', 'lowes.com', 'menards.com',
+    'bestbuy.com', 'newegg.com', 'bhphotovideo.com', 'adorama.com', 'microcenter.com',
+    'zappos.com', 'asos.com', 'zara.com', 'hm.com', 'uniqlo.com', 'gap.com', 'nike.com',
+    'adidas.com', 'footlocker.com', 'rei.com', 'patagonia.com', 'lululemon.com',
+    'etsy.com', 'wayfair.com', 'overstock.com', 'chewy.com', 'petco.com', 'petsmart.com',
+    'sephora.com', 'ulta.com', 'bathandbodyworks.com', 'williams-sonoma.com', 'crateandbarrel.com',
+    'alibaba.com', 'aliexpress.com', 'wish.com', 'shein.com', 'temu.com', 'rakuten.com',
+    'flipkart.com', 'jd.com', 'taobao.com', 'mercadolibre.com',
+    'shopify.com', 'bigcommerce.com', 'squarespace.com', 'wix.com', 'woocommerce.com',
+    'instacart.com', 'freshdirect.com', 'peapod.com', 'shipt.com', 'doordash.com', 'ubereats.com',
+    'shop', 'store', 'buy', 'market', 'outlet', 'deals'
+  ];
+  if (ecommerceSites.some(s => d.includes(s))) return 'E-commerce';
+
+  // Reviews
+  const reviewSites = [
+    'yelp.com', 'tripadvisor.com', 'trustpilot.com', 'sitejabber.com', 'bbb.org',
+    'consumerreports.org', 'consumersearch.com', 'which.co.uk',
+    'g2.com', 'capterra.com', 'softwareadvice.com', 'getapp.com', 'trustradius.com',
+    'gartner.com', 'forrester.com', 'pcmag.com',
+    'glassdoor.com', 'indeed.com', 'comparably.com', 'kununu.com',
+    'wirecutter.com', 'rtings.com', 'tomsguide.com', 'digitaltrends.com', 'reviewed.com',
+    'thespruce.com', 'foodnetwork.com', 'allrecipes.com', 'epicurious.com',
+    'booking.com', 'hotels.com', 'expedia.com', 'kayak.com', 'airbnb.com', 'vrbo.com',
+    'edmunds.com', 'kbb.com', 'caranddriver.com', 'motortrend.com', 'autotrader.com',
+    'zillow.com', 'realtor.com', 'redfin.com', 'trulia.com', 'apartments.com',
+    'reviews', 'review', 'rating', 'rated', 'compare', 'versus', 'vs'
+  ];
+  if (reviewSites.some(s => d.includes(s))) return 'Reviews';
+
+  // Forums & Q&A
+  const forumSites = [
+    'quora.com', 'answers.com', 'ask.com', 'answers.yahoo.com', 'chacha.com',
+    'stackoverflow.com', 'stackexchange.com', 'superuser.com', 'serverfault.com',
+    'askubuntu.com', 'mathoverflow.net', 'github.com', 'gitlab.com', 'bitbucket.org',
+    'reddit.com', 'digg.com', 'slashdot.org', 'hackernews.com', 'news.ycombinator.com',
+    'voat.co', 'hubpages.com', 'xda-developers.com', 'androidcentral.com',
+    'avsforum.com', 'head-fi.org', 'audiogon.com', 'dpreview.com', 'fredmiranda.com',
+    'flyertalk.com', 'fatwalletfinance.com', 'bogleheads.org', 'early-retirement.org',
+    'discourse', 'forum', 'forums', 'community', 'communities', 'discuss', 'discussion',
+    'board', 'boards', 'bbs', 'phpbb', 'vbulletin', 'xenforo', 'invision'
+  ];
+  if (forumSites.some(s => d.includes(s))) return 'Forums & Q&A';
+
+  // Government
+  const govSites = [
+    '.gov', '.gov.uk', '.gov.au', '.gov.ca', '.govt.nz', '.gob', '.gouv',
+    'usa.gov', 'whitehouse.gov', 'congress.gov', 'senate.gov', 'house.gov',
+    'supremecourt.gov', 'uscourts.gov', 'state.gov', 'treasury.gov', 'irs.gov',
+    'ssa.gov', 'medicare.gov', 'va.gov', 'hud.gov', 'usda.gov', 'epa.gov',
+    'fda.gov', 'cdc.gov', 'fbi.gov', 'cia.gov', 'nsa.gov', 'dhs.gov',
+    'un.org', 'who.int', 'worldbank.org', 'imf.org', 'wto.org', 'nato.int',
+    'europa.eu', 'ec.europa.eu', 'oecd.org', 'unicef.org', 'unesco.org',
+    '.org', 'redcross.org', 'salvationarmy.org', 'habitat.org', 'aclu.org',
+    'eff.org', 'fsf.org', 'creativecommons.org', 'mozilla.org', 'apache.org'
+  ];
+  if (govSites.some(s => d.includes(s))) return 'Government';
+
+  // Blogs
+  const blogSites = [
+    'medium.com', 'substack.com', 'blogger.com', 'blogspot.com', 'wordpress.com',
+    'wordpress.org', 'tumblr.com', 'ghost.io', 'ghost.org', 'svbtle.com',
+    'typepad.com', 'livejournal.com', 'wix.com', 'squarespace.com', 'weebly.com',
+    'buttondown.email', 'revue.co', 'mailchimp.com', 'convertkit.com', 'beehiiv.com',
+    'blog', 'blogs', 'personal', 'journal', 'diary', 'thoughts', 'musings',
+    'dev.to', 'hashnode.com', 'hashnode.dev', 'mirror.xyz'
+  ];
+  if (blogSites.some(s => d.includes(s))) return 'Blogs';
+
+  return 'Other';
+};
+
+// Get icon component for a category
+const getCategoryIcon = (category: string, className: string = "w-3.5 h-3.5") => {
+  const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['Other'];
+  const props = { className, style: { color } };
+  switch (category) {
+    case 'Social Media': return <Users {...props} />;
+    case 'Video': return <Play {...props} />;
+    case 'Reference': return <BookOpen {...props} />;
+    case 'News & Media': return <Newspaper {...props} />;
+    case 'E-commerce': return <ShoppingBag {...props} />;
+    case 'Reviews': return <Star {...props} />;
+    case 'Forums & Q&A': return <HelpCircle {...props} />;
+    case 'Government': return <Landmark {...props} />;
+    case 'Blogs': return <PenLine {...props} />;
+    case 'Travel': return <Plane {...props} />;
+    case 'Finance': return <Wallet {...props} />;
+    default: return <CircleDot {...props} />;
+  }
+};
+
 export default function ResultsPage() {
   const router = useRouter();
   const params = useParams();
@@ -2768,7 +2949,11 @@ export default function ResultsPage() {
       .replace(/^[\s]*\d+\.\s+/gm, '')     // Remove numbered lists
       .replace(/^#+\s+/gm, '')             // Remove headings
       .replace(/`([^`]+)`/g, '$1')         // Remove inline code
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Remove links, keep text
+      .replace(/\(\[([^\]]+)\]\([^)]+\)\)/g, '$1')  // Remove links with extra parens: ([text](url))
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // Remove links, keep text: [text](url)
+      .replace(/https?:\/\/[^\s)\]]+/g, '')  // Remove raw URLs
+      .replace(/\(\)/g, '')                // Remove empty parentheses
+      .replace(/\s*\(\s*\)/g, '')          // Remove empty parentheses with spaces
       .replace(/\n+/g, ' ')                // Replace newlines with spaces
       .replace(/\s+/g, ' ')                // Normalize whitespace
       .trim();
@@ -6107,188 +6292,6 @@ export default function ResultsPage() {
             </div>
         )}
 
-        {/* Brand-Source Heatmap */}
-        {brandSourceHeatmap.sources.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
-                <p className="text-sm text-gray-500">Which sources are cited when each brand is mentioned</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setHeatmapShowSentiment(!heatmapShowSentiment)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-                    heatmapShowSentiment
-                      ? 'bg-[#4A7C59] text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {heatmapShowSentiment ? 'Showing Sentiment' : 'Show Sentiment'}
-                </button>
-                <select
-                  value={heatmapProviderFilter}
-                  onChange={(e) => setHeatmapProviderFilter(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                >
-                  <option value="all">All Models</option>
-                  {availableProviders.map((provider) => (
-                    <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left py-2 px-3 font-medium text-gray-600 border-b border-gray-200 sticky left-0 bg-white z-10">Source</th>
-                    {brandSourceHeatmap.brands.map(brand => (
-                      <th
-                        key={brand}
-                        className={`text-center py-2 px-3 font-medium border-b border-gray-200 min-w-[100px] ${
-                          brand === brandSourceHeatmap.searchedBrand
-                            ? 'text-[#4A7C59] bg-green-50'
-                            : 'text-gray-600'
-                        }`}
-                        title={`${brandSourceHeatmap.brandTotals[brand] || 0} total ${(brandSourceHeatmap.brandTotals[brand] || 0) === 1 ? 'mention' : 'mentions'}`}
-                      >
-                        <div className="truncate max-w-[100px]">{brand}</div>
-                        <div className="text-[10px] font-normal text-gray-400">
-                          {brandSourceHeatmap.brandTotals[brand] || 0} {(brandSourceHeatmap.brandTotals[brand] || 0) === 1 ? 'mention' : 'mentions'}
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    // Calculate global max across all cells for consistent color intensity
-                    const globalMax = Math.max(
-                      ...brandSourceHeatmap.data.flatMap(row =>
-                        brandSourceHeatmap.brands.map(b => row[b] as number || 0)
-                      )
-                    );
-                    return brandSourceHeatmap.data.map((row, index) => (
-                      <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                        <td className="py-2 px-3 font-medium text-[#4A7C59] sticky left-0 bg-inherit z-10" title={row.domain}>
-                          <div className="flex items-center gap-2 max-w-[180px]">
-                            <span className="flex-shrink-0 relative group/heatmapicon">
-                              {getCategoryIcon(categorizeDomain(row.domain), "w-3.5 h-3.5")}
-                              <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-700 bg-white border border-gray-200 rounded shadow-sm whitespace-nowrap opacity-0 group-hover/heatmapicon:opacity-100 pointer-events-none transition-opacity z-50">
-                                {categorizeDomain(row.domain)}
-                              </span>
-                            </span>
-                            <span className="truncate">{row.domain}</span>
-                          </div>
-                        </td>
-                        {brandSourceHeatmap.brands.map(brand => {
-                          const count = row[brand] as number || 0;
-                          const sentimentInfo = brandSourceHeatmap.sentimentData[row.domain as string]?.[brand];
-                          const avgSentiment = sentimentInfo?.avg || 0;
-
-                          // Calculate intensity based on mode
-                          const intensity = heatmapShowSentiment
-                            ? avgSentiment > 0 ? (avgSentiment - 1) / 4 : 0  // Scale 1-5 to 0-1
-                            : globalMax > 0 ? count / globalMax : 0;
-
-                          const isSearchedBrand = brand === brandSourceHeatmap.searchedBrand;
-
-                          // In sentiment mode, use different colors: green for positive, yellow for neutral, red for negative
-                          let bgColor: string;
-                          if (count === 0) {
-                            bgColor = isSearchedBrand ? 'rgba(74, 124, 89, 0.05)' : 'transparent';
-                          } else if (heatmapShowSentiment) {
-                            // Sentiment color: green (high) to yellow (mid) to red (low)
-                            if (avgSentiment >= 3.5) {
-                              bgColor = `rgba(74, 124, 89, ${0.3 + (avgSentiment - 3.5) / 1.5 * 0.5})`; // Green
-                            } else if (avgSentiment >= 2.5) {
-                              bgColor = `rgba(234, 179, 8, ${0.3 + (avgSentiment - 2.5) * 0.3})`; // Yellow
-                            } else if (avgSentiment >= 1.5) {
-                              bgColor = `rgba(245, 158, 11, ${0.3 + (avgSentiment - 1.5) * 0.3})`; // Orange
-                            } else {
-                              bgColor = `rgba(239, 68, 68, ${0.3 + intensity * 0.4})`; // Red
-                            }
-                          } else {
-                            bgColor = isSearchedBrand
-                              ? `rgba(74, 124, 89, ${0.2 + intensity * 0.6})`
-                              : `rgba(91, 163, 192, ${0.15 + intensity * 0.55})`;
-                          }
-
-                          return (
-                            <td
-                              key={brand}
-                              className={`text-center py-2 px-3 ${count > 0 ? 'cursor-pointer hover:ring-2 hover:ring-inset hover:ring-gray-400' : ''}`}
-                              style={{ backgroundColor: bgColor }}
-                              onDoubleClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
-                              title={count > 0 ? 'Double-click to view responses' : undefined}
-                            >
-                              {count > 0 ? (
-                                heatmapShowSentiment ? (
-                                  <span className={avgSentiment >= 3.5 && intensity > 0.5 ? 'text-white font-medium' : 'text-gray-700'}>
-                                    {getSentimentLabelFromScore(avgSentiment)}
-                                  </span>
-                                ) : (
-                                  <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
-                                    {count}
-                                  </span>
-                                )
-                              ) : (
-                                <span className="text-gray-300">-</span>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ));
-                  })()}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-              {heatmapShowSentiment ? (
-                <>
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-600">Sentiment Scale:</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>Not Recommended</span>
-                    <div className="flex">
-                      <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(239, 68, 68, 0.5)' }} />
-                      <div className="w-5 h-3" style={{ backgroundColor: 'rgba(245, 158, 11, 0.4)' }} />
-                      <div className="w-5 h-3" style={{ backgroundColor: 'rgba(234, 179, 8, 0.4)' }} />
-                      <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(74, 124, 89, 0.6)' }} />
-                    </div>
-                    <span>Recommended</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(74, 124, 89, 0.5)' }} />
-                      <span>Searched brand</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(91, 163, 192, 0.5)' }} />
-                      <span>Competitors</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>Fewer</span>
-                    <div className="flex">
-                      <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(91, 163, 192, 0.15)' }} />
-                      <div className="w-5 h-3" style={{ backgroundColor: 'rgba(91, 163, 192, 0.4)' }} />
-                      <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(91, 163, 192, 0.7)' }} />
-                    </div>
-                    <span>More</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Brand Website Citations */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -6429,29 +6432,11 @@ export default function ResultsPage() {
         {/* Domain Breakdown Table */}
         {domainTableData.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-[#4A7C59]" />
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Domain Breakdown</h3>
-                  <p className="text-sm text-gray-500">Detailed view of how often each domain is cited across LLM responses</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleExportDomainBreakdownCSV}
-                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-                >
-                  <Download className="w-4 h-4" />
-                  Export CSV
-                </button>
-                <button
-                  onClick={handleCopyLink}
-                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-                >
-                  <Link2 className="w-4 h-4" />
-                  {copied ? 'Copied!' : 'Share'}
-                </button>
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-5 h-5 text-[#4A7C59]" />
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Domain Breakdown</h3>
+                <p className="text-sm text-gray-500">Detailed view of how often each domain is cited across LLM responses</p>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -6615,6 +6600,22 @@ export default function ResultsPage() {
                   Scroll to see all {sortedDomainTableData.length} domains
                 </p>
               )}
+              <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                <button
+                  onClick={handleExportDomainBreakdownCSV}
+                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                >
+                  <Link2 className="w-4 h-4" />
+                  {copied ? 'Copied!' : 'Share'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -7399,9 +7400,27 @@ export default function ResultsPage() {
 
         {/* Individual Results with Sentiment */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
-            <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
+              <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportSentimentCSV}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Link2 className="w-4 h-4" />
+                {copied ? 'Copied!' : 'Share'}
+              </button>
+            </div>
           </div>
 
           {/* Sentiment Legend */}
@@ -7558,24 +7577,6 @@ export default function ResultsPage() {
               Showing 20 of {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results
             </p>
           )}
-
-          {/* Export and Share buttons */}
-          <div className="flex justify-center gap-2 mt-4 pt-4 border-t border-gray-100">
-            <button
-              onClick={handleExportSentimentCSV}
-              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </button>
-            <button
-              onClick={handleCopyLink}
-              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-            >
-              <Link2 className="w-4 h-4" />
-              {copied ? 'Copied!' : 'Share'}
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -8163,13 +8164,11 @@ export default function ResultsPage() {
                           <th
                             key={idx}
                             className="text-center py-3 px-2 font-medium text-gray-600 min-w-[140px] max-w-[180px] relative group"
+                            title={prompt}
                           >
-                            <span className="text-xs block truncate cursor-help">
+                            <span className="text-xs block truncate">
                               {prompt.length > 40 ? prompt.substring(0, 38) + '...' : prompt}
                             </span>
-                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg py-2 px-3 max-w-[300px] whitespace-normal text-left z-50 shadow-lg">
-                              {prompt}
-                            </div>
                           </th>
                         ))}
                         <th className="text-center py-3 px-2 font-medium text-gray-600 min-w-[80px]">Avg</th>
@@ -8233,7 +8232,7 @@ export default function ResultsPage() {
                   <div>
                     <h2 className="text-base font-semibold text-gray-900">Brand Co-occurrence Analysis</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Brands that are frequently mentioned together in AI responses
+                      Brands frequently mentioned together in AI responses. Numbers show co-occurrence count.
                     </p>
                   </div>
                   <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -8409,8 +8408,8 @@ export default function ResultsPage() {
                           </text>
                         </svg>
                       </div>
-                      <p className="text-xs text-gray-400 text-center mt-2">
-                        Circle size represents co-occurrence frequency. Numbers show times mentioned together.
+                      <p className="text-xs text-gray-400 text-center -mt-2">
+                        Circle size represents co-occurrence frequency. Numbers show times brands mentioned together.
                       </p>
                     </div>
                   );
@@ -8524,41 +8523,44 @@ export default function ResultsPage() {
                           }}
                           cursor={{ fill: 'transparent' }}
                         />
-                        {/* Invisible scatter points for tooltip triggering */}
-                        <Scatter
-                          dataKey="brandRate"
-                          fill="transparent"
-                          shape={() => null}
-                        />
                         {/* Custom dumbbell rendering */}
                         <Customized
-                          component={(props: { formattedGraphicalItems?: Array<{ props?: { points?: Array<{ x: number; y: number; payload: { brandRate: number; competitorRate: number; fullDomain: string } }> } }>; xAxisMap?: Record<string, { scale: (value: number) => number }>; offset?: { left: number; top: number; width: number; height: number } }) => {
-                            const { formattedGraphicalItems, xAxisMap, offset } = props;
-                            if (!formattedGraphicalItems || !xAxisMap || !offset) return null;
+                          component={(props: { xAxisMap?: Record<string, { scale: (value: number) => number }>; yAxisMap?: Record<string, { scale: (value: string) => number; bandwidth?: () => number }>; offset?: { left: number; top: number; width: number; height: number } }) => {
+                            const { xAxisMap, yAxisMap } = props;
+                            if (!xAxisMap || !yAxisMap) return null;
 
                             const xAxis = Object.values(xAxisMap)[0];
-                            if (!xAxis) return null;
+                            const yAxis = Object.values(yAxisMap)[0];
+                            if (!xAxis || !yAxis) return null;
 
-                            const scatterItem = formattedGraphicalItems[0];
-                            if (!scatterItem?.props?.points) return null;
+                            const chartData = sourceGapAnalysis.slice(0, 10).map(row => ({
+                              domain: row.domain.length > 25 ? row.domain.substring(0, 23) + '...' : row.domain,
+                              fullDomain: row.domain,
+                              brandRate: row.brandRate,
+                              competitorRate: row.topCompetitorRate,
+                            }));
 
-                            const points = scatterItem.props.points;
+                            // Get bandwidth for category spacing
+                            const bandwidth = yAxis.bandwidth ? yAxis.bandwidth() : 30;
+                            const yOffset = bandwidth / 2;
 
                             return (
                               <g>
-                                {points.map((point, index) => {
-                                  const { y, payload } = point;
-                                  const brandX = xAxis.scale(payload.brandRate);
-                                  const compX = xAxis.scale(payload.competitorRate);
+                                {chartData.map((item, index) => {
+                                  const yPos = yAxis.scale(item.domain) + yOffset;
+                                  const brandX = xAxis.scale(item.brandRate);
+                                  const compX = xAxis.scale(item.competitorRate);
                                   const minX = Math.min(brandX, compX);
                                   const maxX = Math.max(brandX, compX);
+
+                                  if (isNaN(yPos) || isNaN(brandX) || isNaN(compX)) return null;
 
                                   return (
                                     <g
                                       key={index}
                                       style={{ cursor: 'pointer' }}
                                       onClick={() => {
-                                        const domain = payload.fullDomain;
+                                        const domain = item.fullDomain;
                                         const newExpanded = new Set(expandedGapSources);
                                         if (expandedGapSources.has(domain)) {
                                           newExpanded.delete(domain);
@@ -8571,16 +8573,16 @@ export default function ResultsPage() {
                                       {/* Connector line */}
                                       <line
                                         x1={minX}
-                                        y1={y}
+                                        y1={yPos}
                                         x2={maxX}
-                                        y2={y}
+                                        y2={yPos}
                                         stroke="#9ca3af"
                                         strokeWidth={2}
                                       />
                                       {/* Brand dot (green) */}
                                       <circle
                                         cx={brandX}
-                                        cy={y}
+                                        cy={yPos}
                                         r={6}
                                         fill="#4A7C59"
                                         stroke="#fff"
@@ -8589,7 +8591,7 @@ export default function ResultsPage() {
                                       {/* Competitor dot (blue) */}
                                       <circle
                                         cx={compX}
-                                        cy={y}
+                                        cy={yPos}
                                         r={6}
                                         fill="#3b82f6"
                                         stroke="#fff"
@@ -8602,6 +8604,8 @@ export default function ResultsPage() {
                             );
                           }}
                         />
+                        {/* Invisible bar for tooltip triggering */}
+                        <Bar dataKey="brandRate" fill="transparent" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
@@ -9126,6 +9130,188 @@ export default function ResultsPage() {
                     <p>No sentiment gap data available for the selected filters.</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Brand-Source Heatmap */}
+            {brandSourceHeatmap.sources.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
+                    <p className="text-sm text-gray-500">Which sources are cited when each brand is mentioned</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setHeatmapShowSentiment(!heatmapShowSentiment)}
+                      className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                        heatmapShowSentiment
+                          ? 'bg-[#4A7C59] text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {heatmapShowSentiment ? 'Showing Sentiment' : 'Show Sentiment'}
+                    </button>
+                    <select
+                      value={heatmapProviderFilter}
+                      onChange={(e) => setHeatmapProviderFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      <option value="all">All Models</option>
+                      {availableProviders.map((provider) => (
+                        <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="text-left py-2 px-3 font-medium text-gray-600 border-b border-gray-200 sticky left-0 bg-white z-10">Source</th>
+                        {brandSourceHeatmap.brands.map(brand => (
+                          <th
+                            key={brand}
+                            className={`text-center py-2 px-3 font-medium border-b border-gray-200 min-w-[100px] ${
+                              brand === brandSourceHeatmap.searchedBrand
+                                ? 'text-[#4A7C59] bg-green-50'
+                                : 'text-gray-600'
+                            }`}
+                            title={`${brandSourceHeatmap.brandTotals[brand] || 0} total ${(brandSourceHeatmap.brandTotals[brand] || 0) === 1 ? 'mention' : 'mentions'}`}
+                          >
+                            <div className="truncate max-w-[100px]">{brand}</div>
+                            <div className="text-[10px] font-normal text-gray-400">
+                              {brandSourceHeatmap.brandTotals[brand] || 0} {(brandSourceHeatmap.brandTotals[brand] || 0) === 1 ? 'mention' : 'mentions'}
+                            </div>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        // Calculate global max across all cells for consistent color intensity
+                        const globalMax = Math.max(
+                          ...brandSourceHeatmap.data.flatMap(row =>
+                            brandSourceHeatmap.brands.map(b => row[b] as number || 0)
+                          )
+                        );
+                        return brandSourceHeatmap.data.map((row, index) => (
+                          <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                            <td className="py-2 px-3 font-medium text-[#4A7C59] sticky left-0 bg-inherit z-10" title={row.domain}>
+                              <div className="flex items-center gap-2 max-w-[180px]">
+                                <span className="flex-shrink-0 relative group/heatmapicon">
+                                  {getCategoryIcon(categorizeDomain(row.domain), "w-3.5 h-3.5")}
+                                  <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-700 bg-white border border-gray-200 rounded shadow-sm whitespace-nowrap opacity-0 group-hover/heatmapicon:opacity-100 pointer-events-none transition-opacity z-50">
+                                    {categorizeDomain(row.domain)}
+                                  </span>
+                                </span>
+                                <span className="truncate">{row.domain}</span>
+                              </div>
+                            </td>
+                            {brandSourceHeatmap.brands.map(brand => {
+                              const count = row[brand] as number || 0;
+                              const sentimentInfo = brandSourceHeatmap.sentimentData[row.domain as string]?.[brand];
+                              const avgSentiment = sentimentInfo?.avg || 0;
+
+                              // Calculate intensity based on mode
+                              const intensity = heatmapShowSentiment
+                                ? avgSentiment > 0 ? (avgSentiment - 1) / 4 : 0  // Scale 1-5 to 0-1
+                                : globalMax > 0 ? count / globalMax : 0;
+
+                              const isSearchedBrand = brand === brandSourceHeatmap.searchedBrand;
+
+                              // In sentiment mode, use different colors: green for positive, yellow for neutral, red for negative
+                              let bgColor: string;
+                              if (count === 0) {
+                                bgColor = isSearchedBrand ? 'rgba(74, 124, 89, 0.05)' : 'transparent';
+                              } else if (heatmapShowSentiment) {
+                                // Sentiment color: green (high) to yellow (mid) to red (low)
+                                if (avgSentiment >= 3.5) {
+                                  bgColor = `rgba(74, 124, 89, ${0.3 + (avgSentiment - 3.5) / 1.5 * 0.5})`; // Green
+                                } else if (avgSentiment >= 2.5) {
+                                  bgColor = `rgba(234, 179, 8, ${0.3 + (avgSentiment - 2.5) * 0.3})`; // Yellow
+                                } else if (avgSentiment >= 1.5) {
+                                  bgColor = `rgba(245, 158, 11, ${0.3 + (avgSentiment - 1.5) * 0.3})`; // Orange
+                                } else {
+                                  bgColor = `rgba(239, 68, 68, ${0.3 + intensity * 0.4})`; // Red
+                                }
+                              } else {
+                                bgColor = isSearchedBrand
+                                  ? `rgba(74, 124, 89, ${0.2 + intensity * 0.6})`
+                                  : `rgba(91, 163, 192, ${0.15 + intensity * 0.55})`;
+                              }
+
+                              return (
+                                <td
+                                  key={brand}
+                                  className={`text-center py-2 px-3 ${count > 0 ? 'cursor-pointer hover:ring-2 hover:ring-inset hover:ring-gray-400' : ''}`}
+                                  style={{ backgroundColor: bgColor }}
+                                  onDoubleClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
+                                  title={count > 0 ? 'Double-click to view responses' : undefined}
+                                >
+                                  {count > 0 ? (
+                                    heatmapShowSentiment ? (
+                                      <span className={avgSentiment >= 3.5 && intensity > 0.5 ? 'text-white font-medium' : 'text-gray-700'}>
+                                        {getSentimentLabelFromScore(avgSentiment)}
+                                      </span>
+                                    ) : (
+                                      <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
+                                        {count}
+                                      </span>
+                                    )
+                                  ) : (
+                                    <span className="text-gray-300">-</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ));
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+                  {heatmapShowSentiment ? (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <span className="text-gray-600">Sentiment Scale:</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>Not Recommended</span>
+                        <div className="flex">
+                          <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(239, 68, 68, 0.5)' }} />
+                          <div className="w-5 h-3" style={{ backgroundColor: 'rgba(245, 158, 11, 0.4)' }} />
+                          <div className="w-5 h-3" style={{ backgroundColor: 'rgba(234, 179, 8, 0.4)' }} />
+                          <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(74, 124, 89, 0.6)' }} />
+                        </div>
+                        <span>Recommended</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(74, 124, 89, 0.5)' }} />
+                          <span>Searched brand</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(91, 163, 192, 0.5)' }} />
+                          <span>Competitors</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>Fewer</span>
+                        <div className="flex">
+                          <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(91, 163, 192, 0.15)' }} />
+                          <div className="w-5 h-3" style={{ backgroundColor: 'rgba(91, 163, 192, 0.4)' }} />
+                          <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(91, 163, 192, 0.7)' }} />
+                        </div>
+                        <span>More</span>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>
