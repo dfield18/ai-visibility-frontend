@@ -7711,6 +7711,7 @@ export default function ResultsPage() {
                 </div>
 
                 <div className="overflow-x-auto">
+                  <p className="text-xs text-gray-400 mb-2">Click on a row to see specific mentions from AI responses</p>
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
