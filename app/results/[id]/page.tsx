@@ -99,6 +99,7 @@ export default function ResultsPage() {
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
+  const [selectedResultHighlight, setSelectedResultHighlight] = useState<{ brand: string; domain?: string } | null>(null);
   const [heatmapResultsList, setHeatmapResultsList] = useState<{ results: Result[]; domain: string; brand: string } | null>(null);
   const [chartTab, setChartTab] = useState<'allAnswers' | 'performanceRange' | 'shareOfVoice'>('allAnswers');
   const [showSentimentColors, setShowSentimentColors] = useState(false);
@@ -9089,15 +9090,20 @@ export default function ResultsPage() {
 
       {/* Result Detail Modal */}
       {selectedResult && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedResult(null)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setSelectedResult(null); setSelectedResultHighlight(null); }}>
           <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">{getProviderLabel(selectedResult.provider)}</h2>
-                <p className="text-sm text-gray-500">Temperature: {selectedResult.temperature}</p>
+                <p className="text-sm text-gray-500">
+                  Temperature: {selectedResult.temperature}
+                  {selectedResultHighlight && (
+                    <span className="ml-2 text-[#4A7C59]">• Highlighting mentions of {selectedResultHighlight.brand}</span>
+                  )}
+                </p>
               </div>
               <button
-                onClick={() => setSelectedResult(null)}
+                onClick={() => { setSelectedResult(null); setSelectedResultHighlight(null); }}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5 text-gray-500" />
@@ -9165,6 +9171,30 @@ export default function ResultsPage() {
                             <table className="min-w-full">{children}</table>
                           </div>
                         ),
+                        p: ({ children }) => {
+                          // Highlight paragraphs containing the highlighted brand
+                          if (selectedResultHighlight) {
+                            const text = typeof children === 'string' ? children :
+                              (Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '');
+                            const containsBrand = text.toLowerCase().includes(selectedResultHighlight.brand.toLowerCase());
+                            if (containsBrand) {
+                              return <p className="bg-yellow-100 rounded px-2 py-1 -mx-2 border-l-4 border-yellow-400">{children}</p>;
+                            }
+                          }
+                          return <p>{children}</p>;
+                        },
+                        li: ({ children }) => {
+                          // Highlight list items containing the highlighted brand
+                          if (selectedResultHighlight) {
+                            const text = typeof children === 'string' ? children :
+                              (Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '');
+                            const containsBrand = text.toLowerCase().includes(selectedResultHighlight.brand.toLowerCase());
+                            if (containsBrand) {
+                              return <li className="bg-yellow-100 rounded px-2 py-0.5 -mx-2 border-l-4 border-yellow-400">{children}</li>;
+                            }
+                          }
+                          return <li>{children}</li>;
+                        },
                       }}
                     >
                       {highlightCompetitors(formatResponseText(selectedResult.response_text || ''), selectedResult.all_brands_mentioned)}
@@ -9246,6 +9276,7 @@ export default function ResultsPage() {
                   className="p-3 border border-gray-200 rounded-lg hover:border-[#4A7C59] hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => {
                     setSelectedResult(result);
+                    setSelectedResultHighlight({ brand: heatmapResultsList.brand, domain: heatmapResultsList.domain });
                     setHeatmapResultsList(null);
                   }}
                 >
