@@ -1707,6 +1707,10 @@ export default function ResultsPage() {
   const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
   const [heatmapProviderFilter, setHeatmapProviderFilter] = useState<string>('all');
   const [heatmapShowSentiment, setHeatmapShowSentiment] = useState<boolean>(false);
+
+  // State for Domain Breakdown table sorting
+  const [domainSortColumn, setDomainSortColumn] = useState<'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment'>('usedPercent');
+  const [domainSortDirection, setDomainSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
   const [expandedGapSources, setExpandedGapSources] = useState<Set<string>>(new Set());
   const [snippetDetailModal, setSnippetDetailModal] = useState<{ brand: string; responseText: string; provider: string; prompt: string } | null>(null);
@@ -5645,6 +5649,53 @@ export default function ResultsPage() {
         .sort((a, b) => b.usedPercent - a.usedPercent);
     }, [runStatus, globallyFilteredResults, aiCategorizations]);
 
+    // Sorted domain table data based on user selection
+    const sortedDomainTableData = useMemo(() => {
+      return [...domainTableData].sort((a, b) => {
+        let aVal: string | number | null;
+        let bVal: string | number | null;
+
+        switch (domainSortColumn) {
+          case 'domain':
+            aVal = a.domain.toLowerCase();
+            bVal = b.domain.toLowerCase();
+            break;
+          case 'usedPercent':
+            aVal = a.usedPercent;
+            bVal = b.usedPercent;
+            break;
+          case 'avgCitation':
+            aVal = a.avgCitation;
+            bVal = b.avgCitation;
+            break;
+          case 'category':
+            aVal = a.category.toLowerCase();
+            bVal = b.category.toLowerCase();
+            break;
+          case 'avgSentiment':
+            aVal = a.avgSentiment ?? -1;
+            bVal = b.avgSentiment ?? -1;
+            break;
+          default:
+            return 0;
+        }
+
+        if (aVal < bVal) return domainSortDirection === 'asc' ? -1 : 1;
+        if (aVal > bVal) return domainSortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }, [domainTableData, domainSortColumn, domainSortDirection]);
+
+    // Handle column header click for sorting
+    const handleDomainSort = (column: 'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment') => {
+      if (domainSortColumn === column) {
+        setDomainSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+      } else {
+        setDomainSortColumn(column);
+        setDomainSortDirection('desc');
+      }
+    };
+
     // Export Domain Breakdown to CSV
     const handleExportDomainBreakdownCSV = () => {
       if (!runStatus || domainTableData.length === 0) return;
@@ -6226,34 +6277,105 @@ export default function ResultsPage() {
         {/* Domain Breakdown Table */}
         {domainTableData.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Globe className="w-5 h-5 text-[#4A7C59]" />
-              <h3 className="text-lg font-semibold text-gray-900">Domain Breakdown</h3>
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-[#4A7C59]" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Domain Breakdown</h3>
+                  <p className="text-sm text-gray-500">Detailed view of how often each domain is cited across LLM responses</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportDomainBreakdownCSV}
+                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                >
+                  <Download className="w-4 h-4" />
+                  Export CSV
+                </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                >
+                  <Link2 className="w-4 h-4" />
+                  {copied ? 'Copied!' : 'Share'}
+                </button>
+              </div>
             </div>
-            <p className="text-sm text-gray-500 mb-4">
-              Detailed view of how often each domain is cited across LLM responses
-            </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky top-0 bg-white z-10">
                   <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-3 font-medium text-gray-600">Domain</th>
-                    <th className="text-center py-3 px-3 font-medium text-gray-600">
-                      <div>Used</div>
-                      <div className="text-xs font-normal text-gray-400">% of responses</div>
+                    <th
+                      className="text-left py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleDomainSort('domain')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Domain
+                        {domainSortColumn === 'domain' && (
+                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="text-center py-3 px-3 font-medium text-gray-600">
-                      <div>Avg. Citation</div>
-                      <div className="text-xs font-normal text-gray-400">per response</div>
+                    <th
+                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleDomainSort('usedPercent')}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <div>
+                          <div>Used</div>
+                          <div className="text-xs font-normal text-gray-400">% of responses</div>
+                        </div>
+                        {domainSortColumn === 'usedPercent' && (
+                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
                     </th>
-                    <th className="text-center py-3 px-3 font-medium text-gray-600">Type</th>
-                    <th className="text-center py-3 px-3 font-medium text-gray-600">Sentiment for {runStatus?.brand || 'Brand'}</th>
+                    <th
+                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleDomainSort('avgCitation')}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        <div>
+                          <div>Avg. Citation</div>
+                          <div className="text-xs font-normal text-gray-400">per response</div>
+                        </div>
+                        {domainSortColumn === 'avgCitation' && (
+                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleDomainSort('category')}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Type
+                        {domainSortColumn === 'category' && (
+                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      onClick={() => handleDomainSort('avgSentiment')}
+                    >
+                      <div className="flex items-center justify-center gap-1">
+                        Sentiment for {runStatus?.brand || 'Brand'}
+                        {domainSortColumn === 'avgSentiment' && (
+                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </div>
+                    </th>
                     <th className="text-left py-3 px-3 font-medium text-gray-600">Models</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-600">Brands</th>
                   </tr>
                 </thead>
+              </table>
+              <div className="max-h-[400px] overflow-y-auto">
+                <table className="w-full text-sm">
                 <tbody>
-                  {domainTableData.slice(0, 25).map((row, index) => (
+                  {sortedDomainTableData.map((row, index) => (
                     <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
                       <td className="py-2.5 px-3">
                         <div className="flex items-center gap-2">
@@ -6334,28 +6456,13 @@ export default function ResultsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-              {domainTableData.length > 25 && (
+                </table>
+              </div>
+              {sortedDomainTableData.length > 10 && (
                 <p className="text-sm text-gray-500 text-center mt-3">
-                  Showing top 25 of {domainTableData.length} domains
+                  Scroll to see all {sortedDomainTableData.length} domains
                 </p>
               )}
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-                <button
-                  onClick={handleExportDomainBreakdownCSV}
-                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-                >
-                  <Download className="w-4 h-4" />
-                  Export CSV
-                </button>
-                <button
-                  onClick={handleCopyLink}
-                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-                >
-                  <Link2 className="w-4 h-4" />
-                  {copied ? 'Copied!' : 'Share'}
-                </button>
-              </div>
             </div>
           </div>
         )}
