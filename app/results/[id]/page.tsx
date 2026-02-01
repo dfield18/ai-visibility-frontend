@@ -7912,7 +7912,7 @@ export default function ResultsPage() {
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
-                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[100px] max-w-[120px] cursor-help"
+                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[100px] max-w-[120px]"
                             title={prompt}
                           >
                             <span className="text-xs block truncate">
