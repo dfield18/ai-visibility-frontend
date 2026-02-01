@@ -7784,6 +7784,10 @@ export default function ResultsPage() {
                 };
               });
 
+              // Calculate Y-axis domain with padding for labels at top
+              const maxMentions = rawData.length > 0 ? Math.max(...rawData.map(d => d.mentions)) : 10;
+              const yMax = maxMentions + Math.max(1, Math.ceil(maxMentions * 0.15)); // Add ~15% padding at top
+
               return (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="mb-4">
@@ -7794,7 +7798,7 @@ export default function ResultsPage() {
                 </div>
                 <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 20, right: 30, bottom: 60, left: 60 }}>
+                    <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis
                         type="number"
@@ -7810,6 +7814,7 @@ export default function ResultsPage() {
                         type="number"
                         dataKey="mentions"
                         name="Mentions"
+                        domain={[0, yMax]}
                         tick={{ fill: '#6b7280', fontSize: 11 }}
                         label={{
                           content: () => (
@@ -7888,9 +7893,6 @@ export default function ResultsPage() {
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
-                <p className="text-xs text-gray-400 mt-3">
-                  Average Sentiment: 1 = Negative, 2 = Conditional, 3 = Neutral, 4 = Positive, 5 = Strong Endorsement
-                </p>
               </div>
               );
             })()}
@@ -7912,11 +7914,10 @@ export default function ResultsPage() {
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
-                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[100px] max-w-[120px]"
-                            title={prompt}
+                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[140px] max-w-[180px]"
                           >
-                            <span className="text-xs block truncate">
-                              {prompt.length > 20 ? prompt.substring(0, 18) + '...' : prompt}
+                            <span className="text-xs block truncate" title={prompt}>
+                              {prompt.length > 40 ? prompt.substring(0, 38) + '...' : prompt}
                             </span>
                           </th>
                         ))}
@@ -8052,39 +8053,39 @@ export default function ResultsPage() {
                     <div className="mt-6 pt-6 border-t border-gray-100">
                       <h3 className="text-sm font-medium text-gray-700 mb-3">Co-occurrence with {searchedBrand}</h3>
                       <div className="flex justify-center">
-                        <svg width="400" height="250" viewBox="0 0 400 250">
+                        <svg width="550" height="380" viewBox="0 0 550 380">
                           {/* Central brand circle */}
                           <circle
-                            cx="200"
-                            cy="125"
-                            r="60"
+                            cx="275"
+                            cy="190"
+                            r="85"
                             fill="#4A7C59"
                             fillOpacity="0.3"
                             stroke="#4A7C59"
                             strokeWidth="2"
                           />
                           <text
-                            x="200"
-                            y="125"
+                            x="275"
+                            y="190"
                             textAnchor="middle"
                             dominantBaseline="middle"
                             fill="#4A7C59"
-                            fontSize="11"
+                            fontSize="14"
                             fontWeight="600"
                           >
-                            {searchedBrand.length > 10 ? searchedBrand.substring(0, 8) + '...' : searchedBrand}
+                            {searchedBrand.length > 12 ? searchedBrand.substring(0, 10) + '...' : searchedBrand}
                           </text>
 
                           {/* Overlapping competitor circles */}
                           {cooccurringBrands.map((item, idx) => {
                             // Position circles around the center
                             const angle = (idx * (360 / cooccurringBrands.length) - 90) * (Math.PI / 180);
-                            const distance = 55; // How far from center
-                            const cx = 200 + Math.cos(angle) * distance;
-                            const cy = 125 + Math.sin(angle) * distance;
+                            const distance = 80; // How far from center
+                            const cx = 275 + Math.cos(angle) * distance;
+                            const cy = 190 + Math.sin(angle) * distance;
                             // Size based on co-occurrence count
-                            const minRadius = 35;
-                            const maxRadius = 55;
+                            const minRadius = 50;
+                            const maxRadius = 80;
                             const radius = minRadius + ((item.count / maxCount) * (maxRadius - minRadius));
 
                             return (
@@ -8100,24 +8101,24 @@ export default function ResultsPage() {
                                 />
                                 {/* Brand name - positioned outside the circle */}
                                 <text
-                                  x={cx + Math.cos(angle) * (radius + 15)}
-                                  y={cy + Math.sin(angle) * (radius + 15)}
+                                  x={cx + Math.cos(angle) * (radius + 20)}
+                                  y={cy + Math.sin(angle) * (radius + 20)}
                                   textAnchor="middle"
                                   dominantBaseline="middle"
                                   fill={colors[idx % colors.length]}
-                                  fontSize="10"
+                                  fontSize="13"
                                   fontWeight="500"
                                 >
-                                  {item.brand.length > 12 ? item.brand.substring(0, 10) + '...' : item.brand}
+                                  {item.brand.length > 14 ? item.brand.substring(0, 12) + '...' : item.brand}
                                 </text>
                                 {/* Count in overlap area */}
                                 <text
-                                  x={200 + Math.cos(angle) * 30}
-                                  y={125 + Math.sin(angle) * 30}
+                                  x={275 + Math.cos(angle) * 42}
+                                  y={190 + Math.sin(angle) * 42}
                                   textAnchor="middle"
                                   dominantBaseline="middle"
                                   fill="#374151"
-                                  fontSize="10"
+                                  fontSize="13"
                                   fontWeight="600"
                                 >
                                   {item.count}x
