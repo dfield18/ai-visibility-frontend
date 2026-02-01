@@ -1316,7 +1316,7 @@ export default function ResultsPage() {
       brandCitations: number; // Number of responses where brand is mentioned AND this source is cited
       competitorCitations: Record<string, number>; // Per-competitor citation counts
       urls: Map<string, { url: string; title: string; count: number }>; // Individual URLs
-      snippets: Array<{ brand: string; snippet: string; isBrand: boolean; provider: string; prompt: string }>; // Response snippets
+      snippets: Array<{ brand: string; snippet: string; isBrand: boolean; provider: string; prompt: string; responseText: string; resultId: string }>; // Response snippets
     }> = {};
 
     // Process each result
@@ -1376,6 +1376,8 @@ export default function ResultsPage() {
               isBrand: true,
               provider: r.provider,
               prompt: r.prompt,
+              responseText: r.response_text,
+              resultId: r.id,
             });
           }
         }
@@ -1397,6 +1399,8 @@ export default function ResultsPage() {
                 isBrand: false,
                 provider: r.provider,
                 prompt: r.prompt,
+                responseText,
+                resultId: r.id,
               });
             }
           });
@@ -1647,10 +1651,22 @@ export default function ResultsPage() {
   const [heatmapShowSentiment, setHeatmapShowSentiment] = useState<boolean>(false);
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
   const [expandedGapSources, setExpandedGapSources] = useState<Set<string>>(new Set());
+  const [snippetDetailModal, setSnippetDetailModal] = useState<{ brand: string; responseText: string; provider: string; prompt: string } | null>(null);
+  const snippetDetailRef = useRef<HTMLSpanElement>(null);
   const [aiCategorizations, setAiCategorizations] = useState<Record<string, string>>({});
   const [categorizationLoading, setCategorizationLoading] = useState(false);
   const sourcesListRef = useRef<HTMLDivElement>(null);
   const pendingScrollRestore = useRef<{ container: number; window: number } | null>(null);
+
+  // Scroll to highlighted brand in snippet detail modal
+  useEffect(() => {
+    if (snippetDetailModal && snippetDetailRef.current) {
+      // Small delay to ensure modal is rendered
+      setTimeout(() => {
+        snippetDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }, [snippetDetailModal]);
 
   // Restore scroll position after expandedSources changes
   useLayoutEffect(() => {
@@ -8220,8 +8236,14 @@ export default function ResultsPage() {
                                             return (
                                               <div
                                                 key={snippetIdx}
-                                                className="text-sm border-l-2 pl-3 py-1"
+                                                className="text-sm border-l-2 pl-3 py-1 cursor-pointer hover:bg-gray-50 rounded-r transition-colors"
                                                 style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
+                                                onClick={() => setSnippetDetailModal({
+                                                  brand: snippetInfo.brand,
+                                                  responseText: snippetInfo.responseText,
+                                                  provider: snippetInfo.provider,
+                                                  prompt: snippetInfo.prompt,
+                                                })}
                                               >
                                                 <div className="flex items-center gap-2 mb-1">
                                                   <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
@@ -8230,6 +8252,7 @@ export default function ResultsPage() {
                                                   <span className="text-xs text-gray-400">
                                                     via {getProviderLabel(snippetInfo.provider)}
                                                   </span>
+                                                  <span className="text-xs text-blue-500 ml-auto">Click to view full response</span>
                                                 </div>
                                                 <p className="text-gray-600 text-sm leading-relaxed">
                                                   {parts.map((part, i) =>
@@ -8592,6 +8615,62 @@ export default function ResultsPage() {
           />
         )}
       </div>
+
+      {/* Snippet Detail Modal */}
+      {snippetDetailModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSnippetDetailModal(null)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Full Response</h2>
+                <p className="text-sm text-gray-500">{getProviderLabel(snippetDetailModal.provider)}</p>
+              </div>
+              <button
+                onClick={() => setSnippetDetailModal(null)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="p-4 border-b border-gray-100 bg-gray-50">
+              <p className="text-xs text-gray-500 mb-1">Prompt</p>
+              <p className="text-sm text-gray-900">{snippetDetailModal.prompt}</p>
+            </div>
+            <div className="p-4 border-b border-gray-100 bg-blue-50">
+              <p className="text-xs text-blue-600 mb-1">Highlighted brand: <span className="font-semibold">{snippetDetailModal.brand}</span></p>
+              <p className="text-xs text-gray-500">Scroll down to see the highlighted mention</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {(() => {
+                  const text = snippetDetailModal.responseText;
+                  const brand = snippetDetailModal.brand;
+                  const regex = new RegExp(`(${brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                  const parts = text.split(regex);
+                  let firstHighlightRendered = false;
+
+                  return parts.map((part, i) => {
+                    if (part.toLowerCase() === brand.toLowerCase()) {
+                      const isFirst = !firstHighlightRendered;
+                      firstHighlightRendered = true;
+                      return (
+                        <span
+                          key={i}
+                          ref={isFirst ? snippetDetailRef : undefined}
+                          className="bg-yellow-200 text-yellow-900 font-semibold px-1 rounded"
+                        >
+                          {part}
+                        </span>
+                      );
+                    }
+                    return <span key={i}>{part}</span>;
+                  });
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Result Detail Modal */}
       {selectedResult && (
