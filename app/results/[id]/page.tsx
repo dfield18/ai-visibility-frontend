@@ -7811,7 +7811,14 @@ export default function ResultsPage() {
                         dataKey="mentions"
                         name="Mentions"
                         tick={{ fill: '#6b7280', fontSize: 11 }}
-                        label={{ value: 'Number of Mentions', angle: -90, position: 'insideLeft', offset: -10, style: { fill: '#6b7280', fontSize: 12, textAnchor: 'middle' } }}
+                        label={{
+                          content: () => (
+                            <text x={15} y={20} fill="#6b7280" fontSize={12} textAnchor="start">
+                              <tspan x={15} dy={0}>Number of</tspan>
+                              <tspan x={15} dy={14}>Mentions</tspan>
+                            </text>
+                          )
+                        }}
                       />
                       <Tooltip
                         cursor={false}
