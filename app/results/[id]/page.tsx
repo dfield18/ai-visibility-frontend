@@ -8344,62 +8344,6 @@ export default function ResultsPage() {
         </header>
 
         <div className="max-w-6xl mx-auto px-6 pb-4">
-          {/* Global Filter Bar */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-400" />
-              <span className="text-sm font-medium text-gray-700">Filters:</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <select
-                value={globalBrandFilter}
-                onChange={(e) => setGlobalBrandFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-              >
-                <option value="all">All Brands</option>
-                {availableBrands.map((brand) => (
-                  <option key={brand} value={brand}>
-                    {brand}{brand === runStatus?.brand ? ' (searched)' : ''}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={globalLlmFilter}
-                onChange={(e) => setGlobalLlmFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-              >
-                <option value="all">All Models</option>
-                {availableProviders.map((provider) => (
-                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-                ))}
-              </select>
-              <select
-                value={globalPromptFilter}
-                onChange={(e) => setGlobalPromptFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
-              >
-                <option value="all">All Prompts</option>
-                {availablePrompts.map((prompt) => (
-                  <option key={prompt} value={prompt}>{truncate(prompt, 30)}</option>
-                ))}
-              </select>
-            </div>
-            {(globalBrandFilter !== 'all' || globalLlmFilter !== 'all' || globalPromptFilter !== 'all') && (
-              <button
-                onClick={() => {
-                  setGlobalBrandFilter('all');
-                  setGlobalLlmFilter('all');
-                  setGlobalPromptFilter('all');
-                }}
-                className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
-        </div>
-
           {/* Tab Bar */}
           <div className="border-b border-gray-200 bg-[#FAFAF8]">
             <nav className="flex gap-1 overflow-x-auto pb-px">
@@ -8735,22 +8679,21 @@ export default function ResultsPage() {
                         domain={[xMin, xMax]}
                         ticks={xTicks}
                         tickFormatter={(value) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][value] || ''}
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
-                        label={{ value: 'Average Sentiment', position: 'bottom', offset: 20, style: { fill: '#6b7280', fontSize: 12 } }}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
+                        label={{ value: 'Average Sentiment', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
                       />
                       <YAxis
                         type="number"
                         dataKey="mentions"
                         name="Mentions"
                         domain={[0, yMax]}
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
+                        tick={{ fill: '#6b7280', fontSize: 12 }}
                         label={{
-                          content: () => (
-                            <text x={15} y={20} fill="#6b7280" fontSize={12} textAnchor="start">
-                              <tspan x={15} dy={0}>Number of</tspan>
-                              <tspan x={15} dy={14}>Mentions</tspan>
-                            </text>
-                          )
+                          value: 'Number of Mentions',
+                          angle: -90,
+                          position: 'insideLeft',
+                          offset: 10,
+                          style: { fill: '#374151', fontSize: 14, fontWeight: 500, textAnchor: 'middle' }
                         }}
                       />
                       <Tooltip
@@ -8873,11 +8816,17 @@ export default function ResultsPage() {
                           <th
                             key={idx}
                             className="text-center py-3 px-2 font-medium text-gray-600 min-w-[140px] max-w-[180px] relative group"
-                            title={prompt}
                           >
-                            <span className="text-xs block truncate">
+                            <span className="text-xs block truncate cursor-help">
                               {prompt.length > 40 ? prompt.substring(0, 38) + '...' : prompt}
                             </span>
+                            {prompt.length > 40 && (
+                              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 hidden group-hover:block">
+                                <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 max-w-[300px] whitespace-normal text-left shadow-lg">
+                                  {prompt}
+                                </div>
+                              </div>
+                            )}
                           </th>
                         ))}
                         <th className="text-center py-3 px-2 font-medium text-gray-600 min-w-[80px]">Avg</th>
@@ -9118,7 +9067,7 @@ export default function ResultsPage() {
                         </svg>
                       </div>
                       <p className="text-xs text-gray-400 text-center -mt-2">
-                        Circle size represents co-occurrence frequency. Numbers show times brands mentioned together.
+                        Circle size shows how often brands appear together. Numbers show the total mentions.
                       </p>
                     </div>
                   );
@@ -9133,7 +9082,9 @@ export default function ResultsPage() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
-                    <p className="text-sm text-gray-500">Which sources are cited when each brand is mentioned</p>
+                    <p className="text-sm text-gray-500">
+                      {heatmapShowSentiment ? 'Sentiment of each source toward brand' : 'Sources cited when each brand is mentioned'}
+                    </p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1 border-b border-gray-200">
@@ -9226,20 +9177,33 @@ export default function ResultsPage() {
 
                               const isSearchedBrand = brand === brandSourceHeatmap.searchedBrand;
 
-                              // In sentiment mode, use different colors: green for positive, yellow for neutral, red for negative
+                              // In sentiment mode, use distinct colors for each sentiment level
                               let bgColor: string;
+                              let textColor: string = 'text-gray-700';
                               if (count === 0) {
                                 bgColor = isSearchedBrand ? 'rgba(74, 124, 89, 0.05)' : 'transparent';
                               } else if (heatmapShowSentiment) {
-                                // Sentiment color: green (high) to yellow (mid) to red (low)
-                                if (avgSentiment >= 3.5) {
-                                  bgColor = `rgba(74, 124, 89, ${0.3 + (avgSentiment - 3.5) / 1.5 * 0.5})`; // Green
+                                // Distinct colors for each sentiment level
+                                if (avgSentiment >= 4.5) {
+                                  // Highly Recommended - dark green
+                                  bgColor = 'rgba(34, 139, 34, 0.75)';
+                                  textColor = 'text-white font-medium';
+                                } else if (avgSentiment >= 3.5) {
+                                  // Recommended - light green
+                                  bgColor = 'rgba(134, 239, 172, 0.7)';
+                                  textColor = 'text-gray-800';
                                 } else if (avgSentiment >= 2.5) {
-                                  bgColor = `rgba(234, 179, 8, ${0.3 + (avgSentiment - 2.5) * 0.3})`; // Yellow
+                                  // Neutral - gray
+                                  bgColor = 'rgba(156, 163, 175, 0.4)';
+                                  textColor = 'text-gray-800';
                                 } else if (avgSentiment >= 1.5) {
-                                  bgColor = `rgba(245, 158, 11, ${0.3 + (avgSentiment - 1.5) * 0.3})`; // Orange
+                                  // With Caveats - amber/orange
+                                  bgColor = 'rgba(251, 191, 36, 0.6)';
+                                  textColor = 'text-gray-800';
                                 } else {
-                                  bgColor = `rgba(239, 68, 68, ${0.3 + intensity * 0.4})`; // Red
+                                  // Not Recommended - red
+                                  bgColor = 'rgba(239, 68, 68, 0.6)';
+                                  textColor = 'text-white font-medium';
                                 }
                               } else {
                                 bgColor = isSearchedBrand
@@ -9257,7 +9221,7 @@ export default function ResultsPage() {
                                 >
                                   {count > 0 ? (
                                     heatmapShowSentiment ? (
-                                      <span className={avgSentiment >= 3.5 && intensity > 0.5 ? 'text-white font-medium' : 'text-gray-700'}>
+                                      <span className={textColor}>
                                         {getSentimentLabelFromScore(avgSentiment)}
                                       </span>
                                     ) : (
@@ -9281,17 +9245,29 @@ export default function ResultsPage() {
                   {heatmapShowSentiment ? (
                     <>
                       <div className="flex items-center gap-3">
-                        <span className="text-gray-600">Sentiment Scale:</span>
+                        <span className="text-gray-600">Sentiment:</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span>Not Recommended</span>
-                        <div className="flex">
-                          <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(239, 68, 68, 0.5)' }} />
-                          <div className="w-5 h-3" style={{ backgroundColor: 'rgba(245, 158, 11, 0.4)' }} />
-                          <div className="w-5 h-3" style={{ backgroundColor: 'rgba(234, 179, 8, 0.4)' }} />
-                          <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(74, 124, 89, 0.6)' }} />
+                      <div className="flex items-center gap-3 flex-wrap justify-end">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(239, 68, 68, 0.6)' }} />
+                          <span>Not Recommended</span>
                         </div>
-                        <span>Recommended</span>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(251, 191, 36, 0.6)' }} />
+                          <span>With Caveats</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(156, 163, 175, 0.4)' }} />
+                          <span>Neutral</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(134, 239, 172, 0.7)' }} />
+                          <span>Recommended</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(34, 139, 34, 0.75)' }} />
+                          <span>Highly Recommended</span>
+                        </div>
                       </div>
                     </>
                   ) : (
