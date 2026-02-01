@@ -5902,9 +5902,12 @@ export default function ResultsPage() {
                                 const pct = (percent || 0) * 100;
                                 if (pct < 20) return null;
                                 const RADIAN = Math.PI / 180;
-                                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                                const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                                const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                                const angle = midAngle || 0;
+                                const inner = innerRadius || 0;
+                                const outer = outerRadius || 0;
+                                const radius = inner + (outer - inner) * 0.5;
+                                const x = (cx || 0) + radius * Math.cos(-angle * RADIAN);
+                                const y = (cy || 0) + radius * Math.sin(-angle * RADIAN);
                                 return (
                                   <text
                                     x={x}
