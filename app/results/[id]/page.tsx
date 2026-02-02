@@ -105,6 +105,27 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Other': '#B8C9BE'              // Light gray-green
 };
 
+// Helper to extract summary from potentially JSON-formatted text
+// This handles cases where the backend fallback returns raw JSON as the summary
+const extractSummaryText = (summary: string): string => {
+  if (!summary) return '';
+
+  // Check if the summary looks like JSON (starts with { and contains "summary":)
+  const trimmed = summary.trim();
+  if (trimmed.startsWith('{') && trimmed.includes('"summary"')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed.summary && typeof parsed.summary === 'string') {
+        return parsed.summary;
+      }
+    } catch {
+      // Not valid JSON, return as-is
+    }
+  }
+
+  return summary;
+};
+
 // Categorize a domain into a source type
 const categorizeDomain = (domain: string): string => {
   const d = domain.toLowerCase();
@@ -3285,8 +3306,10 @@ export default function ResultsPage() {
                             <span className={`font-semibold ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
                               {brandData.brand}
                             </span>
-                            {brandData.isSearchedBrand && (
+                            {brandData.isSearchedBrand ? (
                               <span className="ml-2 text-xs bg-[#E8F0E8] text-[#4A7C59] px-2 py-0.5 rounded-full">Your Brand</span>
+                            ) : (
+                              <span className="ml-2 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Competitor</span>
                             )}
                           </div>
                         </div>
@@ -3398,7 +3421,7 @@ export default function ResultsPage() {
           </div>
         ) : aiSummary?.summary ? (
           <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiSummary.summary.replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{extractSummaryText(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-sm text-gray-500 italic">
@@ -4955,7 +4978,7 @@ export default function ResultsPage() {
           </div>
         ) : aiSummary?.summary ? (
           <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiSummary.summary.replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{extractSummaryText(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-sm text-gray-500 italic">
