@@ -8375,90 +8375,207 @@ export default function ResultsPage() {
 
   // Recommendations Tab Content
   const RecommendationsTab = () => {
-    // Calculate quick wins - prompts where brand is missing but competitors appear
+    // Calculate high-impact actions with unified scoring system
     const quickWins = useMemo(() => {
       if (!runStatus) return [];
 
-      const wins: Array<{
-        type: 'prompt_gap' | 'provider_gap' | 'source_gap' | 'sentiment_issue';
+      interface QuickWin {
+        type: 'prompt_gap' | 'provider_gap' | 'source_gap';
+        severity: 'critical' | 'high' | 'medium';
         title: string;
         description: string;
-        impact: 'high' | 'medium' | 'low';
         competitors?: string[];
-        details?: string;
-      }> = [];
+        score: number;
+        metrics: {
+          brandVisibility: number;
+          competitorVisibility: number;
+          responseCount: number;
+        };
+      }
 
-      // Find prompts where brand is not mentioned but competitors are
-      promptBreakdownStats
-        .filter(p => p.visibilityScore < 25)
-        .slice(0, 3)
-        .forEach(prompt => {
-          const competitorsInPrompt = brandBreakdownStats
-            .filter(b => !b.isSearchedBrand && b.promptsWithStats.some(ps => ps.prompt === prompt.prompt && ps.rate > 50))
-            .map(b => b.brand)
-            .slice(0, 3);
+      const allWins: QuickWin[] = [];
 
-          if (competitorsInPrompt.length > 0) {
-            wins.push({
-              type: 'prompt_gap',
-              title: `Missing from "${truncate(prompt.prompt, 40)}"`,
-              description: `Your brand appears in only ${prompt.visibilityScore.toFixed(0)}% of responses`,
-              impact: 'high',
-              competitors: competitorsInPrompt,
-            });
-          }
+      // Calculate global brand average visibility for relative comparisons
+      const brandGlobalAvgRate = brandBreakdownStats.find(b => b.isSearchedBrand)?.visibilityScore || 0;
+
+      // --- PROMPT GAPS ---
+      // Eligibility: total responses >= 5, competitor avg >= 40%, brand visibility < 25%
+      promptBreakdownStats.forEach(prompt => {
+        const totalResponses = prompt.total;
+        const brandVisibility = prompt.visibilityScore;
+
+        // Calculate competitor average visibility for this prompt
+        const competitorStats = brandBreakdownStats
+          .filter(b => !b.isSearchedBrand)
+          .map(b => {
+            const promptStat = b.promptsWithStats.find(ps => ps.prompt === prompt.prompt);
+            return { brand: b.brand, rate: promptStat?.rate || 0 };
+          })
+          .filter(c => c.rate > 0);
+
+        const competitorAvgVisibility = competitorStats.length > 0
+          ? competitorStats.reduce((sum, c) => sum + c.rate, 0) / competitorStats.length
+          : 0;
+
+        const topCompetitors = competitorStats
+          .sort((a, b) => b.rate - a.rate)
+          .slice(0, 3)
+          .map(c => c.brand);
+
+        // Eligibility filters
+        if (totalResponses < 5) return;
+        if (competitorAvgVisibility < 40) return;
+        if (brandVisibility >= 25) return;
+
+        // Severity classification
+        const severity: 'critical' | 'high' | 'medium' =
+          brandVisibility < 10 && competitorAvgVisibility > 60 ? 'critical' : 'high';
+
+        // Scoring components (normalized to 0-1)
+        const visibilityGapScore = (competitorAvgVisibility - brandVisibility) / 100;
+        const competitorStrengthScore = competitorAvgVisibility / 100;
+        const responseVolumeScore = Math.min(1, Math.log(totalResponses + 1) / Math.log(50));
+        const confidenceScore = Math.min(1, totalResponses / 10);
+
+        const quickWinScore = visibilityGapScore + competitorStrengthScore + responseVolumeScore + confidenceScore;
+
+        allWins.push({
+          type: 'prompt_gap',
+          severity,
+          title: `Expand visibility for "${truncate(prompt.prompt, 45)}"`,
+          description: `Your brand appears in ${brandVisibility.toFixed(0)}% of responses vs competitors at ${competitorAvgVisibility.toFixed(0)}%`,
+          competitors: topCompetitors,
+          score: quickWinScore,
+          metrics: {
+            brandVisibility,
+            competitorVisibility: competitorAvgVisibility,
+            responseCount: totalResponses,
+          },
         });
+      });
 
-      // Find providers with low visibility
-      Object.entries(llmBreakdownStats)
-        .filter(([_, stats]) => stats.rate < 0.3 && stats.total >= 3)
-        .slice(0, 2)
-        .forEach(([provider, stats]) => {
-          wins.push({
-            type: 'provider_gap',
-            title: `Low visibility on ${getProviderLabel(provider)}`,
-            description: `Only ${(stats.rate * 100).toFixed(0)}% mention rate across ${stats.total} responses`,
-            impact: stats.rate < 0.15 ? 'high' : 'medium',
-            details: 'Consider optimizing content for this AI model',
-          });
+      // --- PROVIDER GAPS ---
+      // Calculate competitor averages per provider
+      const providerCompetitorRates: Record<string, number[]> = {};
+      globallyFilteredResults.forEach((r: Result) => {
+        if (r.error) return;
+        if (!providerCompetitorRates[r.provider]) {
+          providerCompetitorRates[r.provider] = [];
+        }
+        const competitorMentionCount = r.competitors_mentioned?.length || 0;
+        if (competitorMentionCount > 0) {
+          providerCompetitorRates[r.provider].push(1);
+        } else {
+          providerCompetitorRates[r.provider].push(0);
+        }
+      });
+
+      Object.entries(llmBreakdownStats).forEach(([provider, stats]) => {
+        const brandProviderRate = stats.rate * 100;
+        const responseCount = stats.total;
+
+        // Calculate competitor average rate for this provider
+        const competitorRates = providerCompetitorRates[provider] || [];
+        const competitorProviderAvgRate = competitorRates.length > 0
+          ? (competitorRates.reduce((a, b) => a + b, 0) / competitorRates.length) * 100
+          : 0;
+
+        // Eligibility filters
+        if (responseCount < 3) return;
+        if (competitorProviderAvgRate < brandProviderRate + 15) return;
+
+        // Severity classification
+        const severity: 'critical' | 'high' | 'medium' = brandProviderRate < 15 ? 'high' : 'medium';
+
+        // Scoring components
+        const visibilityGapScore = (competitorProviderAvgRate - brandProviderRate) / 100;
+        const competitorStrengthScore = competitorProviderAvgRate / 100;
+        const responseVolumeScore = Math.min(1, Math.log(responseCount + 1) / Math.log(30));
+        const confidenceScore = Math.min(1, responseCount / 8);
+
+        const quickWinScore = visibilityGapScore + competitorStrengthScore + responseVolumeScore + confidenceScore;
+
+        allWins.push({
+          type: 'provider_gap',
+          severity,
+          title: `Improve visibility on ${getProviderLabel(provider)}`,
+          description: `Your brand appears in ${brandProviderRate.toFixed(0)}% of responses vs competitors at ${competitorProviderAvgRate.toFixed(0)}% across ${responseCount} answers`,
+          score: quickWinScore,
+          metrics: {
+            brandVisibility: brandProviderRate,
+            competitorVisibility: competitorProviderAvgRate,
+            responseCount,
+          },
         });
+      });
 
-      // Find sources citing competitors but not the brand
-      const brandSources = new Set<string>();
-      const competitorSources: Record<string, string[]> = {};
+      // --- SOURCE GAPS ---
+      const sourceData: Record<string, {
+        brandMentions: number;
+        competitors: string[];
+        appearanceCount: number;
+      }> = {};
 
       globallyFilteredResults.forEach((r: Result) => {
         if (!r.sources) return;
         r.sources.forEach(s => {
-          const domain = s.url ? new URL(s.url).hostname.replace('www.', '') : '';
-          if (r.brand_mentioned) {
-            brandSources.add(domain);
-          }
-          if (r.competitors_mentioned) {
-            r.competitors_mentioned.forEach(comp => {
-              if (!competitorSources[domain]) competitorSources[domain] = [];
-              if (!competitorSources[domain].includes(comp)) {
-                competitorSources[domain].push(comp);
-              }
-            });
-          }
+          try {
+            const domain = s.url ? new URL(s.url).hostname.replace('www.', '') : '';
+            if (!domain) return;
+
+            if (!sourceData[domain]) {
+              sourceData[domain] = { brandMentions: 0, competitors: [], appearanceCount: 0 };
+            }
+
+            sourceData[domain].appearanceCount++;
+
+            if (r.brand_mentioned) {
+              sourceData[domain].brandMentions++;
+            }
+            if (r.competitors_mentioned) {
+              r.competitors_mentioned.forEach(comp => {
+                if (!sourceData[domain].competitors.includes(comp)) {
+                  sourceData[domain].competitors.push(comp);
+                }
+              });
+            }
+          } catch {}
         });
       });
 
-      Object.entries(competitorSources)
-        .filter(([domain, comps]) => !brandSources.has(domain) && comps.length >= 2)
-        .slice(0, 2)
-        .forEach(([domain, comps]) => {
-          wins.push({
-            type: 'source_gap',
-            title: `${domain} cites competitors but not you`,
-            description: `This source mentions ${comps.length} of your competitors`,
-            impact: 'medium',
-            competitors: comps.slice(0, 3),
-          });
-        });
+      Object.entries(sourceData).forEach(([domain, data]) => {
+        // Eligibility filters: appears in >= 3 responses, cites >= 2 competitors, never cites brand
+        if (data.appearanceCount < 3) return;
+        if (data.competitors.length < 2) return;
+        if (data.brandMentions > 0) return;
 
-      return wins.slice(0, 5);
+        // Scoring components
+        const authorityScore = Math.min(1, Math.log(data.appearanceCount + 1) / Math.log(20));
+        const competitorStrengthScore = Math.min(1, data.competitors.length / 5);
+        const confidenceScore = Math.min(1, data.appearanceCount / 6);
+        const visibilityGapScore = 0.5; // Fixed since brand has 0% on this source
+
+        const quickWinScore = visibilityGapScore + competitorStrengthScore + authorityScore + confidenceScore;
+
+        allWins.push({
+          type: 'source_gap',
+          severity: data.competitors.length >= 4 ? 'high' : 'medium',
+          title: `Target coverage from ${domain}`,
+          description: `This source frequently cites ${data.competitors.length} competitors but has never mentioned your brand`,
+          competitors: data.competitors.slice(0, 4),
+          score: quickWinScore,
+          metrics: {
+            brandVisibility: 0,
+            competitorVisibility: (data.competitors.length / 5) * 100,
+            responseCount: data.appearanceCount,
+          },
+        });
+      });
+
+      // Sort all wins by score and return top 5
+      return allWins
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
     }, [runStatus, promptBreakdownStats, brandBreakdownStats, llmBreakdownStats, globallyFilteredResults]);
 
     // Calculate ChatGPT ad opportunities - prompts with low visibility but high competitor presence
@@ -8622,52 +8739,76 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
-        {/* Quick Wins Section */}
+        {/* Recommended High-Impact Actions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-[#E8F5E9] rounded-lg flex items-center justify-center">
               <Target className="w-5 h-5 text-[#4A7C59]" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Quick Wins</h2>
-              <p className="text-sm text-gray-500">Top priority actions to improve visibility</p>
+              <h2 className="text-lg font-semibold text-gray-900">Recommended High-Impact Actions</h2>
+              <p className="text-sm text-gray-500">Prioritized opportunities to improve your AI visibility</p>
             </div>
           </div>
 
           {quickWins.length > 0 ? (
             <div className="space-y-3">
-              {quickWins.map((win, idx) => (
-                <div key={idx} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex-shrink-0 w-8 h-8 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                    {idx + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-gray-900">{win.title}</h3>
-                      <span className={`text-xs px-2 py-0.5 rounded-full border ${getImpactBadge(win.impact)}`}>
-                        {win.impact} impact
-                      </span>
+              {quickWins.map((win, idx) => {
+                const severityColors = {
+                  critical: 'bg-red-100 text-red-700 border-red-200',
+                  high: 'bg-orange-100 text-orange-700 border-orange-200',
+                  medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                };
+                const typeLabels = {
+                  prompt_gap: 'Prompt Gap',
+                  provider_gap: 'Provider Gap',
+                  source_gap: 'Source Gap',
+                };
+                const typeColors = {
+                  prompt_gap: 'bg-blue-50 text-blue-600',
+                  provider_gap: 'bg-purple-50 text-purple-600',
+                  source_gap: 'bg-teal-50 text-teal-600',
+                };
+
+                return (
+                  <div key={idx} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="flex-shrink-0 w-8 h-8 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                      {idx + 1}
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{win.description}</p>
-                    {win.competitors && win.competitors.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">Competitors mentioned:</span>
-                        <div className="flex flex-wrap gap-1">
-                          {win.competitors.map(comp => (
-                            <span key={comp} className="text-xs px-2 py-0.5 bg-gray-200 text-gray-700 rounded">
-                              {comp}
-                            </span>
-                          ))}
-                        </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center flex-wrap gap-2 mb-1">
+                        <h3 className="font-medium text-gray-900">{win.title}</h3>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${severityColors[win.severity]}`}>
+                          {win.severity === 'critical' ? 'Critical' : win.severity === 'high' ? 'High Priority' : 'Medium Priority'}
+                        </span>
+                        <span className={`text-xs px-2 py-0.5 rounded ${typeColors[win.type]}`}>
+                          {typeLabels[win.type]}
+                        </span>
                       </div>
-                    )}
+                      <p className="text-sm text-gray-600 mb-2">{win.description}</p>
+                      <div className="flex items-center flex-wrap gap-4 text-xs text-gray-500">
+                        <span>Based on {win.metrics.responseCount} responses</span>
+                        {win.competitors && win.competitors.length > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <span>Competitors:</span>
+                            <div className="flex flex-wrap gap-1">
+                              {win.competitors.map(comp => (
+                                <span key={comp} className="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded">
+                                  {comp}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-gray-500 text-center py-8">
-              Great job! No urgent visibility gaps identified.
+              Great job! No significant visibility gaps identified based on current data.
             </p>
           )}
         </div>
@@ -8856,38 +8997,6 @@ export default function ResultsPage() {
             </div>
           </div>
         )}
-
-        {/* Agency Dashboard Teaser */}
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-sm p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Agency Dashboard</h2>
-                <p className="text-sm text-gray-300">Manage multiple clients from one view</p>
-              </div>
-            </div>
-            <button className="px-4 py-2 bg-white text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors">
-              Contact Sales
-            </button>
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-4">
-            <div className="bg-white/10 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold">∞</p>
-              <p className="text-xs text-gray-300">Unlimited Clients</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold">📊</p>
-              <p className="text-xs text-gray-300">Portfolio Reports</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-3 text-center">
-              <p className="text-2xl font-bold">🔄</p>
-              <p className="text-xs text-gray-300">Automated Tracking</p>
-            </div>
-          </div>
-        </div>
 
         {/* Export & Reporting */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
