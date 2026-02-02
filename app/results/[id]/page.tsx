@@ -3165,19 +3165,16 @@ export default function ResultsPage() {
 
         {/* Provider Scores */}
         {providerVisibilityScores.length > 0 && (() => {
-          // Separate AI Overviews from LLM providers
-          const aiOverviews = providerVisibilityScores.find(p => p.provider === 'ai_overviews');
-          const llmProviders = providerVisibilityScores.filter(p => p.provider !== 'ai_overviews').slice(0, 3);
+          const providers = providerVisibilityScores.slice(0, 4);
 
-          const bgColors = ['bg-[#5B7B5D]', 'bg-[#D9CBBA]', 'bg-[#C8C4A8]'];
-          const textColors = ['text-white', 'text-gray-700', 'text-gray-700'];
-          const labelColors = ['text-white/70', 'text-gray-500', 'text-gray-500'];
+          const bgColors = ['bg-[#5B7B5D]', 'bg-[#D9CBBA]', 'bg-[#C8C4A8]', 'bg-[#B8C4B8]'];
+          const textColors = ['text-white', 'text-gray-700', 'text-gray-700', 'text-gray-700'];
+          const labelColors = ['text-white/70', 'text-gray-500', 'text-gray-500', 'text-gray-500'];
 
           return (
-            <div className="space-y-3 mb-5">
-              {/* LLM Provider Scores */}
-              <div className="grid grid-cols-3 gap-3">
-                {llmProviders.map((prov, idx) => (
+            <div className="mb-5">
+              <div className="grid grid-cols-2 gap-3">
+                {providers.map((prov, idx) => (
                   <div
                     key={prov.provider}
                     className={`${bgColors[idx]} rounded-xl p-3 text-center`}
@@ -3188,22 +3185,12 @@ export default function ResultsPage() {
                        prov.provider === 'anthropic' ? 'Claude' :
                        prov.provider === 'gemini' ? 'Gemini' :
                        prov.provider === 'perplexity' ? 'Perplexity' :
+                       prov.provider === 'ai_overviews' ? 'AI Overviews' :
                        prov.provider}
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* AI Overviews Score - separate row */}
-              {aiOverviews && (
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-2.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Search className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm text-blue-900">AI Overviews</span>
-                  </div>
-                  <div className="text-lg font-bold text-blue-700">{aiOverviews.score}%</div>
-                </div>
-              )}
             </div>
           );
         })()}
