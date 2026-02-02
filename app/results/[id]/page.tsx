@@ -57,12 +57,12 @@ type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources
 
 const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Visibility', icon: <LayoutGrid className="w-4 h-4" /> },
-  { id: 'reference', label: 'Reference', icon: <FileText className="w-4 h-4" /> },
   { id: 'competitive', label: 'Competitive Landscape', icon: <TrendingUp className="w-4 h-4" /> },
   { id: 'sentiment', label: 'Sentiment & Framing', icon: <MessageSquare className="w-4 h-4" /> },
   { id: 'sources', label: 'Sources', icon: <Globe className="w-4 h-4" /> },
   { id: 'recommendations', label: 'Recommendations', icon: <Lightbulb className="w-4 h-4" /> },
   { id: 'reports', label: 'Automated Reports', icon: <FileBarChart className="w-4 h-4" /> },
+  { id: 'reference', label: 'Reference', icon: <FileText className="w-4 h-4" /> },
 ];
 
 // Category colors for source types
@@ -5988,31 +5988,6 @@ export default function ResultsPage() {
     const [brandCitationsProviderFilter, setBrandCitationsProviderFilter] = useState<string>('all');
     const [expandedBrandCitations, setExpandedBrandCitations] = useState<Set<string>>(new Set());
 
-    // State for Source Types category filter
-    const [sourceTypeCategoryFilter, setSourceTypeCategoryFilter] = useState<string>('all');
-
-    // Calculate sites within selected category for filtered donut chart view
-    const categoryFilteredSiteData = useMemo(() => {
-      if (sourceTypeCategoryFilter === 'all') return null;
-
-      // Get sites that match the selected category
-      const sitesInCategory = topCitedSources
-        .filter(source => categorizeDomain(source.domain) === sourceTypeCategoryFilter)
-        .map(source => ({
-          name: source.domain,
-          value: source.count,
-          percentage: 0, // Will calculate after
-        }));
-
-      // Calculate percentages
-      const total = sitesInCategory.reduce((sum, site) => sum + site.value, 0);
-      sitesInCategory.forEach(site => {
-        site.percentage = total > 0 ? (site.value / total) * 100 : 0;
-      });
-
-      return sitesInCategory.sort((a, b) => b.value - a.value);
-    }, [sourceTypeCategoryFilter, topCitedSources]);
-
     // Calculate brand website citations with URL details
     const brandWebsiteCitations = useMemo(() => {
       const brandDomain = runStatus?.brand?.toLowerCase().replace(/\s+/g, '') || '';
@@ -7006,8 +6981,7 @@ export default function ResultsPage() {
                   {sourceCategoryData.length > 0 ? (
                     <div className="flex flex-col items-center flex-1 pt-2">
                       <div className="h-[320px] w-[320px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
+                        <PieChart width={320} height={320}>
                             <Pie
                               data={sourceCategoryData}
                               cx="50%"
@@ -7076,7 +7050,6 @@ export default function ResultsPage() {
                               }}
                             />
                           </PieChart>
-                        </ResponsiveContainer>
                       </div>
                       <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-4 text-xs px-2 max-h-[100px] overflow-y-auto">
                         {sourceCategoryData.map((item) => (
@@ -8209,27 +8182,9 @@ export default function ResultsPage() {
 
         {/* Individual Results with Sentiment */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
-              <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleExportSentimentCSV}
-                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-              >
-                <Download className="w-4 h-4" />
-                Export CSV
-              </button>
-              <button
-                onClick={handleCopyLink}
-                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-              >
-                <Link2 className="w-4 h-4" />
-                {copied ? 'Copied!' : 'Share'}
-              </button>
-            </div>
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
+            <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
           </div>
 
           {/* Sentiment Legend */}
@@ -8242,22 +8197,21 @@ export default function ResultsPage() {
             <span className="inline-flex items-center px-2 py-0.5 rounded border bg-red-100 text-red-800 border-red-200">Not Recommended</span>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-200 rounded-lg">
             <table className="w-full">
-              <thead>
+              <thead className="sticky top-0 bg-white z-10">
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Prompt</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Position</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">{runStatus?.brand || 'Brand'} Sentiment</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor Sentiments</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Response</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">Prompt</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">Provider</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">Position</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">{runStatus?.brand || 'Brand'} Sentiment</th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">Competitor Sentiments</th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 bg-white">Response</th>
                 </tr>
               </thead>
               <tbody>
                 {globallyFilteredResults
                   .filter((r: Result) => !r.error && r.brand_sentiment)
-                  .slice(0, 20)
                   .map((result: Result) => (
                     <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4">
@@ -8381,11 +8335,27 @@ export default function ResultsPage() {
             </table>
           </div>
 
-          {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length > 20 && (
-            <p className="text-sm text-gray-500 mt-4 text-center">
-              Showing 20 of {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-sm text-gray-500">
+              {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results total
             </p>
-          )}
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportSentimentCSV}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Link2 className="w-4 h-4" />
+                {copied ? 'Copied!' : 'Share'}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
