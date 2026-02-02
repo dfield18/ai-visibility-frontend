@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { UserButton } from '@clerk/nextjs';
 import {
   CheckCircle2,
   XCircle,
@@ -113,23 +114,32 @@ export default function RunPage() {
       {/* Header */}
       <header className="pt-6 pb-4">
         <div className="max-w-2xl mx-auto px-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/')}
-              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-500" />
-            </button>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">
-                Analyzing{' '}
-                <span className="text-[#4A7C59]">{runStatus.brand}</span>
-              </h1>
-              <p className="text-sm text-gray-500">
-                Running visibility analysis across AI models
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push('/')}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-500" />
+              </button>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">
+                  Analyzing{' '}
+                  <span className="text-[#4A7C59]">{runStatus.brand}</span>
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Running visibility analysis across AI models
+                </p>
+              </div>
             </div>
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "w-9 h-9",
+                },
+              }}
+            />
           </div>
         </div>
       </header>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { UserButton } from '@clerk/nextjs';
 import {
   ArrowLeft,
   Plus,
@@ -208,24 +209,33 @@ export default function ConfigurePage() {
       {/* Header */}
       <header className="pt-6 pb-4">
         <div className="max-w-3xl mx-auto px-6">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/')}
-              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-500" />
-            </button>
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">
-                Configuring analysis for{' '}
-                <span className="text-[#4A7C59]">{brand}</span>
-                {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
-              </h1>
-              <p className="text-sm text-gray-500">
-                Customize prompts, {isCategory ? 'brands' : 'competitors'}, and AI models
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push('/')}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-500" />
+              </button>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900">
+                  Configuring analysis for{' '}
+                  <span className="text-[#4A7C59]">{brand}</span>
+                  {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Customize prompts, {isCategory ? 'brands' : 'competitors'}, and AI models
+                </p>
+              </div>
             </div>
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "w-9 h-9",
+                },
+              }}
+            />
           </div>
         </div>
       </header>

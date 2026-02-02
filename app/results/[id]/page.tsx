@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { UserButton } from '@clerk/nextjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, ZAxis, BarChart, Bar, ReferenceArea, ReferenceLine, ComposedChart, Line, ErrorBar, Customized } from 'recharts';
@@ -9078,13 +9079,22 @@ export default function ResultsPage() {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => router.push('/')}
-                className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-xl hover:bg-[#3d6649] transition-colors flex items-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                New Analysis
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.push('/')}
+                  className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-xl hover:bg-[#3d6649] transition-colors flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  New Analysis
+                </button>
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-9 h-9",
+                    },
+                  }}
+                />
+              </div>
             </div>
           </div>
         </header>
