@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Eye, Sparkles, Zap, Loader2, X, Building2 } from "lucide-react";
+import { Search, Eye, Sparkles, Zap, Loader2, X, Building2, PenLine } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 
 interface BrandSuggestion {
@@ -12,6 +12,8 @@ interface BrandSuggestion {
 
 export default function Home() {
   const [brandInput, setBrandInput] = useState("");
+  const [industryInput, setIndustryInput] = useState("");
+  const [showIndustryField, setShowIndustryField] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<BrandSuggestion[] | null>(null);
@@ -30,7 +32,10 @@ export default function Home() {
       const response = await fetch("/api/validate-brand", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brand: brandInput.trim() }),
+        body: JSON.stringify({
+          brand: brandInput.trim(),
+          ...(industryInput.trim() && { industry: industryInput.trim() })
+        }),
       });
 
       const data = await response.json();
@@ -157,6 +162,43 @@ export default function Home() {
                   )}
                 </button>
               </div>
+
+              {/* Industry context toggle */}
+              <div className="w-3/4 mt-2">
+                {!showIndustryField ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowIndustryField(true)}
+                    className="text-sm text-gray-500 hover:text-[#4A7C59] transition-colors flex items-center gap-1"
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    Add industry context (helps find local/niche businesses)
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-2">
+                    <Building2 className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="e.g., coliving, restaurant, software, law firm..."
+                      value={industryInput}
+                      onChange={(e) => setIndustryInput(e.target.value)}
+                      disabled={isValidating}
+                      className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent disabled:opacity-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowIndustryField(false);
+                        setIndustryInput("");
+                      }}
+                      className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {error && (
                 <p className="mt-2 text-sm text-red-600">{error}</p>
               )}
@@ -259,23 +301,40 @@ export default function Home() {
 
             {/* Suggestions List */}
             <div className="space-y-3">
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSelectBrand(suggestion.name)}
-                  className="w-full p-4 text-left bg-[#FAFAF8] rounded-xl hover:bg-[#E8F0E8] transition-colors group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center flex-shrink-0 group-hover:bg-[#E8F0E8]">
-                      <Building2 className="w-5 h-5 text-[#4A7C59]" />
+              {suggestions.map((suggestion, index) => {
+                const isUseAsEntered = suggestion.description.toLowerCase().includes('use as entered');
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleSelectBrand(suggestion.name)}
+                    className={`w-full p-4 text-left rounded-xl transition-colors group ${
+                      isUseAsEntered
+                        ? 'bg-white border-2 border-dashed border-gray-300 hover:border-[#4A7C59] hover:bg-[#FAFAF8]'
+                        : 'bg-[#FAFAF8] hover:bg-[#E8F0E8]'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                        isUseAsEntered
+                          ? 'bg-gray-100 group-hover:bg-[#E8F0E8]'
+                          : 'bg-white group-hover:bg-[#E8F0E8]'
+                      }`}>
+                        {isUseAsEntered ? (
+                          <PenLine className="w-5 h-5 text-gray-500 group-hover:text-[#4A7C59]" />
+                        ) : (
+                          <Building2 className="w-5 h-5 text-[#4A7C59]" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{suggestion.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {isUseAsEntered ? 'Different business - use my exact input' : suggestion.description}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{suggestion.name}</p>
-                      <p className="text-sm text-gray-500">{suggestion.description}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Footer */}
