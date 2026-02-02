@@ -7253,12 +7253,12 @@ export default function ResultsPage() {
                 <p className="text-sm text-gray-500">Detailed view of how often each domain is cited across LLM responses</p>
               </div>
             </div>
-            <div className="overflow-x-auto">
+            <div className="max-h-[500px] overflow-auto">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white z-10">
                   <tr className="border-b border-gray-200">
                     <th
-                      className="text-left py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className="text-left py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
                       onClick={() => handleDomainSort('domain')}
                     >
                       <div className="flex items-center gap-1">
@@ -7269,7 +7269,7 @@ export default function ResultsPage() {
                       </div>
                     </th>
                     <th
-                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
                       onClick={() => handleDomainSort('usedPercent')}
                     >
                       <div className="flex items-center justify-center gap-1">
@@ -7283,7 +7283,7 @@ export default function ResultsPage() {
                       </div>
                     </th>
                     <th
-                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
                       onClick={() => handleDomainSort('avgCitation')}
                     >
                       <div className="flex items-center justify-center gap-1">
@@ -7297,7 +7297,7 @@ export default function ResultsPage() {
                       </div>
                     </th>
                     <th
-                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
                       onClick={() => handleDomainSort('category')}
                     >
                       <div className="flex items-center justify-center gap-1">
@@ -7308,7 +7308,7 @@ export default function ResultsPage() {
                       </div>
                     </th>
                     <th
-                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none"
+                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
                       onClick={() => handleDomainSort('avgSentiment')}
                     >
                       <div className="flex items-center justify-center gap-1">
@@ -7318,13 +7318,10 @@ export default function ResultsPage() {
                         )}
                       </div>
                     </th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-600">Models</th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-600">Brands</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-600 bg-white">Models</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-600 bg-white">Brands</th>
                   </tr>
                 </thead>
-              </table>
-              <div className="max-h-[400px] overflow-y-auto">
-                <table className="w-full text-sm">
                 <tbody>
                   {sortedDomainTableData.map((row, index) => (
                     <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
@@ -7407,29 +7404,28 @@ export default function ResultsPage() {
                     </tr>
                   ))}
                 </tbody>
-                </table>
-              </div>
-              {sortedDomainTableData.length > 10 && (
-                <p className="text-sm text-gray-500 text-center mt-3">
-                  Scroll to see all {sortedDomainTableData.length} domains
-                </p>
-              )}
-              <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
-                <button
-                  onClick={handleExportDomainBreakdownCSV}
-                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-                >
-                  <Download className="w-4 h-4" />
-                  Export CSV
-                </button>
-                <button
-                  onClick={handleCopyLink}
-                  className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-                >
-                  <Link2 className="w-4 h-4" />
-                  {copied ? 'Copied!' : 'Share'}
-                </button>
-              </div>
+              </table>
+            </div>
+            {sortedDomainTableData.length > 10 && (
+              <p className="text-sm text-gray-500 text-center mt-3">
+                Scroll to see all {sortedDomainTableData.length} domains
+              </p>
+            )}
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+              <button
+                onClick={handleExportDomainBreakdownCSV}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Download className="w-4 h-4" />
+                Export CSV
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+              >
+                <Link2 className="w-4 h-4" />
+                {copied ? 'Copied!' : 'Share'}
+              </button>
             </div>
           </div>
         )}
