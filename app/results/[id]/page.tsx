@@ -9269,14 +9269,21 @@ export default function ResultsPage() {
     const [editingReport, setEditingReport] = useState<ScheduledReport | null>(null);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+    // Extract unique values from results
+    const uniquePrompts = runStatus?.results ? [...new Set(runStatus.results.map(r => r.prompt))] : [];
+    const uniqueProviders = runStatus?.results ? [...new Set(runStatus.results.map(r => r.provider))] : [];
+    const allCompetitorsMentioned = runStatus?.results
+      ? [...new Set(runStatus.results.flatMap(r => r.competitors_mentioned || []))]
+      : [];
+
     // Form state
     const [formData, setFormData] = useState<Partial<ScheduledReportCreate>>({
       name: '',
       brand: runStatus?.brand || '',
       search_type: runStatus?.search_type || 'brand',
-      prompts: runStatus?.results?.[0] ? [...new Set(runStatus.results.map(r => r.prompt))] : [],
-      competitors: runStatus?.results?.[0]?.competitors_mentioned || [],
-      providers: runStatus?.results?.[0] ? [...new Set(runStatus.results.map(r => r.provider))] : [],
+      prompts: uniquePrompts.length > 0 ? uniquePrompts : [''],
+      competitors: allCompetitorsMentioned.length > 0 ? allCompetitorsMentioned : [''],
+      providers: uniqueProviders.length > 0 ? uniqueProviders : ['openai'],
       temperatures: [0.7],
       repeats: 1,
       frequency: 'weekly',
@@ -9323,13 +9330,34 @@ export default function ResultsPage() {
         const token = await getToken();
         if (!token) return;
 
+        // Filter out empty strings and ensure arrays have at least one item
+        const prompts = (formData.prompts || []).filter(p => p.trim());
+        const competitors = (formData.competitors || []).filter(c => c.trim());
+        const providers = (formData.providers || []).filter(p => p.trim());
+
+        if (prompts.length === 0) {
+          setError('At least one prompt is required');
+          setActionLoading(null);
+          return;
+        }
+        if (competitors.length === 0) {
+          setError('At least one competitor is required');
+          setActionLoading(null);
+          return;
+        }
+        if (providers.length === 0) {
+          setError('At least one provider is required');
+          setActionLoading(null);
+          return;
+        }
+
         const data: ScheduledReportCreate = {
           name: formData.name || `${runStatus?.brand} Report`,
           brand: formData.brand || runStatus?.brand || '',
           search_type: formData.search_type || 'brand',
-          prompts: formData.prompts || [],
-          competitors: formData.competitors || [],
-          providers: formData.providers || [],
+          prompts,
+          competitors,
+          providers,
           temperatures: formData.temperatures || [0.7],
           repeats: formData.repeats || 1,
           frequency: formData.frequency || 'weekly',
@@ -9419,9 +9447,9 @@ export default function ResultsPage() {
         name: '',
         brand: runStatus?.brand || '',
         search_type: runStatus?.search_type || 'brand',
-        prompts: runStatus?.results?.[0] ? [...new Set(runStatus.results.map(r => r.prompt))] : [],
-        competitors: runStatus?.results?.[0]?.competitors_mentioned || [],
-        providers: runStatus?.results?.[0] ? [...new Set(runStatus.results.map(r => r.provider))] : [],
+        prompts: uniquePrompts.length > 0 ? uniquePrompts : [''],
+        competitors: allCompetitorsMentioned.length > 0 ? allCompetitorsMentioned : [''],
+        providers: uniqueProviders.length > 0 ? uniqueProviders : ['openai'],
         temperatures: [0.7],
         repeats: 1,
         frequency: 'weekly',
