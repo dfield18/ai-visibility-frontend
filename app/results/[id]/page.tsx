@@ -3206,8 +3206,15 @@ export default function ResultsPage() {
 
   const OverviewTab = () => {
     const totalCards = allBrandsAnalysisData.length;
-    const canGoLeft = brandCarouselIndex > 0;
-    const canGoRight = brandCarouselIndex < totalCards - 1;
+    const canNavigate = totalCards > 1;
+
+    const goToPrevious = () => {
+      setBrandCarouselIndex(prev => prev === 0 ? totalCards - 1 : prev - 1);
+    };
+
+    const goToNext = () => {
+      setBrandCarouselIndex(prev => prev === totalCards - 1 ? 0 : prev + 1);
+    };
 
     const getProviderLabel = (provider: string) => {
       switch (provider) {
@@ -3236,14 +3243,15 @@ export default function ResultsPage() {
           {/* Carousel with Side Navigation */}
           <div className="relative flex items-center justify-center">
             {/* Left Arrow */}
-            <button
-              onClick={() => setBrandCarouselIndex(prev => Math.max(0, prev - 1))}
-              disabled={!canGoLeft}
-              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full transition-colors ${canGoLeft ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
-              style={{ left: 'calc(50% - 230px)' }}
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
+            {canNavigate && (
+              <button
+                onClick={goToPrevious}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full transition-colors hover:bg-gray-100 text-gray-600"
+                style={{ left: 'calc(50% - 230px)' }}
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+            )}
 
             {/* Carousel Cards */}
             <div className="overflow-hidden w-full max-w-md">
@@ -3329,14 +3337,15 @@ export default function ResultsPage() {
             </div>
 
             {/* Right Arrow */}
-            <button
-              onClick={() => setBrandCarouselIndex(prev => Math.min(totalCards - 1, prev + 1))}
-              disabled={!canGoRight}
-              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full transition-colors ${canGoRight ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
-              style={{ right: 'calc(50% - 230px)' }}
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
+            {canNavigate && (
+              <button
+                onClick={goToNext}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full transition-colors hover:bg-gray-100 text-gray-600"
+                style={{ right: 'calc(50% - 230px)' }}
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            )}
           </div>
 
           {/* Carousel Dots */}
