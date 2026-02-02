@@ -3163,31 +3163,48 @@ export default function ResultsPage() {
         </div>
 
         {/* Provider Scores */}
-        {providerVisibilityScores.length > 0 && (
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            {providerVisibilityScores.slice(0, 3).map((prov, idx) => {
-              // Color gradient: darkest for highest score, lighter for lower
-              const bgColors = ['bg-[#4A7C59]', 'bg-[#8BA888]', 'bg-[#B8C4A8]'];
-              const textColors = ['text-white', 'text-gray-800', 'text-gray-800'];
-              return (
-                <div
-                  key={prov.provider}
-                  className={`${bgColors[idx]} rounded-xl p-4 text-center`}
-                >
-                  <div className={`text-3xl font-bold ${textColors[idx]}`}>{prov.score}</div>
-                  <div className={`text-sm ${textColors[idx]} opacity-90`}>
-                    {prov.provider === 'openai' ? 'ChatGPT' :
-                     prov.provider === 'anthropic' ? 'Claude' :
-                     prov.provider === 'gemini' ? 'Gemini' :
-                     prov.provider === 'perplexity' ? 'Perplexity' :
-                     prov.provider === 'ai_overviews' ? 'AI Overviews' :
-                     prov.provider}
+        {providerVisibilityScores.length > 0 && (() => {
+          // Separate AI Overviews from LLM providers
+          const aiOverviews = providerVisibilityScores.find(p => p.provider === 'ai_overviews');
+          const llmProviders = providerVisibilityScores.filter(p => p.provider !== 'ai_overviews').slice(0, 3);
+
+          const bgColors = ['bg-[#4A7C59]', 'bg-[#8BA888]', 'bg-[#B8C4A8]'];
+          const textColors = ['text-white', 'text-gray-800', 'text-gray-800'];
+
+          return (
+            <div className="space-y-3 mb-6">
+              {/* LLM Provider Scores */}
+              <div className="grid grid-cols-3 gap-3">
+                {llmProviders.map((prov, idx) => (
+                  <div
+                    key={prov.provider}
+                    className={`${bgColors[idx]} rounded-xl p-4 text-center`}
+                  >
+                    <div className={`text-3xl font-bold ${textColors[idx]}`}>{prov.score}</div>
+                    <div className={`text-sm ${textColors[idx]} opacity-90`}>
+                      {prov.provider === 'openai' ? 'ChatGPT' :
+                       prov.provider === 'anthropic' ? 'Claude' :
+                       prov.provider === 'gemini' ? 'Gemini' :
+                       prov.provider === 'perplexity' ? 'Perplexity' :
+                       prov.provider}
+                    </div>
                   </div>
+                ))}
+              </div>
+
+              {/* AI Overviews Score - separate row */}
+              {aiOverviews && (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Search className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">Google AI Overviews</span>
+                  </div>
+                  <div className="text-2xl font-bold text-blue-700">{aiOverviews.score}%</div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
 
         {/* Insight */}
         {competitorComparisonRatio !== null && competitorComparisonRatio !== Infinity && (
