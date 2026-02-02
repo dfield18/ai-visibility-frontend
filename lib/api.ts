@@ -9,6 +9,12 @@ import {
   CategorizeRequest,
   CategorizeResponse,
   ApiError,
+  ScheduledReport,
+  ScheduledReportCreate,
+  ScheduledReportUpdate,
+  ScheduledReportListResponse,
+  ToggleResponse,
+  RunNowResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -82,6 +88,71 @@ class ApiClient {
     return this.request<CategorizeResponse>('/api/v1/categorize', {
       method: 'POST',
       body: JSON.stringify(body),
+    });
+  }
+
+  // Scheduled Reports API
+
+  async listScheduledReports(token: string): Promise<ScheduledReportListResponse> {
+    return this.request<ScheduledReportListResponse>('/api/v1/scheduled-reports', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  async createScheduledReport(data: ScheduledReportCreate, token: string): Promise<ScheduledReport> {
+    return this.request<ScheduledReport>('/api/v1/scheduled-reports', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getScheduledReport(reportId: string, token: string): Promise<ScheduledReport> {
+    return this.request<ScheduledReport>(`/api/v1/scheduled-reports/${reportId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  async updateScheduledReport(reportId: string, data: ScheduledReportUpdate, token: string): Promise<ScheduledReport> {
+    return this.request<ScheduledReport>(`/api/v1/scheduled-reports/${reportId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteScheduledReport(reportId: string, token: string): Promise<void> {
+    await this.request<void>(`/api/v1/scheduled-reports/${reportId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  async toggleScheduledReport(reportId: string, token: string): Promise<ToggleResponse> {
+    return this.request<ToggleResponse>(`/api/v1/scheduled-reports/${reportId}/toggle`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  async runScheduledReportNow(reportId: string, token: string): Promise<RunNowResponse> {
+    return this.request<RunNowResponse>(`/api/v1/scheduled-reports/${reportId}/run-now`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
   }
 }

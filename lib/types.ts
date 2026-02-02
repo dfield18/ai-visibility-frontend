@@ -143,3 +143,72 @@ export interface CategorizeRequest {
 export interface CategorizeResponse {
   categories: Record<string, string>;
 }
+
+export interface ScheduledReport {
+  id: string;
+  user_id: string;
+  name: string;
+  brand: string;
+  search_type: SearchType;
+  prompts: string[];
+  competitors: string[];
+  providers: string[];
+  temperatures: number[];
+  repeats: number;
+  frequency: 'daily' | 'weekly';
+  day_of_week: number | null;
+  hour: number;
+  timezone: string;
+  is_active: boolean;
+  last_run_at: string | null;
+  next_run_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduledReportCreate {
+  name: string;
+  brand: string;
+  search_type?: SearchType;
+  prompts: string[];
+  competitors: string[];
+  providers: string[];
+  temperatures: number[];
+  repeats?: number;
+  frequency: 'daily' | 'weekly';
+  day_of_week?: number | null;
+  hour?: number;
+  timezone?: string;
+}
+
+export interface ScheduledReportUpdate {
+  name?: string;
+  brand?: string;
+  search_type?: SearchType;
+  prompts?: string[];
+  competitors?: string[];
+  providers?: string[];
+  temperatures?: number[];
+  repeats?: number;
+  frequency?: 'daily' | 'weekly';
+  day_of_week?: number | null;
+  hour?: number;
+  timezone?: string;
+}
+
+export interface ScheduledReportListResponse {
+  reports: ScheduledReport[];
+  total: number;
+}
+
+export interface ToggleResponse {
+  id: string;
+  is_active: boolean;
+  next_run_at: string | null;
+}
+
+export interface RunNowResponse {
+  id: string;
+  run_id: string;
+  message: string;
+}
