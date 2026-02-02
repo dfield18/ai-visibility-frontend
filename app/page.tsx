@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Search, Eye, Sparkles, Zap, Loader2, X, Building2, PenLine } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 
@@ -101,9 +102,23 @@ export default function Home() {
             <a href="#pricing" className="text-gray-600 hover:text-gray-900 text-sm">
               Pricing
             </a>
-            <button className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-              Sign In
-            </button>
+            <SignedOut>
+              <a
+                href="/sign-in"
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Sign In
+              </a>
+            </SignedOut>
+            <SignedIn>
+              <UserButton
+                appearance={{
+                  elements: {
+                    avatarBox: "w-9 h-9",
+                  },
+                }}
+              />
+            </SignedIn>
           </div>
         </nav>
       </header>
