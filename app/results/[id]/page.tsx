@@ -3143,24 +3143,25 @@ export default function ResultsPage() {
   const OverviewTab = () => (
     <div className="space-y-6">
       {/* Brand Analysis Card */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white rounded-2xl shadow-lg px-6 py-8 max-w-md">
+        {/* Card Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-gray-600" />
+            <div className="w-9 h-9 rounded-lg bg-[#F5F5F0] flex items-center justify-center">
+              <BarChart3 className="w-4 h-4 text-gray-400" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">Brand Analysis</h2>
+            <span className="font-semibold text-gray-700">Brand Analysis</span>
           </div>
-          <span className="text-sm text-[#4A7C59] font-medium">Live</span>
+          <span className="text-sm text-gray-400">Live</span>
         </div>
 
-        {/* Main Visibility Score */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="w-32 h-32 rounded-full bg-[#E8F5E9] flex items-center justify-center mb-3">
-            <span className="text-5xl font-bold text-[#4A7C59]">{Math.round(brandMentionRate * 100)}</span>
+        {/* Visibility Score Circle */}
+        <div className="flex justify-center mb-5">
+          <div className="w-28 h-28 rounded-full bg-[#E8F0E8] flex items-center justify-center">
+            <span className="text-4xl font-bold text-[#4A7C59]">{Math.round(brandMentionRate * 100)}</span>
           </div>
-          <span className="text-base text-[#4A7C59] font-medium">Visibility Score</span>
         </div>
+        <p className="text-center text-gray-400 mb-6">Visibility Score</p>
 
         {/* Provider Scores */}
         {providerVisibilityScores.length > 0 && (() => {
@@ -3168,20 +3169,21 @@ export default function ResultsPage() {
           const aiOverviews = providerVisibilityScores.find(p => p.provider === 'ai_overviews');
           const llmProviders = providerVisibilityScores.filter(p => p.provider !== 'ai_overviews').slice(0, 3);
 
-          const bgColors = ['bg-[#4A7C59]', 'bg-[#8BA888]', 'bg-[#B8C4A8]'];
-          const textColors = ['text-white', 'text-gray-800', 'text-gray-800'];
+          const bgColors = ['bg-[#5B7B5D]', 'bg-[#D9CBBA]', 'bg-[#C8C4A8]'];
+          const textColors = ['text-white', 'text-gray-700', 'text-gray-700'];
+          const labelColors = ['text-white/70', 'text-gray-500', 'text-gray-500'];
 
           return (
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3 mb-5">
               {/* LLM Provider Scores */}
               <div className="grid grid-cols-3 gap-3">
                 {llmProviders.map((prov, idx) => (
                   <div
                     key={prov.provider}
-                    className={`${bgColors[idx]} rounded-xl p-4 text-center`}
+                    className={`${bgColors[idx]} rounded-xl p-3 text-center`}
                   >
-                    <div className={`text-3xl font-bold ${textColors[idx]}`}>{prov.score}</div>
-                    <div className={`text-sm ${textColors[idx]} opacity-90`}>
+                    <div className={`text-xl font-bold ${textColors[idx]}`}>{prov.score}</div>
+                    <div className={`text-xs ${labelColors[idx]}`}>
                       {prov.provider === 'openai' ? 'ChatGPT' :
                        prov.provider === 'anthropic' ? 'Claude' :
                        prov.provider === 'gemini' ? 'Gemini' :
@@ -3194,12 +3196,12 @@ export default function ResultsPage() {
 
               {/* AI Overviews Score - separate row */}
               {aiOverviews && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Search className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-900">Google AI Overviews</span>
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Search className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm text-blue-900">AI Overviews</span>
                   </div>
-                  <div className="text-2xl font-bold text-blue-700">{aiOverviews.score}%</div>
+                  <div className="text-lg font-bold text-blue-700">{aiOverviews.score}%</div>
                 </div>
               )}
             </div>
@@ -3208,12 +3210,12 @@ export default function ResultsPage() {
 
         {/* Insight */}
         {competitorComparisonRatio !== null && competitorComparisonRatio !== Infinity && (
-          <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
-            <Zap className="w-5 h-5 text-[#4A7C59] flex-shrink-0" />
-            <span className="text-sm text-gray-700">
+          <div className="flex items-center gap-2 text-sm text-gray-500 bg-[#FAFAF8] rounded-lg p-2.5">
+            <Zap className="w-4 h-4 text-[#4A7C59] flex-shrink-0" />
+            <span>
               {competitorComparisonRatio >= 1
-                ? `Your brand is mentioned ${competitorComparisonRatio.toFixed(1)}x more than competitors in AI responses`
-                : `Your brand is mentioned ${(1 / competitorComparisonRatio).toFixed(1)}x less than competitors in AI responses`
+                ? `Your brand is mentioned ${competitorComparisonRatio.toFixed(1)}x more than competitors`
+                : `Your brand is mentioned ${(1 / competitorComparisonRatio).toFixed(1)}x less than competitors`
               }
             </span>
           </div>
