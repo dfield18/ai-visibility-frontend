@@ -3234,18 +3234,19 @@ export default function ResultsPage() {
           </div>
 
           {/* Carousel with Side Navigation */}
-          <div className="flex items-center gap-4">
+          <div className="relative flex items-center justify-center">
             {/* Left Arrow */}
             <button
               onClick={() => setBrandCarouselIndex(prev => Math.max(0, prev - 1))}
               disabled={!canGoLeft}
-              className={`flex-shrink-0 p-2 rounded-full transition-colors ${canGoLeft ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full transition-colors ${canGoLeft ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+              style={{ left: 'calc(50% - 230px)' }}
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
 
             {/* Carousel Cards */}
-            <div className="overflow-hidden flex-1">
+            <div className="overflow-hidden w-full max-w-md">
             <div
               className="flex transition-transform duration-300 ease-in-out"
               style={{ transform: `translateX(-${brandCarouselIndex * 100}%)` }}
@@ -3257,8 +3258,8 @@ export default function ResultsPage() {
                 const providers = brandData.providerScores.slice(0, 4);
 
                 return (
-                  <div key={brandData.brand} className="w-full flex-shrink-0 px-1">
-                    <div className={`rounded-2xl shadow-lg px-6 py-8 max-w-md mx-auto ${brandData.isSearchedBrand ? 'bg-white' : 'bg-gray-50'}`}>
+                  <div key={brandData.brand} className="w-full flex-shrink-0">
+                    <div className={`rounded-2xl shadow-lg px-6 py-8 ${brandData.isSearchedBrand ? 'bg-white' : 'bg-gray-50'}`}>
                       {/* Card Header */}
                       <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
@@ -3331,7 +3332,8 @@ export default function ResultsPage() {
             <button
               onClick={() => setBrandCarouselIndex(prev => Math.min(totalCards - 1, prev + 1))}
               disabled={!canGoRight}
-              className={`flex-shrink-0 p-2 rounded-full transition-colors ${canGoRight ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full transition-colors ${canGoRight ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+              style={{ right: 'calc(50% - 230px)' }}
             >
               <ChevronRight className="w-6 h-6" />
             </button>
