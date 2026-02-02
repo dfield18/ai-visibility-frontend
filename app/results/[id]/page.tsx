@@ -3447,7 +3447,7 @@ export default function ResultsPage() {
               </span>
             );
           })()}
-          <p className="text-xs text-gray-400 mt-2">How often your brand appears in AI responses</p>
+          <p className="text-xs text-gray-400 mt-2">% of AI responses that mention your brand when asked relevant questions</p>
         </div>
 
         {/* Share of Voice Card */}
