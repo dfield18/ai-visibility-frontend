@@ -3225,32 +3225,27 @@ export default function ResultsPage() {
       {/* Brand Analysis Carousel */}
       {allBrandsAnalysisData.length > 0 && (
         <div className="relative">
-          {/* Carousel Navigation */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Carousel Header */}
+          <div className="flex items-center justify-center mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Brand Analysis</h2>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">
-                {brandCarouselIndex + 1} of {totalCards}
-              </span>
-              <button
-                onClick={() => setBrandCarouselIndex(prev => Math.max(0, prev - 1))}
-                disabled={!canGoLeft}
-                className={`p-1.5 rounded-lg transition-colors ${canGoLeft ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setBrandCarouselIndex(prev => Math.min(totalCards - 1, prev + 1))}
-                disabled={!canGoRight}
-                className={`p-1.5 rounded-lg transition-colors ${canGoRight ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+            <span className="text-sm text-gray-500 ml-3">
+              {brandCarouselIndex + 1} of {totalCards}
+            </span>
           </div>
 
-          {/* Carousel Cards */}
-          <div className="overflow-hidden">
+          {/* Carousel with Side Navigation */}
+          <div className="flex items-center gap-4">
+            {/* Left Arrow */}
+            <button
+              onClick={() => setBrandCarouselIndex(prev => Math.max(0, prev - 1))}
+              disabled={!canGoLeft}
+              className={`flex-shrink-0 p-2 rounded-full transition-colors ${canGoLeft ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            {/* Carousel Cards */}
+            <div className="overflow-hidden flex-1">
             <div
               className="flex transition-transform duration-300 ease-in-out"
               style={{ transform: `translateX(-${brandCarouselIndex * 100}%)` }}
@@ -3330,6 +3325,16 @@ export default function ResultsPage() {
                 );
               })}
             </div>
+            </div>
+
+            {/* Right Arrow */}
+            <button
+              onClick={() => setBrandCarouselIndex(prev => Math.min(totalCards - 1, prev + 1))}
+              disabled={!canGoRight}
+              className={`flex-shrink-0 p-2 rounded-full transition-colors ${canGoRight ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
           </div>
 
           {/* Carousel Dots */}
