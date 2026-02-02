@@ -3263,7 +3263,7 @@ export default function ResultsPage() {
 
                 return (
                   <div key={brandData.brand} className="w-full flex-shrink-0 px-1">
-                    <div className={`rounded-2xl shadow-lg px-6 py-8 max-w-md ${brandData.isSearchedBrand ? 'bg-white' : 'bg-gray-50'}`}>
+                    <div className={`rounded-2xl shadow-lg px-6 py-8 max-w-md mx-auto ${brandData.isSearchedBrand ? 'bg-white' : 'bg-gray-50'}`}>
                       {/* Card Header */}
                       <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-3">
