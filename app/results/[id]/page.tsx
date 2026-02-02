@@ -39,6 +39,18 @@ import {
   Wallet,
   Zap,
   BarChart3,
+  Target,
+  Megaphone,
+  ArrowRight,
+  FileDown,
+  Calendar,
+  Mail,
+  Share2,
+  Building2,
+  CircleDollarSign,
+  Search,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
@@ -8361,6 +8373,561 @@ export default function ResultsPage() {
     );
   };
 
+  // Recommendations Tab Content
+  const RecommendationsTab = () => {
+    // Calculate quick wins - prompts where brand is missing but competitors appear
+    const quickWins = useMemo(() => {
+      if (!runStatus) return [];
+
+      const wins: Array<{
+        type: 'prompt_gap' | 'provider_gap' | 'source_gap' | 'sentiment_issue';
+        title: string;
+        description: string;
+        impact: 'high' | 'medium' | 'low';
+        competitors?: string[];
+        details?: string;
+      }> = [];
+
+      // Find prompts where brand is not mentioned but competitors are
+      promptBreakdownStats
+        .filter(p => p.visibilityScore < 25)
+        .slice(0, 3)
+        .forEach(prompt => {
+          const competitorsInPrompt = brandBreakdownStats
+            .filter(b => !b.isSearchedBrand && b.promptsWithStats.some(ps => ps.prompt === prompt.prompt && ps.rate > 50))
+            .map(b => b.brand)
+            .slice(0, 3);
+
+          if (competitorsInPrompt.length > 0) {
+            wins.push({
+              type: 'prompt_gap',
+              title: `Missing from "${truncate(prompt.prompt, 40)}"`,
+              description: `Your brand appears in only ${prompt.visibilityScore.toFixed(0)}% of responses`,
+              impact: 'high',
+              competitors: competitorsInPrompt,
+            });
+          }
+        });
+
+      // Find providers with low visibility
+      Object.entries(llmBreakdownStats)
+        .filter(([_, stats]) => stats.rate < 0.3 && stats.total >= 3)
+        .slice(0, 2)
+        .forEach(([provider, stats]) => {
+          wins.push({
+            type: 'provider_gap',
+            title: `Low visibility on ${getProviderLabel(provider)}`,
+            description: `Only ${(stats.rate * 100).toFixed(0)}% mention rate across ${stats.total} responses`,
+            impact: stats.rate < 0.15 ? 'high' : 'medium',
+            details: 'Consider optimizing content for this AI model',
+          });
+        });
+
+      // Find sources citing competitors but not the brand
+      const brandSources = new Set<string>();
+      const competitorSources: Record<string, string[]> = {};
+
+      globallyFilteredResults.forEach((r: Result) => {
+        if (!r.sources) return;
+        r.sources.forEach(s => {
+          const domain = s.url ? new URL(s.url).hostname.replace('www.', '') : '';
+          if (r.brand_mentioned) {
+            brandSources.add(domain);
+          }
+          if (r.competitors_mentioned) {
+            r.competitors_mentioned.forEach(comp => {
+              if (!competitorSources[domain]) competitorSources[domain] = [];
+              if (!competitorSources[domain].includes(comp)) {
+                competitorSources[domain].push(comp);
+              }
+            });
+          }
+        });
+      });
+
+      Object.entries(competitorSources)
+        .filter(([domain, comps]) => !brandSources.has(domain) && comps.length >= 2)
+        .slice(0, 2)
+        .forEach(([domain, comps]) => {
+          wins.push({
+            type: 'source_gap',
+            title: `${domain} cites competitors but not you`,
+            description: `This source mentions ${comps.length} of your competitors`,
+            impact: 'medium',
+            competitors: comps.slice(0, 3),
+          });
+        });
+
+      return wins.slice(0, 5);
+    }, [runStatus, promptBreakdownStats, brandBreakdownStats, llmBreakdownStats, globallyFilteredResults]);
+
+    // Calculate ChatGPT ad opportunities - prompts with low visibility but high competitor presence
+    const adOpportunities = useMemo(() => {
+      if (!runStatus) return [];
+
+      return promptBreakdownStats
+        .filter(p => p.visibilityScore < 40)
+        .map(prompt => {
+          const competitorVisibility = brandBreakdownStats
+            .filter(b => !b.isSearchedBrand)
+            .reduce((sum, b) => {
+              const promptStat = b.promptsWithStats.find(ps => ps.prompt === prompt.prompt);
+              return sum + (promptStat?.rate || 0);
+            }, 0) / Math.max(brandBreakdownStats.filter(b => !b.isSearchedBrand).length, 1);
+
+          return {
+            prompt: prompt.prompt,
+            yourVisibility: prompt.visibilityScore,
+            competitorAvg: competitorVisibility,
+            gap: competitorVisibility - prompt.visibilityScore,
+          };
+        })
+        .filter(p => p.gap > 20)
+        .sort((a, b) => b.gap - a.gap)
+        .slice(0, 3);
+    }, [runStatus, promptBreakdownStats, brandBreakdownStats]);
+
+    // Calculate source opportunities
+    const sourceOpportunities = useMemo(() => {
+      if (!runStatus) return [];
+
+      const sourceMentions: Record<string, { brand: number; competitors: string[] }> = {};
+
+      globallyFilteredResults.forEach((r: Result) => {
+        if (!r.sources) return;
+        r.sources.forEach(s => {
+          try {
+            const domain = s.url ? new URL(s.url).hostname.replace('www.', '') : '';
+            if (!domain) return;
+
+            if (!sourceMentions[domain]) {
+              sourceMentions[domain] = { brand: 0, competitors: [] };
+            }
+
+            if (r.brand_mentioned) {
+              sourceMentions[domain].brand++;
+            }
+            if (r.competitors_mentioned) {
+              r.competitors_mentioned.forEach(comp => {
+                if (!sourceMentions[domain].competitors.includes(comp)) {
+                  sourceMentions[domain].competitors.push(comp);
+                }
+              });
+            }
+          } catch {}
+        });
+      });
+
+      return Object.entries(sourceMentions)
+        .filter(([_, data]) => data.brand === 0 && data.competitors.length >= 2)
+        .map(([domain, data]) => ({
+          domain,
+          competitorCount: data.competitors.length,
+          competitors: data.competitors.slice(0, 4),
+        }))
+        .sort((a, b) => b.competitorCount - a.competitorCount)
+        .slice(0, 5);
+    }, [runStatus, globallyFilteredResults]);
+
+    // Calculate sentiment issues
+    const sentimentIssues = useMemo(() => {
+      if (!runStatus) return [];
+
+      return promptBreakdownStats
+        .filter(p => p.avgSentimentScore !== null && p.avgSentimentScore < 3)
+        .map(p => ({
+          prompt: p.prompt,
+          sentiment: p.avgSentimentScore!,
+          label: p.avgSentimentScore! < 2 ? 'Not Recommended' : 'With Caveats',
+        }))
+        .sort((a, b) => a.sentiment - b.sentiment)
+        .slice(0, 3);
+    }, [promptBreakdownStats]);
+
+    // Content recommendations based on analysis
+    const contentRecommendations = useMemo(() => {
+      const recs: Array<{
+        title: string;
+        description: string;
+        impact: 'high' | 'medium' | 'low';
+        effort: 'high' | 'medium' | 'low';
+      }> = [];
+
+      const searchedBrandStats = brandBreakdownStats.find(b => b.isSearchedBrand);
+      const topCompetitor = brandBreakdownStats.filter(b => !b.isSearchedBrand)[0];
+
+      if (searchedBrandStats && topCompetitor && topCompetitor.visibilityScore > searchedBrandStats.visibilityScore) {
+        recs.push({
+          title: `Create comparison content vs ${topCompetitor.brand}`,
+          description: `${topCompetitor.brand} has ${(topCompetitor.visibilityScore - searchedBrandStats.visibilityScore).toFixed(0)}% higher visibility`,
+          impact: 'high',
+          effort: 'medium',
+        });
+      }
+
+      if (sourceOpportunities.length > 0) {
+        recs.push({
+          title: `Get featured on ${sourceOpportunities[0]?.domain}`,
+          description: 'This authoritative source cites your competitors but not you',
+          impact: 'high',
+          effort: 'high',
+        });
+      }
+
+      if (searchedBrandStats && searchedBrandStats.firstPositionRate < 30) {
+        recs.push({
+          title: 'Optimize content for AI featured snippets',
+          description: `Your brand ranks #1 in only ${searchedBrandStats.firstPositionRate.toFixed(0)}% of mentions`,
+          impact: 'medium',
+          effort: 'low',
+        });
+      }
+
+      if (sentimentIssues.length > 0) {
+        recs.push({
+          title: 'Address sentiment concerns in content',
+          description: `${sentimentIssues.length} prompts show negative or conditional sentiment`,
+          impact: 'medium',
+          effort: 'medium',
+        });
+      }
+
+      recs.push({
+        title: 'Publish expert thought leadership content',
+        description: 'AI models favor authoritative, well-cited content',
+        impact: 'medium',
+        effort: 'medium',
+      });
+
+      return recs.slice(0, 5);
+    }, [brandBreakdownStats, sourceOpportunities, sentimentIssues]);
+
+    const getImpactBadge = (impact: 'high' | 'medium' | 'low') => {
+      const colors = {
+        high: 'bg-green-100 text-green-700 border-green-200',
+        medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        low: 'bg-gray-100 text-gray-600 border-gray-200',
+      };
+      return colors[impact];
+    };
+
+    const getEffortBadge = (effort: 'high' | 'medium' | 'low') => {
+      const colors = {
+        high: 'bg-red-50 text-red-600 border-red-200',
+        medium: 'bg-orange-50 text-orange-600 border-orange-200',
+        low: 'bg-blue-50 text-blue-600 border-blue-200',
+      };
+      return colors[effort];
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Quick Wins Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-[#E8F5E9] rounded-lg flex items-center justify-center">
+              <Target className="w-5 h-5 text-[#4A7C59]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Quick Wins</h2>
+              <p className="text-sm text-gray-500">Top priority actions to improve visibility</p>
+            </div>
+          </div>
+
+          {quickWins.length > 0 ? (
+            <div className="space-y-3">
+              {quickWins.map((win, idx) => (
+                <div key={idx} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex-shrink-0 w-8 h-8 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-medium text-gray-900">{win.title}</h3>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${getImpactBadge(win.impact)}`}>
+                        {win.impact} impact
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">{win.description}</p>
+                    {win.competitors && win.competitors.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Competitors mentioned:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {win.competitors.map(comp => (
+                            <span key={comp} className="text-xs px-2 py-0.5 bg-gray-200 text-gray-700 rounded">
+                              {comp}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 text-center py-8">
+              Great job! No urgent visibility gaps identified.
+            </p>
+          )}
+        </div>
+
+        {/* ChatGPT Advertising Opportunities */}
+        <div className="bg-gradient-to-r from-[#E8F5E9] to-[#F0F7F0] rounded-xl shadow-sm border border-[#C8E6C9] p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <Megaphone className="w-5 h-5 text-[#4A7C59]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">ChatGPT Ads Opportunities</h2>
+                <p className="text-sm text-gray-600">Fill visibility gaps with paid placements</p>
+              </div>
+            </div>
+            <span className="px-3 py-1 bg-[#4A7C59] text-white text-xs font-medium rounded-full">
+              Coming Soon
+            </span>
+          </div>
+
+          <p className="text-sm text-gray-700 mb-4">
+            OpenAI is launching advertising in ChatGPT. Based on your visibility gaps, here are prompts where ads could help:
+          </p>
+
+          {adOpportunities.length > 0 ? (
+            <div className="space-y-3 mb-4">
+              {adOpportunities.map((opp, idx) => (
+                <div key={idx} className="bg-white rounded-lg p-4 border border-gray-200">
+                  <p className="font-medium text-gray-900 mb-2 text-sm">"{truncate(opp.prompt, 60)}"</p>
+                  <div className="flex items-center gap-6 text-sm">
+                    <div>
+                      <span className="text-gray-500">Your visibility:</span>
+                      <span className="ml-2 font-semibold text-red-600">{opp.yourVisibility.toFixed(0)}%</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Competitor avg:</span>
+                      <span className="ml-2 font-semibold text-green-600">{opp.competitorAvg.toFixed(0)}%</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Gap:</span>
+                      <span className="ml-2 font-semibold text-[#4A7C59]">{opp.gap.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg p-4 border border-gray-200 mb-4">
+              <p className="text-sm text-gray-600 text-center">
+                Your visibility is strong across prompts. Ads could help maintain your lead.
+              </p>
+            </div>
+          )}
+
+          <button className="w-full py-3 bg-[#4A7C59] text-white font-medium rounded-lg hover:bg-[#3d6649] transition-colors flex items-center justify-center gap-2">
+            <Mail className="w-4 h-4" />
+            Join ChatGPT Ads Waitlist
+          </button>
+        </div>
+
+        {/* Content & SEO Recommendations */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+              <PenLine className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Content & SEO Recommendations</h2>
+              <p className="text-sm text-gray-500">Actionable strategies to improve AI visibility</p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Recommendation</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Impact</th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Effort</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contentRecommendations.map((rec, idx) => (
+                  <tr key={idx} className="border-b border-gray-100">
+                    <td className="py-3 px-4">
+                      <p className="font-medium text-gray-900 text-sm">{rec.title}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{rec.description}</p>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`text-xs px-2.5 py-1 rounded-full border ${getImpactBadge(rec.impact)}`}>
+                        {rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`text-xs px-2.5 py-1 rounded-full border ${getEffortBadge(rec.effort)}`}>
+                        {rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Source Strategy */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                <Newspaper className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Source Opportunities</h2>
+                <p className="text-sm text-gray-500">High-impact sources to target for coverage</p>
+              </div>
+            </div>
+            {sourceOpportunities.length > 0 && (
+              <button className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-1">
+                <FileDown className="w-4 h-4" />
+                Export PR List
+              </button>
+            )}
+          </div>
+
+          {sourceOpportunities.length > 0 ? (
+            <div className="space-y-2">
+              {sourceOpportunities.map((source, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Globe className="w-4 h-4 text-gray-400" />
+                    <span className="font-medium text-gray-900">{source.domain}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">Cites {source.competitorCount} competitors:</span>
+                    <div className="flex gap-1">
+                      {source.competitors.map(comp => (
+                        <span key={comp} className="text-xs px-2 py-0.5 bg-gray-200 text-gray-700 rounded">
+                          {truncate(comp, 12)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 text-center py-6">
+              No major source gaps identified. Your brand has good source coverage.
+            </p>
+          )}
+        </div>
+
+        {/* Sentiment Improvement */}
+        {sentimentIssues.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                <ThumbsDown className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Sentiment Gaps</h2>
+                <p className="text-sm text-gray-500">Prompts where brand perception needs improvement</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {sentimentIssues.map((issue, idx) => (
+                <div key={idx} className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="font-medium text-gray-900 text-sm">"{truncate(issue.prompt, 50)}"</p>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      issue.label === 'Not Recommended'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-yellow-100 text-yellow-700'
+                    }`}>
+                      {issue.label}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    Consider addressing concerns in your content and marketing materials for this topic.
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Agency Dashboard Teaser */}
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-sm p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Agency Dashboard</h2>
+                <p className="text-sm text-gray-300">Manage multiple clients from one view</p>
+              </div>
+            </div>
+            <button className="px-4 py-2 bg-white text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors">
+              Contact Sales
+            </button>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold">∞</p>
+              <p className="text-xs text-gray-300">Unlimited Clients</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold">📊</p>
+              <p className="text-xs text-gray-300">Portfolio Reports</p>
+            </div>
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold">🔄</p>
+              <p className="text-xs text-gray-300">Automated Tracking</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Export & Reporting */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <FileBarChart className="w-5 h-5 text-gray-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Export & Reporting</h2>
+              <p className="text-sm text-gray-500">Download and share your recommendations</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <FileDown className="w-6 h-6 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">PDF Report</span>
+              <span className="text-xs text-gray-500">Executive summary</span>
+            </button>
+            <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <Download className="w-6 h-6 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">CSV Export</span>
+              <span className="text-xs text-gray-500">Raw data</span>
+            </button>
+            <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <Calendar className="w-6 h-6 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Schedule</span>
+              <span className="text-xs text-gray-500">Weekly reports</span>
+            </button>
+            <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <Share2 className="w-6 h-6 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Share</span>
+              <span className="text-xs text-gray-500">With team</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Placeholder Tab Content
   const PlaceholderTab = ({ title, description }: { title: string; description: string }) => (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
@@ -9370,12 +9937,7 @@ export default function ResultsPage() {
         )}
         {activeTab === 'sentiment' && <SentimentTab />}
         {activeTab === 'sources' && <SourcesTab />}
-        {activeTab === 'recommendations' && (
-          <PlaceholderTab
-            title="Recommendations"
-            description="Get actionable recommendations to improve your AI visibility. Coming soon."
-          />
-        )}
+        {activeTab === 'recommendations' && <RecommendationsTab />}
         {activeTab === 'reports' && (
           <PlaceholderTab
             title="Automated Reports"
