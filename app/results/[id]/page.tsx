@@ -3267,10 +3267,10 @@ export default function ResultsPage() {
               style={{ transform: `translateX(-${brandCarouselIndex * 100}%)` }}
             >
               {allBrandsAnalysisData.map((brandData, cardIndex) => {
-                const bgColors = ['bg-[#5B7B5D]', 'bg-[#D9CBBA]', 'bg-[#C8C4A8]', 'bg-[#B8C4B8]'];
-                const textColors = ['text-white', 'text-gray-700', 'text-gray-700', 'text-gray-700'];
-                const labelColors = ['text-white/70', 'text-gray-500', 'text-gray-500', 'text-gray-500'];
-                const providers = brandData.providerScores.slice(0, 4);
+                const bgColors = ['bg-[#5B7B5D]', 'bg-[#D9CBBA]', 'bg-[#C8C4A8]', 'bg-[#B8C4B8]', 'bg-[#A8B5C8]'];
+                const textColors = ['text-white', 'text-gray-700', 'text-gray-700', 'text-gray-700', 'text-gray-700'];
+                const labelColors = ['text-white/70', 'text-gray-500', 'text-gray-500', 'text-gray-500', 'text-gray-500'];
+                const providers = brandData.providerScores.slice(0, 5);
 
                 return (
                   <div key={brandData.brand} className="w-full flex-shrink-0">
@@ -3306,16 +3306,17 @@ export default function ResultsPage() {
                       {/* Provider Scores */}
                       {providers.length > 0 && (
                         <div className="mb-5">
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-wrap justify-center gap-2">
                             {providers.map((prov, idx) => (
                               <div
                                 key={prov.provider}
-                                className={`${brandData.isSearchedBrand ? bgColors[idx] : 'bg-gray-300'} rounded-xl p-3 text-center`}
+                                className={`${brandData.isSearchedBrand ? bgColors[idx % bgColors.length] : 'bg-gray-300'} rounded-xl p-2.5 text-center`}
+                                style={{ width: providers.length <= 4 ? 'calc(50% - 4px)' : 'calc(33.333% - 6px)', minWidth: '80px' }}
                               >
-                                <div className={`text-xl font-bold ${brandData.isSearchedBrand ? textColors[idx] : 'text-gray-700'}`}>
+                                <div className={`text-lg font-bold ${brandData.isSearchedBrand ? textColors[idx % textColors.length] : 'text-gray-700'}`}>
                                   {prov.score}
                                 </div>
-                                <div className={`text-xs ${brandData.isSearchedBrand ? labelColors[idx] : 'text-gray-500'}`}>
+                                <div className={`text-xs ${brandData.isSearchedBrand ? labelColors[idx % labelColors.length] : 'text-gray-500'}`}>
                                   {getProviderLabel(prov.provider)}
                                 </div>
                               </div>
