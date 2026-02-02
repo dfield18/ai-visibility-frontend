@@ -54,6 +54,8 @@ import {
   ThumbsDown,
   Package,
   Settings,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
@@ -306,6 +308,7 @@ export default function ResultsPage() {
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
   const [sentimentProviderCitationFilter, setSentimentProviderCitationFilter] = useState<string>('all');
   const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
+  const [brandCarouselIndex, setBrandCarouselIndex] = useState(0);
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -3142,74 +3145,207 @@ export default function ResultsPage() {
     return searchedBrandStats.visibilityScore / avgCompetitorVisibility;
   }, [runStatus, brandBreakdownStats]);
 
-  const OverviewTab = () => (
+  // Calculate provider visibility scores for ALL brands (main brand + competitors)
+  const allBrandsAnalysisData = useMemo(() => {
+    if (!runStatus) return [];
+
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    const searchedBrand = runStatus.brand;
+
+    // Get all brands from brandBreakdownStats (already sorted by visibility)
+    const allBrands = brandBreakdownStats.map(b => b.brand);
+
+    return allBrands.map(brand => {
+      const isSearchedBrand = brand === searchedBrand;
+      const brandStats = brandBreakdownStats.find(b => b.brand === brand);
+
+      // Calculate per-provider stats for this brand
+      const providerStats: Record<string, { mentioned: number; total: number }> = {};
+
+      results.forEach(r => {
+        if (!providerStats[r.provider]) {
+          providerStats[r.provider] = { mentioned: 0, total: 0 };
+        }
+        providerStats[r.provider].total++;
+
+        const isMentioned = isSearchedBrand
+          ? r.brand_mentioned
+          : r.competitors_mentioned?.includes(brand);
+
+        if (isMentioned) {
+          providerStats[r.provider].mentioned++;
+        }
+      });
+
+      const providerScores = Object.entries(providerStats)
+        .map(([provider, stats]) => ({
+          provider,
+          score: stats.total > 0 ? Math.round((stats.mentioned / stats.total) * 100) : 0,
+        }))
+        .sort((a, b) => b.score - a.score);
+
+      // Calculate comparison to avg of other brands
+      const otherBrands = brandBreakdownStats.filter(b => b.brand !== brand);
+      const avgOtherVisibility = otherBrands.length > 0
+        ? otherBrands.reduce((sum, b) => sum + b.visibilityScore, 0) / otherBrands.length
+        : 0;
+      const comparisonRatio = avgOtherVisibility > 0
+        ? (brandStats?.visibilityScore || 0) / avgOtherVisibility
+        : brandStats?.visibilityScore && brandStats.visibilityScore > 0 ? Infinity : 1;
+
+      return {
+        brand,
+        isSearchedBrand,
+        visibilityScore: brandStats?.visibilityScore || 0,
+        providerScores,
+        comparisonRatio,
+        avgSentimentScore: brandStats?.avgSentimentScore || null,
+      };
+    });
+  }, [runStatus, globallyFilteredResults, brandBreakdownStats]);
+
+  const OverviewTab = () => {
+    const totalCards = allBrandsAnalysisData.length;
+    const canGoLeft = brandCarouselIndex > 0;
+    const canGoRight = brandCarouselIndex < totalCards - 1;
+
+    const getProviderLabel = (provider: string) => {
+      switch (provider) {
+        case 'openai': return 'ChatGPT';
+        case 'anthropic': return 'Claude';
+        case 'gemini': return 'Gemini';
+        case 'perplexity': return 'Perplexity';
+        case 'ai_overviews': return 'AI Overviews';
+        default: return provider;
+      }
+    };
+
+    return (
     <div className="space-y-6">
-      {/* Brand Analysis Card */}
-      <div className="bg-white rounded-2xl shadow-lg px-6 py-8 max-w-md">
-        {/* Card Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#F5F5F0] flex items-center justify-center">
-              <BarChart3 className="w-4 h-4 text-gray-400" />
+      {/* Brand Analysis Carousel */}
+      {allBrandsAnalysisData.length > 0 && (
+        <div className="relative">
+          {/* Carousel Navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Brand Analysis</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">
+                {brandCarouselIndex + 1} of {totalCards}
+              </span>
+              <button
+                onClick={() => setBrandCarouselIndex(prev => Math.max(0, prev - 1))}
+                disabled={!canGoLeft}
+                className={`p-1.5 rounded-lg transition-colors ${canGoLeft ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setBrandCarouselIndex(prev => Math.min(totalCards - 1, prev + 1))}
+                disabled={!canGoRight}
+                className={`p-1.5 rounded-lg transition-colors ${canGoRight ? 'hover:bg-gray-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
-            <span className="font-semibold text-gray-700">Brand Analysis</span>
           </div>
-          <span className="text-sm text-gray-400">Live</span>
-        </div>
 
-        {/* Visibility Score Circle */}
-        <div className="flex justify-center mb-5">
-          <div className="w-28 h-28 rounded-full bg-[#E8F0E8] flex items-center justify-center">
-            <span className="text-4xl font-bold text-[#4A7C59]">{Math.round(brandMentionRate * 100)}</span>
-          </div>
-        </div>
-        <p className="text-center text-gray-400 mb-6">Visibility Score</p>
+          {/* Carousel Cards */}
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-300 ease-in-out"
+              style={{ transform: `translateX(-${brandCarouselIndex * 100}%)` }}
+            >
+              {allBrandsAnalysisData.map((brandData, cardIndex) => {
+                const bgColors = ['bg-[#5B7B5D]', 'bg-[#D9CBBA]', 'bg-[#C8C4A8]', 'bg-[#B8C4B8]'];
+                const textColors = ['text-white', 'text-gray-700', 'text-gray-700', 'text-gray-700'];
+                const labelColors = ['text-white/70', 'text-gray-500', 'text-gray-500', 'text-gray-500'];
+                const providers = brandData.providerScores.slice(0, 4);
 
-        {/* Provider Scores */}
-        {providerVisibilityScores.length > 0 && (() => {
-          const providers = providerVisibilityScores.slice(0, 4);
+                return (
+                  <div key={brandData.brand} className="w-full flex-shrink-0 px-1">
+                    <div className={`rounded-2xl shadow-lg px-6 py-8 max-w-md ${brandData.isSearchedBrand ? 'bg-white' : 'bg-gray-50'}`}>
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${brandData.isSearchedBrand ? 'bg-[#E8F0E8]' : 'bg-gray-200'}`}>
+                            <BarChart3 className={`w-4 h-4 ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-500'}`} />
+                          </div>
+                          <div>
+                            <span className={`font-semibold ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                              {brandData.brand}
+                            </span>
+                            {brandData.isSearchedBrand && (
+                              <span className="ml-2 text-xs bg-[#E8F0E8] text-[#4A7C59] px-2 py-0.5 rounded-full">Your Brand</span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-sm text-gray-400">Live</span>
+                      </div>
 
-          const bgColors = ['bg-[#5B7B5D]', 'bg-[#D9CBBA]', 'bg-[#C8C4A8]', 'bg-[#B8C4B8]'];
-          const textColors = ['text-white', 'text-gray-700', 'text-gray-700', 'text-gray-700'];
-          const labelColors = ['text-white/70', 'text-gray-500', 'text-gray-500', 'text-gray-500'];
+                      {/* Visibility Score Circle */}
+                      <div className="flex justify-center mb-5">
+                        <div className={`w-28 h-28 rounded-full flex items-center justify-center ${brandData.isSearchedBrand ? 'bg-[#E8F0E8]' : 'bg-gray-200'}`}>
+                          <span className={`text-4xl font-bold ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-600'}`}>
+                            {Math.round(brandData.visibilityScore)}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-center text-gray-400 mb-6">Visibility Score</p>
 
-          return (
-            <div className="mb-5">
-              <div className="grid grid-cols-2 gap-3">
-                {providers.map((prov, idx) => (
-                  <div
-                    key={prov.provider}
-                    className={`${bgColors[idx]} rounded-xl p-3 text-center`}
-                  >
-                    <div className={`text-xl font-bold ${textColors[idx]}`}>{prov.score}</div>
-                    <div className={`text-xs ${labelColors[idx]}`}>
-                      {prov.provider === 'openai' ? 'ChatGPT' :
-                       prov.provider === 'anthropic' ? 'Claude' :
-                       prov.provider === 'gemini' ? 'Gemini' :
-                       prov.provider === 'perplexity' ? 'Perplexity' :
-                       prov.provider === 'ai_overviews' ? 'AI Overviews' :
-                       prov.provider}
+                      {/* Provider Scores */}
+                      {providers.length > 0 && (
+                        <div className="mb-5">
+                          <div className="grid grid-cols-2 gap-3">
+                            {providers.map((prov, idx) => (
+                              <div
+                                key={prov.provider}
+                                className={`${brandData.isSearchedBrand ? bgColors[idx] : 'bg-gray-300'} rounded-xl p-3 text-center`}
+                              >
+                                <div className={`text-xl font-bold ${brandData.isSearchedBrand ? textColors[idx] : 'text-gray-700'}`}>
+                                  {prov.score}
+                                </div>
+                                <div className={`text-xs ${brandData.isSearchedBrand ? labelColors[idx] : 'text-gray-500'}`}>
+                                  {getProviderLabel(prov.provider)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Insight */}
+                      {brandData.comparisonRatio !== null && brandData.comparisonRatio !== Infinity && (
+                        <div className="flex items-center gap-2 text-sm text-gray-500 bg-[#FAFAF8] rounded-lg p-2.5">
+                          <Zap className={`w-4 h-4 flex-shrink-0 ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-400'}`} />
+                          <span>
+                            {brandData.comparisonRatio >= 1
+                              ? `Mentioned ${brandData.comparisonRatio.toFixed(1)}x more than avg`
+                              : `Mentioned ${(1 / brandData.comparisonRatio).toFixed(1)}x less than avg`
+                            }
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          );
-        })()}
-
-        {/* Insight */}
-        {competitorComparisonRatio !== null && competitorComparisonRatio !== Infinity && (
-          <div className="flex items-center gap-2 text-sm text-gray-500 bg-[#FAFAF8] rounded-lg p-2.5">
-            <Zap className="w-4 h-4 text-[#4A7C59] flex-shrink-0" />
-            <span>
-              {competitorComparisonRatio >= 1
-                ? `Your brand is mentioned ${competitorComparisonRatio.toFixed(1)}x more than competitors`
-                : `Your brand is mentioned ${(1 / competitorComparisonRatio).toFixed(1)}x less than competitors`
-              }
-            </span>
           </div>
-        )}
-      </div>
+
+          {/* Carousel Dots */}
+          {totalCards > 1 && (
+            <div className="flex justify-center gap-2 mt-4">
+              {allBrandsAnalysisData.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setBrandCarouselIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-colors ${idx === brandCarouselIndex ? 'bg-[#4A7C59]' : 'bg-gray-300'}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* AI Summary */}
       <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
@@ -4740,6 +4876,7 @@ export default function ResultsPage() {
       </div>
     </div>
   );
+  };
 
   // Reference Tab Content (existing detailed results)
   const ReferenceTab = () => (
