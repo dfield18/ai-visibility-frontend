@@ -52,6 +52,8 @@ import {
   Search,
   ThumbsUp,
   ThumbsDown,
+  Package,
+  Settings,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
@@ -8742,6 +8744,63 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
+        {/* AI-Generated Recommendations */}
+        {aiSummary?.recommendations && aiSummary.recommendations.length > 0 && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <Sparkles className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">AI-Powered Recommendations</h2>
+                <p className="text-sm text-gray-600">Personalized insights based on your visibility analysis</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {aiSummary.recommendations.map((rec, idx) => {
+                const priorityColors = {
+                  high: 'bg-red-100 text-red-700 border-red-200',
+                  medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                  low: 'bg-green-100 text-green-700 border-green-200',
+                };
+                const categoryIcons: Record<string, React.ReactNode> = {
+                  content: <PenLine className="w-4 h-4" />,
+                  seo: <Search className="w-4 h-4" />,
+                  pr: <Newspaper className="w-4 h-4" />,
+                  product: <Package className="w-4 h-4" />,
+                  technical: <Settings className="w-4 h-4" />,
+                };
+                const categoryColors: Record<string, string> = {
+                  content: 'bg-blue-50 text-blue-600',
+                  seo: 'bg-green-50 text-green-600',
+                  pr: 'bg-purple-50 text-purple-600',
+                  product: 'bg-orange-50 text-orange-600',
+                  technical: 'bg-gray-100 text-gray-600',
+                };
+
+                return (
+                  <div key={idx} className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <h3 className="font-semibold text-gray-900">{rec.title}</h3>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${categoryColors[rec.category] || categoryColors.technical}`}>
+                          {categoryIcons[rec.category] || categoryIcons.technical}
+                          {rec.category.charAt(0).toUpperCase() + rec.category.slice(1)}
+                        </span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${priorityColors[rec.priority]}`}>
+                          {rec.priority.charAt(0).toUpperCase() + rec.priority.slice(1)} Priority
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600">{rec.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Recommended High-Impact Actions */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-4">

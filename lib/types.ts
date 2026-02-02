@@ -122,9 +122,17 @@ export interface ApiError {
   detail: string;
 }
 
+export interface AIRecommendation {
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  category: 'content' | 'seo' | 'pr' | 'product' | 'technical';
+}
+
 export interface AISummaryResponse {
   run_id: string;
   summary: string;
+  recommendations: AIRecommendation[];
   generated_at: string;
 }
 
