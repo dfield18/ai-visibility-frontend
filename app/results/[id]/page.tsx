@@ -6423,22 +6423,21 @@ export default function ResultsPage() {
         }))
         .sort((a, b) => b.value - a.value);
 
-      // Group items under 10% into "Other"
-      const threshold = 10;
-      const mainItems = rawData.filter(item => item.percentage >= threshold);
-      const otherItems = rawData.filter(item => item.percentage < threshold);
+      // Show top 4 categories, group the rest as "Other"
+      const top4 = rawData.slice(0, 4);
+      const otherItems = rawData.slice(4);
 
       if (otherItems.length > 0) {
         const otherValue = otherItems.reduce((sum, item) => sum + item.value, 0);
         const otherPercentage = otherItems.reduce((sum, item) => sum + item.percentage, 0);
-        mainItems.push({
+        top4.push({
           name: 'Other',
           value: otherValue,
           percentage: otherPercentage
         });
       }
 
-      return mainItems;
+      return top4;
     }, [topCitedSources, aiCategorizations]);
 
     // Calculate domain table data with additional metrics
@@ -6925,10 +6924,10 @@ export default function ResultsPage() {
                               dataKey="value"
                               nameKey="name"
                               isAnimationActive={false}
-                              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                                // Only show label for items 10% and above
+                              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+                                // Only show label for items 8% and above
                                 const pct = (percent || 0) * 100;
-                                if (pct < 10) return null;
+                                if (pct < 8) return null;
                                 const RADIAN = Math.PI / 180;
                                 const angle = midAngle || 0;
                                 const inner = innerRadius || 0;
@@ -6936,18 +6935,33 @@ export default function ResultsPage() {
                                 const radius = inner + (outer - inner) * 0.5;
                                 const x = (cx || 0) + radius * Math.cos(-angle * RADIAN);
                                 const y = (cy || 0) + radius * Math.sin(-angle * RADIAN);
+                                // Truncate long names
+                                const displayName = String(name).length > 8 ? String(name).substring(0, 7) + '…' : String(name);
                                 return (
-                                  <text
-                                    x={x}
-                                    y={y}
-                                    fill="white"
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    fontSize={11}
-                                    fontWeight={600}
-                                  >
-                                    {`${pct.toFixed(0)}%`}
-                                  </text>
+                                  <g>
+                                    <text
+                                      x={x}
+                                      y={y - 6}
+                                      fill="white"
+                                      textAnchor="middle"
+                                      dominantBaseline="central"
+                                      fontSize={9}
+                                      fontWeight={500}
+                                    >
+                                      {displayName}
+                                    </text>
+                                    <text
+                                      x={x}
+                                      y={y + 6}
+                                      fill="white"
+                                      textAnchor="middle"
+                                      dominantBaseline="central"
+                                      fontSize={11}
+                                      fontWeight={600}
+                                    >
+                                      {`${pct.toFixed(0)}%`}
+                                    </text>
+                                  </g>
                                 );
                               }}
                               labelLine={false}
