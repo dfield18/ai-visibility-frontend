@@ -37,6 +37,8 @@ import {
   CircleDot,
   Plane,
   Wallet,
+  Zap,
+  BarChart3,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
@@ -3084,8 +3086,110 @@ export default function ResultsPage() {
   };
 
   // Overview Tab Content
+  // Calculate provider visibility scores for Brand Analysis card
+  const providerVisibilityScores = useMemo(() => {
+    if (!runStatus) return [];
+
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    const providerStats: Record<string, { mentioned: number; total: number }> = {};
+
+    results.forEach(r => {
+      if (!providerStats[r.provider]) {
+        providerStats[r.provider] = { mentioned: 0, total: 0 };
+      }
+      providerStats[r.provider].total++;
+      if (r.brand_mentioned) {
+        providerStats[r.provider].mentioned++;
+      }
+    });
+
+    return Object.entries(providerStats)
+      .map(([provider, stats]) => ({
+        provider,
+        score: stats.total > 0 ? Math.round((stats.mentioned / stats.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.score - a.score);
+  }, [runStatus, globallyFilteredResults]);
+
+  // Calculate competitor comparison ratio
+  const competitorComparisonRatio = useMemo(() => {
+    if (!runStatus || brandBreakdownStats.length === 0) return null;
+
+    const searchedBrandStats = brandBreakdownStats.find(s => s.isSearchedBrand);
+    const competitors = brandBreakdownStats.filter(s => !s.isSearchedBrand);
+
+    if (!searchedBrandStats || competitors.length === 0) return null;
+
+    const avgCompetitorVisibility = competitors.reduce((sum, c) => sum + c.visibilityScore, 0) / competitors.length;
+
+    if (avgCompetitorVisibility === 0) return searchedBrandStats.visibilityScore > 0 ? Infinity : 1;
+
+    return searchedBrandStats.visibilityScore / avgCompetitorVisibility;
+  }, [runStatus, brandBreakdownStats]);
+
   const OverviewTab = () => (
     <div className="space-y-6">
+      {/* Brand Analysis Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-5 h-5 text-gray-600" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-900">Brand Analysis</h2>
+          </div>
+          <span className="text-sm text-[#4A7C59] font-medium">Live</span>
+        </div>
+
+        {/* Main Visibility Score */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-32 h-32 rounded-full bg-[#E8F5E9] flex items-center justify-center mb-3">
+            <span className="text-5xl font-bold text-[#4A7C59]">{Math.round(brandMentionRate * 100)}</span>
+          </div>
+          <span className="text-base text-[#4A7C59] font-medium">Visibility Score</span>
+        </div>
+
+        {/* Provider Scores */}
+        {providerVisibilityScores.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {providerVisibilityScores.slice(0, 3).map((prov, idx) => {
+              // Color gradient: darkest for highest score, lighter for lower
+              const bgColors = ['bg-[#4A7C59]', 'bg-[#8BA888]', 'bg-[#B8C4A8]'];
+              const textColors = ['text-white', 'text-gray-800', 'text-gray-800'];
+              return (
+                <div
+                  key={prov.provider}
+                  className={`${bgColors[idx]} rounded-xl p-4 text-center`}
+                >
+                  <div className={`text-3xl font-bold ${textColors[idx]}`}>{prov.score}</div>
+                  <div className={`text-sm ${textColors[idx]} opacity-90`}>
+                    {prov.provider === 'openai' ? 'ChatGPT' :
+                     prov.provider === 'anthropic' ? 'Claude' :
+                     prov.provider === 'gemini' ? 'Gemini' :
+                     prov.provider === 'perplexity' ? 'Perplexity' :
+                     prov.provider === 'ai_overviews' ? 'AI Overviews' :
+                     prov.provider}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Insight */}
+        {competitorComparisonRatio !== null && competitorComparisonRatio !== Infinity && (
+          <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
+            <Zap className="w-5 h-5 text-[#4A7C59] flex-shrink-0" />
+            <span className="text-sm text-gray-700">
+              {competitorComparisonRatio >= 1
+                ? `Your brand is mentioned ${competitorComparisonRatio.toFixed(1)}x more than competitors in AI responses`
+                : `Your brand is mentioned ${(1 / competitorComparisonRatio).toFixed(1)}x less than competitors in AI responses`
+              }
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* AI Summary */}
       <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -3566,7 +3670,7 @@ export default function ResultsPage() {
           {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
             <>
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-gray-400">Each row shows how an AI typically positions your brand. The bar spans from best to worst placement.</p>
+                <p className="text-sm text-gray-500">Each row shows how an AI model typically positions your brand. The bar spans from best to worst placement.</p>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="text-xs text-gray-500">Show sentiment</span>
                   <button
@@ -3982,7 +4086,7 @@ export default function ResultsPage() {
 
               {/* Legend for Performance Range view - shows sentiment when toggle is on */}
               {showSentimentColors && (
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 -mt-6">
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 -mt-2">
                   <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
@@ -6896,30 +7000,20 @@ export default function ResultsPage() {
 
                 {/* Source Category Breakdown */}
                 <div className="flex flex-col h-full">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="mb-4">
                     <h3 className="text-sm font-semibold text-gray-700">Source Types</h3>
-                    <select
-                      value={sourceTypeCategoryFilter}
-                      onChange={(e) => setSourceTypeCategoryFilter(e.target.value)}
-                      className="px-2 py-1 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                    >
-                      <option value="all">All Categories</option>
-                      {sourceCategoryData.map((cat) => (
-                        <option key={cat.name} value={cat.name}>{cat.name}</option>
-                      ))}
-                    </select>
                   </div>
                   {sourceCategoryData.length > 0 ? (
                     <div className="flex flex-col items-center flex-1 pt-2">
-                      <div className="h-[260px] w-[260px]">
+                      <div className="h-[320px] w-[320px]">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
-                              data={categoryFilteredSiteData || sourceCategoryData}
+                              data={sourceCategoryData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={60}
-                              outerRadius={100}
+                              innerRadius={75}
+                              outerRadius={130}
                               paddingAngle={2}
                               dataKey="value"
                               nameKey="name"
@@ -6966,20 +7060,17 @@ export default function ResultsPage() {
                               }}
                               labelLine={false}
                             >
-                              {(categoryFilteredSiteData || sourceCategoryData).map((entry, index) => (
+                              {sourceCategoryData.map((entry) => (
                                 <Cell
                                   key={`cell-${entry.name}`}
-                                  fill={categoryFilteredSiteData
-                                    ? `hsl(${150 + index * 25}, 45%, ${45 + index * 5}%)`
-                                    : (CATEGORY_COLORS[entry.name] || CATEGORY_COLORS['Other'])
-                                  }
+                                  fill={CATEGORY_COLORS[entry.name] || CATEGORY_COLORS['Other']}
                                 />
                               ))}
                             </Pie>
                             <Tooltip
                               formatter={(value, name) => {
                                 const numValue = typeof value === 'number' ? value : 0;
-                                const data = categoryFilteredSiteData || sourceCategoryData;
+                                const data = sourceCategoryData;
                                 const itemData = data.find(s => s.name === name);
                                 return [`${numValue} citations (${itemData?.percentage.toFixed(0) || 0}%)`, String(name)];
                               }}
@@ -6988,14 +7079,12 @@ export default function ResultsPage() {
                         </ResponsiveContainer>
                       </div>
                       <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-4 text-xs px-2 max-h-[100px] overflow-y-auto">
-                        {(categoryFilteredSiteData || sourceCategoryData).map((item, index) => (
+                        {sourceCategoryData.map((item) => (
                           <div key={item.name} className="flex items-center gap-1.5">
                             <div
                               className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                               style={{
-                                backgroundColor: categoryFilteredSiteData
-                                  ? `hsl(${150 + index * 25}, 45%, ${45 + index * 5}%)`
-                                  : (CATEGORY_COLORS[item.name] || CATEGORY_COLORS['Other'])
+                                backgroundColor: CATEGORY_COLORS[item.name] || CATEGORY_COLORS['Other']
                               }}
                             />
                             <span className="text-gray-700 truncate max-w-[100px]" title={item.name}>{item.name}</span>
@@ -7003,9 +7092,6 @@ export default function ResultsPage() {
                           </div>
                         ))}
                       </div>
-                      {categoryFilteredSiteData && categoryFilteredSiteData.length === 0 && (
-                        <p className="text-sm text-gray-500 text-center py-4">No sites in this category</p>
-                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500 text-center py-4">No data available</p>
@@ -9080,7 +9166,7 @@ export default function ResultsPage() {
                           </text>
                         </svg>
                       </div>
-                      <p className="text-xs text-gray-400 text-center -mt-2">
+                      <p className="text-sm text-gray-500 text-center mt-1">
                         Circle size shows how often brands appear together. Numbers show the total mentions.
                       </p>
                     </div>
