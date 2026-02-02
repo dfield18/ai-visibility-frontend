@@ -9292,6 +9292,7 @@ export default function ResultsPage() {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     });
 
+    const MAX_REPORTS = 3;
     const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const PROVIDER_LABELS: Record<string, string> = {
       openai: 'ChatGPT',
@@ -9506,13 +9507,22 @@ export default function ResultsPage() {
             <p className="text-sm text-gray-500 mt-1">
               Schedule recurring visibility analyses and receive results via email
             </p>
+            <p className="text-xs text-gray-400 mt-1">
+              {reports.length} of {MAX_REPORTS} reports used
+            </p>
           </div>
           <button
             onClick={() => {
               resetForm();
               setIsCreating(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-lg hover:bg-[#3d6649] transition-colors"
+            disabled={reports.length >= MAX_REPORTS}
+            className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              reports.length >= MAX_REPORTS
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-[#4A7C59] text-white hover:bg-[#3d6649]'
+            }`}
+            title={reports.length >= MAX_REPORTS ? `Maximum of ${MAX_REPORTS} reports allowed` : undefined}
           >
             <Plus className="w-4 h-4" />
             New Report
@@ -9540,8 +9550,11 @@ export default function ResultsPage() {
               <FileBarChart className="w-8 h-8 text-[#4A7C59]" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No automated reports yet</h3>
-            <p className="text-gray-500 max-w-md mx-auto mb-6">
+            <p className="text-gray-500 max-w-md mx-auto mb-4">
               Create your first automated report to receive regular visibility updates for {runStatus?.brand || 'your brand'}.
+            </p>
+            <p className="text-xs text-gray-400 mb-6">
+              You can create up to {MAX_REPORTS} automated reports.
             </p>
             <button
               onClick={() => {
