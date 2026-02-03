@@ -10666,6 +10666,56 @@ export default function ResultsPage() {
                     </select>
                   </div>
                 </div>
+
+                {/* Legend - moved to top */}
+                <div className="mb-4 flex items-center gap-3 text-xs text-gray-500">
+                  {heatmapShowSentiment ? (
+                    <>
+                      <span className="text-gray-600 font-medium">Sentiment:</span>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(239, 68, 68, 0.6)' }} />
+                        <span>Not Recommended</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(251, 191, 36, 0.6)' }} />
+                        <span>With Caveats</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(156, 163, 175, 0.4)' }} />
+                        <span>Neutral</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(134, 239, 172, 0.7)' }} />
+                        <span>Recommended</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(34, 139, 34, 0.75)' }} />
+                        <span>Highly Recommended</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(74, 124, 89, 0.5)' }} />
+                        <span>Searched brand</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(91, 163, 192, 0.5)' }} />
+                        <span>Competitors</span>
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        <span>Fewer</span>
+                        <div className="flex">
+                          <div className="w-4 h-3 rounded-l" style={{ backgroundColor: 'rgba(91, 163, 192, 0.15)' }} />
+                          <div className="w-4 h-3" style={{ backgroundColor: 'rgba(91, 163, 192, 0.4)' }} />
+                          <div className="w-4 h-3 rounded-r" style={{ backgroundColor: 'rgba(91, 163, 192, 0.7)' }} />
+                        </div>
+                        <span>More</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -10759,23 +10809,16 @@ export default function ResultsPage() {
                               return (
                                 <td
                                   key={brand}
-                                  className={`text-center py-2 px-3 ${count > 0 ? 'cursor-pointer hover:ring-2 hover:ring-inset hover:ring-gray-400' : ''}`}
-                                  style={{ backgroundColor: bgColor }}
+                                  className={`text-center py-2 px-2 ${count > 0 ? 'cursor-pointer hover:ring-2 hover:ring-inset hover:ring-gray-400' : ''}`}
+                                  style={{ backgroundColor: bgColor, minWidth: '60px' }}
                                   onDoubleClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
-                                  title={count > 0 ? 'Double-click to view responses' : undefined}
+                                  title={count > 0 ? (heatmapShowSentiment ? `${getSentimentLabelFromScore(avgSentiment)} - Double-click to view` : `${count} citations - Double-click to view`) : undefined}
                                 >
-                                  {count > 0 ? (
-                                    heatmapShowSentiment ? (
-                                      <span className={textColor}>
-                                        {getSentimentLabelFromScore(avgSentiment)}
-                                      </span>
-                                    ) : (
-                                      <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
-                                        {count}
-                                      </span>
-                                    )
-                                  ) : (
-                                    <span className="text-gray-300">-</span>
+                                  {count === 0 && <span className="text-gray-300">-</span>}
+                                  {count > 0 && !heatmapShowSentiment && (
+                                    <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
+                                      {count}
+                                    </span>
                                   )}
                                 </td>
                               );
@@ -10785,59 +10828,6 @@ export default function ResultsPage() {
                       })()}
                     </tbody>
                   </table>
-                </div>
-                <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-                  {heatmapShowSentiment ? (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <span className="text-gray-600">Sentiment:</span>
-                      </div>
-                      <div className="flex items-center gap-3 flex-wrap justify-end">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(239, 68, 68, 0.6)' }} />
-                          <span>Not Recommended</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(251, 191, 36, 0.6)' }} />
-                          <span>With Caveats</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(156, 163, 175, 0.4)' }} />
-                          <span>Neutral</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(134, 239, 172, 0.7)' }} />
-                          <span>Recommended</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(34, 139, 34, 0.75)' }} />
-                          <span>Highly Recommended</span>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(74, 124, 89, 0.5)' }} />
-                          <span>Searched brand</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(91, 163, 192, 0.5)' }} />
-                          <span>Competitors</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span>Fewer</span>
-                        <div className="flex">
-                          <div className="w-5 h-3 rounded-l" style={{ backgroundColor: 'rgba(91, 163, 192, 0.15)' }} />
-                          <div className="w-5 h-3" style={{ backgroundColor: 'rgba(91, 163, 192, 0.4)' }} />
-                          <div className="w-5 h-3 rounded-r" style={{ backgroundColor: 'rgba(91, 163, 192, 0.7)' }} />
-                        </div>
-                        <span>More</span>
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
             )}
