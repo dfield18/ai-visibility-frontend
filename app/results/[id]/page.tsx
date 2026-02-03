@@ -3682,6 +3682,33 @@ export default function ResultsPage() {
                 </label>
               </div>
 
+              {/* Legend for All Answers view - shows sentiment when toggle is on */}
+              {showSentimentColors && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Highly Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                    <span className="text-xs text-gray-500">With Caveats</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                    <span className="text-xs text-gray-500">Not Recommended</span>
+                  </div>
+                </div>
+              )}
+
               <div>
                   <div className="h-[450px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
                   <ResponsiveContainer width="100%" height="100%">
@@ -3869,32 +3896,6 @@ export default function ResultsPage() {
                   </div>
                 </div>
 
-              {/* Legend for All Answers view - shows sentiment when toggle is on */}
-              {showSentimentColors && (
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-2">
-                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-500">Neutral</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                    <span className="text-xs text-gray-500">With Caveats</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
-                  </div>
-                </div>
-              )}
 
             </>
           )}
@@ -3920,6 +3921,33 @@ export default function ResultsPage() {
                   </button>
                 </label>
               </div>
+
+              {/* Legend for Performance Range view - shows sentiment when toggle is on */}
+              {showSentimentColors && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Highly Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                    <span className="text-xs text-gray-500">With Caveats</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                    <span className="text-xs text-gray-500">Not Recommended</span>
+                  </div>
+                </div>
+              )}
 
               <div>
                   <div className="h-[450px] relative [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
@@ -4317,32 +4345,6 @@ export default function ResultsPage() {
                   </div>
                 </div>
 
-              {/* Legend for Performance Range view - shows sentiment when toggle is on */}
-              {showSentimentColors && (
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 -mt-2">
-                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-500">Neutral</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
-                    <span className="text-xs text-gray-500">With Caveats</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
-                  </div>
-                </div>
-              )}
             </>
           )}
         </div>
