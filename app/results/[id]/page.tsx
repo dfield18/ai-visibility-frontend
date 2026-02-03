@@ -156,6 +156,27 @@ const extractActionableTakeaway = (summary: string): string => {
   return '';
 };
 
+// Helper to remove the actionable takeaway section from the AI summary
+const removeActionableTakeaway = (summary: string): string => {
+  if (!summary) return '';
+
+  const text = extractSummaryText(summary);
+
+  // Remove "Actionable takeaway" section (case insensitive)
+  const patterns = [
+    /\n\n\*\*Actionable takeaway[:\s]*\*\*[\s\S]*$/i,
+    /\n\n\*\*Actionable[:\s]*\*\*[\s\S]*$/i,
+    /\n\nActionable takeaway[:\s]*[\s\S]*$/i,
+  ];
+
+  let result = text;
+  for (const pattern of patterns) {
+    result = result.replace(pattern, '');
+  }
+
+  return result.trim();
+};
+
 // Categorize a domain into a source type
 const categorizeDomain = (domain: string): string => {
   const d = domain.toLowerCase();
@@ -3449,7 +3470,7 @@ export default function ResultsPage() {
           </div>
         ) : aiSummary?.summary ? (
           <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{extractSummaryText(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{removeActionableTakeaway(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-sm text-gray-500 italic">
