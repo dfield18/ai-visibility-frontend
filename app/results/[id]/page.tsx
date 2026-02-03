@@ -114,21 +114,48 @@ const extractSummaryText = (summary: string): string => {
 
   // Check if the summary looks like JSON (starts with { and contains "summary":)
   if (trimmed.startsWith('{') && trimmed.includes('"summary"')) {
+    // First try standard JSON parse
     try {
       const parsed = JSON.parse(trimmed);
       if (parsed.summary && typeof parsed.summary === 'string') {
         return parsed.summary;
       }
     } catch {
-      // JSON parsing failed - try to extract summary using regex
-      // This handles cases where the JSON might be malformed or truncated
-      const summaryMatch = trimmed.match(/"summary"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"recommendations"|"\s*}|$)/);
-      if (summaryMatch && summaryMatch[1]) {
-        // Unescape JSON string escapes
-        return summaryMatch[1]
-          .replace(/\\n/g, '\n')
-          .replace(/\\"/g, '"')
-          .replace(/\\\\/g, '\\');
+      // JSON parsing failed - continue to fallback extraction
+    }
+
+    // Fallback: Extract content after "summary": " using string manipulation
+    // This handles malformed/truncated JSON
+    const summaryKeyIndex = trimmed.indexOf('"summary"');
+    if (summaryKeyIndex !== -1) {
+      // Find the opening quote of the value
+      const colonIndex = trimmed.indexOf(':', summaryKeyIndex);
+      if (colonIndex !== -1) {
+        // Find the first quote after the colon
+        const valueStartQuote = trimmed.indexOf('"', colonIndex);
+        if (valueStartQuote !== -1) {
+          // Extract everything after the opening quote
+          let content = trimmed.slice(valueStartQuote + 1);
+
+          // Try to find the end of the summary value
+          // Look for patterns that indicate the end: ",\n followed by "recommendations" or closing brace
+          const recommendationsIndex = content.indexOf('",\n  "recommendations"');
+          const endBraceIndex = content.indexOf('"\n}');
+          const altEndIndex = content.indexOf('",\n}');
+
+          // Find the earliest valid ending
+          const endings = [recommendationsIndex, endBraceIndex, altEndIndex].filter(i => i !== -1);
+          if (endings.length > 0) {
+            content = content.slice(0, Math.min(...endings));
+          }
+
+          // Clean up: unescape JSON string escapes
+          return content
+            .replace(/\\n/g, '\n')
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, '\\')
+            .trim();
+        }
       }
     }
   }
