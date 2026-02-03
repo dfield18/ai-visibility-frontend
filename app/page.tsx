@@ -219,17 +219,13 @@ export default function Home() {
               )}
             </form>
 
-            {/* Trust Text */}
-            <p className="text-sm text-gray-500">
-              Trusted by 2,000+ brands tracking their AI presence
-            </p>
           </div>
 
           {/* Right Column - Demo Card */}
           <div className="flex justify-center lg:justify-end lg:mr-[-8%]">
             <div className="bg-white rounded-2xl shadow-lg px-6 py-8 w-full">
               {/* Card Header */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-[#F5F5F0] flex items-center justify-center">
                     <svg
@@ -248,7 +244,6 @@ export default function Home() {
                   </div>
                   <span className="font-semibold text-gray-700">Brand Analysis</span>
                 </div>
-                <span className="text-sm text-gray-400">Live</span>
               </div>
 
               {/* Visibility Score Circle */}
