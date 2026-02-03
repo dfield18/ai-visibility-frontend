@@ -7231,7 +7231,12 @@ export default function ResultsPage() {
                   <div className="mb-4">
                     <h3 className="text-sm font-semibold text-gray-700">Source Types</h3>
                   </div>
-                  {sourceCategoryData.length > 0 ? (
+                  {runStatus?.status !== 'complete' ? (
+                    <div className="flex flex-col items-center justify-center flex-1 py-8">
+                      <Spinner size="md" />
+                      <p className="text-sm text-gray-500 mt-3">Loading source data...</p>
+                    </div>
+                  ) : sourceCategoryData.length > 0 ? (
                     <div className="flex flex-col items-center flex-1 pt-2">
                       <div className="h-[320px] w-[320px]">
                         <PieChart width={320} height={320}>
