@@ -169,6 +169,11 @@ const extractActionableTakeaway = (summary: string): string => {
 
   const text = extractSummaryText(summary);
 
+  // If text still looks like JSON, don't try to extract from it
+  if (text.trim().startsWith('{') || text.trim().startsWith('"recommendations"')) {
+    return '';
+  }
+
   // Look for "Actionable takeaway" section (case insensitive)
   // It's typically the last paragraph, starting with **Actionable takeaway**
   const patterns = [
@@ -180,14 +185,28 @@ const extractActionableTakeaway = (summary: string): string => {
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (match && match[1]) {
-      return match[1].trim();
+      const extracted = match[1].trim();
+      // Make sure we didn't extract JSON
+      if (!extracted.startsWith('{') && !extracted.startsWith('[') && !extracted.includes('"recommendations"')) {
+        return extracted;
+      }
     }
   }
 
   // Fallback: return the last paragraph if no explicit actionable takeaway found
+  // But only if it doesn't look like JSON
   const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
   if (paragraphs.length > 0) {
-    return paragraphs[paragraphs.length - 1].trim();
+    const lastParagraph = paragraphs[paragraphs.length - 1].trim();
+    // Check if it looks like JSON or contains JSON-like content
+    if (!lastParagraph.startsWith('{') &&
+        !lastParagraph.startsWith('[') &&
+        !lastParagraph.startsWith('"') &&
+        !lastParagraph.includes('"recommendations"') &&
+        !lastParagraph.includes('"title"') &&
+        !lastParagraph.includes('"tactics"')) {
+      return lastParagraph;
+    }
   }
 
   return '';
