@@ -126,6 +126,36 @@ const extractSummaryText = (summary: string): string => {
   return summary;
 };
 
+// Helper to extract just the actionable takeaway section from the AI summary
+const extractActionableTakeaway = (summary: string): string => {
+  if (!summary) return '';
+
+  const text = extractSummaryText(summary);
+
+  // Look for "Actionable takeaway" section (case insensitive)
+  // It's typically the last paragraph, starting with **Actionable takeaway**
+  const patterns = [
+    /\*\*Actionable takeaway[:\s]*\*\*\s*([\s\S]*?)(?=\n\n\*\*|$)/i,
+    /Actionable takeaway[:\s]*([\s\S]*?)(?=\n\n\*\*|$)/i,
+    /\*\*Actionable[:\s]*\*\*\s*([\s\S]*?)(?=\n\n\*\*|$)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+  }
+
+  // Fallback: return the last paragraph if no explicit actionable takeaway found
+  const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
+  if (paragraphs.length > 0) {
+    return paragraphs[paragraphs.length - 1].trim();
+  }
+
+  return '';
+};
+
 // Categorize a domain into a source type
 const categorizeDomain = (domain: string): string => {
   const d = domain.toLowerCase();
@@ -8928,51 +8958,29 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
-        {/* AI Analysis Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-blue-600" />
-              <h2 className="text-base font-semibold text-gray-900">AI Analysis</h2>
-            </div>
-            {aiSummary?.summary && (
-              <button
-                onClick={() => setAiSummaryExpanded(!aiSummaryExpanded)}
-                className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-              >
-                {aiSummaryExpanded ? (
-                  <>Show less <ChevronUp className="w-4 h-4" /></>
+        {/* Actionable Takeaway Section */}
+        {(isSummaryLoading || (aiSummary?.summary && extractActionableTakeaway(aiSummary.summary))) && (
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-200 p-5">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Lightbulb className="w-4 h-4 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-gray-900 mb-1">Actionable Takeaway</h3>
+                {isSummaryLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Spinner size="sm" />
+                    <span className="text-sm text-gray-500">Analyzing results...</span>
+                  </div>
                 ) : (
-                  <>Show more <ChevronDown className="w-4 h-4" /></>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    {extractActionableTakeaway(aiSummary?.summary || '').replace(/\bai_overviews\b/gi, 'Google AI Overviews')}
+                  </p>
                 )}
-              </button>
-            )}
+              </div>
+            </div>
           </div>
-          {isSummaryLoading ? (
-            <div className="flex items-center gap-3 py-4">
-              <Spinner size="sm" />
-              <span className="text-sm text-gray-500">Generating AI summary...</span>
-            </div>
-          ) : aiSummary?.summary ? (
-            <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{extractSummaryText(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 italic">
-              AI summary will be available once the analysis is complete.
-            </p>
-          )}
-          {aiSummary?.summary && !aiSummaryExpanded && (
-            <div className="mt-2 pt-2 border-t border-gray-100">
-              <button
-                onClick={() => setAiSummaryExpanded(true)}
-                className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-              >
-                Read full analysis →
-              </button>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* AI-Generated Recommendations */}
         {aiSummary?.recommendations && aiSummary.recommendations.length > 0 && (
