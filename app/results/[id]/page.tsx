@@ -3446,6 +3446,11 @@ export default function ResultsPage() {
                           </span>
                         </div>
                       )}
+
+                      {/* Score Definition */}
+                      <p className="text-xs text-gray-400 mt-4 text-left">
+                        Visibility Score = % of AI responses mentioning this brand
+                      </p>
                     </div>
                   </div>
                 );
