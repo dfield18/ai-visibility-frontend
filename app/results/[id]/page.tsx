@@ -8074,7 +8074,10 @@ export default function ResultsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6 items-start">
             {/* Sentiment Distribution */}
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-4">Overall Sentiment Distribution</h4>
+              <div className="flex items-baseline justify-between mb-4">
+                <h4 className="text-sm font-medium text-gray-700">Overall Sentiment Distribution</h4>
+                <span className="text-xs text-gray-400">Bar length = number of citations</span>
+              </div>
               <div className="space-y-3">
                 {brandSentimentData.map((d) => (
                   <div key={d.sentiment} className="flex items-center gap-3">
