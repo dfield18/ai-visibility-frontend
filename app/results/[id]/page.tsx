@@ -3359,17 +3359,16 @@ export default function ResultsPage() {
                       {/* Provider Scores */}
                       {providers.length > 0 && (
                         <div className="mb-5">
-                          <div className="flex flex-wrap justify-center gap-2">
+                          <div className="flex justify-center gap-1.5">
                             {providers.map((prov, idx) => (
                               <div
                                 key={prov.provider}
-                                className={`${brandData.isSearchedBrand ? bgColors[idx % bgColors.length] : 'bg-gray-300'} rounded-xl p-2.5 text-center`}
-                                style={{ width: providers.length <= 4 ? 'calc(50% - 4px)' : 'calc(33.333% - 6px)', minWidth: '80px' }}
+                                className={`${brandData.isSearchedBrand ? bgColors[idx % bgColors.length] : 'bg-gray-300'} rounded-xl px-2 py-2 text-center flex-1`}
                               >
-                                <div className={`text-lg font-bold ${brandData.isSearchedBrand ? textColors[idx % textColors.length] : 'text-gray-700'}`}>
+                                <div className={`text-base font-bold ${brandData.isSearchedBrand ? textColors[idx % textColors.length] : 'text-gray-700'}`}>
                                   {prov.score}
                                 </div>
-                                <div className={`text-xs ${brandData.isSearchedBrand ? labelColors[idx % labelColors.length] : 'text-gray-500'}`}>
+                                <div className={`text-[10px] leading-tight ${brandData.isSearchedBrand ? labelColors[idx % labelColors.length] : 'text-gray-500'}`}>
                                   {getProviderLabel(prov.provider)}
                                 </div>
                               </div>
