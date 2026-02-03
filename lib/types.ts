@@ -127,6 +127,7 @@ export interface AIRecommendation {
   description: string;
   priority: 'high' | 'medium' | 'low';
   category: 'content' | 'seo' | 'pr' | 'product' | 'technical';
+  dataInsight?: string;
 }
 
 export interface AISummaryResponse {

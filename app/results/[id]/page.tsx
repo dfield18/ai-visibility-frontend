@@ -9058,6 +9058,13 @@ export default function ResultsPage() {
                       </div>
                     </div>
                     <p className="text-sm text-gray-600">{rec.description}</p>
+                    {rec.dataInsight && (
+                      <div className="mt-2 px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg">
+                        <p className="text-xs text-blue-700">
+                          <span className="font-semibold">Data insight:</span> {rec.dataInsight}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
