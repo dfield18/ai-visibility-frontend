@@ -3343,7 +3343,6 @@ export default function ResultsPage() {
                             )}
                           </div>
                         </div>
-                        <span className="text-sm text-gray-400">Live</span>
                       </div>
 
                       {/* Visibility Score Circle */}
