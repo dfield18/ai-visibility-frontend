@@ -9196,63 +9196,6 @@ export default function ResultsPage() {
           )}
         </div>
 
-        {/* ChatGPT Advertising Opportunities */}
-        <div className="bg-gradient-to-r from-[#E8F5E9] to-[#F0F7F0] rounded-xl shadow-sm border border-[#C8E6C9] p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <Megaphone className="w-5 h-5 text-[#4A7C59]" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">ChatGPT Ads Opportunities</h2>
-                <p className="text-sm text-gray-600">Fill visibility gaps with paid placements</p>
-              </div>
-            </div>
-            <span className="px-3 py-1 bg-[#4A7C59] text-white text-xs font-medium rounded-full">
-              Coming Soon
-            </span>
-          </div>
-
-          <p className="text-sm text-gray-700 mb-4">
-            OpenAI is launching advertising in ChatGPT. Based on your visibility gaps, here are prompts where ads could help:
-          </p>
-
-          {adOpportunities.length > 0 ? (
-            <div className="space-y-3 mb-4">
-              {adOpportunities.map((opp, idx) => (
-                <div key={idx} className="bg-white rounded-lg p-4 border border-gray-200">
-                  <p className="font-medium text-gray-900 mb-2 text-sm">"{truncate(opp.prompt, 60)}"</p>
-                  <div className="flex items-center gap-6 text-sm">
-                    <div>
-                      <span className="text-gray-500">Your visibility:</span>
-                      <span className="ml-2 font-semibold text-red-600">{opp.yourVisibility.toFixed(0)}%</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Competitor avg:</span>
-                      <span className="ml-2 font-semibold text-green-600">{opp.competitorAvg.toFixed(0)}%</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Gap:</span>
-                      <span className="ml-2 font-semibold text-[#4A7C59]">{opp.gap.toFixed(0)}%</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg p-4 border border-gray-200 mb-4">
-              <p className="text-sm text-gray-600 text-center">
-                Your visibility is strong across prompts. Ads could help maintain your lead.
-              </p>
-            </div>
-          )}
-
-          <button className="w-full py-3 bg-[#4A7C59] text-white font-medium rounded-lg hover:bg-[#3d6649] transition-colors flex items-center justify-center gap-2">
-            <Mail className="w-4 h-4" />
-            Join ChatGPT Ads Waitlist
-          </button>
-        </div>
-
         {/* Content & SEO Recommendations */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-4">
