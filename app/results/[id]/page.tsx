@@ -138,15 +138,27 @@ const extractSummaryText = (summary: string): string => {
           let content = trimmed.slice(valueStartQuote + 1);
 
           // Try to find the end of the summary value
-          // Look for patterns that indicate the end: ",\n followed by "recommendations" or closing brace
-          const recommendationsIndex = content.indexOf('",\n  "recommendations"');
-          const endBraceIndex = content.indexOf('"\n}');
-          const altEndIndex = content.indexOf('",\n}');
+          // Look for various patterns that indicate the end
+          const endPatterns = [
+            '",\n  "recommendations"',
+            '",\n"recommendations"',
+            '", "recommendations"',
+            '","recommendations"',
+            '"\n}',
+            '",\n}',
+            '"}',
+          ];
 
-          // Find the earliest valid ending
-          const endings = [recommendationsIndex, endBraceIndex, altEndIndex].filter(i => i !== -1);
-          if (endings.length > 0) {
-            content = content.slice(0, Math.min(...endings));
+          let earliestEnd = -1;
+          for (const pattern of endPatterns) {
+            const idx = content.indexOf(pattern);
+            if (idx !== -1 && (earliestEnd === -1 || idx < earliestEnd)) {
+              earliestEnd = idx;
+            }
+          }
+
+          if (earliestEnd !== -1) {
+            content = content.slice(0, earliestEnd);
           }
 
           // Clean up: unescape JSON string escapes
@@ -169,8 +181,8 @@ const extractActionableTakeaway = (summary: string): string => {
 
   const text = extractSummaryText(summary);
 
-  // If text still looks like JSON, don't try to extract from it
-  if (text.trim().startsWith('{') || text.trim().startsWith('"recommendations"')) {
+  // If text still looks like raw JSON, return empty
+  if (text.trim().startsWith('{') || text.trim().startsWith('"recommendations"') || text.trim().startsWith('"title"')) {
     return '';
   }
 
@@ -193,20 +205,22 @@ const extractActionableTakeaway = (summary: string): string => {
     }
   }
 
-  // Fallback: return the last paragraph if no explicit actionable takeaway found
-  // But only if it doesn't look like JSON
-  const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
+  // Fallback: return the last non-JSON paragraph if no explicit actionable takeaway found
+  const paragraphs = text.split(/\n\n+/).filter(p => {
+    const trimmed = p.trim();
+    // Skip JSON-like content
+    return trimmed &&
+           !trimmed.startsWith('{') &&
+           !trimmed.startsWith('[') &&
+           !trimmed.startsWith('"') &&
+           !trimmed.includes('"recommendations"') &&
+           !trimmed.includes('"title"') &&
+           !trimmed.includes('"tactics"') &&
+           !trimmed.includes('"priority"');
+  });
+
   if (paragraphs.length > 0) {
-    const lastParagraph = paragraphs[paragraphs.length - 1].trim();
-    // Check if it looks like JSON or contains JSON-like content
-    if (!lastParagraph.startsWith('{') &&
-        !lastParagraph.startsWith('[') &&
-        !lastParagraph.startsWith('"') &&
-        !lastParagraph.includes('"recommendations"') &&
-        !lastParagraph.includes('"title"') &&
-        !lastParagraph.includes('"tactics"')) {
-      return lastParagraph;
-    }
+    return paragraphs[paragraphs.length - 1].trim();
   }
 
   return '';
