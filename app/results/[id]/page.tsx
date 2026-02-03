@@ -465,6 +465,25 @@ export default function ResultsPage() {
     runStatus?.status === 'complete'
   );
 
+  // Debug logging for AI Summary response
+  useEffect(() => {
+    if (aiSummary) {
+      console.log('[AI Summary] Full response:', aiSummary);
+      console.log('[AI Summary] Summary field:', aiSummary.summary);
+      console.log('[AI Summary] Summary field type:', typeof aiSummary.summary);
+      console.log('[AI Summary] Summary starts with {:', aiSummary.summary?.trim().startsWith('{'));
+      console.log('[AI Summary] Recommendations:', aiSummary.recommendations);
+      console.log('[AI Summary] Recommendations count:', aiSummary.recommendations?.length);
+      if (aiSummary.recommendations?.length > 0) {
+        console.log('[AI Summary] First recommendation:', aiSummary.recommendations[0]);
+        console.log('[AI Summary] First rec has tactics:', !!aiSummary.recommendations[0]?.tactics);
+        console.log('[AI Summary] First rec tactics:', aiSummary.recommendations[0]?.tactics);
+      }
+      console.log('[AI Summary] Extracted summary text:', extractSummaryText(aiSummary.summary || ''));
+      console.log('[AI Summary] Extracted actionable takeaway:', extractActionableTakeaway(aiSummary.summary || ''));
+    }
+  }, [aiSummary]);
+
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
