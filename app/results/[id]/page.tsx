@@ -9065,6 +9065,19 @@ export default function ResultsPage() {
                         </p>
                       </div>
                     )}
+                    {rec.tactics && rec.tactics.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <p className="text-xs font-semibold text-gray-700 mb-2">Recommended tactics:</p>
+                        <ul className="space-y-1.5">
+                          {rec.tactics.map((tactic, tacticIdx) => (
+                            <li key={tacticIdx} className="flex items-start gap-2 text-sm text-gray-600">
+                              <span className="text-[#4A7C59] mt-0.5">→</span>
+                              <span>{tactic}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 );
               })}
