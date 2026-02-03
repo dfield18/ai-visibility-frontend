@@ -8928,6 +8928,52 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
+        {/* AI Analysis Section */}
+        <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-blue-600" />
+              <h2 className="text-base font-semibold text-gray-900">AI Analysis</h2>
+            </div>
+            {aiSummary?.summary && (
+              <button
+                onClick={() => setAiSummaryExpanded(!aiSummaryExpanded)}
+                className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+              >
+                {aiSummaryExpanded ? (
+                  <>Show less <ChevronUp className="w-4 h-4" /></>
+                ) : (
+                  <>Show more <ChevronDown className="w-4 h-4" /></>
+                )}
+              </button>
+            )}
+          </div>
+          {isSummaryLoading ? (
+            <div className="flex items-center gap-3 py-4">
+              <Spinner size="sm" />
+              <span className="text-sm text-gray-500">Generating AI summary...</span>
+            </div>
+          ) : aiSummary?.summary ? (
+            <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{extractSummaryText(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500 italic">
+              AI summary will be available once the analysis is complete.
+            </p>
+          )}
+          {aiSummary?.summary && !aiSummaryExpanded && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <button
+                onClick={() => setAiSummaryExpanded(true)}
+                className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+              >
+                Read full analysis →
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* AI-Generated Recommendations */}
         {aiSummary?.recommendations && aiSummary.recommendations.length > 0 && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
