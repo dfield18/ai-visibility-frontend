@@ -7094,9 +7094,9 @@ export default function ResultsPage() {
                   {topCitedSources.map((source, index) => {
                     const isExpanded = expandedSources.has(source.domain);
                     return (
-                      <div key={source.domain} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
+                      <div key={source.domain} className="bg-[#FAFAF8] rounded-lg">
                         <div
-                          className="flex items-center gap-2 p-2.5 cursor-pointer hover:bg-gray-100 transition-[background-color] duration-150"
+                          className="flex items-center gap-2 p-2.5 cursor-pointer hover:bg-gray-100 transition-colors duration-100 rounded-t-lg"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -7117,11 +7117,8 @@ export default function ResultsPage() {
                           }}
                         >
                           <span className="text-xs font-medium text-gray-400 w-5">{index + 1}.</span>
-                          <span className="flex-shrink-0 relative group/icon">
+                          <span className="flex-shrink-0 relative group/icon" title={categorizeDomain(source.domain)}>
                             {getCategoryIcon(categorizeDomain(source.domain))}
-                            <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs text-gray-700 bg-white border border-gray-200 rounded shadow-sm whitespace-nowrap opacity-0 group-hover/icon:opacity-100 pointer-events-none transition-opacity delay-300 z-50">
-                              {categorizeDomain(source.domain)}
-                            </span>
                           </span>
                           <div className="flex-1 flex items-center gap-1.5 text-sm font-medium text-[#4A7C59] min-w-0">
                             {isExpanded ? <ChevronUp className="w-3 h-3 flex-shrink-0" /> : <ChevronDown className="w-3 h-3 flex-shrink-0" />}
