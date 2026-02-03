@@ -110,8 +110,9 @@ const CATEGORY_COLORS: Record<string, string> = {
 const extractSummaryText = (summary: string): string => {
   if (!summary) return '';
 
-  // Check if the summary looks like JSON (starts with { and contains "summary":)
   const trimmed = summary.trim();
+
+  // Check if the summary looks like JSON (starts with { and contains "summary":)
   if (trimmed.startsWith('{') && trimmed.includes('"summary"')) {
     try {
       const parsed = JSON.parse(trimmed);
@@ -119,7 +120,16 @@ const extractSummaryText = (summary: string): string => {
         return parsed.summary;
       }
     } catch {
-      // Not valid JSON, return as-is
+      // JSON parsing failed - try to extract summary using regex
+      // This handles cases where the JSON might be malformed or truncated
+      const summaryMatch = trimmed.match(/"summary"\s*:\s*"([\s\S]*?)(?:"\s*,\s*"recommendations"|"\s*}|$)/);
+      if (summaryMatch && summaryMatch[1]) {
+        // Unescape JSON string escapes
+        return summaryMatch[1]
+          .replace(/\\n/g, '\n')
+          .replace(/\\"/g, '"')
+          .replace(/\\\\/g, '\\');
+      }
     }
   }
 
