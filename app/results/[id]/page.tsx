@@ -3371,7 +3371,7 @@ export default function ResultsPage() {
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* AI Visibility Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">AI Visibility</p>
             <div className="relative group">
@@ -3395,7 +3395,7 @@ export default function ResultsPage() {
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#e5e7eb"
+                  stroke="#fecaca"
                   strokeWidth="8"
                   fill="none"
                 />
@@ -3403,7 +3403,7 @@ export default function ResultsPage() {
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#22d3ee"
+                  stroke="#22c55e"
                   strokeWidth="8"
                   fill="none"
                   strokeLinecap="round"
@@ -3411,7 +3411,7 @@ export default function ResultsPage() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold text-gray-900">{overviewMetrics?.overallVisibility?.toFixed(1) || 0}%</span>
+                <span className="text-sm font-bold text-gray-900">{overviewMetrics?.overallVisibility?.toFixed(1) || 0}%</span>
               </div>
             </div>
           </div>
@@ -3423,11 +3423,11 @@ export default function ResultsPage() {
               </span>
             );
           })()}
-          <p className="text-xs text-gray-500 leading-relaxed">% of AI responses that mention your brand when asked relevant questions</p>
+          <p className="text-xs text-gray-500 leading-relaxed mt-auto">% of AI responses that mention your brand when asked relevant questions</p>
         </div>
 
         {/* Share of Voice Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">Share of Voice</p>
             <div className="relative group">
@@ -3451,7 +3451,7 @@ export default function ResultsPage() {
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#e5e7eb"
+                  stroke="#fecaca"
                   strokeWidth="8"
                   fill="none"
                 />
@@ -3459,7 +3459,7 @@ export default function ResultsPage() {
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#3b82f6"
+                  stroke="#22c55e"
                   strokeWidth="8"
                   fill="none"
                   strokeLinecap="round"
@@ -3467,7 +3467,7 @@ export default function ResultsPage() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold text-gray-900">{overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%</span>
+                <span className="text-sm font-bold text-gray-900">{overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%</span>
               </div>
             </div>
           </div>
@@ -3479,11 +3479,11 @@ export default function ResultsPage() {
               </span>
             );
           })()}
-          <p className="text-xs text-gray-500 leading-relaxed">Your brand's share of all brand mentions</p>
+          <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your brand's share of all brand mentions</p>
         </div>
 
         {/* Top Result Rate Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">Top Result Rate</p>
             <div className="relative group">
@@ -3507,7 +3507,7 @@ export default function ResultsPage() {
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#e5e7eb"
+                  stroke="#fecaca"
                   strokeWidth="8"
                   fill="none"
                 />
@@ -3515,7 +3515,7 @@ export default function ResultsPage() {
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#f59e0b"
+                  stroke="#22c55e"
                   strokeWidth="8"
                   fill="none"
                   strokeLinecap="round"
@@ -3523,7 +3523,7 @@ export default function ResultsPage() {
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-lg font-bold text-gray-900">{overviewMetrics?.top1Rate?.toFixed(0) || 0}%</span>
+                <span className="text-sm font-bold text-gray-900">{overviewMetrics?.top1Rate?.toFixed(0) || 0}%</span>
               </div>
             </div>
           </div>
@@ -3535,11 +3535,11 @@ export default function ResultsPage() {
               </span>
             );
           })()}
-          <p className="text-xs text-gray-500 leading-relaxed">How often your brand is the #1 result</p>
+          <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often your brand is the #1 result</p>
         </div>
 
         {/* Avg. Position Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">Avg. Position</p>
             <div className="relative group">
@@ -3592,7 +3592,7 @@ export default function ResultsPage() {
               </span>
             );
           })()}
-          <p className="text-xs text-gray-500 leading-relaxed">Your average ranking when mentioned</p>
+          <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your average ranking when mentioned</p>
         </div>
       </div>
 
@@ -3641,760 +3641,6 @@ export default function ResultsPage() {
           </div>
         )}
       </div>
-
-      {/* Charts Section with Tabs */}
-      {scatterPlotData.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          {/* Chart Title */}
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Where your brand appears in AI-generated answers</h2>
-
-          {/* Key takeaway - shown above tabs for Ranking in AI Results and Performance Range */}
-          {(chartTab === 'allAnswers' || chartTab === 'performanceRange') && (() => {
-            const totalAnswers = scatterPlotData.length;
-            const mentionedCount = scatterPlotData.filter(d => d.isMentioned).length;
-            const notMentionedCount = totalAnswers - mentionedCount;
-            const topPositionCount = scatterPlotData.filter(d => d.rank === 1).length;
-            const top3Count = scatterPlotData.filter(d => d.rank >= 1 && d.rank <= 3).length;
-            const mentionRate = totalAnswers > 0 ? (mentionedCount / totalAnswers) * 100 : 0;
-            const topPositionRate = mentionedCount > 0 ? (topPositionCount / mentionedCount) * 100 : 0;
-
-            let takeaway = '';
-            if (mentionRate < 30) {
-              takeaway = `Your brand appears in only ${mentionRate.toFixed(0)}% of AI answers—there's room to improve visibility.`;
-            } else if (topPositionRate > 50 && mentionRate > 50) {
-              takeaway = `Strong performance: your brand is the top result in ${topPositionRate.toFixed(0)}% of answers where it appears.`;
-            } else if (topPositionCount > 0 && top3Count > mentionedCount * 0.6) {
-              takeaway = `Your brand typically appears in the top 3 positions when mentioned.`;
-            } else if (notMentionedCount > mentionedCount) {
-              takeaway = `Your brand is not shown in ${notMentionedCount} of ${totalAnswers} answers—consider optimizing for AI visibility.`;
-            } else if (mentionRate > 70) {
-              takeaway = `Good visibility: your brand appears in ${mentionRate.toFixed(0)}% of AI answers.`;
-            } else {
-              takeaway = `Your brand appears in ${mentionedCount} of ${totalAnswers} AI answers across all platforms.`;
-            }
-
-            return (
-              <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 mb-4">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
-                </p>
-              </div>
-            );
-          })()}
-
-          {/* Chart Tabs */}
-          <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
-            <button
-              onClick={() => setChartTab('allAnswers')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                chartTab === 'allAnswers'
-                  ? 'border-[#4A7C59] text-[#4A7C59]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {runStatus?.brand || 'Brand'}'s Ranking in AI Results
-            </button>
-            <button
-              onClick={() => setChartTab('performanceRange')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                chartTab === 'performanceRange'
-                  ? 'border-[#4A7C59] text-[#4A7C59]'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Performance Range
-            </button>
-                      </div>
-
-          {/* All Answers Chart */}
-          {chartTab === 'allAnswers' && (
-            <>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs text-gray-400">Each dot is one AI response. Higher dots mean earlier mentions of {runStatus?.brand || 'your brand'}.</p>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-gray-500">Show sentiment</span>
-                  <button
-                    onClick={() => setShowSentimentColors(!showSentimentColors)}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                      showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                        showSentimentColors ? 'translate-x-5' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </label>
-              </div>
-
-              {/* Legend for All Answers view - shows sentiment when toggle is on */}
-              {showSentimentColors && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
-                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
-                    <span className="text-xs text-gray-500">With Caveats</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-500">Neutral</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                  <div className="h-[450px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 50 }}>
-                      {/* Horizontal band shading - green gradient (darker = better ranking) */}
-                      <ReferenceArea y1={-0.5} y2={0.5} fill="#86efac" fillOpacity={0.5} />
-                      <ReferenceArea y1={0.5} y2={1.5} fill="#bbf7d0" fillOpacity={0.5} />
-                      <ReferenceArea y1={1.5} y2={2.5} fill="#dcfce7" fillOpacity={0.5} />
-                      <ReferenceArea y1={2.5} y2={3.5} fill="#ecfdf5" fillOpacity={0.5} />
-                      <ReferenceArea y1={3.5} y2={4.5} fill="#f0fdf4" fillOpacity={0.5} />
-                      <ReferenceArea y1={4.5} y2={5.5} fill="#e5e7eb" fillOpacity={0.3} />
-                      {/* Divider line above "Not mentioned" band */}
-                      <ReferenceLine y={4.5} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 4" />
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={true} horizontal={false} />
-                      <XAxis
-                        type="number"
-                        dataKey="xIndexWithOffset"
-                        domain={[-0.5, scatterProviderOrder.length - 0.5]}
-                        tick={(props: any) => {
-                          const { x, y, payload } = props;
-                          const provider = scatterProviderOrder[Math.round(payload?.value ?? 0)];
-                          const label = provider ? (providerLabels[provider] || provider) : '';
-                          return (
-                            <text
-                              x={x}
-                              y={y + 12}
-                              textAnchor="middle"
-                              fill="#6b7280"
-                              fontSize={12}
-                            >
-                              {label}
-                            </text>
-                          );
-                        }}
-                        ticks={scatterProviderOrder.map((_, i) => i)}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                        tickLine={false}
-                        interval={0}
-                      />
-                      <YAxis
-                        type="number"
-                        dataKey="rankBandIndex"
-                        name="Rank"
-                        domain={[-0.5, RANK_BANDS.length - 0.5]}
-                        reversed
-                        tick={(props: any) => {
-                          const { x, y, payload } = props;
-                          const label = RANK_BANDS[Math.round(payload?.value ?? 0)] || '';
-                          const isNotMentioned = label === 'Not shown';
-                          const isAfterTop10 = label === 'Shown after top 10';
-
-                          // Split "Shown after top 10" into two lines
-                          if (isAfterTop10) {
-                            return (
-                              <text
-                                x={x}
-                                y={y}
-                                textAnchor="end"
-                                fill="#6b7280"
-                                fontSize={12}
-                              >
-                                <tspan x={x} dy="-2">Shown after</tspan>
-                                <tspan x={x} dy="12">top 10</tspan>
-                              </text>
-                            );
-                          }
-
-                          return (
-                            <text
-                              x={x}
-                              y={y}
-                              dy={4}
-                              textAnchor="end"
-                              fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
-                              fontSize={12}
-                              fontStyle={isNotMentioned ? 'italic' : 'normal'}
-                            >
-                              {label}
-                            </text>
-                          );
-                        }}
-                        axisLine={{ stroke: '#e5e7eb' }}
-                        tickLine={false}
-                        ticks={RANK_BANDS.map((_, i) => i)}
-                        interval={0}
-                        width={80}
-                      />
-                      <Tooltip
-                        cursor={false}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            const truncatedPrompt = data.prompt.length > 70
-                              ? data.prompt.substring(0, 70) + '...'
-                              : data.prompt;
-                            return (
-                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[320px]">
-                                <p className="text-sm font-semibold text-gray-900 mb-1" title={data.prompt}>
-                                  {truncatedPrompt}
-                                </p>
-                                <p className="text-sm text-gray-700">
-                                  {data.rank === 0
-                                    ? 'Not shown'
-                                    : data.rank === 1
-                                      ? 'Shown as: #1 (Top result)'
-                                      : `Shown as: #${data.rank}`}
-                                </p>
-                                {showSentimentColors && data.sentiment && data.sentiment !== 'not_mentioned' && (
-                                  <p className={`text-xs mt-1 ${
-                                    data.sentiment === 'strong_endorsement' ? 'text-green-600' :
-                                    data.sentiment === 'positive_endorsement' ? 'text-lime-600' :
-                                    data.sentiment === 'neutral_mention' ? 'text-gray-600' :
-                                    data.sentiment === 'conditional' ? 'text-amber-500' :
-                                    data.sentiment === 'negative_comparison' ? 'text-red-500' : ''
-                                  }`}>
-                                    {data.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
-                                     data.sentiment === 'positive_endorsement' ? 'Recommended' :
-                                     data.sentiment === 'neutral_mention' ? 'Neutral' :
-                                     data.sentiment === 'conditional' ? 'With Caveats' :
-                                     data.sentiment === 'negative_comparison' ? 'Not Recommended' : ''}
-                                  </p>
-                                )}
-                                <p className="text-xs text-gray-400 mt-2">
-                                  {data.label}
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      <Scatter
-                        data={scatterPlotData}
-                        fill="#6b7280"
-                        shape={(props: any) => {
-                          const { cx, cy, payload } = props;
-                          // Sentiment colors: green=strong, gray=neutral, orange=conditional, red=negative
-                          let fillColor = '#6b7280'; // default gray
-                          let opacity = payload.isMentioned ? 0.6 : 0.25;
-
-                          if (showSentimentColors && payload.sentiment) {
-                            switch (payload.sentiment) {
-                              case 'strong_endorsement':
-                                fillColor = '#22c55e'; // green-500
-                                opacity = 0.8;
-                                break;
-                              case 'positive_endorsement':
-                                fillColor = '#84cc16'; // lime-500
-                                opacity = 0.8;
-                                break;
-                              case 'neutral_mention':
-                                fillColor = '#6b7280'; // gray-500
-                                opacity = 0.6;
-                                break;
-                              case 'conditional':
-                                fillColor = '#fcd34d'; // amber-300
-                                opacity = 1;
-                                break;
-                              case 'negative_comparison':
-                                fillColor = '#f87171'; // red-400
-                                opacity = 0.8;
-                                break;
-                              case 'not_mentioned':
-                                fillColor = '#d1d5db'; // gray-300
-                                opacity = 0.4;
-                                break;
-                            }
-                          }
-
-                          return (
-                            <circle
-                              cx={cx}
-                              cy={cy}
-                              r={5}
-                              fill={fillColor}
-                              opacity={opacity}
-                              style={{ cursor: 'pointer' }}
-                              onDoubleClick={() => setSelectedResult(payload.originalResult)}
-                            />
-                          );
-                        }}
-                      />
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                  </div>
-                </div>
-
-
-            </>
-          )}
-
-          {/* Performance Range Chart */}
-          {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
-            <>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm text-gray-500">Each row shows how an AI model typically positions your brand. The bar spans from best to worst placement.</p>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-gray-500">Show sentiment</span>
-                  <button
-                    onClick={() => setShowSentimentColors(!showSentimentColors)}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                      showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                        showSentimentColors ? 'translate-x-5' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </label>
-              </div>
-
-              {/* Legend for Performance Range view - shows sentiment when toggle is on */}
-              {showSentimentColors && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
-                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
-                    <span className="text-xs text-gray-500">With Caveats</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-500">Neutral</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                  <div className="h-[450px] relative [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart
-                        data={rangeChartData}
-                        layout="vertical"
-                        margin={{ top: 20, right: 20, bottom: 20, left: 50 }}
-                      >
-                        {/* Background color bands - green gradient (darker = better ranking) */}
-                        <ReferenceArea x1={-0.5} x2={0.5} fill="#86efac" fillOpacity={0.5} /> {/* 1 */}
-                        <ReferenceArea x1={0.5} x2={1.5} fill="#bbf7d0" fillOpacity={0.5} /> {/* 2 */}
-                        <ReferenceArea x1={1.5} x2={2.5} fill="#bbf7d0" fillOpacity={0.4} /> {/* 3 */}
-                        <ReferenceArea x1={2.5} x2={3.5} fill="#dcfce7" fillOpacity={0.5} /> {/* 4 */}
-                        <ReferenceArea x1={3.5} x2={4.5} fill="#dcfce7" fillOpacity={0.4} /> {/* 5 */}
-                        <ReferenceArea x1={4.5} x2={5.5} fill="#ecfdf5" fillOpacity={0.5} /> {/* 6 */}
-                        <ReferenceArea x1={5.5} x2={6.5} fill="#ecfdf5" fillOpacity={0.4} /> {/* 7 */}
-                        <ReferenceArea x1={6.5} x2={7.5} fill="#f0fdf4" fillOpacity={0.5} /> {/* 8 */}
-                        <ReferenceArea x1={7.5} x2={8.5} fill="#f0fdf4" fillOpacity={0.4} /> {/* 9 */}
-                        <ReferenceArea x1={8.5} x2={9.5} fill="#f0fdf4" fillOpacity={0.3} /> {/* 10+ */}
-                        <ReferenceArea x1={9.5} x2={10.5} fill="#e5e7eb" fillOpacity={0.3} /> {/* Not mentioned */}
-                        {/* Divider line before "Not mentioned" */}
-                        <ReferenceLine x={9.5} stroke="#d1d5db" strokeWidth={1} />
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} vertical={true} />
-                        <YAxis
-                          type="category"
-                          dataKey="label"
-                          tick={(props: any) => {
-                            const { x, y, payload } = props;
-                            const label = payload?.value || '';
-                            const isGoogleAI = label === 'Google AI Overviews';
-
-                            if (isGoogleAI) {
-                              return (
-                                <text
-                                  x={x - 8}
-                                  y={y}
-                                  textAnchor="end"
-                                  fill="#6b7280"
-                                  fontSize={12}
-                                >
-                                  <tspan x={x - 8} dy="-2">Google AI</tspan>
-                                  <tspan x={x - 8} dy="14">Overviews</tspan>
-                                </text>
-                              );
-                            }
-
-                            return (
-                              <text
-                                x={x - 8}
-                                y={y}
-                                dy={4}
-                                textAnchor="end"
-                                fill="#6b7280"
-                                fontSize={12}
-                              >
-                                {label}
-                              </text>
-                            );
-                          }}
-                          axisLine={{ stroke: '#e5e7eb' }}
-                          tickLine={false}
-                          width={80}
-                        />
-                        <XAxis
-                          type="number"
-                          domain={[-0.5, RANGE_X_LABELS.length - 0.5]}
-                          tick={(props: any) => {
-                            const { x, y, payload } = props;
-                            const label = RANGE_X_LABELS[Math.round(payload?.value ?? 0)] || '';
-                            const isNotMentioned = label === 'Not shown';
-                            const isAfterTop10 = label === 'Shown after top 10';
-
-                            // Split "Shown after top 10" into two lines
-                            if (isAfterTop10) {
-                              return (
-                                <text
-                                  x={x}
-                                  y={y + 8}
-                                  textAnchor="middle"
-                                  fill="#6b7280"
-                                  fontSize={11}
-                                >
-                                  <tspan x={x} dy="0">Shown after</tspan>
-                                  <tspan x={x} dy="12">top 10</tspan>
-                                </text>
-                              );
-                            }
-
-                            return (
-                              <text
-                                x={x}
-                                y={y + 12}
-                                textAnchor="middle"
-                                fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
-                                fontSize={11}
-                                fontStyle={isNotMentioned ? 'italic' : 'normal'}
-                              >
-                                {label}
-                              </text>
-                            );
-                          }}
-                          axisLine={{ stroke: '#e5e7eb' }}
-                          tickLine={false}
-                          ticks={RANGE_X_LABELS.map((_, i) => i)}
-                          interval={0}
-                                                  />
-                        <Tooltip
-                          cursor={false}
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-
-                              // Format position for display
-                              const formatPosition = (rangeX: number): string => {
-                                if (rangeX === 10) return 'Not shown';
-                                if (rangeX === 9) return '#10+';
-                                return `#${rangeX + 1}`;
-                              };
-
-                              // Format average as absolute number
-                              const formatAverage = (avg: number): string => {
-                                return avg.toFixed(1);
-                              };
-
-                              const bestPos = formatPosition(data.bestRangeX);
-                              const worstPos = formatPosition(data.worstRangeX);
-                              const avgPos = formatAverage(data.avgRanking);
-
-                              // Add "(some prompts)" if worst is "Not shown"
-                              const worstDisplay = data.worstRangeX === 10
-                                ? 'Not shown (some prompts)'
-                                : worstPos;
-
-                              return (
-                                <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[220px]">
-                                  <p className="text-sm font-semibold text-gray-900 mb-2">{data.label}</p>
-                                  <div className="space-y-1">
-                                    <p className="text-sm text-gray-700">
-                                      Best position shown: {bestPos}
-                                    </p>
-                                    <p className="text-sm text-gray-700">
-                                      Average position: {avgPos}
-                                    </p>
-                                    <p className="text-sm text-gray-700">
-                                      Worst position shown: {worstDisplay}
-                                    </p>
-                                  </div>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        {/* Range bar: invisible spacer + visible range */}
-                        <Bar dataKey="rangeStart" stackId="range" fill="transparent" barSize={20} />
-                        <Bar
-                          dataKey="rangeHeight"
-                          stackId="range"
-                          fill="#6b7280"
-                          fillOpacity={0.3}
-                          radius={[4, 4, 4, 4]}
-                          barSize={20}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                    {/* Dots overlay - positioned absolutely over the chart plotting area */}
-                    {rangeViewDots.length > 0 && (() => {
-                      // Chart margins matching ComposedChart margin prop
-                      const margin = { top: 20, right: 20, bottom: 20, left: 50 };
-                      const yAxisWidth = 80; // Matches YAxis width prop
-                      const xAxisHeight = 25; // Estimated height of X-axis with labels
-                      const numProviders = rangeChartData.length;
-
-                      // Domain is [-0.5, 10.5] - total range of 11 units
-                      const domainMin = -0.5;
-                      const domainMax = RANGE_X_LABELS.length - 0.5; // 10.5
-                      const domainRange = domainMax - domainMin; // 11
-
-                      // Calculate plotting area bounds
-                      // Left edge: margin.left + yAxisWidth (Y-axis is inside the chart area)
-                      const plotLeft = margin.left + yAxisWidth;
-                      // Width: container width - plotLeft - margin.right
-                      const plotWidth = `calc(100% - ${plotLeft + margin.right}px)`;
-                      // Height: container height - margin.top - margin.bottom - xAxisHeight
-                      // The X-axis is inside the chart area, so we need to subtract its height
-                      const plotHeight = `calc(100% - ${margin.top + margin.bottom + xAxisHeight}px)`;
-
-                      return (
-                        <div
-                          className="absolute pointer-events-none"
-                          style={{
-                            top: `${margin.top}px`,
-                            left: `${plotLeft}px`,
-                            width: plotWidth,
-                            height: plotHeight,
-                          }}
-                        >
-                          {/* Render dots for each prompt result */}
-                          {rangeViewDots.map((dot, idx) => {
-                            if (dot.yIndex < 0) return null;
-
-                            // X position: convert domain value to percentage within plotting area
-                            // dot.x is in range [0, 10] with small offsets
-                            // Map to percentage: (value - domainMin) / domainRange * 100
-                            const xPercent = ((dot.x - domainMin) / domainRange) * 100;
-
-                            // Y position: center dot within provider's band
-                            const yPercent = ((dot.yIndex + 0.5) / numProviders) * 100;
-
-                            // Check for overlap with average/median markers for this provider
-                            const providerData = rangeChartData[dot.yIndex];
-                            const hasMultipleResponses = providerData && providerData.promptsAnalyzed > 1;
-                            const overlapThreshold = 0.3;
-                            const overlapsAvg = hasMultipleResponses && Math.abs(dot.x - providerData.avgRankingX) < overlapThreshold;
-                            const overlapsMedian = hasMultipleResponses && Math.abs(dot.x - providerData.medianRankingX) < overlapThreshold;
-                            const avgMedianSame = hasMultipleResponses && Math.abs(providerData.avgRankingX - providerData.medianRankingX) < 0.5;
-
-                            // Calculate dot Y offset based on overlaps
-                            // When overlapping: dot on top, avg in middle-top, median in middle-bottom
-                            let dotYOffset = 0;
-                            if (overlapsAvg && overlapsMedian && avgMedianSame) {
-                              // All three at same position: dot at top
-                              dotYOffset = -12;
-                            } else if (overlapsAvg) {
-                              // Overlaps just avg: dot above avg
-                              dotYOffset = -10;
-                            } else if (overlapsMedian) {
-                              // Overlaps just median: dot above median
-                              dotYOffset = -10;
-                            }
-
-                            return (
-                              <div
-                                key={`range-dot-${idx}`}
-                                className="absolute pointer-events-auto group"
-                                style={{
-                                  left: `${xPercent}%`,
-                                  top: `calc(${yPercent}% + ${dotYOffset}px)`,
-                                  transform: 'translate(-50%, -50%)',
-                                }}
-                              >
-                                {/* Dot - styled to match Dots chart */}
-                                <div
-                                  className="w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
-                                  style={{
-                                    backgroundColor: showSentimentColors && dot.sentiment
-                                      ? dot.sentiment === 'strong_endorsement' ? '#22c55e'
-                                        : dot.sentiment === 'positive_endorsement' ? '#84cc16'
-                                        : dot.sentiment === 'neutral_mention' ? '#6b7280'
-                                        : dot.sentiment === 'conditional' ? '#fcd34d'
-                                        : dot.sentiment === 'negative_comparison' ? '#f87171'
-                                        : '#d1d5db'
-                                      : '#6b7280',
-                                    opacity: showSentimentColors && dot.sentiment
-                                      ? (dot.sentiment === 'not_mentioned' ? 0.4 : 0.8)
-                                      : (dot.isMentioned ? 0.7 : 0.3),
-                                  }}
-                                  onDoubleClick={() => setSelectedResult(dot.originalResult)}
-                                />
-                                {/* Tooltip on hover */}
-                                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
-                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[320px] text-left">
-                                    <p className="text-sm font-semibold text-gray-900 mb-1">{dot.prompt.length > 70 ? dot.prompt.substring(0, 70) + '...' : dot.prompt}</p>
-                                    <p className="text-sm text-gray-700">
-                                      {dot.rank === 0 ? 'Not shown' : dot.rank === 1 ? 'Shown as: #1 (Top result)' : `Shown as: #${dot.rank}`}
-                                    </p>
-                                    {showSentimentColors && dot.sentiment && dot.sentiment !== 'not_mentioned' && (
-                                      <p className={`text-xs mt-1 ${
-                                        dot.sentiment === 'strong_endorsement' ? 'text-green-600' :
-                                        dot.sentiment === 'positive_endorsement' ? 'text-lime-600' :
-                                        dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
-                                        dot.sentiment === 'conditional' ? 'text-amber-500' :
-                                        dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
-                                      }`}>
-                                        {dot.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
-                                         dot.sentiment === 'positive_endorsement' ? 'Recommended' :
-                                         dot.sentiment === 'neutral_mention' ? 'Neutral' :
-                                         dot.sentiment === 'conditional' ? 'With Caveats' :
-                                         dot.sentiment === 'negative_comparison' ? 'Not Recommended' : ''}
-                                      </p>
-                                    )}
-                                    <p className="text-xs text-gray-400 mt-2">{dot.label}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-
-                          {/* Render average and median markers for each provider */}
-                          {rangeChartData.map((data, idx) => {
-                            // Skip average/median markers when there's only 1 response (no meaningful stats)
-                            if (data.promptsAnalyzed === 1) return null;
-
-                            const yPercent = ((idx + 0.5) / numProviders) * 100;
-                            const avgXPercent = ((data.avgRankingX - domainMin) / domainRange) * 100;
-                            const medianXPercent = ((data.medianRankingX - domainMin) / domainRange) * 100;
-
-                            // Check if any dots overlap with avg or median for this provider
-                            const overlapThreshold = 0.3;
-                            const dotsForProvider = rangeViewDots.filter(d => d.yIndex === idx);
-                            const dotOverlapsAvg = dotsForProvider.some(d => Math.abs(d.x - data.avgRankingX) < overlapThreshold);
-                            const dotOverlapsMedian = dotsForProvider.some(d => Math.abs(d.x - data.medianRankingX) < overlapThreshold);
-
-                            // Check if average and median are at same position (within 0.5)
-                            const avgMedianSame = Math.abs(data.avgRankingX - data.medianRankingX) < 0.5;
-
-                            // Calculate offsets based on all overlaps
-                            // Stack order from top: dot (-12), avg (0 or -4), median (8 or 4)
-                            let avgYOffset = 0;
-                            let medianYOffset = 0;
-
-                            if (avgMedianSame && dotOverlapsAvg) {
-                              // All three overlap: dot at -12, avg at 0, median at 8
-                              avgYOffset = 0;
-                              medianYOffset = 8;
-                            } else if (avgMedianSame) {
-                              // Just avg and median overlap (no dot): avg at -4, median at 4
-                              avgYOffset = -4;
-                              medianYOffset = 4;
-                            } else {
-                              // Avg and median are separate, check dot overlaps individually
-                              if (dotOverlapsAvg) {
-                                avgYOffset = 6; // Push avg down, dot is above
-                              }
-                              if (dotOverlapsMedian) {
-                                medianYOffset = 6; // Push median down, dot is above
-                              }
-                            }
-
-                            return (
-                              <React.Fragment key={`markers-${idx}`}>
-                                {/* Average marker - subtle blue triangle */}
-                                <div
-                                  className="absolute pointer-events-auto group"
-                                  style={{
-                                    left: `${avgXPercent}%`,
-                                    top: `calc(${yPercent}% + ${avgYOffset}px)`,
-                                    transform: 'translate(-50%, -50%)',
-                                  }}
-                                >
-                                  <div
-                                    className="cursor-pointer hover:scale-125 transition-transform"
-                                    style={{
-                                      width: 0,
-                                      height: 0,
-                                      borderLeft: '4px solid transparent',
-                                      borderRight: '4px solid transparent',
-                                      borderBottom: '6px solid rgba(96, 165, 250, 0.7)',
-                                    }}
-                                  />
-                                  {/* Tooltip */}
-                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
-                                    <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg whitespace-nowrap">
-                                      <p className="text-xs text-gray-600">
-                                        Avg: {data.avgRanking.toFixed(1)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Median marker - subtle orange diamond */}
-                                <div
-                                  className="absolute pointer-events-auto group"
-                                  style={{
-                                    left: `${medianXPercent}%`,
-                                    top: `calc(${yPercent}% + ${medianYOffset}px)`,
-                                    transform: 'translate(-50%, -50%)',
-                                  }}
-                                >
-                                  <div
-                                    className="cursor-pointer hover:scale-125 transition-transform"
-                                    style={{
-                                      width: '6px',
-                                      height: '6px',
-                                      backgroundColor: 'rgba(251, 146, 60, 0.7)',
-                                      transform: 'rotate(45deg)',
-                                    }}
-                                  />
-                                  {/* Tooltip */}
-                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
-                                    <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg whitespace-nowrap">
-                                      <p className="text-xs text-gray-600">
-                                        Median: {data.medianRanking.toFixed(1)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </React.Fragment>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-            </>
-          )}
-        </div>
-      )}
 
       {/* Prompt Breakdown Table */}
       {promptBreakdownStats.length > 0 && (
@@ -5028,6 +4274,759 @@ export default function ResultsPage() {
         </div>
       </div>
 
+      {/* Charts Section with Tabs */}
+      {scatterPlotData.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          {/* Chart Title */}
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Where your brand appears in AI-generated answers</h2>
+
+          {/* Key takeaway - shown above tabs for Ranking in AI Results and Performance Range */}
+          {(chartTab === 'allAnswers' || chartTab === 'performanceRange') && (() => {
+            const totalAnswers = scatterPlotData.length;
+            const mentionedCount = scatterPlotData.filter(d => d.isMentioned).length;
+            const notMentionedCount = totalAnswers - mentionedCount;
+            const topPositionCount = scatterPlotData.filter(d => d.rank === 1).length;
+            const top3Count = scatterPlotData.filter(d => d.rank >= 1 && d.rank <= 3).length;
+            const mentionRate = totalAnswers > 0 ? (mentionedCount / totalAnswers) * 100 : 0;
+            const topPositionRate = mentionedCount > 0 ? (topPositionCount / mentionedCount) * 100 : 0;
+
+            let takeaway = '';
+            if (mentionRate < 30) {
+              takeaway = `Your brand appears in only ${mentionRate.toFixed(0)}% of AI answers—there's room to improve visibility.`;
+            } else if (topPositionRate > 50 && mentionRate > 50) {
+              takeaway = `Strong performance: your brand is the top result in ${topPositionRate.toFixed(0)}% of answers where it appears.`;
+            } else if (topPositionCount > 0 && top3Count > mentionedCount * 0.6) {
+              takeaway = `Your brand typically appears in the top 3 positions when mentioned.`;
+            } else if (notMentionedCount > mentionedCount) {
+              takeaway = `Your brand is not shown in ${notMentionedCount} of ${totalAnswers} answers—consider optimizing for AI visibility.`;
+            } else if (mentionRate > 70) {
+              takeaway = `Good visibility: your brand appears in ${mentionRate.toFixed(0)}% of AI answers.`;
+            } else {
+              takeaway = `Your brand appears in ${mentionedCount} of ${totalAnswers} AI answers across all platforms.`;
+            }
+
+            return (
+              <div className="inline-block bg-[#FAFAF8] rounded-lg px-3 py-2 mb-4">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium text-gray-700">Key takeaway:</span> {takeaway}
+                </p>
+              </div>
+            );
+          })()}
+
+          {/* Chart Tabs */}
+          <div className="flex items-center gap-1 mb-4 border-b border-gray-200">
+            <button
+              onClick={() => setChartTab('allAnswers')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                chartTab === 'allAnswers'
+                  ? 'border-[#4A7C59] text-[#4A7C59]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {runStatus?.brand || 'Brand'}'s Ranking in AI Results
+            </button>
+            <button
+              onClick={() => setChartTab('performanceRange')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                chartTab === 'performanceRange'
+                  ? 'border-[#4A7C59] text-[#4A7C59]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Performance Range
+            </button>
+                      </div>
+
+          {/* All Answers Chart */}
+          {chartTab === 'allAnswers' && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs text-gray-400">Each dot is one AI response. Higher dots mean earlier mentions of {runStatus?.brand || 'your brand'}.</p>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs text-gray-500">Show sentiment</span>
+                  <button
+                    onClick={() => setShowSentimentColors(!showSentimentColors)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                      showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                        showSentimentColors ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </label>
+              </div>
+
+              {/* Legend for All Answers view - shows sentiment when toggle is on */}
+              {showSentimentColors && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                    <span className="text-xs text-gray-500">Not Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+                    <span className="text-xs text-gray-500">With Caveats</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Highly Recommended</span>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                  <div className="h-[450px] [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 50 }}>
+                      {/* Horizontal band shading - green gradient (darker = better ranking) */}
+                      <ReferenceArea y1={-0.5} y2={0.5} fill="#86efac" fillOpacity={0.5} />
+                      <ReferenceArea y1={0.5} y2={1.5} fill="#bbf7d0" fillOpacity={0.5} />
+                      <ReferenceArea y1={1.5} y2={2.5} fill="#dcfce7" fillOpacity={0.5} />
+                      <ReferenceArea y1={2.5} y2={3.5} fill="#ecfdf5" fillOpacity={0.5} />
+                      <ReferenceArea y1={3.5} y2={4.5} fill="#f0fdf4" fillOpacity={0.5} />
+                      <ReferenceArea y1={4.5} y2={5.5} fill="#e5e7eb" fillOpacity={0.3} />
+                      {/* Divider line above "Not mentioned" band */}
+                      <ReferenceLine y={4.5} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 4" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#fecaca" vertical={true} horizontal={false} />
+                      <XAxis
+                        type="number"
+                        dataKey="xIndexWithOffset"
+                        domain={[-0.5, scatterProviderOrder.length - 0.5]}
+                        tick={(props: any) => {
+                          const { x, y, payload } = props;
+                          const provider = scatterProviderOrder[Math.round(payload?.value ?? 0)];
+                          const label = provider ? (providerLabels[provider] || provider) : '';
+                          return (
+                            <text
+                              x={x}
+                              y={y + 12}
+                              textAnchor="middle"
+                              fill="#6b7280"
+                              fontSize={12}
+                            >
+                              {label}
+                            </text>
+                          );
+                        }}
+                        ticks={scatterProviderOrder.map((_, i) => i)}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        tickLine={false}
+                        interval={0}
+                      />
+                      <YAxis
+                        type="number"
+                        dataKey="rankBandIndex"
+                        name="Rank"
+                        domain={[-0.5, RANK_BANDS.length - 0.5]}
+                        reversed
+                        tick={(props: any) => {
+                          const { x, y, payload } = props;
+                          const label = RANK_BANDS[Math.round(payload?.value ?? 0)] || '';
+                          const isNotMentioned = label === 'Not shown';
+                          const isAfterTop10 = label === 'Shown after top 10';
+
+                          // Split "Shown after top 10" into two lines
+                          if (isAfterTop10) {
+                            return (
+                              <text
+                                x={x}
+                                y={y}
+                                textAnchor="end"
+                                fill="#6b7280"
+                                fontSize={12}
+                              >
+                                <tspan x={x} dy="-2">Shown after</tspan>
+                                <tspan x={x} dy="12">top 10</tspan>
+                              </text>
+                            );
+                          }
+
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              dy={4}
+                              textAnchor="end"
+                              fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
+                              fontSize={12}
+                              fontStyle={isNotMentioned ? 'italic' : 'normal'}
+                            >
+                              {label}
+                            </text>
+                          );
+                        }}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        tickLine={false}
+                        ticks={RANK_BANDS.map((_, i) => i)}
+                        interval={0}
+                        width={80}
+                      />
+                      <Tooltip
+                        cursor={false}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            const truncatedPrompt = data.prompt.length > 70
+                              ? data.prompt.substring(0, 70) + '...'
+                              : data.prompt;
+                            return (
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[320px]">
+                                <p className="text-sm font-semibold text-gray-900 mb-1" title={data.prompt}>
+                                  {truncatedPrompt}
+                                </p>
+                                <p className="text-sm text-gray-700">
+                                  {data.rank === 0
+                                    ? 'Not shown'
+                                    : data.rank === 1
+                                      ? 'Shown as: #1 (Top result)'
+                                      : `Shown as: #${data.rank}`}
+                                </p>
+                                {showSentimentColors && data.sentiment && data.sentiment !== 'not_mentioned' && (
+                                  <p className={`text-xs mt-1 ${
+                                    data.sentiment === 'strong_endorsement' ? 'text-green-600' :
+                                    data.sentiment === 'positive_endorsement' ? 'text-lime-600' :
+                                    data.sentiment === 'neutral_mention' ? 'text-gray-600' :
+                                    data.sentiment === 'conditional' ? 'text-amber-500' :
+                                    data.sentiment === 'negative_comparison' ? 'text-red-500' : ''
+                                  }`}>
+                                    {data.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
+                                     data.sentiment === 'positive_endorsement' ? 'Recommended' :
+                                     data.sentiment === 'neutral_mention' ? 'Neutral' :
+                                     data.sentiment === 'conditional' ? 'With Caveats' :
+                                     data.sentiment === 'negative_comparison' ? 'Not Recommended' : ''}
+                                  </p>
+                                )}
+                                <p className="text-xs text-gray-400 mt-2">
+                                  {data.label}
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Scatter
+                        data={scatterPlotData}
+                        fill="#6b7280"
+                        shape={(props: any) => {
+                          const { cx, cy, payload } = props;
+                          // Sentiment colors: green=strong, gray=neutral, orange=conditional, red=negative
+                          let fillColor = '#6b7280'; // default gray
+                          let opacity = payload.isMentioned ? 0.6 : 0.25;
+
+                          if (showSentimentColors && payload.sentiment) {
+                            switch (payload.sentiment) {
+                              case 'strong_endorsement':
+                                fillColor = '#22c55e'; // green-500
+                                opacity = 0.8;
+                                break;
+                              case 'positive_endorsement':
+                                fillColor = '#84cc16'; // lime-500
+                                opacity = 0.8;
+                                break;
+                              case 'neutral_mention':
+                                fillColor = '#6b7280'; // gray-500
+                                opacity = 0.6;
+                                break;
+                              case 'conditional':
+                                fillColor = '#fcd34d'; // amber-300
+                                opacity = 1;
+                                break;
+                              case 'negative_comparison':
+                                fillColor = '#f87171'; // red-400
+                                opacity = 0.8;
+                                break;
+                              case 'not_mentioned':
+                                fillColor = '#d1d5db'; // gray-300
+                                opacity = 0.4;
+                                break;
+                            }
+                          }
+
+                          return (
+                            <circle
+                              cx={cx}
+                              cy={cy}
+                              r={5}
+                              fill={fillColor}
+                              opacity={opacity}
+                              style={{ cursor: 'pointer' }}
+                              onDoubleClick={() => setSelectedResult(payload.originalResult)}
+                            />
+                          );
+                        }}
+                      />
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                  </div>
+                </div>
+
+
+            </>
+          )}
+
+          {/* Performance Range Chart */}
+          {chartTab === 'performanceRange' && rangeChartData.length > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm text-gray-500">Each row shows how an AI model typically positions your brand. The bar spans from best to worst placement.</p>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <span className="text-xs text-gray-500">Show sentiment</span>
+                  <button
+                    onClick={() => setShowSentimentColors(!showSentimentColors)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                      showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                        showSentimentColors ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </label>
+              </div>
+
+              {/* Legend for Performance Range view - shows sentiment when toggle is on */}
+              {showSentimentColors && (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                    <span className="text-xs text-gray-500">Not Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+                    <span className="text-xs text-gray-500">With Caveats</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Highly Recommended</span>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                  <div className="h-[450px] relative [&_.recharts-surface]:outline-none [&_.recharts-wrapper]:outline-none [&_svg]:outline-none [&_svg]:focus:outline-none [&_*]:focus:outline-none [&_*]:focus-visible:outline-none">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart
+                        data={rangeChartData}
+                        layout="vertical"
+                        margin={{ top: 20, right: 20, bottom: 20, left: 50 }}
+                      >
+                        {/* Background color bands - green gradient (darker = better ranking) */}
+                        <ReferenceArea x1={-0.5} x2={0.5} fill="#86efac" fillOpacity={0.5} /> {/* 1 */}
+                        <ReferenceArea x1={0.5} x2={1.5} fill="#bbf7d0" fillOpacity={0.5} /> {/* 2 */}
+                        <ReferenceArea x1={1.5} x2={2.5} fill="#bbf7d0" fillOpacity={0.4} /> {/* 3 */}
+                        <ReferenceArea x1={2.5} x2={3.5} fill="#dcfce7" fillOpacity={0.5} /> {/* 4 */}
+                        <ReferenceArea x1={3.5} x2={4.5} fill="#dcfce7" fillOpacity={0.4} /> {/* 5 */}
+                        <ReferenceArea x1={4.5} x2={5.5} fill="#ecfdf5" fillOpacity={0.5} /> {/* 6 */}
+                        <ReferenceArea x1={5.5} x2={6.5} fill="#ecfdf5" fillOpacity={0.4} /> {/* 7 */}
+                        <ReferenceArea x1={6.5} x2={7.5} fill="#f0fdf4" fillOpacity={0.5} /> {/* 8 */}
+                        <ReferenceArea x1={7.5} x2={8.5} fill="#f0fdf4" fillOpacity={0.4} /> {/* 9 */}
+                        <ReferenceArea x1={8.5} x2={9.5} fill="#f0fdf4" fillOpacity={0.3} /> {/* 10+ */}
+                        <ReferenceArea x1={9.5} x2={10.5} fill="#e5e7eb" fillOpacity={0.3} /> {/* Not mentioned */}
+                        {/* Divider line before "Not mentioned" */}
+                        <ReferenceLine x={9.5} stroke="#d1d5db" strokeWidth={1} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#fecaca" horizontal={false} vertical={true} />
+                        <YAxis
+                          type="category"
+                          dataKey="label"
+                          tick={(props: any) => {
+                            const { x, y, payload } = props;
+                            const label = payload?.value || '';
+                            const isGoogleAI = label === 'Google AI Overviews';
+
+                            if (isGoogleAI) {
+                              return (
+                                <text
+                                  x={x - 8}
+                                  y={y}
+                                  textAnchor="end"
+                                  fill="#6b7280"
+                                  fontSize={12}
+                                >
+                                  <tspan x={x - 8} dy="-2">Google AI</tspan>
+                                  <tspan x={x - 8} dy="14">Overviews</tspan>
+                                </text>
+                              );
+                            }
+
+                            return (
+                              <text
+                                x={x - 8}
+                                y={y}
+                                dy={4}
+                                textAnchor="end"
+                                fill="#6b7280"
+                                fontSize={12}
+                              >
+                                {label}
+                              </text>
+                            );
+                          }}
+                          axisLine={{ stroke: '#e5e7eb' }}
+                          tickLine={false}
+                          width={80}
+                        />
+                        <XAxis
+                          type="number"
+                          domain={[-0.5, RANGE_X_LABELS.length - 0.5]}
+                          tick={(props: any) => {
+                            const { x, y, payload } = props;
+                            const label = RANGE_X_LABELS[Math.round(payload?.value ?? 0)] || '';
+                            const isNotMentioned = label === 'Not shown';
+                            const isAfterTop10 = label === 'Shown after top 10';
+
+                            // Split "Shown after top 10" into two lines
+                            if (isAfterTop10) {
+                              return (
+                                <text
+                                  x={x}
+                                  y={y + 8}
+                                  textAnchor="middle"
+                                  fill="#6b7280"
+                                  fontSize={11}
+                                >
+                                  <tspan x={x} dy="0">Shown after</tspan>
+                                  <tspan x={x} dy="12">top 10</tspan>
+                                </text>
+                              );
+                            }
+
+                            return (
+                              <text
+                                x={x}
+                                y={y + 12}
+                                textAnchor="middle"
+                                fill={isNotMentioned ? '#9ca3af' : '#6b7280'}
+                                fontSize={11}
+                                fontStyle={isNotMentioned ? 'italic' : 'normal'}
+                              >
+                                {label}
+                              </text>
+                            );
+                          }}
+                          axisLine={{ stroke: '#e5e7eb' }}
+                          tickLine={false}
+                          ticks={RANGE_X_LABELS.map((_, i) => i)}
+                          interval={0}
+                                                  />
+                        <Tooltip
+                          cursor={false}
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+
+                              // Format position for display
+                              const formatPosition = (rangeX: number): string => {
+                                if (rangeX === 10) return 'Not shown';
+                                if (rangeX === 9) return '#10+';
+                                return `#${rangeX + 1}`;
+                              };
+
+                              // Format average as absolute number
+                              const formatAverage = (avg: number): string => {
+                                return avg.toFixed(1);
+                              };
+
+                              const bestPos = formatPosition(data.bestRangeX);
+                              const worstPos = formatPosition(data.worstRangeX);
+                              const avgPos = formatAverage(data.avgRanking);
+
+                              // Add "(some prompts)" if worst is "Not shown"
+                              const worstDisplay = data.worstRangeX === 10
+                                ? 'Not shown (some prompts)'
+                                : worstPos;
+
+                              return (
+                                <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[220px]">
+                                  <p className="text-sm font-semibold text-gray-900 mb-2">{data.label}</p>
+                                  <div className="space-y-1">
+                                    <p className="text-sm text-gray-700">
+                                      Best position shown: {bestPos}
+                                    </p>
+                                    <p className="text-sm text-gray-700">
+                                      Average position: {avgPos}
+                                    </p>
+                                    <p className="text-sm text-gray-700">
+                                      Worst position shown: {worstDisplay}
+                                    </p>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        {/* Range bar: invisible spacer + visible range */}
+                        <Bar dataKey="rangeStart" stackId="range" fill="transparent" barSize={20} />
+                        <Bar
+                          dataKey="rangeHeight"
+                          stackId="range"
+                          fill="#6b7280"
+                          fillOpacity={0.3}
+                          radius={[4, 4, 4, 4]}
+                          barSize={20}
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                    {/* Dots overlay - positioned absolutely over the chart plotting area */}
+                    {rangeViewDots.length > 0 && (() => {
+                      // Chart margins matching ComposedChart margin prop
+                      const margin = { top: 20, right: 20, bottom: 20, left: 50 };
+                      const yAxisWidth = 80; // Matches YAxis width prop
+                      const xAxisHeight = 25; // Estimated height of X-axis with labels
+                      const numProviders = rangeChartData.length;
+
+                      // Domain is [-0.5, 10.5] - total range of 11 units
+                      const domainMin = -0.5;
+                      const domainMax = RANGE_X_LABELS.length - 0.5; // 10.5
+                      const domainRange = domainMax - domainMin; // 11
+
+                      // Calculate plotting area bounds
+                      // Left edge: margin.left + yAxisWidth (Y-axis is inside the chart area)
+                      const plotLeft = margin.left + yAxisWidth;
+                      // Width: container width - plotLeft - margin.right
+                      const plotWidth = `calc(100% - ${plotLeft + margin.right}px)`;
+                      // Height: container height - margin.top - margin.bottom - xAxisHeight
+                      // The X-axis is inside the chart area, so we need to subtract its height
+                      const plotHeight = `calc(100% - ${margin.top + margin.bottom + xAxisHeight}px)`;
+
+                      return (
+                        <div
+                          className="absolute pointer-events-none"
+                          style={{
+                            top: `${margin.top}px`,
+                            left: `${plotLeft}px`,
+                            width: plotWidth,
+                            height: plotHeight,
+                          }}
+                        >
+                          {/* Render dots for each prompt result */}
+                          {rangeViewDots.map((dot, idx) => {
+                            if (dot.yIndex < 0) return null;
+
+                            // X position: convert domain value to percentage within plotting area
+                            // dot.x is in range [0, 10] with small offsets
+                            // Map to percentage: (value - domainMin) / domainRange * 100
+                            const xPercent = ((dot.x - domainMin) / domainRange) * 100;
+
+                            // Y position: center dot within provider's band
+                            const yPercent = ((dot.yIndex + 0.5) / numProviders) * 100;
+
+                            // Check for overlap with average/median markers for this provider
+                            const providerData = rangeChartData[dot.yIndex];
+                            const hasMultipleResponses = providerData && providerData.promptsAnalyzed > 1;
+                            const overlapThreshold = 0.3;
+                            const overlapsAvg = hasMultipleResponses && Math.abs(dot.x - providerData.avgRankingX) < overlapThreshold;
+                            const overlapsMedian = hasMultipleResponses && Math.abs(dot.x - providerData.medianRankingX) < overlapThreshold;
+                            const avgMedianSame = hasMultipleResponses && Math.abs(providerData.avgRankingX - providerData.medianRankingX) < 0.5;
+
+                            // Calculate dot Y offset based on overlaps
+                            // When overlapping: dot on top, avg in middle-top, median in middle-bottom
+                            let dotYOffset = 0;
+                            if (overlapsAvg && overlapsMedian && avgMedianSame) {
+                              // All three at same position: dot at top
+                              dotYOffset = -12;
+                            } else if (overlapsAvg) {
+                              // Overlaps just avg: dot above avg
+                              dotYOffset = -10;
+                            } else if (overlapsMedian) {
+                              // Overlaps just median: dot above median
+                              dotYOffset = -10;
+                            }
+
+                            return (
+                              <div
+                                key={`range-dot-${idx}`}
+                                className="absolute pointer-events-auto group"
+                                style={{
+                                  left: `${xPercent}%`,
+                                  top: `calc(${yPercent}% + ${dotYOffset}px)`,
+                                  transform: 'translate(-50%, -50%)',
+                                }}
+                              >
+                                {/* Dot - styled to match Dots chart */}
+                                <div
+                                  className="w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
+                                  style={{
+                                    backgroundColor: showSentimentColors && dot.sentiment
+                                      ? dot.sentiment === 'strong_endorsement' ? '#22c55e'
+                                        : dot.sentiment === 'positive_endorsement' ? '#84cc16'
+                                        : dot.sentiment === 'neutral_mention' ? '#6b7280'
+                                        : dot.sentiment === 'conditional' ? '#fcd34d'
+                                        : dot.sentiment === 'negative_comparison' ? '#f87171'
+                                        : '#d1d5db'
+                                      : '#6b7280',
+                                    opacity: showSentimentColors && dot.sentiment
+                                      ? (dot.sentiment === 'not_mentioned' ? 0.4 : 0.8)
+                                      : (dot.isMentioned ? 0.7 : 0.3),
+                                  }}
+                                  onDoubleClick={() => setSelectedResult(dot.originalResult)}
+                                />
+                                {/* Tooltip on hover */}
+                                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
+                                  <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[320px] text-left">
+                                    <p className="text-sm font-semibold text-gray-900 mb-1">{dot.prompt.length > 70 ? dot.prompt.substring(0, 70) + '...' : dot.prompt}</p>
+                                    <p className="text-sm text-gray-700">
+                                      {dot.rank === 0 ? 'Not shown' : dot.rank === 1 ? 'Shown as: #1 (Top result)' : `Shown as: #${dot.rank}`}
+                                    </p>
+                                    {showSentimentColors && dot.sentiment && dot.sentiment !== 'not_mentioned' && (
+                                      <p className={`text-xs mt-1 ${
+                                        dot.sentiment === 'strong_endorsement' ? 'text-green-600' :
+                                        dot.sentiment === 'positive_endorsement' ? 'text-lime-600' :
+                                        dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
+                                        dot.sentiment === 'conditional' ? 'text-amber-500' :
+                                        dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
+                                      }`}>
+                                        {dot.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
+                                         dot.sentiment === 'positive_endorsement' ? 'Recommended' :
+                                         dot.sentiment === 'neutral_mention' ? 'Neutral' :
+                                         dot.sentiment === 'conditional' ? 'With Caveats' :
+                                         dot.sentiment === 'negative_comparison' ? 'Not Recommended' : ''}
+                                      </p>
+                                    )}
+                                    <p className="text-xs text-gray-400 mt-2">{dot.label}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Render average and median markers for each provider */}
+                          {rangeChartData.map((data, idx) => {
+                            // Skip average/median markers when there's only 1 response (no meaningful stats)
+                            if (data.promptsAnalyzed === 1) return null;
+
+                            const yPercent = ((idx + 0.5) / numProviders) * 100;
+                            const avgXPercent = ((data.avgRankingX - domainMin) / domainRange) * 100;
+                            const medianXPercent = ((data.medianRankingX - domainMin) / domainRange) * 100;
+
+                            // Check if any dots overlap with avg or median for this provider
+                            const overlapThreshold = 0.3;
+                            const dotsForProvider = rangeViewDots.filter(d => d.yIndex === idx);
+                            const dotOverlapsAvg = dotsForProvider.some(d => Math.abs(d.x - data.avgRankingX) < overlapThreshold);
+                            const dotOverlapsMedian = dotsForProvider.some(d => Math.abs(d.x - data.medianRankingX) < overlapThreshold);
+
+                            // Check if average and median are at same position (within 0.5)
+                            const avgMedianSame = Math.abs(data.avgRankingX - data.medianRankingX) < 0.5;
+
+                            // Calculate offsets based on all overlaps
+                            // Stack order from top: dot (-12), avg (0 or -4), median (8 or 4)
+                            let avgYOffset = 0;
+                            let medianYOffset = 0;
+
+                            if (avgMedianSame && dotOverlapsAvg) {
+                              // All three overlap: dot at -12, avg at 0, median at 8
+                              avgYOffset = 0;
+                              medianYOffset = 8;
+                            } else if (avgMedianSame) {
+                              // Just avg and median overlap (no dot): avg at -4, median at 4
+                              avgYOffset = -4;
+                              medianYOffset = 4;
+                            } else {
+                              // Avg and median are separate, check dot overlaps individually
+                              if (dotOverlapsAvg) {
+                                avgYOffset = 6; // Push avg down, dot is above
+                              }
+                              if (dotOverlapsMedian) {
+                                medianYOffset = 6; // Push median down, dot is above
+                              }
+                            }
+
+                            return (
+                              <React.Fragment key={`markers-${idx}`}>
+                                {/* Average marker - subtle blue triangle */}
+                                <div
+                                  className="absolute pointer-events-auto group"
+                                  style={{
+                                    left: `${avgXPercent}%`,
+                                    top: `calc(${yPercent}% + ${avgYOffset}px)`,
+                                    transform: 'translate(-50%, -50%)',
+                                  }}
+                                >
+                                  <div
+                                    className="cursor-pointer hover:scale-125 transition-transform"
+                                    style={{
+                                      width: 0,
+                                      height: 0,
+                                      borderLeft: '4px solid transparent',
+                                      borderRight: '4px solid transparent',
+                                      borderBottom: '6px solid rgba(96, 165, 250, 0.7)',
+                                    }}
+                                  />
+                                  {/* Tooltip */}
+                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
+                                    <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg whitespace-nowrap">
+                                      <p className="text-xs text-gray-600">
+                                        Avg: {data.avgRanking.toFixed(1)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Median marker - subtle orange diamond */}
+                                <div
+                                  className="absolute pointer-events-auto group"
+                                  style={{
+                                    left: `${medianXPercent}%`,
+                                    top: `calc(${yPercent}% + ${medianYOffset}px)`,
+                                    transform: 'translate(-50%, -50%)',
+                                  }}
+                                >
+                                  <div
+                                    className="cursor-pointer hover:scale-125 transition-transform"
+                                    style={{
+                                      width: '6px',
+                                      height: '6px',
+                                      backgroundColor: 'rgba(251, 146, 60, 0.7)',
+                                      transform: 'rotate(45deg)',
+                                    }}
+                                  />
+                                  {/* Tooltip */}
+                                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
+                                    <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg whitespace-nowrap">
+                                      <p className="text-xs text-gray-600">
+                                        Median: {data.medianRanking.toFixed(1)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </React.Fragment>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+            </>
+          )}
+        </div>
+      )}
       {/* AI Summary */}
       <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
         <div className="flex items-center justify-between mb-4">
@@ -5411,7 +5410,7 @@ export default function ResultsPage() {
                   layout="vertical"
                   margin={{ top: 10, right: 50, bottom: 10, left: 140 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#fecaca" />
                   <XAxis
                     type="number"
                     domain={[0, 100]}
@@ -5819,7 +5818,7 @@ export default function ResultsPage() {
                   layout="vertical"
                   margin={{ top: 10, right: 50, bottom: 10, left: 140 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#fecaca" />
                   <XAxis
                     type="number"
                     domain={[-4, 4]}
