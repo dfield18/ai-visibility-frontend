@@ -3369,129 +3369,230 @@ export default function ResultsPage() {
     return (
     <div className="space-y-6">
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* AI Visibility Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-gray-600">AI Visibility</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-gray-700">AI Visibility</p>
             <div className="relative group">
               <button
                 className="p-1 rounded-full hover:bg-gray-100 transition-colors"
                 aria-label="Learn more about AI Visibility"
                 tabIndex={0}
               >
-                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                <HelpCircle className="w-4 h-4 text-gray-400" />
               </button>
               <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
                 Mentioned in {overviewMetrics?.mentionedCount || 0} of {overviewMetrics?.totalResponses || 0} AI answers (across selected models/prompts).
               </div>
             </div>
           </div>
-          <p className={`text-2xl font-bold ${getMentionRateColor(overviewMetrics?.overallVisibility ? overviewMetrics.overallVisibility / 100 : 0)}`}>
-            {overviewMetrics?.overallVisibility?.toFixed(1) || 0}%
-          </p>
+          {/* Circular Progress Ring */}
+          <div className="flex justify-start mb-4">
+            <div className="relative w-20 h-20">
+              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="32"
+                  stroke="#e5e7eb"
+                  strokeWidth="8"
+                  fill="none"
+                />
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="32"
+                  stroke="#22d3ee"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(overviewMetrics?.overallVisibility || 0) * 2.01} 201`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-lg font-bold text-gray-900">{overviewMetrics?.overallVisibility?.toFixed(1) || 0}%</span>
+              </div>
+            </div>
+          </div>
           {(() => {
             const interpretation = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null);
             return (
-              <span className={`inline-block mt-1.5 px-2 py-0.5 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+              <span className={`inline-block mb-3 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
                 {interpretation.label}
               </span>
             );
           })()}
-          <p className="text-xs text-gray-400 mt-2">% of AI responses that mention your brand when asked relevant questions</p>
+          <p className="text-xs text-gray-500 leading-relaxed">% of AI responses that mention your brand when asked relevant questions</p>
         </div>
 
         {/* Share of Voice Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-gray-600">Share of Voice</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-gray-700">Share of Voice</p>
             <div className="relative group">
               <button
                 className="p-1 rounded-full hover:bg-gray-100 transition-colors"
                 aria-label="Learn more about Share of Voice"
                 tabIndex={0}
               >
-                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                <HelpCircle className="w-4 h-4 text-gray-400" />
               </button>
               <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
                 {overviewMetrics?.selectedBrand || 'Your brand'} accounts for {overviewMetrics?.shareOfVoice?.toFixed(1) || 0}% of all brand mentions ({overviewMetrics?.selectedBrandMentions || 0} of {overviewMetrics?.totalBrandMentions || 0} mentions).
               </div>
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900">
-            {overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%
-          </p>
+          {/* Circular Progress Ring */}
+          <div className="flex justify-start mb-4">
+            <div className="relative w-20 h-20">
+              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="32"
+                  stroke="#e5e7eb"
+                  strokeWidth="8"
+                  fill="none"
+                />
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="32"
+                  stroke="#3b82f6"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(overviewMetrics?.shareOfVoice || 0) * 2.01} 201`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-lg font-bold text-gray-900">{overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%</span>
+              </div>
+            </div>
+          </div>
           {(() => {
             const interpretation = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null);
             return (
-              <span className={`inline-block mt-1.5 px-2 py-0.5 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+              <span className={`inline-block mb-3 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
                 {interpretation.label}
               </span>
             );
           })()}
-          <p className="text-xs text-gray-400 mt-2">Your brand's share of all brand mentions</p>
+          <p className="text-xs text-gray-500 leading-relaxed">Your brand's share of all brand mentions</p>
         </div>
 
-        {/* Top Result Rate Card (formerly First Position) */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-gray-600">Top Result Rate</p>
+        {/* Top Result Rate Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-gray-700">Top Result Rate</p>
             <div className="relative group">
               <button
                 className="p-1 rounded-full hover:bg-gray-100 transition-colors"
                 aria-label="Learn more about Top Result Rate"
                 tabIndex={0}
               >
-                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                <HelpCircle className="w-4 h-4 text-gray-400" />
               </button>
               <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
                 Ranked #1 in {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.responsesWhereMentioned || 0} AI answers where {overviewMetrics?.selectedBrand || 'your brand'} appears.
               </div>
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900">
-            {overviewMetrics?.top1Rate?.toFixed(0) || 0}%
-          </p>
+          {/* Circular Progress Ring */}
+          <div className="flex justify-start mb-4">
+            <div className="relative w-20 h-20">
+              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="32"
+                  stroke="#e5e7eb"
+                  strokeWidth="8"
+                  fill="none"
+                />
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="32"
+                  stroke="#f59e0b"
+                  strokeWidth="8"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeDasharray={`${(overviewMetrics?.top1Rate || 0) * 2.01} 201`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-lg font-bold text-gray-900">{overviewMetrics?.top1Rate?.toFixed(0) || 0}%</span>
+              </div>
+            </div>
+          </div>
           {(() => {
             const interpretation = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null);
             return (
-              <span className={`inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+              <span className={`inline-block mb-3 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
                 {interpretation.label}
               </span>
             );
           })()}
-          <p className="text-xs text-gray-400 mt-2">How often your brand is the #1 result</p>
+          <p className="text-xs text-gray-500 leading-relaxed">How often your brand is the #1 result</p>
         </div>
 
         {/* Avg. Position Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-gray-600">Avg. Position</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-gray-700">Avg. Position</p>
             <div className="relative group">
               <button
                 className="p-1 rounded-full hover:bg-gray-100 transition-colors"
                 aria-label="Learn more about Average Position"
                 tabIndex={0}
               >
-                <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                <HelpCircle className="w-4 h-4 text-gray-400" />
               </button>
               <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
                 Average rank when {overviewMetrics?.selectedBrand || 'your brand'} is shown: {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on {overviewMetrics?.ranksCount || 0} responses.
               </div>
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900">
-            {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
-          </p>
+          {/* Large Position Number */}
+          <div className="text-center mb-3">
+            <span className="text-3xl font-bold text-gray-900">{overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}</span>
+          </div>
+          {/* Position Scale */}
+          <div className="mb-4">
+            <div className="flex justify-center gap-1.5 mb-1">
+              {[1, 2, 3, 4, 5].map((pos) => {
+                const avgRank = overviewMetrics?.avgRank || 0;
+                const isHighlighted = avgRank > 0 && Math.round(avgRank) === pos;
+                return (
+                  <div
+                    key={pos}
+                    className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-medium ${
+                      isHighlighted
+                        ? 'bg-[#4A7C59] text-white'
+                        : 'bg-gray-100 text-gray-500'
+                    }`}
+                  >
+                    {pos}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex justify-between px-1">
+              <span className="text-[10px] text-gray-400">Best</span>
+              <span className="text-[10px] text-gray-400">Worst</span>
+            </div>
+          </div>
           {(() => {
             const interpretation = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null);
             return (
-              <span className={`inline-block mt-1.5 px-2 py-0.5 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+              <span className={`inline-block mb-3 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
                 {interpretation.label}
               </span>
             );
           })()}
-          <p className="text-xs text-gray-400 mt-2">Your average ranking when mentioned</p>
+          <p className="text-xs text-gray-500 leading-relaxed">Your average ranking when mentioned</p>
         </div>
       </div>
 
@@ -10433,7 +10534,7 @@ export default function ResultsPage() {
                             key={idx}
                             className="text-center py-3 px-2 font-medium text-gray-600 min-w-[140px] max-w-[180px] relative group"
                           >
-                            <span className="text-xs block truncate cursor-help">
+                            <span className={`text-xs block truncate ${prompt.length > 40 ? 'cursor-default' : ''}`}>
                               {prompt.length > 40 ? prompt.substring(0, 38) + '...' : prompt}
                             </span>
                             {prompt.length > 40 && (
