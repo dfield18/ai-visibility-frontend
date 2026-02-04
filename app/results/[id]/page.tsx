@@ -3388,14 +3388,14 @@ export default function ResultsPage() {
             </div>
           </div>
           {/* Circular Progress Ring */}
-          <div className="flex justify-start mb-4">
-            <div className="relative w-20 h-20">
-              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
+          <div className="h-[100px] flex items-start">
+            <div className="relative w-[88px] h-[88px]">
+              <svg className="w-[88px] h-[88px] transform -rotate-90" viewBox="0 0 80 80">
                 <circle
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#fecaca"
+                  stroke="hsl(var(--muted))"
                   strokeWidth="8"
                   fill="none"
                 />
@@ -3444,14 +3444,14 @@ export default function ResultsPage() {
             </div>
           </div>
           {/* Circular Progress Ring */}
-          <div className="flex justify-start mb-4">
-            <div className="relative w-20 h-20">
-              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
+          <div className="h-[100px] flex items-start">
+            <div className="relative w-[88px] h-[88px]">
+              <svg className="w-[88px] h-[88px] transform -rotate-90" viewBox="0 0 80 80">
                 <circle
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#fecaca"
+                  stroke="hsl(var(--muted))"
                   strokeWidth="8"
                   fill="none"
                 />
@@ -3500,14 +3500,14 @@ export default function ResultsPage() {
             </div>
           </div>
           {/* Circular Progress Ring */}
-          <div className="flex justify-start mb-4">
-            <div className="relative w-20 h-20">
-              <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 80 80">
+          <div className="h-[100px] flex items-start">
+            <div className="relative w-[88px] h-[88px]">
+              <svg className="w-[88px] h-[88px] transform -rotate-90" viewBox="0 0 80 80">
                 <circle
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#fecaca"
+                  stroke="hsl(var(--muted))"
                   strokeWidth="8"
                   fill="none"
                 />
@@ -3555,33 +3555,36 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-          {/* Large Position Number */}
-          <div className="text-center mb-3">
-            <span className="text-3xl font-bold text-gray-900">{overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}</span>
-          </div>
-          {/* Position Scale */}
-          <div className="mb-4">
-            <div className="flex justify-center gap-1.5 mb-1">
-              {[1, 2, 3, 4, 5].map((pos) => {
-                const avgRank = overviewMetrics?.avgRank || 0;
-                const isHighlighted = avgRank > 0 && Math.round(avgRank) === pos;
-                return (
-                  <div
-                    key={pos}
-                    className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-medium ${
-                      isHighlighted
-                        ? 'bg-[#4A7C59] text-white'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}
-                  >
-                    {pos}
-                  </div>
-                );
-              })}
+          {/* Position Visual Container */}
+          <div className="h-[100px]">
+            {/* Large Position Number */}
+            <div className="text-center mb-2">
+              <span className="text-3xl font-bold text-gray-900">{overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}</span>
             </div>
-            <div className="flex justify-between px-1">
-              <span className="text-[10px] text-gray-400">Best</span>
-              <span className="text-[10px] text-gray-400">Worst</span>
+            {/* Position Scale */}
+            <div>
+              <div className="flex justify-center gap-1.5 mb-1">
+                {[1, 2, 3, 4, 5].map((pos) => {
+                  const avgRank = overviewMetrics?.avgRank || 0;
+                  const isHighlighted = avgRank > 0 && Math.round(avgRank) === pos;
+                  return (
+                    <div
+                      key={pos}
+                      className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-medium ${
+                        isHighlighted
+                          ? 'bg-[#4A7C59] text-white'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}
+                    >
+                      {pos}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-between px-1">
+                <span className="text-[10px] text-gray-400">Best</span>
+                <span className="text-[10px] text-gray-400">Worst</span>
+              </div>
             </div>
           </div>
           {(() => {
@@ -4400,7 +4403,7 @@ export default function ResultsPage() {
                       <ReferenceArea y1={4.5} y2={5.5} fill="#e5e7eb" fillOpacity={0.3} />
                       {/* Divider line above "Not mentioned" band */}
                       <ReferenceLine y={4.5} stroke="#9ca3af" strokeWidth={1} strokeDasharray="4 4" />
-                      <CartesianGrid strokeDasharray="3 3" stroke="#fecaca" vertical={true} horizontal={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" vertical={true} horizontal={false} />
                       <XAxis
                         type="number"
                         dataKey="xIndexWithOffset"
@@ -4649,7 +4652,7 @@ export default function ResultsPage() {
                         <ReferenceArea x1={9.5} x2={10.5} fill="#e5e7eb" fillOpacity={0.3} /> {/* Not mentioned */}
                         {/* Divider line before "Not mentioned" */}
                         <ReferenceLine x={9.5} stroke="#d1d5db" strokeWidth={1} />
-                        <CartesianGrid strokeDasharray="3 3" stroke="#fecaca" horizontal={false} vertical={true} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" horizontal={false} vertical={true} />
                         <YAxis
                           type="category"
                           dataKey="label"
@@ -5410,7 +5413,7 @@ export default function ResultsPage() {
                   layout="vertical"
                   margin={{ top: 10, right: 50, bottom: 10, left: 140 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#fecaca" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="hsl(var(--muted))" />
                   <XAxis
                     type="number"
                     domain={[0, 100]}
@@ -5818,7 +5821,7 @@ export default function ResultsPage() {
                   layout="vertical"
                   margin={{ top: 10, right: 50, bottom: 10, left: 140 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="#fecaca" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} vertical={true} stroke="hsl(var(--muted))" />
                   <XAxis
                     type="number"
                     domain={[-4, 4]}
