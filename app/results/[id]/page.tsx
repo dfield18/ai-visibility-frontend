@@ -3286,6 +3286,30 @@ export default function ResultsPage() {
     }
   };
 
+  // Get donut arc color based on performance tone
+  const getArcColor = (tone: InterpretationTone): string => {
+    switch (tone) {
+      case 'success':
+        return '#16a34a'; // green-600
+      case 'warn':
+        return '#f97316'; // orange-500
+      default:
+        return '#eab308'; // yellow-500
+    }
+  };
+
+  // Get card background tint based on performance tone
+  const getCardBackground = (tone: InterpretationTone): string => {
+    switch (tone) {
+      case 'success':
+        return 'bg-gradient-to-br from-green-50/50 to-white';
+      case 'warn':
+        return 'bg-gradient-to-br from-orange-50/50 to-white';
+      default:
+        return 'bg-gradient-to-br from-gray-50/50 to-white';
+    }
+  };
+
   const getProviderShortLabel = (provider: string) => {
     switch (provider) {
       case 'openai': return 'GPT';
@@ -3442,14 +3466,25 @@ export default function ResultsPage() {
     return grouped;
   }, [scatterPlotData]);
 
-  // Get sentiment color for dot
+  // Get sentiment color for dot - matches the scatter chart colors
   const getSentimentDotColor = (sentiment: string | null): string => {
-    if (!sentiment) return '#9ca3af'; // gray
-    const s = sentiment.toLowerCase();
-    if (s === 'positive' || s === 'highly_recommended' || s === 'recommended') return '#16a34a'; // green
-    if (s === 'negative' || s === 'not_recommended') return '#ef4444'; // red
-    if (s === 'mixed' || s === 'with_caveats') return '#f59e0b'; // amber/yellow
-    return '#6b7280'; // neutral gray
+    if (!sentiment) return '#6b7280'; // gray for no sentiment
+    switch (sentiment) {
+      case 'strong_endorsement':
+        return '#22c55e'; // green-500 - Highly Recommended
+      case 'positive_endorsement':
+        return '#84cc16'; // lime-500 - Recommended
+      case 'neutral_mention':
+        return '#6b7280'; // gray-500 - Neutral
+      case 'conditional':
+        return '#fcd34d'; // amber-300 - With Caveats
+      case 'negative_comparison':
+        return '#f87171'; // red-400 - Not Recommended
+      case 'not_mentioned':
+        return '#d1d5db'; // gray-300 - Not mentioned
+      default:
+        return '#6b7280'; // gray for unknown
+    }
   };
 
   const OverviewTab = () => {
@@ -3458,248 +3493,248 @@ export default function ResultsPage() {
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* AI Visibility Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px]">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium text-gray-700">AI Visibility</p>
-            <div className="relative group">
-              <button
-                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Learn more about AI Visibility"
-                tabIndex={0}
-              >
-                <HelpCircle className="w-4 h-4 text-gray-400" />
-              </button>
-              <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                Mentioned in {overviewMetrics?.mentionedCount || 0} of {overviewMetrics?.totalResponses || 0} AI answers (across selected models/prompts).
+        {(() => {
+          const visibilityTone = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tone;
+          return (
+            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(visibilityTone)}`}>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-gray-700">AI Visibility</p>
+                <div className="relative group">
+                  <button
+                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Learn more about AI Visibility"
+                    tabIndex={0}
+                  >
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                    Mentioned in {overviewMetrics?.mentionedCount || 0} of {overviewMetrics?.totalResponses || 0} AI answers (across selected models/prompts).
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Circular Progress Ring */}
-          <div className="h-[100px] flex items-start">
-            <div className="relative w-[80px] h-[80px]">
-              <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="7"
-                  fill="none"
-                />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="#16a34a"
-                  strokeWidth="7"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(overviewMetrics?.overallVisibility || 0) * 2.01} 201`}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-gray-900">{overviewMetrics?.overallVisibility?.toFixed(1) || 0}%</span>
+              {/* Circular Progress Ring */}
+              <div className="h-[100px] flex items-start">
+                <div className="relative w-[80px] h-[80px]">
+                  <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      stroke="hsl(var(--muted))"
+                      strokeWidth="7"
+                      fill="none"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      stroke={getArcColor(visibilityTone)}
+                      strokeWidth="7"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray={`${(overviewMetrics?.overallVisibility || 0) * 2.01} 201`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-sm font-bold text-gray-900">{overviewMetrics?.overallVisibility?.toFixed(1) || 0}%</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Badge - fixed height container */}
-          <div className="h-[28px] flex items-start">
-            {(() => {
-              const interpretation = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null);
-              return (
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(interpretation.tone)}`}>
-                  {interpretation.label}
+              {/* Badge - fixed height container */}
+              <div className="h-[28px] flex items-start">
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(visibilityTone)}`}>
+                  {getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).label}
                 </span>
-              );
-            })()}
-          </div>
-          {/* Description - pushed to bottom */}
-          <p className="text-xs text-gray-500 leading-relaxed mt-auto">% of relevant AI responses that mention {runStatus?.brand || 'your brand'}</p>
-        </div>
+              </div>
+              {/* Description - pushed to bottom */}
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">% of relevant AI responses that mention {runStatus?.brand || 'your brand'}</p>
+            </div>
+          );
+        })()}
 
         {/* Share of Voice Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px]">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium text-gray-700">Share of Voice</p>
-            <div className="relative group">
-              <button
-                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Learn more about Share of Voice"
-                tabIndex={0}
-              >
-                <HelpCircle className="w-4 h-4 text-gray-400" />
-              </button>
-              <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                {overviewMetrics?.selectedBrand || 'Your brand'} accounts for {overviewMetrics?.shareOfVoice?.toFixed(1) || 0}% of all brand mentions ({overviewMetrics?.selectedBrandMentions || 0} of {overviewMetrics?.totalBrandMentions || 0} mentions).
+        {(() => {
+          const sovTone = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tone;
+          return (
+            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(sovTone)}`}>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-gray-700">Share of Voice</p>
+                <div className="relative group">
+                  <button
+                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Learn more about Share of Voice"
+                    tabIndex={0}
+                  >
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                    {overviewMetrics?.selectedBrand || 'Your brand'} accounts for {overviewMetrics?.shareOfVoice?.toFixed(1) || 0}% of all brand mentions ({overviewMetrics?.selectedBrandMentions || 0} of {overviewMetrics?.totalBrandMentions || 0} mentions).
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Circular Progress Ring */}
-          <div className="h-[100px] flex items-start">
-            <div className="relative w-[80px] h-[80px]">
-              <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="7"
-                  fill="none"
-                />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="#16a34a"
-                  strokeWidth="7"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(overviewMetrics?.shareOfVoice || 0) * 2.01} 201`}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-gray-900">{overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%</span>
+              {/* Circular Progress Ring */}
+              <div className="h-[100px] flex items-start">
+                <div className="relative w-[80px] h-[80px]">
+                  <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      stroke="hsl(var(--muted))"
+                      strokeWidth="7"
+                      fill="none"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      stroke={getArcColor(sovTone)}
+                      strokeWidth="7"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray={`${(overviewMetrics?.shareOfVoice || 0) * 2.01} 201`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-sm font-bold text-gray-900">{overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Badge - fixed height container */}
-          <div className="h-[28px] flex items-start">
-            {(() => {
-              const interpretation = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null);
-              return (
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(interpretation.tone)}`}>
-                  {interpretation.label}
+              {/* Badge - fixed height container */}
+              <div className="h-[28px] flex items-start">
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(sovTone)}`}>
+                  {getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).label}
                 </span>
-              );
-            })()}
-          </div>
-          {/* Description - pushed to bottom */}
-          <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your brand's share of all brand mentions</p>
-        </div>
+              </div>
+              {/* Description - pushed to bottom */}
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your brand's share of all brand mentions</p>
+            </div>
+          );
+        })()}
 
         {/* Top Result Rate Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px]">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium text-gray-700">Top Result Rate</p>
-            <div className="relative group">
-              <button
-                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Learn more about Top Result Rate"
-                tabIndex={0}
-              >
-                <HelpCircle className="w-4 h-4 text-gray-400" />
-              </button>
-              <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                Ranked #1 in {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.responsesWhereMentioned || 0} AI answers where {overviewMetrics?.selectedBrand || 'your brand'} appears.
+        {(() => {
+          const topRateTone = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null).tone;
+          return (
+            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(topRateTone)}`}>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-gray-700">Top Result Rate</p>
+                <div className="relative group">
+                  <button
+                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Learn more about Top Result Rate"
+                    tabIndex={0}
+                  >
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                    Ranked #1 in {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.responsesWhereMentioned || 0} AI answers where {overviewMetrics?.selectedBrand || 'your brand'} appears.
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Circular Progress Ring */}
-          <div className="h-[100px] flex items-start">
-            <div className="relative w-[80px] h-[80px]">
-              <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="hsl(var(--muted))"
-                  strokeWidth="7"
-                  fill="none"
-                />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="#16a34a"
-                  strokeWidth="7"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeDasharray={`${(overviewMetrics?.top1Rate || 0) * 2.01} 201`}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-bold text-gray-900">{overviewMetrics?.top1Rate?.toFixed(0) || 0}%</span>
+              {/* Circular Progress Ring */}
+              <div className="h-[100px] flex items-start">
+                <div className="relative w-[80px] h-[80px]">
+                  <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      stroke="hsl(var(--muted))"
+                      strokeWidth="7"
+                      fill="none"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      stroke={getArcColor(topRateTone)}
+                      strokeWidth="7"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeDasharray={`${(overviewMetrics?.top1Rate || 0) * 2.01} 201`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-sm font-bold text-gray-900">{overviewMetrics?.top1Rate?.toFixed(0) || 0}%</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Badge - fixed height container */}
-          <div className="h-[28px] flex items-start">
-            {(() => {
-              const interpretation = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null);
-              return (
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(interpretation.tone)}`}>
-                  {interpretation.label}
+              {/* Badge - fixed height container */}
+              <div className="h-[28px] flex items-start">
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(topRateTone)}`}>
+                  {getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null).label}
                 </span>
-              );
-            })()}
-          </div>
-          {/* Description - pushed to bottom */}
-          <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often your brand is the #1 result</p>
-        </div>
+              </div>
+              {/* Description - pushed to bottom */}
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often your brand is the #1 result</p>
+            </div>
+          );
+        })()}
 
         {/* Avg. Position Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px]">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium text-gray-700">Avg. Position</p>
-            <div className="relative group">
-              <button
-                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Learn more about Average Position"
-                tabIndex={0}
-              >
-                <HelpCircle className="w-4 h-4 text-gray-400" />
-              </button>
-              <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                Average rank when {overviewMetrics?.selectedBrand || 'your brand'} is shown: {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on {overviewMetrics?.ranksCount || 0} responses.
+        {(() => {
+          const avgPosTone = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null).tone;
+          const avgRank = overviewMetrics?.avgRank || 0;
+          return (
+            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(avgPosTone)}`}>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-medium text-gray-700">Avg. Position</p>
+                <div className="relative group">
+                  <button
+                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Learn more about Average Position"
+                    tabIndex={0}
+                  >
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                    Average rank when {overviewMetrics?.selectedBrand || 'your brand'} is shown: {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on {overviewMetrics?.ranksCount || 0} responses.
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          {/* Position Visual Container */}
-          <div className="h-[100px]">
-            {/* Large Position Number */}
-            <div className="text-center mb-2">
-              <span className="text-3xl font-bold text-gray-900">{overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}</span>
-            </div>
-            {/* Position Scale */}
-            <div>
-              <div className="flex justify-center gap-1.5 mb-1">
-                {[1, 2, 3, 4, 5].map((pos) => {
-                  const avgRank = overviewMetrics?.avgRank || 0;
-                  const isHighlighted = avgRank > 0 && Math.round(avgRank) === pos;
-                  return (
-                    <div
-                      key={pos}
-                      className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-medium ${
-                        isHighlighted
-                          ? 'bg-[#4A7C59] text-white'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
-                      {pos}
-                    </div>
-                  );
-                })}
+              {/* Position Visual Container */}
+              <div className="h-[100px]">
+                {/* Large Position Number */}
+                <div className="text-center mb-3">
+                  <span className="text-4xl font-bold text-gray-900">{overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}</span>
+                </div>
+                {/* Position Scale - More prominent */}
+                <div>
+                  <div className="flex justify-center gap-2 mb-1.5">
+                    {[1, 2, 3, 4, 5].map((pos) => {
+                      const isHighlighted = avgRank > 0 && Math.round(avgRank) === pos;
+                      return (
+                        <div
+                          key={pos}
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-semibold transition-all ${
+                            isHighlighted
+                              ? 'bg-[#4A7C59] text-white shadow-md scale-110'
+                              : 'bg-gray-100 text-gray-500'
+                          }`}
+                        >
+                          {pos}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex justify-between px-2">
+                    <span className="text-xs text-gray-400">Best</span>
+                    <span className="text-xs text-gray-400">Worst</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between px-1">
-                <span className="text-[10px] text-gray-400">Best</span>
-                <span className="text-[10px] text-gray-400">Worst</span>
-              </div>
-            </div>
-          </div>
-          {/* Badge - fixed height container */}
-          <div className="h-[28px] flex items-start">
-            {(() => {
-              const interpretation = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null);
-              return (
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(interpretation.tone)}`}>
-                  {interpretation.label}
+              {/* Badge - fixed height container */}
+              <div className="h-[28px] flex items-start">
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(avgPosTone)}`}>
+                  {getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null).label}
                 </span>
-              );
-            })()}
-          </div>
-          {/* Description - pushed to bottom */}
-          <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your average ranking when mentioned</p>
-        </div>
+              </div>
+              {/* Description - pushed to bottom */}
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your average ranking when mentioned</p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* AI Summary */}
@@ -3751,42 +3786,65 @@ export default function ResultsPage() {
       {/* AI Brand Position by Platform */}
       {Object.keys(positionByPlatformData).length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-base font-semibold text-gray-900">AI Brand Position by Platform</h2>
-            <div className="relative group">
-              <button
-                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Learn more about AI Brand Position"
-                tabIndex={0}
-              >
-                <HelpCircle className="w-4 h-4 text-gray-400" />
-              </button>
-              <div className="absolute left-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                Shows where your brand appears in AI responses across different platforms, colored by sentiment.
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold text-gray-900">AI Brand Position by Platform</h2>
+              <div className="relative group">
+                <button
+                  className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                  aria-label="Learn more about AI Brand Position"
+                  tabIndex={0}
+                >
+                  <HelpCircle className="w-4 h-4 text-gray-400" />
+                </button>
+                <div className="absolute left-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                  Shows where your brand appears in AI responses across different platforms{showSentimentColors ? ', colored by sentiment' : ''}.
+                </div>
               </div>
             </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <span className="text-xs text-gray-500">Show sentiment</span>
+              <button
+                onClick={() => setShowSentimentColors(!showSentimentColors)}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                  showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                    showSentimentColors ? 'translate-x-5' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </label>
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-6">
-            <span className="text-xs text-gray-500">Sentiment:</span>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#16a34a]" />
-              <span className="text-xs text-gray-600">Positive</span>
+          {/* Legend - only show when sentiment colors are enabled */}
+          {showSentimentColors && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
+              <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                <span className="text-xs text-gray-500">Not Recommended</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
+                <span className="text-xs text-gray-500">With Caveats</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                <span className="text-xs text-gray-500">Neutral</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                <span className="text-xs text-gray-500">Recommended</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                <span className="text-xs text-gray-500">Highly Recommended</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#6b7280]" />
-              <span className="text-xs text-gray-600">Neutral</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" />
-              <span className="text-xs text-gray-600">Mixed</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
-              <span className="text-xs text-gray-600">Negative</span>
-            </div>
-          </div>
+          )}
 
           {/* Dot Plot Grid */}
           <div className="space-y-4">
@@ -3804,7 +3862,7 @@ export default function ResultsPage() {
                           <div
                             key={idx}
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: getSentimentDotColor(dot.sentiment) }}
+                            style={{ backgroundColor: showSentimentColors ? getSentimentDotColor(dot.sentiment) : '#16a34a' }}
                           />
                         ))}
                       </div>
@@ -7905,7 +7963,7 @@ export default function ResultsPage() {
     // Helper function to get sentiment bar color
     const getSentimentBarColor = (sentiment: string) => {
       switch (sentiment) {
-        case 'strong_endorsement': return '#22c55e';
+        case 'strong_endorsement': return '#15803d'; // Darker green (green-700)
         case 'positive_endorsement': return '#84cc16';
         case 'neutral_mention': return '#3b82f6';
         case 'conditional': return '#fde68a'; // amber-200 (very light)
@@ -10189,12 +10247,24 @@ export default function ResultsPage() {
                           const getProviderPillStyle = (score: number) => {
                             if (score >= 90) return { bg: 'bg-[#16a34a]', text: 'text-white' }; // Dark green
                             if (score >= 70) return { bg: 'bg-[#4ade80]', text: 'text-gray-800' }; // Light green
-                            return { bg: 'bg-gray-100 border border-gray-300', text: 'text-gray-600' }; // Gray outline
+                            if (score >= 50) return { bg: 'bg-[#a3a095]', text: 'text-white' }; // Brown/tan
+                            return { bg: 'bg-gray-200', text: 'text-gray-600' }; // Gray
+                          };
+
+                          // Get visibility score color based on value
+                          const getScoreColor = (score: number) => {
+                            if (score >= 90) return '#15803d'; // Dark green (green-700)
+                            if (score >= 75) return '#16a34a'; // Green (green-600)
+                            if (score >= 60) return '#22c55e'; // Light green (green-500)
+                            if (score >= 45) return '#86efac'; // Lighter green (green-300)
+                            if (score >= 30) return '#a3a095'; // Brown/tan
+                            if (score >= 15) return '#8b8578'; // Darker brown
+                            return '#6b7280'; // Gray
                           };
 
                           return (
                             <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
-                              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-6 h-full">
+                              <div className="bg-white rounded-2xl shadow-md border-2 border-gray-200 px-6 py-6 h-full hover:shadow-lg transition-shadow">
                                 {/* Brand Name */}
                                 <div className="flex items-center justify-center gap-2 mb-4">
                                   <span className="font-semibold text-gray-900">{brandData.brand}</span>
@@ -10205,7 +10275,10 @@ export default function ResultsPage() {
 
                                 {/* Large Visibility Score */}
                                 <div className="text-center mb-1">
-                                  <span className={`text-6xl font-bold ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                                  <span
+                                    className="text-6xl font-bold"
+                                    style={{ color: getScoreColor(brandData.visibilityScore) }}
+                                  >
                                     {Math.round(brandData.visibilityScore)}
                                   </span>
                                 </div>
@@ -11065,13 +11138,13 @@ export default function ResultsPage() {
                         <span>Competitors</span>
                       </div>
                       <div className="flex items-center gap-2 ml-2">
-                        <span>Fewer</span>
-                        <div className="flex">
-                          <div className="w-4 h-3 rounded-l" style={{ backgroundColor: 'rgba(91, 163, 192, 0.15)' }} />
-                          <div className="w-4 h-3" style={{ backgroundColor: 'rgba(91, 163, 192, 0.4)' }} />
-                          <div className="w-4 h-3 rounded-r" style={{ backgroundColor: 'rgba(91, 163, 192, 0.7)' }} />
-                        </div>
                         <span>More</span>
+                        <div className="flex">
+                          <div className="w-4 h-3 rounded-l" style={{ backgroundColor: 'rgba(91, 163, 192, 0.7)' }} />
+                          <div className="w-4 h-3" style={{ backgroundColor: 'rgba(91, 163, 192, 0.4)' }} />
+                          <div className="w-4 h-3 rounded-r" style={{ backgroundColor: 'rgba(91, 163, 192, 0.15)' }} />
+                        </div>
+                        <span>Fewer</span>
                       </div>
                     </>
                   )}
