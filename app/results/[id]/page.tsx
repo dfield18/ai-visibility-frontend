@@ -7632,7 +7632,7 @@ export default function ResultsPage() {
                       </div>
                     </th>
                     <th className="text-left py-3 px-3 font-medium text-gray-600 bg-white">Models</th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-600 bg-white">Brands</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-600 bg-white">Brands Mentioned</th>
                   </tr>
                 </thead>
                 <tbody>
