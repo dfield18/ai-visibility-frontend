@@ -1642,7 +1642,7 @@ export default function ResultsPage() {
   }, [runStatus, brandBreakdownStats, modelPreferenceData, brandCooccurrence]);
 
   // State for Brand Co-occurrence view
-  const [cooccurrenceView, setCooccurrenceView] = useState<'pairs' | 'venn'>('pairs');
+  const [cooccurrenceView, setCooccurrenceView] = useState<'pairs' | 'venn'>('venn');
 
   // State for Source Gap Analysis filters
   const [sourceGapProviderFilter, setSourceGapProviderFilter] = useState<string>('all');
@@ -2984,6 +2984,39 @@ export default function ResultsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleExportHeatmapCSV = () => {
+    if (!brandSourceHeatmap.sources.length) return;
+
+    const headers = ['Source', ...brandSourceHeatmap.brands];
+    const rows = brandSourceHeatmap.data.map(row => {
+      const values = [row.domain as string];
+      brandSourceHeatmap.brands.forEach(brand => {
+        if (heatmapShowSentiment) {
+          const sentimentInfo = brandSourceHeatmap.sentimentData[row.domain as string]?.[brand];
+          values.push(sentimentInfo?.avg ? sentimentInfo.avg.toFixed(2) : '0');
+        } else {
+          values.push(String(row[brand] || 0));
+        }
+      });
+      return values;
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${runStatus?.brand || 'brand'}-source-heatmap-${heatmapShowSentiment ? 'sentiment' : 'citations'}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportSentimentCSV = () => {
     if (!runStatus) return;
 
@@ -3365,13 +3398,67 @@ export default function ResultsPage() {
     });
   }, [runStatus, globallyFilteredResults, brandBreakdownStats]);
 
+  // Position categories for the dot plot chart
+  const POSITION_CATEGORIES = ['Top', '2-3', '4-5', '6-10', '>10', 'N/A'];
+
+  // Compute data for position by platform dot plot
+  const positionByPlatformData = useMemo(() => {
+    if (!scatterPlotData.length) return [];
+
+    // Group data by provider and position category
+    const grouped: Record<string, Record<string, { sentiment: string | null; count: number }[]>> = {};
+
+    scatterPlotData.forEach((dp) => {
+      const provider = dp.label; // Use display label
+      if (!grouped[provider]) {
+        grouped[provider] = {};
+        POSITION_CATEGORIES.forEach(cat => {
+          grouped[provider][cat] = [];
+        });
+      }
+
+      // Determine position category
+      let category: string;
+      if (!dp.isMentioned || dp.rank === 0) {
+        category = 'N/A';
+      } else if (dp.rank === 1) {
+        category = 'Top';
+      } else if (dp.rank >= 2 && dp.rank <= 3) {
+        category = '2-3';
+      } else if (dp.rank >= 4 && dp.rank <= 5) {
+        category = '4-5';
+      } else if (dp.rank >= 6 && dp.rank <= 10) {
+        category = '6-10';
+      } else {
+        category = '>10';
+      }
+
+      grouped[provider][category].push({
+        sentiment: dp.sentiment,
+        count: 1,
+      });
+    });
+
+    return grouped;
+  }, [scatterPlotData]);
+
+  // Get sentiment color for dot
+  const getSentimentDotColor = (sentiment: string | null): string => {
+    if (!sentiment) return '#9ca3af'; // gray
+    const s = sentiment.toLowerCase();
+    if (s === 'positive' || s === 'highly_recommended' || s === 'recommended') return '#16a34a'; // green
+    if (s === 'negative' || s === 'not_recommended') return '#ef4444'; // red
+    if (s === 'mixed' || s === 'with_caveats') return '#f59e0b'; // amber/yellow
+    return '#6b7280'; // neutral gray
+  };
+
   const OverviewTab = () => {
     return (
     <div className="space-y-6">
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* AI Visibility Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[280px]">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px]">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">AI Visibility</p>
             <div className="relative group">
@@ -3403,7 +3490,7 @@ export default function ResultsPage() {
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#22c55e"
+                  stroke="#16a34a"
                   strokeWidth="7"
                   fill="none"
                   strokeLinecap="round"
@@ -3427,11 +3514,11 @@ export default function ResultsPage() {
             })()}
           </div>
           {/* Description - pushed to bottom */}
-          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">% of relevant AI responses that mention {runStatus?.brand || 'your brand'}</p>
+          <p className="text-xs text-gray-500 leading-relaxed mt-auto">% of relevant AI responses that mention {runStatus?.brand || 'your brand'}</p>
         </div>
 
         {/* Share of Voice Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[280px]">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px]">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">Share of Voice</p>
             <div className="relative group">
@@ -3463,7 +3550,7 @@ export default function ResultsPage() {
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#22c55e"
+                  stroke="#16a34a"
                   strokeWidth="7"
                   fill="none"
                   strokeLinecap="round"
@@ -3487,11 +3574,11 @@ export default function ResultsPage() {
             })()}
           </div>
           {/* Description - pushed to bottom */}
-          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">Your brand's share of all brand mentions</p>
+          <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your brand's share of all brand mentions</p>
         </div>
 
         {/* Top Result Rate Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[280px]">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px]">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">Top Result Rate</p>
             <div className="relative group">
@@ -3523,7 +3610,7 @@ export default function ResultsPage() {
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#22c55e"
+                  stroke="#16a34a"
                   strokeWidth="7"
                   fill="none"
                   strokeLinecap="round"
@@ -3547,11 +3634,11 @@ export default function ResultsPage() {
             })()}
           </div>
           {/* Description - pushed to bottom */}
-          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">How often your brand is the #1 result</p>
+          <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often your brand is the #1 result</p>
         </div>
 
         {/* Avg. Position Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[280px]">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px]">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">Avg. Position</p>
             <div className="relative group">
@@ -3611,7 +3698,7 @@ export default function ResultsPage() {
             })()}
           </div>
           {/* Description - pushed to bottom */}
-          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">Your average ranking when mentioned</p>
+          <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your average ranking when mentioned</p>
         </div>
       </div>
 
@@ -3660,6 +3747,90 @@ export default function ResultsPage() {
           </div>
         )}
       </div>
+
+      {/* AI Brand Position by Platform */}
+      {Object.keys(positionByPlatformData).length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-base font-semibold text-gray-900">AI Brand Position by Platform</h2>
+            <div className="relative group">
+              <button
+                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                aria-label="Learn more about AI Brand Position"
+                tabIndex={0}
+              >
+                <HelpCircle className="w-4 h-4 text-gray-400" />
+              </button>
+              <div className="absolute left-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                Shows where your brand appears in AI responses across different platforms, colored by sentiment.
+              </div>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-6">
+            <span className="text-xs text-gray-500">Sentiment:</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#16a34a]" />
+              <span className="text-xs text-gray-600">Positive</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#6b7280]" />
+              <span className="text-xs text-gray-600">Neutral</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#f59e0b]" />
+              <span className="text-xs text-gray-600">Mixed</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#ef4444]" />
+              <span className="text-xs text-gray-600">Negative</span>
+            </div>
+          </div>
+
+          {/* Dot Plot Grid */}
+          <div className="space-y-4">
+            {Object.entries(positionByPlatformData).map(([provider, categories]) => (
+              <div key={provider} className="flex items-center">
+                <div className="w-24 flex-shrink-0">
+                  <span className="text-sm font-medium text-gray-900">{provider}</span>
+                </div>
+                <div className="flex-1 grid grid-cols-6 gap-2">
+                  {POSITION_CATEGORIES.map((category) => {
+                    const dots = categories[category] || [];
+                    return (
+                      <div key={category} className="flex items-center justify-center min-h-[24px] gap-0.5 flex-wrap">
+                        {dots.map((dot, idx) => (
+                          <div
+                            key={idx}
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: getSentimentDotColor(dot.sentiment) }}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* X-axis labels */}
+          <div className="flex items-center mt-4 pt-2 border-t border-gray-100">
+            <div className="w-24 flex-shrink-0" />
+            <div className="flex-1 grid grid-cols-6 gap-2">
+              {POSITION_CATEGORIES.map((category) => (
+                <div key={category} className="text-center">
+                  <span className="text-xs text-gray-500">{category}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="text-center mt-2">
+            <span className="text-xs text-gray-400">Order of appearance in AI Response</span>
+          </div>
+        </div>
+      )}
 
       {/* Prompt Breakdown Table */}
       {promptBreakdownStats.length > 0 && (
@@ -10802,7 +10973,7 @@ export default function ResultsPage() {
                         </svg>
                       </div>
                       <p className="text-sm text-gray-500 text-center mt-1">
-                        Circle size shows how often brands appear together. Numbers show the total mentions.
+                        Bubble size reflects how often brands appear together; values denote total mention volume.
                       </p>
                     </div>
                   );
@@ -11020,6 +11191,24 @@ export default function ResultsPage() {
                       })()}
                     </tbody>
                   </table>
+                </div>
+
+                {/* Export buttons */}
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={handleExportHeatmapCSV}
+                    className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                  >
+                    <Download className="w-4 h-4" />
+                    Export CSV
+                  </button>
+                  <button
+                    onClick={handleCopyLink}
+                    className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                  >
+                    <Link2 className="w-4 h-4" />
+                    {copied ? 'Copied!' : 'Share'}
+                  </button>
                 </div>
               </div>
             )}
