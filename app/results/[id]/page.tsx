@@ -8534,11 +8534,11 @@ export default function ResultsPage() {
           {/* Sentiment Legend */}
           <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
             <span className="text-gray-500">Sentiment:</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-green-100 text-green-800 border-green-200">Highly Recommended</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-lime-100 text-lime-800 border-lime-200">Recommended</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-blue-100 text-blue-800 border-blue-200">Mentioned</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-yellow-100 text-yellow-800 border-yellow-200">With Caveats</span>
             <span className="inline-flex items-center px-2 py-0.5 rounded border bg-red-100 text-red-800 border-red-200">Not Recommended</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-yellow-100 text-yellow-800 border-yellow-200">With Caveats</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-blue-100 text-blue-800 border-blue-200">Mentioned</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-lime-100 text-lime-800 border-lime-200">Recommended</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-green-100 text-green-800 border-green-200">Highly Recommended</span>
           </div>
 
           <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-200 rounded-lg">
