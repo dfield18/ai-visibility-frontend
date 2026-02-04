@@ -3424,11 +3424,6 @@ export default function ResultsPage() {
                   return (
                     <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
                       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-6 h-full">
-                        {/* Card Type Label */}
-                        <p className="text-center text-sm text-gray-500 mb-3">
-                          {brandData.isSearchedBrand ? 'Your Brand' : 'Competitor'}
-                        </p>
-
                         {/* Brand Name */}
                         <div className="flex items-center justify-center gap-2 mb-4">
                           <span className="font-semibold text-gray-900">{brandData.brand}</span>
