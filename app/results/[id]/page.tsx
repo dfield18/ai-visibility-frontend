@@ -3415,15 +3415,17 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-          {(() => {
-            const interpretation = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null);
-            return (
-              <span className={`inline-block mb-3 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
-                {interpretation.label}
-              </span>
-            );
-          })()}
-          <p className="text-xs text-gray-500 leading-relaxed mt-auto">% of AI responses that mention your brand when asked relevant questions</p>
+          <div className="mt-auto">
+            {(() => {
+              const interpretation = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null);
+              return (
+                <span className={`inline-block w-fit mb-2 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                  {interpretation.label}
+                </span>
+              );
+            })()}
+            <p className="text-[10px] text-gray-500 leading-relaxed">% of AI responses that mention your brand when asked relevant questions</p>
+          </div>
         </div>
 
         {/* Share of Voice Card */}
@@ -3471,15 +3473,17 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-          {(() => {
-            const interpretation = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null);
-            return (
-              <span className={`inline-block mb-3 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
-                {interpretation.label}
-              </span>
-            );
-          })()}
-          <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your brand's share of all brand mentions</p>
+          <div className="mt-auto">
+            {(() => {
+              const interpretation = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null);
+              return (
+                <span className={`inline-block w-fit mb-2 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                  {interpretation.label}
+                </span>
+              );
+            })()}
+            <p className="text-[10px] text-gray-500 leading-relaxed">Your brand's share of all brand mentions</p>
+          </div>
         </div>
 
         {/* Top Result Rate Card */}
@@ -3527,15 +3531,17 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-          {(() => {
-            const interpretation = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null);
-            return (
-              <span className={`inline-block mb-3 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
-                {interpretation.label}
-              </span>
-            );
-          })()}
-          <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often your brand is the #1 result</p>
+          <div className="mt-auto">
+            {(() => {
+              const interpretation = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null);
+              return (
+                <span className={`inline-block w-fit mb-2 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                  {interpretation.label}
+                </span>
+              );
+            })()}
+            <p className="text-[10px] text-gray-500 leading-relaxed">How often your brand is the #1 result</p>
+          </div>
         </div>
 
         {/* Avg. Position Card */}
@@ -3587,15 +3593,17 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-          {(() => {
-            const interpretation = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null);
-            return (
-              <span className={`inline-block mb-3 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
-                {interpretation.label}
-              </span>
-            );
-          })()}
-          <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your average ranking when mentioned</p>
+          <div className="mt-auto">
+            {(() => {
+              const interpretation = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null);
+              return (
+                <span className={`inline-block w-fit mb-2 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                  {interpretation.label}
+                </span>
+              );
+            })()}
+            <p className="text-[10px] text-gray-500 leading-relaxed">Your average ranking when mentioned</p>
+          </div>
         </div>
       </div>
 
