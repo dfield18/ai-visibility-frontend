@@ -9096,7 +9096,7 @@ export default function ResultsPage() {
         )}
 
         {/* AI-Generated Recommendations */}
-        {aiSummary?.recommendations && aiSummary.recommendations.length > 0 && (
+        {aiSummary?.recommendations && (typeof aiSummary.recommendations === 'string' ? aiSummary.recommendations.length > 0 : Array.isArray(aiSummary.recommendations) && aiSummary.recommendations.length > 0) && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
@@ -9110,7 +9110,21 @@ export default function ResultsPage() {
 
             <div className="bg-white rounded-lg p-5 border border-gray-200">
               <div className="text-sm text-gray-700 leading-relaxed space-y-4 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiSummary.recommendations}</ReactMarkdown>
+                {typeof aiSummary.recommendations === 'string' ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiSummary.recommendations}</ReactMarkdown>
+                ) : (
+                  // Fallback for old array format during transition
+                  <div className="space-y-4">
+                    {(aiSummary.recommendations as unknown as Array<{title: string; description: string; tactics?: string[]}>).map((rec, idx) => (
+                      <div key={idx}>
+                        <p><strong>{rec.title}.</strong> {rec.description}</p>
+                        {rec.tactics && rec.tactics.length > 0 && (
+                          <p className="mt-1 text-gray-600">{rec.tactics.join(' ')}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
