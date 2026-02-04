@@ -122,19 +122,10 @@ export interface ApiError {
   detail: string;
 }
 
-export interface AIRecommendation {
-  title: string;
-  description: string;
-  priority: 'high' | 'medium' | 'low';
-  category: 'content' | 'seo' | 'pr' | 'product' | 'technical';
-  dataInsight?: string;
-  tactics?: string[];
-}
-
 export interface AISummaryResponse {
   run_id: string;
   summary: string;
-  recommendations: AIRecommendation[];
+  recommendations: string;  // Prose-style strategy brief
   generated_at: string;
 }
 
