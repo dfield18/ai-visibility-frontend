@@ -3366,192 +3366,8 @@ export default function ResultsPage() {
   }, [runStatus, globallyFilteredResults, brandBreakdownStats]);
 
   const OverviewTab = () => {
-    const totalCards = allBrandsAnalysisData.length;
-    const canNavigate = totalCards > 1;
-
-    const goToPrevious = () => {
-      setBrandCarouselIndex(prev => prev === 0 ? totalCards - 1 : prev - 1);
-    };
-
-    const goToNext = () => {
-      setBrandCarouselIndex(prev => prev === totalCards - 1 ? 0 : prev + 1);
-    };
-
-    const getProviderLabel = (provider: string) => {
-      switch (provider) {
-        case 'openai': return 'ChatGPT';
-        case 'anthropic': return 'Claude';
-        case 'gemini': return 'Gemini';
-        case 'perplexity': return 'Perplexity';
-        case 'ai_overviews': return 'AI Overviews';
-        default: return provider;
-      }
-    };
-
     return (
     <div className="space-y-6">
-      {/* Brand Analysis Carousel */}
-      {allBrandsAnalysisData.length > 0 && (
-        <div className="relative">
-          {/* Carousel with Side Navigation */}
-          <div className="relative flex items-center">
-            {/* Left Arrow */}
-            {canNavigate && (
-              <button
-                onClick={goToPrevious}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-            )}
-
-            {/* Carousel Cards - Show 3 at a time */}
-            <div className="overflow-hidden w-full px-12">
-              <div
-                className="flex transition-transform duration-300 ease-in-out gap-4"
-                style={{ transform: `translateX(-${brandCarouselIndex * (100 / 3 + 1.33)}%)` }}
-              >
-                {allBrandsAnalysisData.map((brandData) => {
-                  const providers = brandData.providerScores.slice(0, 4);
-
-                  // Get provider pill color based on score
-                  const getProviderPillStyle = (score: number) => {
-                    if (score >= 90) return { bg: 'bg-[#16a34a]', text: 'text-white' }; // Dark green
-                    if (score >= 70) return { bg: 'bg-[#4ade80]', text: 'text-gray-800' }; // Light green
-                    return { bg: 'bg-gray-100 border border-gray-300', text: 'text-gray-600' }; // Gray outline
-                  };
-
-                  return (
-                    <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
-                      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-6 h-full">
-                        {/* Brand Name */}
-                        <div className="flex items-center justify-center gap-2 mb-4">
-                          <span className="font-semibold text-gray-900">{brandData.brand}</span>
-                          {brandData.isSearchedBrand && (
-                            <span className="text-xs bg-[#E8F0E8] text-[#4A7C59] px-2 py-0.5 rounded-full">Your Brand</span>
-                          )}
-                        </div>
-
-                        {/* Large Visibility Score */}
-                        <div className="text-center mb-1">
-                          <span className={`text-6xl font-bold ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
-                            {Math.round(brandData.visibilityScore)}
-                          </span>
-                        </div>
-                        <p className="text-center text-sm text-gray-500 mb-5">Visibility Score</p>
-
-                        {/* Provider Score Pills */}
-                        {providers.length > 0 && (
-                          <div className="flex justify-center gap-2 mb-5">
-                            {providers.map((prov) => {
-                              const pillStyle = getProviderPillStyle(prov.score);
-                              return (
-                                <div key={prov.provider} className="flex flex-col items-center">
-                                  <div className={`w-12 h-12 rounded-full ${pillStyle.bg} flex items-center justify-center`}>
-                                    <span className={`text-sm font-semibold ${pillStyle.text}`}>{prov.score}</span>
-                                  </div>
-                                  <span className="text-[10px] text-gray-500 mt-1">{getProviderLabel(prov.provider)}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* Comparison Text */}
-                        {brandData.comparisonRatio !== null && brandData.comparisonRatio !== Infinity && (
-                          <p className="text-center text-sm text-gray-600 mb-4">
-                            Mentioned <span className="font-semibold">
-                              {brandData.comparisonRatio >= 1
-                                ? `${brandData.comparisonRatio.toFixed(1)}x more`
-                                : `${(1 / brandData.comparisonRatio).toFixed(1)}x less`
-                              }
-                            </span> than avg
-                          </p>
-                        )}
-
-                        {/* Score Definition */}
-                        <p className="text-xs text-gray-400 text-center">
-                          Visibility Score = % of AI responses mentioning this brand
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Right Arrow */}
-            {canNavigate && (
-              <button
-                onClick={goToNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-
-          {/* Carousel Dots */}
-          {totalCards > 1 && (
-            <div className="flex justify-center gap-2 mt-6">
-              {allBrandsAnalysisData.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setBrandCarouselIndex(idx)}
-                  className={`w-2.5 h-2.5 rounded-full transition-colors ${idx === brandCarouselIndex ? 'bg-gray-800' : 'bg-gray-300'}`}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* AI Summary */}
-      <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-blue-600" />
-            <h2 className="text-base font-semibold text-gray-900">AI Analysis</h2>
-          </div>
-          {aiSummary?.summary && (
-            <button
-              onClick={() => setAiSummaryExpanded(!aiSummaryExpanded)}
-              className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-            >
-              {aiSummaryExpanded ? (
-                <>Show less <ChevronUp className="w-4 h-4" /></>
-              ) : (
-                <>Show more <ChevronDown className="w-4 h-4" /></>
-              )}
-            </button>
-          )}
-        </div>
-        {isSummaryLoading ? (
-          <div className="flex items-center gap-3 py-4">
-            <Spinner size="sm" />
-            <span className="text-sm text-gray-500">Generating AI summary...</span>
-          </div>
-        ) : aiSummary?.summary ? (
-          <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{removeActionableTakeaway(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500 italic">
-            AI summary will be available once the analysis is complete.
-          </p>
-        )}
-        {aiSummary?.summary && !aiSummaryExpanded && (
-          <div className="mt-2 pt-2 border-t border-gray-100">
-            <button
-              onClick={() => setAiSummaryExpanded(true)}
-              className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-            >
-              Read full analysis →
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* AI Visibility Card */}
@@ -3677,6 +3493,52 @@ export default function ResultsPage() {
           })()}
           <p className="text-xs text-gray-400 mt-2">Your average ranking when mentioned</p>
         </div>
+      </div>
+
+      {/* AI Summary */}
+      <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-blue-600" />
+            <h2 className="text-base font-semibold text-gray-900">AI Analysis</h2>
+          </div>
+          {aiSummary?.summary && (
+            <button
+              onClick={() => setAiSummaryExpanded(!aiSummaryExpanded)}
+              className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+            >
+              {aiSummaryExpanded ? (
+                <>Show less <ChevronUp className="w-4 h-4" /></>
+              ) : (
+                <>Show more <ChevronDown className="w-4 h-4" /></>
+              )}
+            </button>
+          )}
+        </div>
+        {isSummaryLoading ? (
+          <div className="flex items-center gap-3 py-4">
+            <Spinner size="sm" />
+            <span className="text-sm text-gray-500">Generating AI summary...</span>
+          </div>
+        ) : aiSummary?.summary ? (
+          <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{removeActionableTakeaway(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 italic">
+            AI summary will be available once the analysis is complete.
+          </p>
+        )}
+        {aiSummary?.summary && !aiSummaryExpanded && (
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <button
+              onClick={() => setAiSummaryExpanded(true)}
+              className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+            >
+              Read full analysis →
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Charts Section with Tabs */}
@@ -9986,6 +9848,146 @@ export default function ResultsPage() {
         {activeTab === 'reference' && <ReferenceTab />}
         {activeTab === 'competitive' && (
           <div className="space-y-6">
+            {/* Brand Analysis Carousel */}
+            {allBrandsAnalysisData.length > 0 && (() => {
+              const totalCards = allBrandsAnalysisData.length;
+              const canNavigate = totalCards > 1;
+
+              const goToPrevious = () => {
+                setBrandCarouselIndex(prev => prev === 0 ? totalCards - 1 : prev - 1);
+              };
+
+              const goToNext = () => {
+                setBrandCarouselIndex(prev => prev === totalCards - 1 ? 0 : prev + 1);
+              };
+
+              const getCarouselProviderLabel = (provider: string) => {
+                switch (provider) {
+                  case 'openai': return 'ChatGPT';
+                  case 'anthropic': return 'Claude';
+                  case 'gemini': return 'Gemini';
+                  case 'perplexity': return 'Perplexity';
+                  case 'ai_overviews': return 'AI Overviews';
+                  default: return provider;
+                }
+              };
+
+              return (
+                <div className="relative">
+                  {/* Carousel with Side Navigation */}
+                  <div className="relative flex items-center">
+                    {/* Left Arrow */}
+                    {canNavigate && (
+                      <button
+                        onClick={goToPrevious}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                    )}
+
+                    {/* Carousel Cards - Show 3 at a time */}
+                    <div className="overflow-hidden w-full px-12">
+                      <div
+                        className="flex transition-transform duration-300 ease-in-out gap-4"
+                        style={{ transform: `translateX(-${brandCarouselIndex * (100 / 3 + 1.33)}%)` }}
+                      >
+                        {allBrandsAnalysisData.map((brandData) => {
+                          const providers = brandData.providerScores.slice(0, 4);
+
+                          // Get provider pill color based on score
+                          const getProviderPillStyle = (score: number) => {
+                            if (score >= 90) return { bg: 'bg-[#16a34a]', text: 'text-white' }; // Dark green
+                            if (score >= 70) return { bg: 'bg-[#4ade80]', text: 'text-gray-800' }; // Light green
+                            return { bg: 'bg-gray-100 border border-gray-300', text: 'text-gray-600' }; // Gray outline
+                          };
+
+                          return (
+                            <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
+                              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-6 h-full">
+                                {/* Brand Name */}
+                                <div className="flex items-center justify-center gap-2 mb-4">
+                                  <span className="font-semibold text-gray-900">{brandData.brand}</span>
+                                  {brandData.isSearchedBrand && (
+                                    <span className="text-xs bg-[#E8F0E8] text-[#4A7C59] px-2 py-0.5 rounded-full">Your Brand</span>
+                                  )}
+                                </div>
+
+                                {/* Large Visibility Score */}
+                                <div className="text-center mb-1">
+                                  <span className={`text-6xl font-bold ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                                    {Math.round(brandData.visibilityScore)}
+                                  </span>
+                                </div>
+                                <p className="text-center text-sm text-gray-500 mb-5">Visibility Score</p>
+
+                                {/* Provider Score Pills */}
+                                {providers.length > 0 && (
+                                  <div className="flex justify-center gap-2 mb-5">
+                                    {providers.map((prov) => {
+                                      const pillStyle = getProviderPillStyle(prov.score);
+                                      return (
+                                        <div key={prov.provider} className="flex flex-col items-center">
+                                          <div className={`w-12 h-12 rounded-full ${pillStyle.bg} flex items-center justify-center`}>
+                                            <span className={`text-sm font-semibold ${pillStyle.text}`}>{prov.score}</span>
+                                          </div>
+                                          <span className="text-[10px] text-gray-500 mt-1">{getCarouselProviderLabel(prov.provider)}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* Comparison Text */}
+                                {brandData.comparisonRatio !== null && brandData.comparisonRatio !== Infinity && (
+                                  <p className="text-center text-sm text-gray-600 mb-4">
+                                    Mentioned <span className="font-semibold">
+                                      {brandData.comparisonRatio >= 1
+                                        ? `${brandData.comparisonRatio.toFixed(1)}x more`
+                                        : `${(1 / brandData.comparisonRatio).toFixed(1)}x less`
+                                      }
+                                    </span> than avg
+                                  </p>
+                                )}
+
+                                {/* Score Definition */}
+                                <p className="text-xs text-gray-400 text-center">
+                                  Visibility Score = % of AI responses mentioning this brand
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Right Arrow */}
+                    {canNavigate && (
+                      <button
+                        onClick={goToNext}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Carousel Dots */}
+                  {totalCards > 1 && (
+                    <div className="flex justify-center gap-2 mt-6">
+                      {allBrandsAnalysisData.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setBrandCarouselIndex(idx)}
+                          className={`w-2.5 h-2.5 rounded-full transition-colors ${idx === brandCarouselIndex ? 'bg-gray-800' : 'bg-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {/* Competitive Insights Summary */}
             {competitiveInsights.length > 0 && (
               <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
