@@ -3806,7 +3806,7 @@ export default function ResultsPage() {
                     <span className="text-xs text-gray-500">Neutral</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
                     <span className="text-xs text-gray-500">With Caveats</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -3928,7 +3928,7 @@ export default function ResultsPage() {
                                     data.sentiment === 'strong_endorsement' ? 'text-green-600' :
                                     data.sentiment === 'positive_endorsement' ? 'text-lime-600' :
                                     data.sentiment === 'neutral_mention' ? 'text-gray-600' :
-                                    data.sentiment === 'conditional' ? 'text-orange-500' :
+                                    data.sentiment === 'conditional' ? 'text-amber-500' :
                                     data.sentiment === 'negative_comparison' ? 'text-red-500' : ''
                                   }`}>
                                     {data.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
@@ -3971,8 +3971,8 @@ export default function ResultsPage() {
                                 opacity = 0.6;
                                 break;
                               case 'conditional':
-                                fillColor = '#fb923c'; // orange-400
-                                opacity = 0.8;
+                                fillColor = '#fcd34d'; // amber-300
+                                opacity = 1;
                                 break;
                               case 'negative_comparison':
                                 fillColor = '#f87171'; // red-400
@@ -4046,7 +4046,7 @@ export default function ResultsPage() {
                     <span className="text-xs text-gray-500">Neutral</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-orange-400 opacity-80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
                     <span className="text-xs text-gray-500">With Caveats</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -4305,7 +4305,7 @@ export default function ResultsPage() {
                                       ? dot.sentiment === 'strong_endorsement' ? '#22c55e'
                                         : dot.sentiment === 'positive_endorsement' ? '#84cc16'
                                         : dot.sentiment === 'neutral_mention' ? '#6b7280'
-                                        : dot.sentiment === 'conditional' ? '#fb923c'
+                                        : dot.sentiment === 'conditional' ? '#fcd34d'
                                         : dot.sentiment === 'negative_comparison' ? '#f87171'
                                         : '#d1d5db'
                                       : '#6b7280',
@@ -4327,7 +4327,7 @@ export default function ResultsPage() {
                                         dot.sentiment === 'strong_endorsement' ? 'text-green-600' :
                                         dot.sentiment === 'positive_endorsement' ? 'text-lime-600' :
                                         dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
-                                        dot.sentiment === 'conditional' ? 'text-orange-500' :
+                                        dot.sentiment === 'conditional' ? 'text-amber-500' :
                                         dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
                                       }`}>
                                         {dot.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
