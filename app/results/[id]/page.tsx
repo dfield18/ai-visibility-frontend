@@ -3393,136 +3393,117 @@ export default function ResultsPage() {
       {/* Brand Analysis Carousel */}
       {allBrandsAnalysisData.length > 0 && (
         <div className="relative">
-          {/* Carousel Header */}
-          <div className="flex items-center justify-center mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Brand Analysis</h2>
-            <span className="text-sm text-gray-500 ml-3">
-              {brandCarouselIndex + 1} of {totalCards}
-            </span>
-          </div>
-
           {/* Carousel with Side Navigation */}
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center">
             {/* Left Arrow */}
             {canNavigate && (
               <button
                 onClick={goToPrevious}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full transition-colors hover:bg-gray-100 text-gray-600"
-                style={{ left: 'calc(50% - 230px)' }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
               >
-                <ChevronLeft className="w-6 h-6" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
             )}
 
-            {/* Carousel Cards */}
-            <div className="overflow-hidden w-full max-w-md">
-            <div
-              className="flex transition-transform duration-300 ease-in-out"
-              style={{ transform: `translateX(-${brandCarouselIndex * 100}%)` }}
-            >
-              {allBrandsAnalysisData.map((brandData, cardIndex) => {
-                const bgColors = ['bg-[#5B7B5D]', 'bg-[#D9CBBA]', 'bg-[#C8C4A8]', 'bg-[#B8C4B8]', 'bg-[#A8B5C8]'];
-                const textColors = ['text-white', 'text-gray-700', 'text-gray-700', 'text-gray-700', 'text-gray-700'];
-                const labelColors = ['text-white/70', 'text-gray-500', 'text-gray-500', 'text-gray-500', 'text-gray-500'];
-                const providers = brandData.providerScores.slice(0, 5);
+            {/* Carousel Cards - Show 3 at a time */}
+            <div className="overflow-hidden w-full px-12">
+              <div
+                className="flex transition-transform duration-300 ease-in-out gap-4"
+                style={{ transform: `translateX(-${brandCarouselIndex * (100 / 3 + 1.33)}%)` }}
+              >
+                {allBrandsAnalysisData.map((brandData) => {
+                  const providers = brandData.providerScores.slice(0, 4);
 
-                return (
-                  <div key={brandData.brand} className="w-full flex-shrink-0">
-                    <div className={`rounded-2xl shadow-lg px-6 py-8 ${brandData.isSearchedBrand ? 'bg-white' : 'bg-gray-50'}`}>
-                      {/* Card Header */}
-                      <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${brandData.isSearchedBrand ? 'bg-[#E8F0E8]' : 'bg-gray-200'}`}>
-                            <BarChart3 className={`w-4 h-4 ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-500'}`} />
-                          </div>
-                          <div>
-                            <span className={`font-semibold ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
-                              {brandData.brand}
-                            </span>
-                            {brandData.isSearchedBrand ? (
-                              <span className="ml-2 text-xs bg-[#E8F0E8] text-[#4A7C59] px-2 py-0.5 rounded-full">Your Brand</span>
-                            ) : (
-                              <span className="ml-2 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Competitor</span>
-                            )}
-                          </div>
+                  // Get provider pill color based on score
+                  const getProviderPillStyle = (score: number) => {
+                    if (score >= 90) return { bg: 'bg-[#16a34a]', text: 'text-white' }; // Dark green
+                    if (score >= 70) return { bg: 'bg-[#4ade80]', text: 'text-gray-800' }; // Light green
+                    return { bg: 'bg-gray-100 border border-gray-300', text: 'text-gray-600' }; // Gray outline
+                  };
+
+                  return (
+                    <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
+                      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-6 h-full">
+                        {/* Card Type Label */}
+                        <p className="text-center text-sm text-gray-500 mb-3">
+                          {brandData.isSearchedBrand ? 'Your Brand' : 'Competitor'}
+                        </p>
+
+                        {/* Brand Name */}
+                        <div className="flex items-center justify-center gap-2 mb-4">
+                          <span className="font-semibold text-gray-900">{brandData.brand}</span>
+                          {brandData.isSearchedBrand && (
+                            <span className="text-xs bg-[#E8F0E8] text-[#4A7C59] px-2 py-0.5 rounded-full">Your Brand</span>
+                          )}
                         </div>
-                      </div>
 
-                      {/* Visibility Score Circle */}
-                      <div className="flex justify-center mb-5">
-                        <div className={`w-28 h-28 rounded-full flex items-center justify-center ${brandData.isSearchedBrand ? 'bg-[#E8F0E8]' : 'bg-gray-200'}`}>
-                          <span className={`text-4xl font-bold ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-600'}`}>
+                        {/* Large Visibility Score */}
+                        <div className="text-center mb-1">
+                          <span className={`text-6xl font-bold ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
                             {Math.round(brandData.visibilityScore)}
                           </span>
                         </div>
-                      </div>
-                      <p className="text-center text-gray-400 mb-6">Visibility Score</p>
+                        <p className="text-center text-sm text-gray-500 mb-5">Visibility Score</p>
 
-                      {/* Provider Scores */}
-                      {providers.length > 0 && (
-                        <div className="mb-5">
-                          <div className="flex justify-center gap-1.5">
-                            {providers.map((prov, idx) => (
-                              <div
-                                key={prov.provider}
-                                className={`${brandData.isSearchedBrand ? bgColors[idx % bgColors.length] : 'bg-gray-300'} rounded-xl px-2 py-2 text-center flex-1`}
-                              >
-                                <div className={`text-base font-bold ${brandData.isSearchedBrand ? textColors[idx % textColors.length] : 'text-gray-700'}`}>
-                                  {prov.score}
+                        {/* Provider Score Pills */}
+                        {providers.length > 0 && (
+                          <div className="flex justify-center gap-2 mb-5">
+                            {providers.map((prov) => {
+                              const pillStyle = getProviderPillStyle(prov.score);
+                              return (
+                                <div key={prov.provider} className="flex flex-col items-center">
+                                  <div className={`w-12 h-12 rounded-full ${pillStyle.bg} flex items-center justify-center`}>
+                                    <span className={`text-sm font-semibold ${pillStyle.text}`}>{prov.score}</span>
+                                  </div>
+                                  <span className="text-[10px] text-gray-500 mt-1">{getProviderLabel(prov.provider)}</span>
                                 </div>
-                                <div className={`text-[10px] leading-tight ${brandData.isSearchedBrand ? labelColors[idx % labelColors.length] : 'text-gray-500'}`}>
-                                  {getProviderLabel(prov.provider)}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Insight */}
-                      {brandData.comparisonRatio !== null && brandData.comparisonRatio !== Infinity && (
-                        <div className="flex items-center gap-2 text-sm text-gray-500 bg-[#FAFAF8] rounded-lg p-2.5">
-                          <Zap className={`w-4 h-4 flex-shrink-0 ${brandData.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-400'}`} />
-                          <span>
-                            {brandData.comparisonRatio >= 1
-                              ? `Mentioned ${brandData.comparisonRatio.toFixed(1)}x more than avg`
-                              : `Mentioned ${(1 / brandData.comparisonRatio).toFixed(1)}x less than avg`
-                            }
-                          </span>
-                        </div>
-                      )}
+                        {/* Comparison Text */}
+                        {brandData.comparisonRatio !== null && brandData.comparisonRatio !== Infinity && (
+                          <p className="text-center text-sm text-gray-600 mb-4">
+                            Mentioned <span className="font-semibold">
+                              {brandData.comparisonRatio >= 1
+                                ? `${brandData.comparisonRatio.toFixed(1)}x more`
+                                : `${(1 / brandData.comparisonRatio).toFixed(1)}x less`
+                              }
+                            </span> than avg
+                          </p>
+                        )}
 
-                      {/* Score Definition */}
-                      <p className="text-xs text-gray-400 mt-4 text-left">
-                        Visibility Score = % of AI responses mentioning this brand
-                      </p>
+                        {/* Score Definition */}
+                        <p className="text-xs text-gray-400 text-center">
+                          Visibility Score = % of AI responses mentioning this brand
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Right Arrow */}
             {canNavigate && (
               <button
                 onClick={goToNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full transition-colors hover:bg-gray-100 text-gray-600"
-                style={{ right: 'calc(50% - 230px)' }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
               >
-                <ChevronRight className="w-6 h-6" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             )}
           </div>
 
           {/* Carousel Dots */}
           {totalCards > 1 && (
-            <div className="flex justify-center gap-2 mt-4">
+            <div className="flex justify-center gap-2 mt-6">
               {allBrandsAnalysisData.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setBrandCarouselIndex(idx)}
-                  className={`w-2 h-2 rounded-full transition-colors ${idx === brandCarouselIndex ? 'bg-[#4A7C59]' : 'bg-gray-300'}`}
+                  className={`w-2.5 h-2.5 rounded-full transition-colors ${idx === brandCarouselIndex ? 'bg-gray-800' : 'bg-gray-300'}`}
                 />
               ))}
             </div>
