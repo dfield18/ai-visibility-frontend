@@ -3794,24 +3794,24 @@ export default function ResultsPage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
                   <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-500">Neutral</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                    <span className="text-xs text-gray-500">Not Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
                     <span className="text-xs text-gray-500">With Caveats</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Highly Recommended</span>
                   </div>
                 </div>
               )}
@@ -4034,24 +4034,24 @@ export default function ResultsPage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
                   <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Recommended</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-500">Neutral</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
+                    <span className="text-xs text-gray-500">Not Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
                     <span className="text-xs text-gray-500">With Caveats</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Recommended</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
+                    <span className="text-xs text-gray-500">Highly Recommended</span>
                   </div>
                 </div>
               )}
