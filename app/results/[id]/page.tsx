@@ -3245,11 +3245,11 @@ export default function ResultsPage() {
   const getToneStyles = (tone: InterpretationTone): string => {
     switch (tone) {
       case 'success':
-        return 'bg-green-50 text-green-700 border-green-200';
+        return 'bg-green-100 text-green-700';
       case 'warn':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
+        return 'bg-orange-100 text-orange-700';
       default:
-        return 'bg-gray-50 text-gray-600 border-gray-200';
+        return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -3389,14 +3389,14 @@ export default function ResultsPage() {
           </div>
           {/* Circular Progress Ring */}
           <div className="h-[100px] flex items-start">
-            <div className="relative w-[88px] h-[88px]">
-              <svg className="w-[88px] h-[88px] transform -rotate-90" viewBox="0 0 80 80">
+            <div className="relative w-[80px] h-[80px]">
+              <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
                 <circle
                   cx="40"
                   cy="40"
                   r="32"
                   stroke="hsl(var(--muted))"
-                  strokeWidth="8"
+                  strokeWidth="7"
                   fill="none"
                 />
                 <circle
@@ -3404,7 +3404,7 @@ export default function ResultsPage() {
                   cy="40"
                   r="32"
                   stroke="#22c55e"
-                  strokeWidth="8"
+                  strokeWidth="7"
                   fill="none"
                   strokeLinecap="round"
                   strokeDasharray={`${(overviewMetrics?.overallVisibility || 0) * 2.01} 201`}
@@ -3420,14 +3420,14 @@ export default function ResultsPage() {
             {(() => {
               const interpretation = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null);
               return (
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(interpretation.tone)}`}>
                   {interpretation.label}
                 </span>
               );
             })()}
           </div>
           {/* Description - pushed to bottom */}
-          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">% of AI responses that mention your brand when asked relevant questions</p>
+          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">% of relevant AI responses that mention {runStatus?.brand || 'your brand'}</p>
         </div>
 
         {/* Share of Voice Card */}
@@ -3449,14 +3449,14 @@ export default function ResultsPage() {
           </div>
           {/* Circular Progress Ring */}
           <div className="h-[100px] flex items-start">
-            <div className="relative w-[88px] h-[88px]">
-              <svg className="w-[88px] h-[88px] transform -rotate-90" viewBox="0 0 80 80">
+            <div className="relative w-[80px] h-[80px]">
+              <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
                 <circle
                   cx="40"
                   cy="40"
                   r="32"
                   stroke="hsl(var(--muted))"
-                  strokeWidth="8"
+                  strokeWidth="7"
                   fill="none"
                 />
                 <circle
@@ -3464,7 +3464,7 @@ export default function ResultsPage() {
                   cy="40"
                   r="32"
                   stroke="#22c55e"
-                  strokeWidth="8"
+                  strokeWidth="7"
                   fill="none"
                   strokeLinecap="round"
                   strokeDasharray={`${(overviewMetrics?.shareOfVoice || 0) * 2.01} 201`}
@@ -3480,7 +3480,7 @@ export default function ResultsPage() {
             {(() => {
               const interpretation = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null);
               return (
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(interpretation.tone)}`}>
                   {interpretation.label}
                 </span>
               );
@@ -3509,14 +3509,14 @@ export default function ResultsPage() {
           </div>
           {/* Circular Progress Ring */}
           <div className="h-[100px] flex items-start">
-            <div className="relative w-[88px] h-[88px]">
-              <svg className="w-[88px] h-[88px] transform -rotate-90" viewBox="0 0 80 80">
+            <div className="relative w-[80px] h-[80px]">
+              <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
                 <circle
                   cx="40"
                   cy="40"
                   r="32"
                   stroke="hsl(var(--muted))"
-                  strokeWidth="8"
+                  strokeWidth="7"
                   fill="none"
                 />
                 <circle
@@ -3524,7 +3524,7 @@ export default function ResultsPage() {
                   cy="40"
                   r="32"
                   stroke="#22c55e"
-                  strokeWidth="8"
+                  strokeWidth="7"
                   fill="none"
                   strokeLinecap="round"
                   strokeDasharray={`${(overviewMetrics?.top1Rate || 0) * 2.01} 201`}
@@ -3540,7 +3540,7 @@ export default function ResultsPage() {
             {(() => {
               const interpretation = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null);
               return (
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(interpretation.tone)}`}>
                   {interpretation.label}
                 </span>
               );
@@ -3604,7 +3604,7 @@ export default function ResultsPage() {
             {(() => {
               const interpretation = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null);
               return (
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(interpretation.tone)}`}>
                   {interpretation.label}
                 </span>
               );
