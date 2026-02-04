@@ -7780,7 +7780,7 @@ export default function ResultsPage() {
         case 'strong_endorsement': return '#22c55e';
         case 'positive_endorsement': return '#84cc16';
         case 'neutral_mention': return '#3b82f6';
-        case 'conditional': return '#fcd34d'; // amber-300 (lighter)
+        case 'conditional': return '#fde68a'; // amber-200 (very light)
         case 'negative_comparison': return '#ef4444';
         case 'not_mentioned': return '#9ca3af';
         default: return '#9ca3af';
