@@ -3371,7 +3371,7 @@ export default function ResultsPage() {
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* AI Visibility Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[280px]">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">AI Visibility</p>
             <div className="relative group">
@@ -3415,21 +3415,23 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-          <div className="mt-auto">
+          {/* Badge - fixed height container */}
+          <div className="h-[28px] flex items-start">
             {(() => {
               const interpretation = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null);
               return (
-                <span className={`inline-block w-fit mb-2 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
                   {interpretation.label}
                 </span>
               );
             })()}
-            <p className="text-[10px] text-gray-500 leading-relaxed">% of AI responses that mention your brand when asked relevant questions</p>
           </div>
+          {/* Description - pushed to bottom */}
+          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">% of AI responses that mention your brand when asked relevant questions</p>
         </div>
 
         {/* Share of Voice Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[280px]">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">Share of Voice</p>
             <div className="relative group">
@@ -3473,21 +3475,23 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-          <div className="mt-auto">
+          {/* Badge - fixed height container */}
+          <div className="h-[28px] flex items-start">
             {(() => {
               const interpretation = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null);
               return (
-                <span className={`inline-block w-fit mb-2 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
                   {interpretation.label}
                 </span>
               );
             })()}
-            <p className="text-[10px] text-gray-500 leading-relaxed">Your brand's share of all brand mentions</p>
           </div>
+          {/* Description - pushed to bottom */}
+          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">Your brand's share of all brand mentions</p>
         </div>
 
         {/* Top Result Rate Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[280px]">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">Top Result Rate</p>
             <div className="relative group">
@@ -3531,21 +3535,23 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-          <div className="mt-auto">
+          {/* Badge - fixed height container */}
+          <div className="h-[28px] flex items-start">
             {(() => {
               const interpretation = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null);
               return (
-                <span className={`inline-block w-fit mb-2 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
                   {interpretation.label}
                 </span>
               );
             })()}
-            <p className="text-[10px] text-gray-500 leading-relaxed">How often your brand is the #1 result</p>
           </div>
+          {/* Description - pushed to bottom */}
+          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">How often your brand is the #1 result</p>
         </div>
 
         {/* Avg. Position Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-full">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[280px]">
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium text-gray-700">Avg. Position</p>
             <div className="relative group">
@@ -3593,17 +3599,19 @@ export default function ResultsPage() {
               </div>
             </div>
           </div>
-          <div className="mt-auto">
+          {/* Badge - fixed height container */}
+          <div className="h-[28px] flex items-start">
             {(() => {
               const interpretation = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null);
               return (
-                <span className={`inline-block w-fit mb-2 px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full border ${getToneStyles(interpretation.tone)}`}>
                   {interpretation.label}
                 </span>
               );
             })()}
-            <p className="text-[10px] text-gray-500 leading-relaxed">Your average ranking when mentioned</p>
           </div>
+          {/* Description - pushed to bottom */}
+          <p className="text-[10px] text-gray-500 leading-relaxed mt-auto">Your average ranking when mentioned</p>
         </div>
       </div>
 
