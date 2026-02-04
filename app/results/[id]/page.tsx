@@ -10721,7 +10721,7 @@ export default function ResultsPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
                     <p className="text-sm text-gray-500">
-                      {heatmapShowSentiment ? 'Sentiment of each source toward brand' : 'Sources cited when each brand is mentioned'}
+                      {heatmapShowSentiment ? 'Overall sentiment of each source toward brand' : 'Sources cited when each brand is mentioned'}
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
