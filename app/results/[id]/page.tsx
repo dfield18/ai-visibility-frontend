@@ -10761,29 +10761,29 @@ export default function ResultsPage() {
                 </div>
 
                 {/* Legend - moved to top */}
-                <div className="mb-4 flex items-center gap-3 text-xs text-gray-500">
+                <div className="mb-4 flex items-center gap-4 text-xs text-gray-500">
                   {heatmapShowSentiment ? (
                     <>
                       <span className="text-gray-600 font-medium">Sentiment:</span>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(239, 68, 68, 0.6)' }} />
-                        <span>Not Recommended</span>
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+                        <span>Highly Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(251, 191, 36, 0.6)' }} />
-                        <span>With Caveats</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(156, 163, 175, 0.4)' }} />
-                        <span>Neutral</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(134, 239, 172, 0.7)' }} />
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4ade80' }} />
                         <span>Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(34, 139, 34, 0.75)' }} />
-                        <span>Highly Recommended</span>
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
+                        <span>Neutral</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
+                        <span>With Caveats</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
+                        <span>Not Recommended</span>
                       </div>
                     </>
                   ) : (
@@ -10865,53 +10865,55 @@ export default function ResultsPage() {
 
                               const isSearchedBrand = brand === brandSourceHeatmap.searchedBrand;
 
-                              // In sentiment mode, use distinct colors for each sentiment level
-                              let bgColor: string;
-                              let textColor: string = 'text-gray-700';
-                              if (count === 0) {
-                                bgColor = isSearchedBrand ? 'rgba(74, 124, 89, 0.05)' : 'transparent';
-                              } else if (heatmapShowSentiment) {
-                                // Distinct colors for each sentiment level
+                              // Get bar color for sentiment mode
+                              let barColor: string = '#9ca3af';
+                              if (heatmapShowSentiment && count > 0) {
                                 if (avgSentiment >= 4.5) {
-                                  // Highly Recommended - dark green
-                                  bgColor = 'rgba(34, 139, 34, 0.75)';
-                                  textColor = 'text-white font-medium';
+                                  barColor = '#16a34a'; // Highly Recommended - dark green
                                 } else if (avgSentiment >= 3.5) {
-                                  // Recommended - light green
-                                  bgColor = 'rgba(134, 239, 172, 0.7)';
-                                  textColor = 'text-gray-800';
+                                  barColor = '#4ade80'; // Recommended - light green
                                 } else if (avgSentiment >= 2.5) {
-                                  // Neutral - gray
-                                  bgColor = 'rgba(156, 163, 175, 0.4)';
-                                  textColor = 'text-gray-800';
+                                  barColor = '#9ca3af'; // Neutral - gray
                                 } else if (avgSentiment >= 1.5) {
-                                  // With Caveats - amber/orange
-                                  bgColor = 'rgba(251, 191, 36, 0.6)';
-                                  textColor = 'text-gray-800';
+                                  barColor = '#fbbf24'; // With Caveats - amber
                                 } else {
-                                  // Not Recommended - red
-                                  bgColor = 'rgba(239, 68, 68, 0.6)';
-                                  textColor = 'text-white font-medium';
+                                  barColor = '#ef4444'; // Not Recommended - red
                                 }
-                              } else {
-                                bgColor = isSearchedBrand
-                                  ? `rgba(74, 124, 89, ${0.2 + intensity * 0.6})`
-                                  : `rgba(91, 163, 192, ${0.15 + intensity * 0.55})`;
+                              } else if (!heatmapShowSentiment && count > 0) {
+                                barColor = isSearchedBrand ? '#4A7C59' : '#5ba3c0';
                               }
 
                               return (
                                 <td
                                   key={brand}
-                                  className={`text-center py-2 px-2 ${count > 0 ? 'cursor-pointer hover:ring-2 hover:ring-inset hover:ring-gray-400' : ''}`}
-                                  style={{ backgroundColor: bgColor, minWidth: '60px' }}
+                                  className={`text-center py-2 px-2 ${count > 0 ? 'cursor-pointer' : ''}`}
+                                  style={{ minWidth: '100px' }}
                                   onDoubleClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
                                   title={count > 0 ? (heatmapShowSentiment ? `${getSentimentLabelFromScore(avgSentiment)} - Double-click to view` : `${count} citations - Double-click to view`) : undefined}
                                 >
-                                  {count === 0 && <span className="text-gray-300">-</span>}
-                                  {count > 0 && !heatmapShowSentiment && (
-                                    <span className={intensity > 0.6 ? 'text-white font-medium' : 'text-gray-700'}>
-                                      {count}
-                                    </span>
+                                  {count === 0 ? (
+                                    <span className="text-gray-300">–</span>
+                                  ) : heatmapShowSentiment ? (
+                                    <div
+                                      className="h-7 rounded-md mx-auto hover:opacity-80 transition-opacity"
+                                      style={{
+                                        backgroundColor: barColor,
+                                        width: '80%',
+                                        maxWidth: '80px',
+                                      }}
+                                    />
+                                  ) : (
+                                    <div
+                                      className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity"
+                                      style={{
+                                        backgroundColor: barColor,
+                                        opacity: 0.3 + intensity * 0.7,
+                                        width: '80%',
+                                        maxWidth: '80px',
+                                      }}
+                                    >
+                                      <span className="text-white text-xs font-medium">{count}</span>
+                                    </div>
                                   )}
                                 </td>
                               );
