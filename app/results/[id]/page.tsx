@@ -9096,7 +9096,12 @@ export default function ResultsPage() {
         )}
 
         {/* AI-Generated Recommendations */}
-        {aiSummary?.recommendations && (typeof aiSummary.recommendations === 'string' ? aiSummary.recommendations.length > 0 : Array.isArray(aiSummary.recommendations) && aiSummary.recommendations.length > 0) && (
+        {aiSummary?.recommendations && (() => {
+          const recs = aiSummary.recommendations as unknown;
+          if (typeof recs === 'string') return recs.length > 0;
+          if (Array.isArray(recs)) return recs.length > 0;
+          return false;
+        })() && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
@@ -9110,8 +9115,8 @@ export default function ResultsPage() {
 
             <div className="bg-white rounded-lg p-5 border border-gray-200">
               <div className="text-sm text-gray-700 leading-relaxed space-y-4 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0">
-                {typeof aiSummary.recommendations === 'string' ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiSummary.recommendations}</ReactMarkdown>
+                {typeof (aiSummary.recommendations as unknown) === 'string' ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiSummary.recommendations as string}</ReactMarkdown>
                 ) : (
                   // Fallback for old array format during transition
                   <div className="space-y-4">
