@@ -4517,7 +4517,7 @@ export default function ResultsPage() {
                     if (score >= 4.5) return 'text-green-600';
                     if (score >= 3.5) return 'text-lime-600';
                     if (score >= 2.5) return 'text-gray-600';
-                    if (score >= 1.5) return 'text-orange-500';
+                    if (score >= 1.5) return 'text-amber-500';
                     if (score >= 0.5) return 'text-red-500';
                     return 'text-gray-400';
                   };
@@ -10107,7 +10107,7 @@ export default function ResultsPage() {
                           if (score >= 4.5) return 'text-green-600';
                           if (score >= 3.5) return 'text-lime-600';
                           if (score >= 2.5) return 'text-gray-600';
-                          if (score >= 1.5) return 'text-orange-500';
+                          if (score >= 1.5) return 'text-amber-500';
                           if (score >= 0.5) return 'text-red-500';
                           return 'text-gray-400';
                         };
@@ -10130,7 +10130,7 @@ export default function ResultsPage() {
                             'strong_endorsement': 'text-green-600',
                             'positive_endorsement': 'text-lime-600',
                             'neutral_mention': 'text-gray-600',
-                            'conditional': 'text-orange-500',
+                            'conditional': 'text-amber-500',
                             'negative_comparison': 'text-red-500',
                           };
                           return colors[sentiment] || 'text-gray-400';
