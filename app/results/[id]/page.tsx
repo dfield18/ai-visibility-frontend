@@ -2529,6 +2529,217 @@ export default function ResultsPage() {
       .slice(0, 5);
   }, [runStatus, globallyFilteredResults]);
 
+  // Sources Insights Summary - auto-generated key findings for Sources tab
+  const sourcesInsights = useMemo(() => {
+    if (!runStatus) return [];
+
+    const insights: string[] = [];
+    const searchedBrand = runStatus.brand;
+
+    // Get all results with sources
+    const resultsWithSources = globallyFilteredResults.filter(
+      (r: Result) => !r.error && r.sources && r.sources.length > 0
+    );
+
+    if (resultsWithSources.length === 0) return [];
+
+    // 1. Top cited source insight
+    if (topCitedSources.length > 0) {
+      const topSource = topCitedSources[0];
+      insights.push(`${topSource.domain} is the most frequently cited source (${topSource.count} citations across ${topSource.providers.length} ${topSource.providers.length === 1 ? 'model' : 'models'})`);
+    }
+
+    // 2. Key influencer insight (sources cited by multiple providers)
+    if (keyInfluencers.length > 0) {
+      insights.push(`${keyInfluencers.length} source${keyInfluencers.length === 1 ? '' : 's'} ${keyInfluencers.length === 1 ? 'is' : 'are'} cited by multiple AI models, indicating high authority`);
+    }
+
+    // 3. Brand website citation rate
+    const brandDomain = searchedBrand.toLowerCase().replace(/\s+/g, '');
+    const brandCitations = topCitedSources.filter(s =>
+      s.domain.toLowerCase().includes(brandDomain) || brandDomain.includes(s.domain.toLowerCase().replace('.com', '').replace('.org', ''))
+    );
+    if (brandCitations.length > 0) {
+      const totalBrandCitations = brandCitations.reduce((sum, s) => sum + s.count, 0);
+      insights.push(`${searchedBrand}'s website is cited ${totalBrandCitations} time${totalBrandCitations === 1 ? '' : 's'} as a source`);
+    } else {
+      insights.push(`${searchedBrand}'s website is not currently cited as a source by AI models — an opportunity for improvement`);
+    }
+
+    // 4. Source diversity
+    const uniqueDomains = new Set(topCitedSources.map(s => s.domain));
+    if (uniqueDomains.size > 5) {
+      insights.push(`AI models cite ${uniqueDomains.size} different sources, showing diverse information gathering`);
+    }
+
+    // 5. Provider with most sources
+    const providerSourceCounts: Record<string, number> = {};
+    resultsWithSources.forEach((r: Result) => {
+      providerSourceCounts[r.provider] = (providerSourceCounts[r.provider] || 0) + (r.sources?.length || 0);
+    });
+    const topProvider = Object.entries(providerSourceCounts).sort((a, b) => b[1] - a[1])[0];
+    if (topProvider) {
+      const formatProviderName = (p: string) => {
+        switch (p) {
+          case 'openai': return 'GPT-4o';
+          case 'anthropic': return 'Claude';
+          case 'perplexity': return 'Perplexity';
+          case 'ai_overviews': return 'Google AI Overviews';
+          case 'gemini': return 'Gemini';
+          default: return p;
+        }
+      };
+      insights.push(`${formatProviderName(topProvider[0])} provides the most source citations (${topProvider[1]} total)`);
+    }
+
+    return insights.slice(0, 5);
+  }, [runStatus, globallyFilteredResults, topCitedSources, keyInfluencers]);
+
+  // Sentiment Insights Summary - auto-generated key findings for Sentiment tab
+  const sentimentInsights = useMemo(() => {
+    if (!runStatus) return [];
+
+    const insights: string[] = [];
+    const searchedBrand = runStatus.brand;
+
+    // Get sentiment data
+    const resultsWithSentiment = globallyFilteredResults.filter(
+      (r: Result) => !r.error && r.brand_sentiment
+    );
+
+    if (resultsWithSentiment.length === 0) return [];
+
+    // Count sentiments
+    const sentimentCounts: Record<string, number> = {
+      strong_endorsement: 0,
+      positive_endorsement: 0,
+      neutral_mention: 0,
+      conditional: 0,
+      negative_comparison: 0,
+    };
+
+    resultsWithSentiment.forEach((r: Result) => {
+      const sentiment = r.brand_sentiment || '';
+      if (sentimentCounts[sentiment] !== undefined) {
+        sentimentCounts[sentiment]++;
+      }
+    });
+
+    const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0);
+    const positiveCount = sentimentCounts.strong_endorsement + sentimentCounts.positive_endorsement;
+    const positiveRate = total > 0 ? (positiveCount / total) * 100 : 0;
+
+    // 1. Overall sentiment insight
+    if (positiveRate >= 70) {
+      insights.push(`${searchedBrand} receives highly positive framing — ${positiveRate.toFixed(0)}% of mentions are endorsements`);
+    } else if (positiveRate >= 50) {
+      insights.push(`${searchedBrand} has generally positive sentiment with ${positiveRate.toFixed(0)}% endorsement rate`);
+    } else if (positiveRate >= 30) {
+      insights.push(`${searchedBrand} has mixed sentiment — only ${positiveRate.toFixed(0)}% of mentions are positive endorsements`);
+    } else {
+      insights.push(`${searchedBrand} has challenging sentiment positioning — ${positiveRate.toFixed(0)}% positive endorsements`);
+    }
+
+    // 2. Strongest sentiment category
+    const topSentiment = Object.entries(sentimentCounts).sort((a, b) => b[1] - a[1])[0];
+    if (topSentiment && topSentiment[1] > 0) {
+      const labelMap: Record<string, string> = {
+        strong_endorsement: 'Highly Recommended',
+        positive_endorsement: 'Recommended',
+        neutral_mention: 'Neutral Mention',
+        conditional: 'Mentioned with Caveats',
+        negative_comparison: 'Not Recommended',
+      };
+      const percentage = total > 0 ? (topSentiment[1] / total * 100).toFixed(0) : 0;
+      insights.push(`Most common framing: "${labelMap[topSentiment[0]]}" (${percentage}% of responses)`);
+    }
+
+    // 3. Caveat/negative analysis
+    const negativeCount = sentimentCounts.conditional + sentimentCounts.negative_comparison;
+    if (negativeCount > 0) {
+      const negativeRate = (negativeCount / total) * 100;
+      if (negativeRate > 20) {
+        insights.push(`${negativeRate.toFixed(0)}% of mentions include caveats or negative comparisons — room for improvement`);
+      }
+    }
+
+    // 4. Provider-specific sentiment patterns
+    const providerSentiments: Record<string, { positive: number; total: number }> = {};
+    resultsWithSentiment.forEach((r: Result) => {
+      if (!providerSentiments[r.provider]) {
+        providerSentiments[r.provider] = { positive: 0, total: 0 };
+      }
+      providerSentiments[r.provider].total++;
+      if (r.brand_sentiment === 'strong_endorsement' || r.brand_sentiment === 'positive_endorsement') {
+        providerSentiments[r.provider].positive++;
+      }
+    });
+
+    const formatProviderName = (p: string) => {
+      switch (p) {
+        case 'openai': return 'GPT-4o';
+        case 'anthropic': return 'Claude';
+        case 'perplexity': return 'Perplexity';
+        case 'ai_overviews': return 'Google AI Overviews';
+        case 'gemini': return 'Gemini';
+        default: return p;
+      }
+    };
+
+    // Find best and worst providers
+    const providerRates = Object.entries(providerSentiments)
+      .filter(([, data]) => data.total >= 2)
+      .map(([provider, data]) => ({
+        provider,
+        rate: (data.positive / data.total) * 100,
+        total: data.total,
+      }))
+      .sort((a, b) => b.rate - a.rate);
+
+    if (providerRates.length >= 2) {
+      const best = providerRates[0];
+      const worst = providerRates[providerRates.length - 1];
+      if (best.rate - worst.rate > 20) {
+        insights.push(`${formatProviderName(best.provider)} is most positive (${best.rate.toFixed(0)}% endorsements) vs ${formatProviderName(worst.provider)} (${worst.rate.toFixed(0)}%)`);
+      }
+    }
+
+    // 5. Competitor comparison (if available)
+    const competitorSentiments: Record<string, { positive: number; total: number }> = {};
+    globallyFilteredResults
+      .filter((r: Result) => !r.error && r.competitor_sentiments)
+      .forEach((r: Result) => {
+        if (r.competitor_sentiments) {
+          Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
+            if (!competitorSentiments[comp]) {
+              competitorSentiments[comp] = { positive: 0, total: 0 };
+            }
+            competitorSentiments[comp].total++;
+            if (sentiment === 'strong_endorsement' || sentiment === 'positive_endorsement') {
+              competitorSentiments[comp].positive++;
+            }
+          });
+        }
+      });
+
+    const competitorsWithBetterSentiment = Object.entries(competitorSentiments)
+      .filter(([, data]) => data.total >= 2)
+      .filter(([, data]) => {
+        const compRate = (data.positive / data.total) * 100;
+        return compRate > positiveRate + 10;
+      });
+
+    if (competitorsWithBetterSentiment.length > 0) {
+      const topComp = competitorsWithBetterSentiment[0];
+      const compRate = (topComp[1].positive / topComp[1].total) * 100;
+      insights.push(`${topComp[0]} has stronger sentiment (${compRate.toFixed(0)}% positive) than ${searchedBrand} (${positiveRate.toFixed(0)}%)`);
+    } else if (Object.keys(competitorSentiments).length > 0) {
+      insights.push(`${searchedBrand} has equal or better sentiment than tracked competitors`);
+    }
+
+    return insights.slice(0, 5);
+  }, [runStatus, globallyFilteredResults]);
+
   // Calculate ranking data for scatter plot - one dot per prompt per LLM
   // Centralized rank band constant - used for Y-axis, band rendering, tooltip mapping
   // Order: index 0 = best rank, index 5 = not mentioned (renders top to bottom with reversed axis)
@@ -7433,6 +7644,26 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
+        {/* Key Sources Insights */}
+        {sourcesInsights.length > 0 && (
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Lightbulb className="w-5 h-5 text-purple-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Key Sources Insights</h2>
+            </div>
+            <ul className="space-y-3">
+              {sourcesInsights.map((insight, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
+                    {idx + 1}
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Key Influencers */}
         {keyInfluencers.length > 0 && (
           <div className="bg-gradient-to-r from-[#E8F0E8] to-[#F0F4F0] rounded-xl border border-[#4A7C59]/20 p-6">
@@ -8551,6 +8782,26 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
+        {/* Key Sentiment & Framing Insights */}
+        {sentimentInsights.length > 0 && (
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Lightbulb className="w-5 h-5 text-amber-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Framing Insights</h2>
+            </div>
+            <ul className="space-y-3">
+              {sentimentInsights.map((insight, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
+                    {idx + 1}
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Brand Sentiment Overview */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">How AI Describes {runStatus?.brand}</h3>
