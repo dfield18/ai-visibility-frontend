@@ -12031,6 +12031,30 @@ export default function ResultsPage() {
                     </select>
                   </div>
                 </div>
+                {/* Sentiment Legend */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
+                  <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#15803d' }} />
+                    <span className="text-xs text-gray-500">Strong</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+                    <span className="text-xs text-gray-500">Positive</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#eab308' }} />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f97316' }} />
+                    <span className="text-xs text-gray-500">Conditional</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#dc2626' }} />
+                    <span className="text-xs text-gray-500">Negative</span>
+                  </div>
+                </div>
                 <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
@@ -12161,32 +12185,7 @@ export default function ResultsPage() {
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500">
-                  <span className="text-gray-400 italic">Hover over dots for details • Searched brand has thicker border</span>
-                  <span className="text-gray-300">|</span>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-[#dc2626]"></div>
-                      <span>Negative</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-[#f97316]"></div>
-                      <span>Conditional</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
-                      <span>Neutral</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-                      <span>Positive</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full bg-[#15803d]"></div>
-                      <span>Strong</span>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-xs text-gray-400 italic text-center mt-2">Hover over dots for details • Searched brand has thicker border</p>
               </div>
               );
             })()}
@@ -12956,6 +12955,37 @@ export default function ResultsPage() {
                             }
                           }
                           return <li>{children}</li>;
+                        },
+                        a: ({ href, children }) => {
+                          // Highlight inline source links that match the highlighted domain
+                          if (selectedResultHighlight?.domain) {
+                            const text = typeof children === 'string' ? children :
+                              (Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '');
+                            const linkText = (text + ' ' + (href || '')).toLowerCase();
+                            const domainBase = selectedResultHighlight.domain.toLowerCase().replace('.com', '').replace('.org', '').replace('.net', '');
+                            if (linkText.includes(domainBase)) {
+                              return (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="bg-yellow-200 text-yellow-800 px-1 rounded font-medium hover:bg-yellow-300"
+                                >
+                                  {children}
+                                </a>
+                              );
+                            }
+                          }
+                          return (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#4A7C59] hover:underline"
+                            >
+                              {children}
+                            </a>
+                          );
                         },
                       }}
                     >
