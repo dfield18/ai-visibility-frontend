@@ -12090,11 +12090,16 @@ export default function ResultsPage() {
                         domain={[0, yMax]}
                         tick={{ fill: '#6b7280', fontSize: 12 }}
                         label={{
-                          value: 'Mention Count',
-                          position: 'insideTopLeft',
-                          offset: 15,
-                          dy: -20,
-                          style: { fill: '#374151', fontSize: 12, fontWeight: 500, textAnchor: 'start' }
+                          content: (props: any) => {
+                            const { viewBox } = props;
+                            if (!viewBox) return null;
+                            return (
+                              <text x={viewBox.x + 5} y={viewBox.y - 8} fill="#374151" fontSize={11} fontWeight={500}>
+                                <tspan x={viewBox.x + 5} dy="0">Mention</tspan>
+                                <tspan x={viewBox.x + 5} dy="12">Count</tspan>
+                              </text>
+                            );
+                          }
                         }}
                       />
                       <Tooltip
