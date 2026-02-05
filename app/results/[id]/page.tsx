@@ -9147,26 +9147,6 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
-        {/* Key Sentiment & Framing Insights */}
-        {sentimentInsights.length > 0 && (
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Lightbulb className="w-5 h-5 text-amber-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Framing Insights</h2>
-            </div>
-            <ul className="space-y-3">
-              {sentimentInsights.map((insight, idx) => (
-                <li key={idx} className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
-                    {idx + 1}
-                  </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {/* Brand Sentiment Overview */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">How AI Describes {runStatus?.brand}</h3>
@@ -9243,6 +9223,26 @@ export default function ResultsPage() {
             </div>
           </div>
         </div>
+
+        {/* Key Sentiment & Framing Insights */}
+        {sentimentInsights.length > 0 && (
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Lightbulb className="w-5 h-5 text-amber-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Framing Insights</h2>
+            </div>
+            <ul className="space-y-3">
+              {sentimentInsights.map((insight, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
+                    {idx + 1}
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Sentiment by Provider */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
