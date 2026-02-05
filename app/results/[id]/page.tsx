@@ -8272,9 +8272,33 @@ export default function ResultsPage() {
                   ))}
                 </select>
               </div>
+              {/* Sentiment Legend - above chart */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
+                <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#15803d' }} />
+                  <span className="text-xs text-gray-500">Strong</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+                  <span className="text-xs text-gray-500">Positive</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#eab308' }} />
+                  <span className="text-xs text-gray-500">Neutral</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f97316' }} />
+                  <span className="text-xs text-gray-500">Conditional</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#dc2626' }} />
+                  <span className="text-xs text-gray-500">Negative</span>
+                </div>
+              </div>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 20, right: 40, bottom: 60, left: 60 }}>
+                  <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       type="number"
@@ -8296,11 +8320,11 @@ export default function ResultsPage() {
                       tickFormatter={(value) => `#${value}`}
                       tick={{ fill: '#6b7280', fontSize: 12 }}
                       label={{
-                        value: 'Avg. Brand Position (lower is better)',
-                        angle: -90,
-                        position: 'insideLeft',
-                        offset: 10,
-                        style: { fill: '#374151', fontSize: 14, fontWeight: 500, textAnchor: 'middle' }
+                        value: 'Avg Position',
+                        position: 'insideTopLeft',
+                        offset: 15,
+                        dy: -15,
+                        style: { fill: '#374151', fontSize: 12, fontWeight: 500, textAnchor: 'start' }
                       }}
                     />
                     <Tooltip
@@ -8331,8 +8355,8 @@ export default function ResultsPage() {
                         const groupSize = payload.groupSize || 1;
                         const indexInGroup = payload.indexInGroup || 0;
 
-                        // Fixed size for cleaner look
-                        const circleRadius = 10;
+                        // Circle size based on citation count for visual hierarchy
+                        const circleRadius = Math.min(Math.max(6, 4 + payload.citationCount * 0.5), 14);
 
                         // Color based on sentiment (1-5 scale)
                         const sentiment = payload.avgSentiment;
@@ -8352,51 +8376,18 @@ export default function ResultsPage() {
                         };
 
                         // Offset for overlapping points - spread horizontally
-                        const spacing = 22;
+                        const spacing = circleRadius * 2 + 4;
                         const totalWidth = (groupSize - 1) * spacing;
                         const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
-                        // Truncate domain for display
-                        const displayDomain = payload.domain.length > 15
-                          ? payload.domain.substring(0, 13) + '...'
-                          : payload.domain;
+                        // Only show labels for significant sources (high provider count or top position)
+                        const isSignificant = payload.providerCount >= 3 || (payload.avgPosition <= 2 && payload.citationCount >= 3);
+                        const showLabel = isSignificant && groupSize <= 2;
 
-                        // Label positioning - simpler approach matching other charts
-                        let labelYOffset = -14;
-                        if (groupSize === 2) {
-                          labelYOffset = indexInGroup === 0 ? -14 : 22;
-                        } else if (groupSize >= 3) {
-                          const angles = [-90, 150, 30, -45, -135, 90];
-                          const angle = angles[indexInGroup % angles.length];
-                          const radians = (angle * Math.PI) / 180;
-                          const labelXOffset = Math.cos(radians) * 18;
-                          labelYOffset = Math.sin(radians) * 18;
-                          const textAnchor = labelXOffset < -5 ? 'end' : labelXOffset > 5 ? 'start' : 'middle';
-                          return (
-                            <g>
-                              <circle
-                                cx={cx + xOffset}
-                                cy={cy}
-                                r={circleRadius}
-                                fill={getColor()}
-                                stroke={getStroke()}
-                                strokeWidth={2}
-                                opacity={0.85}
-                                style={{ cursor: 'pointer' }}
-                              />
-                              <text
-                                x={cx + xOffset + labelXOffset}
-                                y={cy + labelYOffset}
-                                textAnchor={textAnchor}
-                                fill="#374151"
-                                fontSize={10}
-                                fontWeight={500}
-                              >
-                                {displayDomain}
-                              </text>
-                            </g>
-                          );
-                        }
+                        // Truncate domain for display
+                        const displayDomain = payload.domain.length > 12
+                          ? payload.domain.substring(0, 10) + '...'
+                          : payload.domain;
 
                         return (
                           <g>
@@ -8406,20 +8397,22 @@ export default function ResultsPage() {
                               r={circleRadius}
                               fill={getColor()}
                               stroke={getStroke()}
-                              strokeWidth={2}
-                              opacity={0.85}
+                              strokeWidth={1.5}
+                              opacity={0.9}
                               style={{ cursor: 'pointer' }}
                             />
-                            <text
-                              x={cx + xOffset}
-                              y={cy + labelYOffset}
-                              textAnchor="middle"
-                              fill="#374151"
-                              fontSize={10}
-                              fontWeight={500}
-                            >
-                              {displayDomain}
-                            </text>
+                            {showLabel && (
+                              <text
+                                x={cx + xOffset}
+                                y={cy - circleRadius - 4}
+                                textAnchor="middle"
+                                fill="#374151"
+                                fontSize={9}
+                                fontWeight={500}
+                              >
+                                {displayDomain}
+                              </text>
+                            )}
                           </g>
                         );
                       }}
@@ -8427,32 +8420,7 @@ export default function ResultsPage() {
                   </ScatterChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500">
-                <span className="text-gray-400 italic">Hover over dots for details</span>
-                <span className="text-gray-300">|</span>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#dc2626]"></div>
-                    <span>Negative</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#f97316]"></div>
-                    <span>Conditional</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
-                    <span>Neutral</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-                    <span>Positive</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#15803d]"></div>
-                    <span>Strong</span>
-                  </div>
-                </div>
-              </div>
+              <p className="mt-3 text-center text-xs text-gray-400 italic">Hover over dots for details • Dot size indicates citation frequency</p>
             </div>
           );
         })()}
