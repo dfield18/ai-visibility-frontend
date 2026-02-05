@@ -463,6 +463,7 @@ export default function ResultsPage() {
   const [sentimentByPromptBrandFilter, setSentimentByPromptBrandFilter] = useState<string>('');
   const [sentimentByPromptSourceFilter, setSentimentByPromptSourceFilter] = useState<string>('all');
   const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
+  const [expandedResultRows, setExpandedResultRows] = useState<Set<string>>(new Set());
   const [brandCarouselIndex, setBrandCarouselIndex] = useState(0);
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
@@ -4514,13 +4515,19 @@ export default function ResultsPage() {
       )}
 
       {/* All Results Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">All Results</h2>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">All Results</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error).length} results
+            </p>
+          </div>
           <select
             value={providerFilter}
             onChange={(e) => setProviderFilter(e.target.value)}
-            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
           >
             <option value="all">All Models</option>
             {availableProviders.map((p) => (
@@ -4528,13 +4535,13 @@ export default function ResultsPage() {
             ))}
           </select>
         </div>
-        <p className="text-sm text-gray-500 mb-4">
-          Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error).length} results
-        </p>
-        <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
+
+        {/* Table */}
+        <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="sticky top-0 bg-white z-10">
-              <tr className="border-b border-gray-200">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50/50">
+                <th className="w-10 py-3 px-4"></th>
                 <th
                   className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                   onClick={() => handleTableSort('prompt')}
@@ -4558,10 +4565,10 @@ export default function ResultsPage() {
                   </span>
                 </th>
                 <th
-                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                   onClick={() => handleTableSort('position')}
                 >
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center justify-center gap-1">
                     Position
                     {tableSortColumn === 'position' && (
                       <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
@@ -4570,10 +4577,10 @@ export default function ResultsPage() {
                 </th>
                 {!isCategory && (
                   <th
-                    className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                    className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                     onClick={() => handleTableSort('mentioned')}
                   >
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center justify-center gap-1">
                       {runStatus?.brand} Mentioned
                       {tableSortColumn === 'mentioned' && (
                         <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
@@ -4582,10 +4589,10 @@ export default function ResultsPage() {
                   </th>
                 )}
                 <th
-                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                   onClick={() => handleTableSort('sentiment')}
                 >
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center justify-center gap-1">
                     Sentiment
                     {tableSortColumn === 'sentiment' && (
                       <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
@@ -4608,34 +4615,30 @@ export default function ResultsPage() {
             </thead>
             <tbody>
               {sortedResults.map((result: Result) => {
+                const isExpanded = expandedResultRows.has(result.id);
+
                 // Calculate position for this result
                 let position: number | null = null;
                 if (result.response_text && !result.error) {
                   const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
                   const brandLower = (selectedBrand || '').toLowerCase();
 
-                  // Check if brand is mentioned
                   const isMentioned = isCategory
                     ? result.competitors_mentioned?.includes(selectedBrand || '')
                     : result.brand_mentioned;
 
                   if (isMentioned && brandLower) {
-                    // Use all_brands_mentioned if available (includes all detected brands)
                     const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
                       ? result.all_brands_mentioned
                       : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
 
-                    // First try exact match
                     let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
-
-                    // If not found, try partial match
                     if (foundIndex === -1) {
                       foundIndex = allBrands.findIndex(b =>
                         b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
                       );
                     }
 
-                    // If still not found, find position by text search
                     let rank = foundIndex + 1;
                     if (foundIndex === -1) {
                       const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
@@ -4657,102 +4660,208 @@ export default function ResultsPage() {
                   }
                 }
 
+                // Position badge styling
+                const getPositionBadge = () => {
+                  if (result.error) return <span className="text-sm text-gray-400">-</span>;
+                  if (!position) {
+                    return (
+                      <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg bg-white">
+                        Not shown
+                      </span>
+                    );
+                  }
+                  const colors = position === 1
+                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                    : position === 2
+                    ? 'bg-gray-50 text-gray-600 border-gray-200'
+                    : position === 3
+                    ? 'bg-orange-50 text-orange-700 border-orange-200'
+                    : 'bg-gray-50 text-gray-500 border-gray-200';
+                  return (
+                    <span className={`inline-flex items-center justify-center w-10 h-10 text-sm font-semibold rounded-full border-2 ${colors}`}>
+                      #{position}
+                    </span>
+                  );
+                };
+
+                // Mentioned badge
+                const getMentionedBadge = () => {
+                  if (result.error) {
+                    return (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-600 text-xs font-medium rounded-full">
+                        <AlertTriangle className="w-3 h-3" />Error
+                      </span>
+                    );
+                  }
+                  if (result.brand_mentioned) {
+                    return (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-medium rounded-full">
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                        Yes
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                      No
+                    </span>
+                  );
+                };
+
+                // Sentiment badge
+                const getSentimentBadge = () => {
+                  if (result.error) return <span className="text-sm text-gray-400">-</span>;
+                  const sentiment = result.brand_sentiment;
+                  if (!sentiment || sentiment === 'not_mentioned') {
+                    return (
+                      <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-full bg-white">
+                        Not mentioned
+                      </span>
+                    );
+                  }
+                  const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
+                    'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
+                    'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
+                    'neutral_mention': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
+                    'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
+                    'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
+                  };
+                  const config = configs[sentiment] || { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200', label: 'Unknown' };
+                  return (
+                    <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${config.bg} ${config.text} ${config.border}`}>
+                      {config.label}
+                    </span>
+                  );
+                };
+
+                // Competitors list
+                const getCompetitorsList = () => {
+                  if (result.error) return <span className="text-sm text-gray-400">-</span>;
+                  const competitors = result.competitors_mentioned || [];
+                  if (competitors.length === 0) {
+                    return <span className="text-sm text-gray-400">None</span>;
+                  }
+                  const displayed = competitors.slice(0, 2);
+                  const remaining = competitors.length - 2;
+                  return (
+                    <span className="text-sm text-gray-700">
+                      {displayed.join(', ')}
+                      {remaining > 0 && (
+                        <span className="text-gray-400 ml-1">+{remaining}</span>
+                      )}
+                    </span>
+                  );
+                };
+
                 return (
                   <React.Fragment key={result.id}>
-                    <tr className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <p className="text-sm text-gray-900">{truncate(result.prompt, 50)}</p>
+                    <tr
+                      className={`border-b border-gray-100 cursor-pointer transition-colors ${isExpanded ? 'bg-gray-50/60' : 'hover:bg-gray-50/40'}`}
+                      onClick={() => {
+                        const newExpanded = new Set(expandedResultRows);
+                        if (isExpanded) {
+                          newExpanded.delete(result.id);
+                        } else {
+                          newExpanded.add(result.id);
+                        }
+                        setExpandedResultRows(newExpanded);
+                      }}
+                    >
+                      <td className="py-4 px-4">
+                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                       </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
+                      <td className="py-4 px-4">
+                        <p className="text-sm text-gray-900 font-medium">{truncate(result.prompt, 40)}</p>
                       </td>
-                      <td className="py-3 px-4">
-                        {result.error ? (
-                          <span className="text-sm text-gray-400">-</span>
-                        ) : position ? (
-                          <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
-                            position === 1 ? 'bg-green-100 text-green-700' :
-                            position <= 3 ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-600'
-                          }`}>
-                            #{position}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
-                            Not shown
-                          </span>
-                        )}
+                      <td className="py-4 px-4">
+                        <span className="text-sm text-gray-600">{getProviderLabel(result.provider)}</span>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        {getPositionBadge()}
                       </td>
                       {!isCategory && (
-                        <td className="py-3 px-4">
-                          {result.error ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-lg">
-                              <AlertTriangle className="w-3 h-3" />Error
-                            </span>
-                          ) : result.brand_mentioned ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
-                              <Check className="w-3 h-3" />Yes
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
-                              <X className="w-3 h-3" />No
-                            </span>
-                          )}
+                        <td className="py-4 px-4 text-center">
+                          {getMentionedBadge()}
                         </td>
                       )}
-                      <td className="py-3 px-4">
-                        {result.error ? (
-                          <span className="text-sm text-gray-400">-</span>
-                        ) : result.brand_sentiment ? (
-                          <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
-                            result.brand_sentiment === 'strong_endorsement' ? 'bg-green-100 text-green-700' :
-                            result.brand_sentiment === 'positive_endorsement' ? 'bg-lime-100 text-lime-700' :
-                            result.brand_sentiment === 'conditional' ? 'bg-orange-100 text-orange-700' :
-                            result.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-700' :
-                            result.brand_sentiment === 'neutral_mention' ? 'bg-gray-100 text-gray-600' :
-                            'bg-gray-100 text-gray-500'
-                          }`}>
-                            {result.brand_sentiment === 'strong_endorsement' ? 'Highly Recommended' :
-                             result.brand_sentiment === 'positive_endorsement' ? 'Recommended' :
-                             result.brand_sentiment === 'conditional' ? 'With Caveats' :
-                             result.brand_sentiment === 'negative_comparison' ? 'Not Recommended' :
-                             result.brand_sentiment === 'neutral_mention' ? 'Neutral' :
-                             'Not mentioned'}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
-                            Not mentioned
-                          </span>
-                        )}
+                      <td className="py-4 px-4 text-center">
+                        {getSentimentBadge()}
                       </td>
-                      <td className="py-3 px-4">
-                        {result.error ? (
-                          <span className="text-sm text-gray-400">-</span>
-                        ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
-                          <span className="text-sm text-gray-700">
-                            {result.competitors_mentioned.slice(0, 2).join(', ')}
-                            {result.competitors_mentioned.length > 2 && (
-                              <span className="relative group">
-                                <span className="text-[#4A7C59] cursor-pointer hover:underline"> +{result.competitors_mentioned.length - 2}</span>
-                                <span className="absolute right-0 top-full mt-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap z-50 shadow-lg">
-                                  {result.competitors_mentioned.slice(2).join(', ')}
-                                </span>
-                              </span>
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-sm text-gray-400">None</span>
-                        )}
+                      <td className="py-4 px-4">
+                        {getCompetitorsList()}
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-4 px-4 text-right">
                         <button
-                          onClick={() => setSelectedResult(result)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedResult(result);
+                          }}
                           className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
                         >
                           View <ExternalLink className="w-3 h-3" />
                         </button>
                       </td>
                     </tr>
+                    {/* Expanded Content */}
+                    {isExpanded && (
+                      <tr className="bg-gray-50/60">
+                        <td colSpan={isCategory ? 7 : 8} className="px-6 py-4">
+                          <div className="pl-8 space-y-4">
+                            {/* Full Response */}
+                            <div>
+                              <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Full Response</h4>
+                              <div className="text-sm text-gray-700 bg-white rounded-lg border border-gray-200 p-4 max-h-48 overflow-y-auto">
+                                {result.error ? (
+                                  <span className="text-red-600">{result.error}</span>
+                                ) : (
+                                  <div className="prose prose-sm max-w-none">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {result.response_text || 'No response text available'}
+                                    </ReactMarkdown>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {/* Sources */}
+                            {result.sources && result.sources.length > 0 && (
+                              <div>
+                                <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Sources</h4>
+                                <div className="flex flex-wrap gap-2">
+                                  {result.sources.slice(0, 5).map((source, idx) => {
+                                    // Extract domain inline
+                                    let domain = source.url;
+                                    try {
+                                      domain = new URL(source.url).hostname.replace(/^www\./, '');
+                                    } catch {
+                                      domain = source.url.split('/')[2] || source.url;
+                                    }
+                                    return (
+                                      <a
+                                        key={idx}
+                                        href={source.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-md text-xs text-gray-600 hover:border-[#4A7C59] hover:text-[#4A7C59] transition-colors"
+                                      >
+                                        <Globe className="w-3 h-3" />
+                                        {domain}
+                                      </a>
+                                    );
+                                  })}
+                                  {result.sources.length > 5 && (
+                                    <span className="inline-flex items-center px-2 py-1 text-xs text-gray-400">
+                                      +{result.sources.length - 5} more
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                   </React.Fragment>
                 );
               })}
@@ -4760,8 +4869,8 @@ export default function ResultsPage() {
           </table>
         </div>
 
-        {/* Export and Share Options */}
-        <div className="flex items-center justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 p-4 bg-gray-50/50 border-t border-gray-100 rounded-b-2xl">
           <button
             onClick={() => {
               // Generate CSV content
@@ -4817,7 +4926,7 @@ export default function ResultsPage() {
               document.body.removeChild(a);
               URL.revokeObjectURL(url);
             }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
           >
             <Download className="w-4 h-4" />
             Export CSV
@@ -4830,7 +4939,7 @@ export default function ResultsPage() {
                 setTimeout(() => setCopied(false), 2000);
               });
             }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
           >
             <Link2 className="w-4 h-4" />
             {copied ? 'Link Copied!' : 'Share Link'}
