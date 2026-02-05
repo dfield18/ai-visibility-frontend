@@ -8357,6 +8357,7 @@ export default function ResultsPage() {
                     />
                     <Tooltip
                       cursor={false}
+                      isAnimationActive={false}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length > 0) {
                           const data = payload[0].payload;
