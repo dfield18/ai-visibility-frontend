@@ -12912,9 +12912,37 @@ export default function ResultsPage() {
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
-                        a: ({ href, children }) => (
-                          <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
-                        ),
+                        a: ({ href, children }) => {
+                          // Highlight inline source links that match the highlighted domain
+                          if (selectedResultHighlight?.domain) {
+                            const text = typeof children === 'string' ? children :
+                              (Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '');
+                            const linkText = (text + ' ' + (href || '')).toLowerCase();
+                            const domainBase = selectedResultHighlight.domain.toLowerCase().replace('.com', '').replace('.org', '').replace('.net', '');
+                            if (linkText.includes(domainBase)) {
+                              return (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="bg-yellow-200 text-yellow-800 px-1 rounded font-medium hover:bg-yellow-300"
+                                >
+                                  {children}
+                                </a>
+                              );
+                            }
+                          }
+                          return (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#4A7C59] hover:underline"
+                            >
+                              {children}
+                            </a>
+                          );
+                        },
                         table: ({ children }) => (
                           <div className="overflow-x-auto mb-3">
                             <table className="min-w-full">{children}</table>
@@ -12955,37 +12983,6 @@ export default function ResultsPage() {
                             }
                           }
                           return <li>{children}</li>;
-                        },
-                        a: ({ href, children }) => {
-                          // Highlight inline source links that match the highlighted domain
-                          if (selectedResultHighlight?.domain) {
-                            const text = typeof children === 'string' ? children :
-                              (Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '');
-                            const linkText = (text + ' ' + (href || '')).toLowerCase();
-                            const domainBase = selectedResultHighlight.domain.toLowerCase().replace('.com', '').replace('.org', '').replace('.net', '');
-                            if (linkText.includes(domainBase)) {
-                              return (
-                                <a
-                                  href={href}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="bg-yellow-200 text-yellow-800 px-1 rounded font-medium hover:bg-yellow-300"
-                                >
-                                  {children}
-                                </a>
-                              );
-                            }
-                          }
-                          return (
-                            <a
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#4A7C59] hover:underline"
-                            >
-                              {children}
-                            </a>
-                          );
                         },
                       }}
                     >
