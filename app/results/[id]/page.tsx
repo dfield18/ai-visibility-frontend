@@ -460,6 +460,8 @@ export default function ResultsPage() {
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
   const [sentimentProviderCitationFilter, setSentimentProviderCitationFilter] = useState<string>('all');
+  const [sentimentByPromptBrandFilter, setSentimentByPromptBrandFilter] = useState<string>('');
+  const [sentimentByPromptSourceFilter, setSentimentByPromptSourceFilter] = useState<string>('all');
   const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
   const [brandCarouselIndex, setBrandCarouselIndex] = useState(0);
 
@@ -9252,13 +9254,143 @@ export default function ResultsPage() {
         )}
 
         {/* Sentiment by Prompt Chart */}
-        {promptBreakdownStats.filter(p => p.avgSentimentScore !== null && p.mentioned > 0).length > 0 && (() => {
-          // Filter to prompts with sentiment data
-          const promptsWithSentiment = promptBreakdownStats.filter(
-            p => p.avgSentimentScore !== null && p.mentioned > 0
-          );
+        {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length > 0 && (() => {
+          // Get effective brand filter (default to searched brand)
+          const effectiveBrand = sentimentByPromptBrandFilter || runStatus?.brand || '';
 
-          if (promptsWithSentiment.length === 0) return null;
+          // Build brand options for dropdown
+          const brandOptions: { value: string; label: string }[] = [];
+          if (runStatus?.brand) {
+            brandOptions.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)` });
+          }
+          const competitors = new Set<string>();
+          globallyFilteredResults.forEach((r: Result) => {
+            r.competitors_mentioned?.forEach(c => competitors.add(c));
+          });
+          competitors.forEach(c => {
+            if (c !== runStatus?.brand) {
+              brandOptions.push({ value: c, label: c });
+            }
+          });
+
+          // Build source options for dropdown
+          const sourceOptions: string[] = [];
+          const sourceDomains = new Set<string>();
+          globallyFilteredResults.forEach((r: Result) => {
+            r.sources?.forEach(s => {
+              if (s.url) {
+                const domain = extractDomain(s.url);
+                sourceDomains.add(domain);
+              }
+            });
+          });
+          sourceDomains.forEach(d => sourceOptions.push(d));
+          sourceOptions.sort();
+
+          // Calculate sentiment by prompt with filters
+          const sentimentScoreMap: Record<string, number> = {
+            'strong_endorsement': 5,
+            'positive_endorsement': 4,
+            'neutral_mention': 3,
+            'conditional': 2,
+            'negative_comparison': 1,
+          };
+
+          // Filter results by source if selected
+          let filteredResults = globallyFilteredResults.filter((r: Result) => !r.error);
+          if (sentimentByPromptSourceFilter !== 'all') {
+            filteredResults = filteredResults.filter((r: Result) =>
+              r.sources?.some(s => s.url && extractDomain(s.url) === sentimentByPromptSourceFilter)
+            );
+          }
+
+          // Group by prompt and calculate sentiment for selected brand
+          const promptGroups: Record<string, Result[]> = {};
+          filteredResults.forEach((r: Result) => {
+            if (!promptGroups[r.prompt]) {
+              promptGroups[r.prompt] = [];
+            }
+            promptGroups[r.prompt].push(r);
+          });
+
+          const promptsWithSentiment = Object.entries(promptGroups).map(([prompt, results]) => {
+            let mentioned = 0;
+            const sentimentScores: number[] = [];
+
+            results.forEach(r => {
+              // Check if the selected brand is mentioned
+              const isBrandMentioned = effectiveBrand === runStatus?.brand
+                ? r.brand_mentioned
+                : r.competitors_mentioned?.includes(effectiveBrand);
+
+              if (isBrandMentioned) {
+                mentioned++;
+
+                // Get sentiment for the selected brand
+                let sentiment: string | null | undefined;
+                if (effectiveBrand === runStatus?.brand) {
+                  sentiment = r.brand_sentiment;
+                } else {
+                  sentiment = r.competitor_sentiments?.[effectiveBrand];
+                }
+
+                if (sentiment && sentiment !== 'not_mentioned' && sentimentScoreMap[sentiment]) {
+                  sentimentScores.push(sentimentScoreMap[sentiment]);
+                }
+              }
+            });
+
+            const avgSentimentScore = sentimentScores.length > 0
+              ? sentimentScores.reduce((a, b) => a + b, 0) / sentimentScores.length
+              : null;
+
+            return {
+              prompt,
+              total: results.length,
+              mentioned,
+              avgSentimentScore,
+              visibilityScore: results.length > 0 ? (mentioned / results.length) * 100 : 0,
+            };
+          }).filter(p => p.avgSentimentScore !== null && p.mentioned > 0);
+
+          if (promptsWithSentiment.length === 0) {
+            return (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Sentiment by Prompt</h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Which prompts trigger positive vs negative framing
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={sentimentByPromptSourceFilter}
+                      onChange={(e) => setSentimentByPromptSourceFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      <option value="all">All Sources</option>
+                      {sourceOptions.map((domain) => (
+                        <option key={domain} value={domain}>{domain}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={sentimentByPromptBrandFilter || runStatus?.brand || ''}
+                      onChange={(e) => setSentimentByPromptBrandFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      {brandOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="text-center py-12 text-gray-500">
+                  No sentiment data available for the selected filters.
+                </div>
+              </div>
+            );
+          }
 
           // Calculate dynamic axis ranges
           const sentimentValues = promptsWithSentiment.map(p => p.avgSentimentScore || 0);
@@ -9298,8 +9430,29 @@ export default function ResultsPage() {
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">Sentiment by Prompt</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Which prompts trigger positive vs negative framing of your brand
+                    Which prompts trigger positive vs negative framing of {effectiveBrand}
                   </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={sentimentByPromptSourceFilter}
+                    onChange={(e) => setSentimentByPromptSourceFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                  >
+                    <option value="all">All Sources</option>
+                    {sourceOptions.map((domain) => (
+                      <option key={domain} value={domain}>{domain}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={sentimentByPromptBrandFilter || runStatus?.brand || ''}
+                    onChange={(e) => setSentimentByPromptBrandFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                  >
+                    {brandOptions.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="h-[400px]">
