@@ -445,6 +445,10 @@ export default function ResultsPage() {
   const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
   const [expandedCompetitorRows, setExpandedCompetitorRows] = useState<Set<string>>(new Set());
   const [expandedLLMCards, setExpandedLLMCards] = useState<Set<string>>(new Set());
+  // Response-Level Sentiment filters
+  const [responseSentimentFilter, setResponseSentimentFilter] = useState<string>('all');
+  const [responseLlmFilter, setResponseLlmFilter] = useState<string>('all');
+  const [expandedResponseRows, setExpandedResponseRows] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
   const [aiSummaryExpanded, setAiSummaryExpanded] = useState(false);
   const [selectedResult, setSelectedResult] = useState<Result | null>(null);
@@ -2208,6 +2212,12 @@ export default function ResultsPage() {
     }
   };
 
+  // Capitalize first letter of a string
+  const capitalizeFirst = (str: string): string => {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  };
+
   // Extract a readable title from URL path
   const getReadableTitleFromUrl = (url: string): string => {
     try {
@@ -3579,7 +3589,7 @@ export default function ResultsPage() {
         {(() => {
           const visibilityTone = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tone;
           return (
-            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(visibilityTone)}`}>
+            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[270px] ${getCardBackground(visibilityTone)}`}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">AI Visibility</p>
                 <div className="relative group">
@@ -3624,7 +3634,7 @@ export default function ResultsPage() {
                 </div>
               </div>
               {/* Badge - fixed height container */}
-              <div className="h-[28px] flex items-start">
+              <div className="h-[28px] flex items-start mt-3">
                 <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(visibilityTone)}`}>
                   {getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).label}
                 </span>
@@ -3639,7 +3649,7 @@ export default function ResultsPage() {
         {(() => {
           const sovTone = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tone;
           return (
-            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(sovTone)}`}>
+            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[270px] ${getCardBackground(sovTone)}`}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Share of Voice</p>
                 <div className="relative group">
@@ -3684,7 +3694,7 @@ export default function ResultsPage() {
                 </div>
               </div>
               {/* Badge - fixed height container */}
-              <div className="h-[28px] flex items-start">
+              <div className="h-[28px] flex items-start mt-3">
                 <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(sovTone)}`}>
                   {getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).label}
                 </span>
@@ -3699,7 +3709,7 @@ export default function ResultsPage() {
         {(() => {
           const topRateTone = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null).tone;
           return (
-            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(topRateTone)}`}>
+            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[270px] ${getCardBackground(topRateTone)}`}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Top Result Rate</p>
                 <div className="relative group">
@@ -3744,7 +3754,7 @@ export default function ResultsPage() {
                 </div>
               </div>
               {/* Badge - fixed height container */}
-              <div className="h-[28px] flex items-start">
+              <div className="h-[28px] flex items-start mt-3">
                 <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(topRateTone)}`}>
                   {getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null).label}
                 </span>
@@ -3760,7 +3770,7 @@ export default function ResultsPage() {
           const avgPosTone = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null).tone;
           const avgRank = overviewMetrics?.avgRank || 0;
           return (
-            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(avgPosTone)}`}>
+            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[270px] ${getCardBackground(avgPosTone)}`}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Avg. Position</p>
                 <div className="relative group">
@@ -3781,7 +3791,7 @@ export default function ResultsPage() {
                 <div className="w-full">
                   {/* Large Position Number */}
                   <div className="text-center mb-2">
-                    <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: avgRank <= 1.5 ? '#16a34a' : avgRank <= 3 ? '#eab308' : '#f97316' }}>
+                    <span className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: avgRank <= 1.5 ? '#16a34a' : avgRank <= 3 ? '#eab308' : '#f97316' }}>
                       {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
                     </span>
                   </div>
@@ -3817,7 +3827,7 @@ export default function ResultsPage() {
                 </div>
               </div>
               {/* Badge - fixed height container */}
-              <div className="h-[28px] flex items-start">
+              <div className="h-[28px] flex items-start mt-3">
                 <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(avgPosTone)}`}>
                   {getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null).label}
                 </span>
@@ -7783,7 +7793,7 @@ export default function ResultsPage() {
                       <span className="text-sm font-medium text-gray-400 w-6">{index + 1}.</span>
                       <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
                         {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
-                        {citation.brand}'s website
+                        {capitalizeFirst(citation.brand)}'s website
                         {citation.isSearchedBrand && (
                           <span className="text-xs px-1.5 py-0.5 bg-[#4A7C59] text-white rounded">searched</span>
                         )}
@@ -8371,17 +8381,21 @@ export default function ResultsPage() {
           {isHovered && matchingResults.length > 0 && (
             <div
               data-sentiment-popup
-              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-lg min-w-[280px] max-w-[350px] text-left ${
+              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-xl min-w-[300px] max-w-[380px] text-left ${
                 popupPosition === 'top'
-                  ? 'bottom-full mb-2 left-0'
-                  : 'top-full mt-2 left-0'
+                  ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
+                  : 'top-full mt-2 left-1/2 -translate-x-1/2'
               }`}
+              style={{ maxHeight: '280px' }}
               onWheel={(e) => e.stopPropagation()}
             >
-              <div>
+                <p className="text-xs font-medium text-gray-500 mb-2 pb-2 border-b border-gray-100">
+                {matchingResults.length} {matchingResults.length === 1 ? 'response' : 'responses'} - Click to view details
+              </p>
+              <div className="overflow-y-auto space-y-0" style={{ maxHeight: '220px' }}>
                 {matchingResults.map((result, idx) => {
-                  const truncatedPrompt = result.prompt.length > 70
-                    ? result.prompt.substring(0, 70) + '...'
+                  const truncatedPrompt = result.prompt.length > 60
+                    ? result.prompt.substring(0, 60) + '...'
                     : result.prompt;
 
                   // Calculate rank using same logic as All Answers chart
@@ -8428,25 +8442,27 @@ export default function ResultsPage() {
                   return (
                     <div
                       key={result.id}
-                      className={`hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'pt-3 mt-3 border-t border-gray-100' : ''}`}
+                      className={`p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'mt-2' : ''}`}
                       onClick={() => {
                         setSelectedResult(result);
                         setHoveredSentimentBadge(null);
                       }}
                     >
-                      <p className="text-sm font-semibold text-gray-900 mb-1" title={result.prompt}>
+                      <p className="text-sm font-medium text-gray-900 mb-1 leading-snug" title={result.prompt}>
                         {truncatedPrompt}
                       </p>
-                      <p className="text-sm text-gray-700">
-                        {rank === 0
-                          ? 'Not shown'
-                          : rank === 1
-                            ? 'Shown as: #1 (Top result)'
-                            : `Shown as: #${rank}`}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        {getProviderLabel(result.provider)}
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-gray-600">
+                          {rank === 0
+                            ? 'Not shown'
+                            : rank === 1
+                              ? 'Shown as: #1 (Top result)'
+                              : `Shown as: #${rank}`}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {getProviderLabel(result.provider)}
+                        </p>
+                      </div>
                     </div>
                   );
                 })}
@@ -8889,163 +8905,213 @@ export default function ResultsPage() {
 
         {/* Individual Results with Sentiment */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
-            <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
+              <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <select
+                value={responseSentimentFilter}
+                onChange={(e) => setResponseSentimentFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Sentiments</option>
+                <option value="strong_endorsement">Highly Recommended</option>
+                <option value="positive_endorsement">Recommended</option>
+                <option value="neutral_mention">Mentioned</option>
+                <option value="conditional">With Caveats</option>
+                <option value="negative_comparison">Not Recommended</option>
+              </select>
+              <select
+                value={responseLlmFilter}
+                onChange={(e) => setResponseLlmFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              >
+                <option value="all">All Models</option>
+                {availableProviders.map((provider) => (
+                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Sentiment Legend */}
-          <div className="flex flex-wrap items-center gap-3 mb-4 text-xs">
-            <span className="text-gray-500">Sentiment:</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-red-100 text-red-800 border-red-200">Not Recommended</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-yellow-100 text-yellow-800 border-yellow-200">With Caveats</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-blue-100 text-blue-800 border-blue-200">Mentioned</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-lime-100 text-lime-800 border-lime-200">Recommended</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded border bg-green-100 text-green-800 border-green-200">Highly Recommended</span>
-          </div>
+          {(() => {
+            const filteredSentimentResults = globallyFilteredResults
+              .filter((r: Result) => !r.error && r.brand_sentiment)
+              .filter((r: Result) => responseSentimentFilter === 'all' || r.brand_sentiment === responseSentimentFilter)
+              .filter((r: Result) => responseLlmFilter === 'all' || r.provider === responseLlmFilter);
 
-          <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-200 rounded-lg">
-            <table className="w-full">
-              <thead className="sticky top-0 bg-white z-10">
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">Prompt</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">Provider</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">Position</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">{runStatus?.brand || 'Brand'} Sentiment</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 bg-white">Competitor Sentiments</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500 bg-white">Response</th>
-                </tr>
-              </thead>
-              <tbody>
-                {globallyFilteredResults
-                  .filter((r: Result) => !r.error && r.brand_sentiment)
-                  .map((result: Result) => (
-                    <tr key={result.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <p className="text-sm text-gray-900 max-w-xs truncate" title={result.prompt}>
-                          {truncate(result.prompt, 50)}
-                        </p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        {(() => {
-                          let rank = 0;
-                          const brandLower = (runStatus?.brand || '').toLowerCase();
-                          if (result.brand_mentioned && result.response_text) {
-                            const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                              ? result.all_brands_mentioned
-                              : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+            return (
+              <>
+                <p className="text-sm text-gray-500 mb-4">
+                  Showing {filteredSentimentResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results
+                </p>
 
-                            let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
-                            if (foundIndex === -1) {
-                              foundIndex = allBrands.findIndex(b =>
-                                b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
-                              );
-                            }
-                            if (foundIndex === -1) {
-                              const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
-                              if (brandPos >= 0) {
-                                let brandsBeforeCount = 0;
-                                for (const b of allBrands) {
-                                  const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
-                                  if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
-                                }
-                                rank = brandsBeforeCount + 1;
-                              } else {
-                                rank = allBrands.length + 1;
-                              }
-                            } else {
-                              rank = foundIndex + 1;
-                            }
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-200 rounded-lg">
+                  <table className="w-full">
+                    <thead className="sticky top-0 bg-gray-50 z-10">
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-gray-50">Prompt</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-gray-50">Provider</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-gray-50">{runStatus?.brand || 'Brand'} Position & Sentiment</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-gray-50">Competitors</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSentimentResults.map((result: Result, index: number) => {
+                        const isRowExpanded = expandedResponseRows.has(result.id);
+
+                        // Calculate rank
+                        let rank = 0;
+                        const brandLower = (runStatus?.brand || '').toLowerCase();
+                        if (result.brand_mentioned && result.response_text) {
+                          const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                            ? result.all_brands_mentioned
+                            : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+
+                          let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+                          if (foundIndex === -1) {
+                            foundIndex = allBrands.findIndex(b =>
+                              b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+                            );
                           }
-                          return rank > 0 ? (
-                            <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
-                              rank === 1 ? 'bg-green-100 text-green-700' :
-                              rank <= 3 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-gray-100 text-gray-600'
-                            }`}>
-                              #{rank}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
-                              Not shown
-                            </span>
-                          );
-                        })()}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg border ${getSentimentColor(result.brand_sentiment)}`}>
-                          {getSentimentLabel(result.brand_sentiment)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        {(() => {
-                          const mentionedCompetitors = result.competitor_sentiments
-                            ? Object.entries(result.competitor_sentiments).filter(([_, sentiment]) => sentiment !== 'not_mentioned')
-                            : [];
-                          const isExpanded = expandedCompetitorRows.has(result.id);
-                          const displayCompetitors = isExpanded ? mentionedCompetitors : mentionedCompetitors.slice(0, 3);
-                          const hiddenCount = mentionedCompetitors.length - 3;
+                          if (foundIndex === -1) {
+                            const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+                            if (brandPos >= 0) {
+                              let brandsBeforeCount = 0;
+                              for (const b of allBrands) {
+                                const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                                if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
+                              }
+                              rank = brandsBeforeCount + 1;
+                            } else {
+                              rank = allBrands.length + 1;
+                            }
+                          } else {
+                            rank = foundIndex + 1;
+                          }
+                        }
 
-                          return (
-                            <div className="flex flex-wrap gap-1.5">
-                              {displayCompetitors.map(([comp, sentiment]) => (
-                                <span
-                                  key={comp}
-                                  className={`inline-flex items-center px-2 py-0.5 text-xs rounded border ${getSentimentColor(sentiment)}`}
-                                  title={`${comp}: ${getSentimentLabel(sentiment)}`}
-                                >
-                                  {truncate(comp, 12)}
-                                </span>
-                              ))}
-                              {hiddenCount > 0 && !isExpanded && (
-                                <button
-                                  onClick={() => {
-                                    const newExpanded = new Set(expandedCompetitorRows);
-                                    newExpanded.add(result.id);
-                                    setExpandedCompetitorRows(newExpanded);
-                                  }}
-                                  className="text-xs text-[#4A7C59] hover:text-[#3d6649] hover:underline font-medium"
-                                >
-                                  +{hiddenCount} more
-                                </button>
-                              )}
-                              {isExpanded && mentionedCompetitors.length > 3 && (
-                                <button
-                                  onClick={() => {
-                                    const newExpanded = new Set(expandedCompetitorRows);
-                                    newExpanded.delete(result.id);
-                                    setExpandedCompetitorRows(newExpanded);
-                                  }}
-                                  className="text-xs text-gray-400 hover:text-gray-600 hover:underline"
-                                >
-                                  Show less
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => setSelectedResult(result)}
-                          className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-                        >
-                          View <ChevronDown className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
+                        // Get competitor info
+                        const mentionedCompetitors = result.competitor_sentiments
+                          ? Object.entries(result.competitor_sentiments).filter(([_, sentiment]) => sentiment !== 'not_mentioned')
+                          : [];
 
-          <div className="flex items-center justify-between mt-4">
-            <p className="text-sm text-gray-500">
-              {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results total
-            </p>
+                        return (
+                          <React.Fragment key={result.id}>
+                            <tr
+                              className={`border-b border-gray-100 cursor-pointer transition-colors ${
+                                index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/50 hover:bg-gray-100/50'
+                              } ${isRowExpanded ? 'bg-blue-50/30' : ''}`}
+                              onClick={() => {
+                                const newExpanded = new Set(expandedResponseRows);
+                                if (isRowExpanded) {
+                                  newExpanded.delete(result.id);
+                                } else {
+                                  newExpanded.add(result.id);
+                                }
+                                setExpandedResponseRows(newExpanded);
+                              }}
+                            >
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-2">
+                                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isRowExpanded ? 'rotate-90' : ''}`} />
+                                  <p className="text-sm text-gray-900 max-w-sm" title={result.prompt}>
+                                    {truncate(result.prompt, 55)}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="text-sm text-gray-600">{getProviderLabel(result.provider)}</span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-2">
+                                  {rank > 0 ? (
+                                    <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full ${
+                                      rank === 1 ? 'bg-green-500 text-white' :
+                                      rank <= 3 ? 'bg-yellow-400 text-gray-800' :
+                                      'bg-gray-200 text-gray-600'
+                                    }`}>
+                                      {rank}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium rounded-full bg-gray-100 text-gray-400">
+                                      -
+                                    </span>
+                                  )}
+                                  <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${getSentimentColor(result.brand_sentiment)}`}>
+                                    {getSentimentLabel(result.brand_sentiment)}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                {mentionedCompetitors.length > 0 ? (
+                                  <span className="text-sm text-gray-600">
+                                    {mentionedCompetitors.length} competitor{mentionedCompetitors.length !== 1 ? 's' : ''} mentioned
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-gray-400">None mentioned</span>
+                                )}
+                              </td>
+                            </tr>
+                            {/* Expanded row content */}
+                            {isRowExpanded && (
+                              <tr className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                                <td colSpan={4} className="px-4 pb-4">
+                                  <div className="ml-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="grid grid-cols-2 gap-6">
+                                      {/* Left side - Response preview */}
+                                      <div>
+                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Response Preview</p>
+                                        <p className="text-sm text-gray-700 line-clamp-4">
+                                          {result.response_text ? truncate(result.response_text, 300) : 'No response text available'}
+                                        </p>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedResult(result);
+                                          }}
+                                          className="mt-2 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+                                        >
+                                          View full response
+                                        </button>
+                                      </div>
+                                      {/* Right side - Competitor sentiments */}
+                                      <div>
+                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Competitor Sentiments</p>
+                                        {mentionedCompetitors.length > 0 ? (
+                                          <div className="flex flex-wrap gap-1.5">
+                                            {mentionedCompetitors.map(([comp, sentiment]) => (
+                                              <span
+                                                key={comp}
+                                                className={`inline-flex items-center px-2 py-1 text-xs rounded border ${getSentimentColor(sentiment)}`}
+                                                title={getSentimentLabel(sentiment)}
+                                              >
+                                                {truncate(comp, 15)}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        ) : (
+                                          <p className="text-sm text-gray-400">No competitors mentioned in this response</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            );
+          })()}
+
+          <div className="flex items-center justify-end mt-4">
             <div className="flex gap-2">
               <button
                 onClick={handleExportSentimentCSV}
@@ -10442,38 +10508,42 @@ export default function ResultsPage() {
                           };
 
                           return (
-                            <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
-                              <div className="bg-white rounded-2xl shadow-md border-2 border-gray-200 px-6 py-6 h-full hover:shadow-lg transition-shadow">
+                            <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[220px]">
+                              <div className={`bg-white rounded-xl shadow-sm px-4 py-4 h-full hover:shadow-md transition-shadow ${
+                                brandData.isSearchedBrand
+                                  ? 'border-2 border-[#4A7C59] ring-2 ring-[#4A7C59]/20'
+                                  : 'border border-gray-200'
+                              }`}>
                                 {/* Brand Name */}
-                                <div className="flex items-center justify-center gap-2 mb-4">
-                                  <span className="font-semibold text-gray-900">{brandData.brand}</span>
+                                <div className="flex items-center justify-center gap-2 mb-3">
+                                  <span className="font-semibold text-gray-900 text-sm">{brandData.brand}</span>
                                   {brandData.isSearchedBrand && (
-                                    <span className="text-xs bg-[#E8F0E8] text-[#4A7C59] px-2 py-0.5 rounded-full">Your Brand</span>
+                                    <span className="text-[10px] bg-[#E8F0E8] text-[#4A7C59] px-1.5 py-0.5 rounded-full">Your Brand</span>
                                   )}
                                 </div>
 
                                 {/* Large Visibility Score */}
-                                <div className="text-center mb-1">
+                                <div className="text-center mb-0.5">
                                   <span
-                                    className="text-6xl font-bold"
+                                    className="text-4xl font-bold"
                                     style={{ color: getScoreColor(brandData.visibilityScore) }}
                                   >
                                     {Math.round(brandData.visibilityScore)}
                                   </span>
                                 </div>
-                                <p className="text-center text-sm text-gray-500 mb-5">Visibility Score</p>
+                                <p className="text-center text-xs text-gray-500 mb-3">Visibility Score</p>
 
                                 {/* Provider Score Pills */}
                                 {providers.length > 0 && (
-                                  <div className="flex justify-center gap-2 mb-5">
+                                  <div className="flex justify-center gap-1.5 mb-3">
                                     {providers.map((prov) => {
                                       const pillStyle = getProviderPillStyle(prov.score);
                                       return (
                                         <div key={prov.provider} className="flex flex-col items-center">
-                                          <div className={`w-12 h-12 rounded-full ${pillStyle.bg} flex items-center justify-center`}>
-                                            <span className={`text-sm font-semibold ${pillStyle.text}`}>{prov.score}</span>
+                                          <div className={`w-9 h-9 rounded-full ${pillStyle.bg} flex items-center justify-center`}>
+                                            <span className={`text-xs font-semibold ${pillStyle.text}`}>{prov.score}</span>
                                           </div>
-                                          <span className="text-[10px] text-gray-500 mt-1">{getCarouselProviderLabel(prov.provider)}</span>
+                                          <span className="text-[9px] text-gray-500 mt-0.5">{getCarouselProviderLabel(prov.provider)}</span>
                                         </div>
                                       );
                                     })}
@@ -10482,7 +10552,7 @@ export default function ResultsPage() {
 
                                 {/* Comparison Text */}
                                 {brandData.comparisonRatio !== null && brandData.comparisonRatio !== Infinity && (
-                                  <p className="text-center text-sm text-gray-600 mb-4">
+                                  <p className="text-center text-xs text-gray-600 mb-2">
                                     Mentioned <span className="font-semibold">
                                       {brandData.comparisonRatio >= 1
                                         ? `${brandData.comparisonRatio.toFixed(1)}x more`
@@ -10494,7 +10564,7 @@ export default function ResultsPage() {
 
                                 {/* Score Definition */}
                                 <div className="flex justify-center mt-auto">
-                                  <p className="text-xs text-gray-400 text-center">
+                                  <p className="text-[10px] text-gray-400 text-center">
                                     Visibility Score = % of AI responses mentioning this brand
                                   </p>
                                 </div>
@@ -11181,6 +11251,8 @@ export default function ResultsPage() {
 
                   // Colors for competitor circles - light green variants
                   const colors = ['#86efac', '#a7f3d0', '#6ee7b7', '#bbf7d0'];
+                  // Darker colors for text labels - easier to read
+                  const labelColors = ['#15803d', '#166534', '#14532d', '#166534'];
 
                   return (
                     <div>
@@ -11226,9 +11298,9 @@ export default function ResultsPage() {
                                   y={cy + Math.sin(angle) * (radius + 18)}
                                   textAnchor="middle"
                                   dominantBaseline="middle"
-                                  fill={colors[idx % colors.length]}
+                                  fill={labelColors[idx % labelColors.length]}
                                   fontSize="13"
-                                  fontWeight="500"
+                                  fontWeight="600"
                                 >
                                   {item.brand.length > 14 ? item.brand.substring(0, 12) + '...' : item.brand}
                                 </text>
