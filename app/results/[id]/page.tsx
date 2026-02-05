@@ -9251,6 +9251,218 @@ export default function ResultsPage() {
           </div>
         )}
 
+        {/* Sentiment by Prompt Chart */}
+        {promptBreakdownStats.filter(p => p.avgSentimentScore !== null && p.mentioned > 0).length > 0 && (() => {
+          // Filter to prompts with sentiment data
+          const promptsWithSentiment = promptBreakdownStats.filter(
+            p => p.avgSentimentScore !== null && p.mentioned > 0
+          );
+
+          if (promptsWithSentiment.length === 0) return null;
+
+          // Calculate dynamic axis ranges
+          const sentimentValues = promptsWithSentiment.map(p => p.avgSentimentScore || 0);
+          const minSentiment = Math.min(...sentimentValues);
+          const maxSentiment = Math.max(...sentimentValues);
+          const xMin = Math.max(0.5, Math.floor(minSentiment) - 0.5);
+          const xMax = Math.min(5.5, Math.ceil(maxSentiment) + 0.5);
+          const xTicks = [1, 2, 3, 4, 5].filter(t => t >= xMin && t <= xMax);
+
+          const maxMentions = Math.max(...promptsWithSentiment.map(p => p.mentioned));
+          const yMax = maxMentions + Math.max(1, Math.ceil(maxMentions * 0.15));
+
+          // Process data for overlapping points
+          const positionGroups: Record<string, typeof promptsWithSentiment> = {};
+          promptsWithSentiment.forEach(point => {
+            const key = `${point.mentioned}-${(point.avgSentimentScore || 0).toFixed(1)}`;
+            if (!positionGroups[key]) {
+              positionGroups[key] = [];
+            }
+            positionGroups[key].push(point);
+          });
+
+          const processedData = promptsWithSentiment.map(point => {
+            const key = `${point.mentioned}-${(point.avgSentimentScore || 0).toFixed(1)}`;
+            const group = positionGroups[key];
+            const indexInGroup = group.findIndex(p => p.prompt === point.prompt);
+            return {
+              ...point,
+              groupSize: group.length,
+              indexInGroup,
+            };
+          });
+
+          return (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Sentiment by Prompt</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Which prompts trigger positive vs negative framing of your brand
+                  </p>
+                </div>
+              </div>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      type="number"
+                      dataKey="avgSentimentScore"
+                      name="Avg. Sentiment"
+                      domain={[xMin, xMax]}
+                      ticks={xTicks}
+                      tickFormatter={(value) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][Math.round(value)] || ''}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      label={{ value: 'Average Sentiment', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="mentioned"
+                      name="Mentions"
+                      domain={[0, yMax]}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      label={{
+                        value: 'Number of Mentions',
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: 10,
+                        style: { fill: '#374151', fontSize: 14, fontWeight: 500, textAnchor: 'middle' }
+                      }}
+                    />
+                    <Tooltip
+                      cursor={false}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length > 0) {
+                          const data = payload[0].payload;
+                          const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
+                          return (
+                            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm max-w-[300px]">
+                              <p className="font-medium text-gray-900 mb-2 line-clamp-2">{data.prompt}</p>
+                              <div className="space-y-1 text-gray-600">
+                                <p>Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentimentScore)] || 'N/A'}</span></p>
+                                <p>Mentions: <span className="font-medium">{data.mentioned}</span> of {data.total} responses</p>
+                                <p>Visibility: <span className="font-medium">{data.visibilityScore.toFixed(0)}%</span></p>
+                                {data.avgRank && (
+                                  <p>Avg. Position: <span className="font-medium">#{data.avgRank.toFixed(1)}</span></p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Scatter
+                      data={processedData}
+                      shape={(props: any) => {
+                        const { cx, cy, payload } = props;
+                        const groupSize = payload.groupSize || 1;
+                        const indexInGroup = payload.indexInGroup || 0;
+
+                        // Color based on sentiment (green = good, red = bad)
+                        const sentiment = payload.avgSentimentScore || 3;
+                        const getColor = () => {
+                          if (sentiment >= 4.5) return '#15803d'; // Strong - dark green
+                          if (sentiment >= 3.5) return '#22c55e'; // Positive - green
+                          if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
+                          if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
+                          return '#dc2626'; // Negative - red
+                        };
+                        const getStroke = () => {
+                          if (sentiment >= 4.5) return '#166534';
+                          if (sentiment >= 3.5) return '#166534';
+                          if (sentiment >= 2.5) return '#a16207';
+                          if (sentiment >= 1.5) return '#c2410c';
+                          return '#991b1b';
+                        };
+
+                        const circleRadius = 10;
+                        const spacing = 22;
+                        const totalWidth = (groupSize - 1) * spacing;
+                        const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
+
+                        // Truncate prompt for label
+                        const shortPrompt = payload.prompt.length > 20
+                          ? payload.prompt.substring(0, 18) + '...'
+                          : payload.prompt;
+
+                        // Label positioning
+                        let labelXOffset = 0;
+                        let labelYOffset = -14;
+                        let textAnchor: 'start' | 'middle' | 'end' = 'middle';
+
+                        if (groupSize === 2) {
+                          labelYOffset = indexInGroup === 0 ? -14 : 22;
+                        } else if (groupSize >= 3) {
+                          const angles = [-90, 150, 30, -45, -135, 90];
+                          const angle = angles[indexInGroup % angles.length];
+                          const radians = (angle * Math.PI) / 180;
+                          labelXOffset = Math.cos(radians) * 18;
+                          labelYOffset = Math.sin(radians) * 18;
+                          if (labelXOffset < -5) textAnchor = 'end';
+                          else if (labelXOffset > 5) textAnchor = 'start';
+                        }
+
+                        return (
+                          <g>
+                            <circle
+                              cx={cx + xOffset}
+                              cy={cy}
+                              r={circleRadius}
+                              fill={getColor()}
+                              stroke={getStroke()}
+                              strokeWidth={2}
+                              opacity={0.85}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            <text
+                              x={cx + xOffset + labelXOffset}
+                              y={cy + labelYOffset}
+                              textAnchor={textAnchor}
+                              fill="#374151"
+                              fontSize={10}
+                              fontWeight={500}
+                            >
+                              {shortPrompt}
+                            </text>
+                          </g>
+                        );
+                      }}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500">
+                <span className="text-gray-400 italic">Hover over dots for details</span>
+                <span className="text-gray-300">|</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#dc2626]"></div>
+                    <span>Negative</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#f97316]"></div>
+                    <span>Conditional</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
+                    <span>Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
+                    <span>Positive</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#15803d]"></div>
+                    <span>Strong</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Sentiment by Provider */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
           <div className="flex items-center justify-between mb-1">
