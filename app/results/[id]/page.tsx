@@ -8040,17 +8040,6 @@ export default function ResultsPage() {
                         const totalWidth = (groupSize - 1) * spacing;
                         const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
-                        // Label positioning
-                        let labelYOffset = -(circleRadius + 4);
-                        if (groupSize === 2 && indexInGroup === 1) {
-                          labelYOffset = circleRadius + 12;
-                        }
-
-                        // Truncate long domain names
-                        const displayDomain = payload.domain.length > 18
-                          ? payload.domain.substring(0, 16) + '...'
-                          : payload.domain;
-
                         return (
                           <g>
                             <circle
@@ -8061,17 +8050,8 @@ export default function ResultsPage() {
                               stroke="#166534"
                               strokeWidth={1.5}
                               opacity={0.85}
+                              style={{ cursor: 'pointer' }}
                             />
-                            <text
-                              x={cx + xOffset}
-                              y={cy + labelYOffset}
-                              textAnchor="middle"
-                              fill="#374151"
-                              fontSize={10}
-                              fontWeight={500}
-                            >
-                              {displayDomain}
-                            </text>
                           </g>
                         );
                       }}
@@ -8079,10 +8059,11 @@ export default function ResultsPage() {
                   </ScatterChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-4 flex items-center justify-center gap-6 text-xs text-gray-500">
-                <div className="flex items-center gap-2">
-                  <span>Dot size = citation count</span>
-                </div>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-gray-500">
+                <span className="text-gray-400 italic">Hover over dots for details</span>
+                <span className="text-gray-300">|</span>
+                <span>Dot size = citation count</span>
+                <span className="text-gray-300">|</span>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-full bg-[#86efac]"></div>
