@@ -7906,19 +7906,13 @@ export default function ResultsPage() {
         {/* Source Positioning Chart */}
         {sourcePositioningData.length > 0 && (() => {
           // Calculate dynamic axis ranges
-          const importanceValues = sourcePositioningData.map(d => d.importanceScore);
-          const maxImportance = Math.max(...importanceValues, 10);
-          const sentimentValues = sourcePositioningData.map(d => d.avgSentiment);
-          const minSentiment = Math.min(...sentimentValues, 1);
-          const maxSentiment = Math.max(...sentimentValues, 5);
-          const xMin = Math.max(0.5, Math.floor(minSentiment) - 0.5);
-          const xMax = Math.min(5.5, Math.ceil(maxSentiment) + 0.5);
-          const xTicks = [1, 2, 3, 4, 5].filter(t => t >= xMin && t <= xMax);
+          const maxProviders = Math.max(...sourcePositioningData.map(d => d.providerCount), 1);
+          const maxBrandMentionRate = Math.max(...sourcePositioningData.map(d => d.brandMentionRate), 10);
 
           // Group points by position to handle overlaps
           const positionGroups: Record<string, typeof sourcePositioningData> = {};
           sourcePositioningData.forEach(point => {
-            const key = `${point.importanceScore}-${point.avgSentiment.toFixed(1)}`;
+            const key = `${point.providerCount}-${point.brandMentionRate}`;
             if (!positionGroups[key]) {
               positionGroups[key] = [];
             }
@@ -7926,7 +7920,7 @@ export default function ResultsPage() {
           });
 
           const processedData = sourcePositioningData.map(point => {
-            const key = `${point.importanceScore}-${point.avgSentiment.toFixed(1)}`;
+            const key = `${point.providerCount}-${point.brandMentionRate}`;
             const group = positionGroups[key];
             const indexInGroup = group.findIndex(p => p.domain === point.domain);
             return {
@@ -7940,9 +7934,9 @@ export default function ResultsPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Source Positioning</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Source Influence Map</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    How sources rank by importance and typical sentiment when cited
+                    How sources perform across AI model coverage and brand association
                   </p>
                 </div>
                 <select
@@ -7955,34 +7949,40 @@ export default function ResultsPage() {
                   ))}
                 </select>
               </div>
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-1">
                 <p className="text-xs text-gray-600">
-                  <span className="font-medium">Source Importance Score</span> combines: citation frequency (40%), provider diversity (30%), and brand mention rate when cited (30%).
-                  Higher scores indicate sources that AI models rely on more heavily.
+                  <span className="font-medium">Provider Diversity (X-axis):</span> Number of different AI models that cite this source. Higher = more widely trusted.
+                </p>
+                <p className="text-xs text-gray-600">
+                  <span className="font-medium">Brand Mention Rate (Y-axis):</span> Percentage of citations where your brand was mentioned alongside this source.
+                </p>
+                <p className="text-xs text-gray-600">
+                  <span className="font-medium">Color:</span> Average sentiment when this source is cited. Green = positive, yellow = neutral, red = negative.
                 </p>
               </div>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
+                  <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 80 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       type="number"
-                      dataKey="avgSentiment"
-                      name="Avg. Sentiment"
-                      domain={[xMin, xMax]}
-                      ticks={xTicks}
-                      tickFormatter={(value) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][Math.round(value)] || ''}
+                      dataKey="providerCount"
+                      name="Provider Diversity"
+                      domain={[0.5, Math.max(maxProviders, 4) + 0.5]}
+                      ticks={[1, 2, 3, 4].filter(t => t <= Math.max(maxProviders, 4))}
+                      tickFormatter={(value) => `${value} model${value !== 1 ? 's' : ''}`}
                       tick={{ fill: '#6b7280', fontSize: 12 }}
-                      label={{ value: 'Typical Sentiment When Cited', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
+                      label={{ value: 'Provider Diversity (# of AI Models)', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
                     />
                     <YAxis
                       type="number"
-                      dataKey="importanceScore"
-                      name="Importance"
-                      domain={[0, Math.ceil(maxImportance / 10) * 10 + 10]}
+                      dataKey="brandMentionRate"
+                      name="Brand Mention Rate"
+                      domain={[0, Math.min(Math.ceil(maxBrandMentionRate / 10) * 10 + 10, 100)]}
+                      tickFormatter={(value) => `${value}%`}
                       tick={{ fill: '#6b7280', fontSize: 12 }}
                       label={{
-                        value: 'Source Importance Score',
+                        value: 'Brand Mention Rate (%)',
                         angle: -90,
                         position: 'insideLeft',
                         offset: 10,
@@ -7999,14 +7999,13 @@ export default function ResultsPage() {
                             <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm max-w-[280px]">
                               <p className="font-medium text-gray-900 mb-2">{data.domain}</p>
                               <div className="space-y-1 text-gray-600">
-                                <p>Importance Score: <span className="font-medium text-gray-900">{data.importanceScore}</span></p>
                                 <p>Citations: <span className="font-medium">{data.citationCount}</span></p>
-                                <p>Models: <span className="font-medium">{data.providerCount}</span> ({data.providers.map((p: string) => getProviderLabel(p)).join(', ')})</p>
-                                <p>Typical Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentiment)] || 'N/A'}</span></p>
+                                <p>AI Models: <span className="font-medium">{data.providerCount}</span> ({data.providers.map((p: string) => getProviderLabel(p)).join(', ')})</p>
+                                <p>Brand Mention Rate: <span className="font-medium">{data.brandMentionRate}%</span></p>
+                                <p>Avg. Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentiment)] || 'N/A'}</span></p>
                                 {data.avgPosition && (
                                   <p>Avg. Brand Position: <span className="font-medium">#{data.avgPosition.toFixed(1)}</span></p>
                                 )}
-                                <p>Brand Mention Rate: <span className="font-medium">{data.brandMentionRate}%</span></p>
                               </div>
                             </div>
                           );
@@ -8022,21 +8021,32 @@ export default function ResultsPage() {
                         const indexInGroup = payload.indexInGroup || 0;
 
                         // Size based on citation count
-                        const minSize = 6;
-                        const maxSize = 14;
+                        const minSize = 8;
+                        const maxSize = 16;
                         const maxCitations = Math.max(...sourcePositioningData.map(d => d.citationCount), 1);
                         const circleRadius = minSize + ((payload.citationCount / maxCitations) * (maxSize - minSize));
 
-                        // Color based on provider count (more providers = more authoritative = darker)
-                        const getColor = () => {
-                          if (payload.providerCount >= 4) return '#15803d'; // dark green
-                          if (payload.providerCount >= 3) return '#22c55e'; // green
-                          if (payload.providerCount >= 2) return '#4ade80'; // light green
-                          return '#86efac'; // very light green
+                        // Color based on sentiment (1-5 scale)
+                        const getSentimentColor = () => {
+                          const sentiment = payload.avgSentiment;
+                          if (sentiment >= 4.5) return '#15803d'; // Strong - dark green
+                          if (sentiment >= 3.5) return '#22c55e'; // Positive - green
+                          if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
+                          if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
+                          return '#dc2626'; // Negative - red
+                        };
+
+                        const getStrokeColor = () => {
+                          const sentiment = payload.avgSentiment;
+                          if (sentiment >= 4.5) return '#166534';
+                          if (sentiment >= 3.5) return '#166534';
+                          if (sentiment >= 2.5) return '#a16207';
+                          if (sentiment >= 1.5) return '#c2410c';
+                          return '#991b1b';
                         };
 
                         // Offset for overlapping points
-                        const spacing = 22;
+                        const spacing = 24;
                         const totalWidth = (groupSize - 1) * spacing;
                         const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
@@ -8046,8 +8056,8 @@ export default function ResultsPage() {
                               cx={cx + xOffset}
                               cy={cy}
                               r={circleRadius}
-                              fill={getColor()}
-                              stroke="#166534"
+                              fill={getSentimentColor()}
+                              stroke={getStrokeColor()}
                               strokeWidth={1.5}
                               opacity={0.85}
                               style={{ cursor: 'pointer' }}
@@ -8066,20 +8076,24 @@ export default function ResultsPage() {
                 <span className="text-gray-300">|</span>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#86efac]"></div>
-                    <span>1 model</span>
+                    <div className="w-3 h-3 rounded-full bg-[#dc2626]"></div>
+                    <span>Negative</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#4ade80]"></div>
-                    <span>2 models</span>
+                    <div className="w-3 h-3 rounded-full bg-[#f97316]"></div>
+                    <span>Conditional</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
+                    <span>Neutral</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-                    <span>3 models</span>
+                    <span>Positive</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded-full bg-[#15803d]"></div>
-                    <span>4+ models</span>
+                    <span>Strong</span>
                   </div>
                 </div>
               </div>
