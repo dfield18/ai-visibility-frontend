@@ -26,18 +26,15 @@ import {
   Lightbulb,
   FileBarChart,
   // Category icons
-  Users,
-  Play,
-  BookOpen,
-  Newspaper,
-  ShoppingBag,
-  Star,
-  HelpCircle,
-  Landmark,
-  PenLine,
-  CircleDot,
-  Plane,
-  Wallet,
+  AtSign,
+  Film,
+  Rss,
+  Tag,
+  Award,
+  MessagesSquare,
+  Feather,
+  MapPin,
+  Circle,
   Zap,
   BarChart3,
   Target,
@@ -63,6 +60,9 @@ import {
   Power,
   PlayCircle,
   Pause,
+  HelpCircle,
+  PenLine,
+  Newspaper,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
@@ -392,23 +392,23 @@ const categorizeDomain = (domain: string): string => {
   return 'Other';
 };
 
-// Get icon component for a category
+// Get icon component for a category - sleek, minimal icons
 const getCategoryIcon = (category: string, className: string = "w-3.5 h-3.5") => {
   const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['Other'];
   const props = { className, style: { color } };
   switch (category) {
-    case 'Social Media': return <Users {...props} />;
-    case 'Video': return <Play {...props} />;
-    case 'Reference': return <BookOpen {...props} />;
-    case 'News & Media': return <Newspaper {...props} />;
-    case 'E-commerce': return <ShoppingBag {...props} />;
-    case 'Reviews': return <Star {...props} />;
-    case 'Forums & Q&A': return <HelpCircle {...props} />;
-    case 'Government': return <Landmark {...props} />;
-    case 'Blogs': return <PenLine {...props} />;
-    case 'Travel': return <Plane {...props} />;
-    case 'Finance': return <Wallet {...props} />;
-    default: return <CircleDot {...props} />;
+    case 'Social Media': return <AtSign {...props} />;
+    case 'Video': return <Film {...props} />;
+    case 'Reference': return <FileText {...props} />;
+    case 'News & Media': return <Rss {...props} />;
+    case 'E-commerce': return <Tag {...props} />;
+    case 'Reviews': return <Award {...props} />;
+    case 'Forums & Q&A': return <MessagesSquare {...props} />;
+    case 'Government': return <Building2 {...props} />;
+    case 'Blogs': return <Feather {...props} />;
+    case 'Travel': return <MapPin {...props} />;
+    case 'Finance': return <TrendingUp {...props} />;
+    default: return <Circle {...props} />;
   }
 };
 
@@ -7775,18 +7775,18 @@ export default function ResultsPage() {
       const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['Other'];
       const props = { className, style: { color } };
       switch (category) {
-        case 'Social Media': return <Users {...props} />;
-        case 'Video': return <Play {...props} />;
-        case 'Reference': return <BookOpen {...props} />;
-        case 'News & Media': return <Newspaper {...props} />;
-        case 'E-commerce': return <ShoppingBag {...props} />;
-        case 'Reviews': return <Star {...props} />;
-        case 'Forums & Q&A': return <HelpCircle {...props} />;
-        case 'Government': return <Landmark {...props} />;
-        case 'Blogs': return <PenLine {...props} />;
-        case 'Travel': return <Plane {...props} />;
-        case 'Finance': return <Wallet {...props} />;
-        default: return <CircleDot {...props} />;
+        case 'Social Media': return <AtSign {...props} />;
+        case 'Video': return <Film {...props} />;
+        case 'Reference': return <FileText {...props} />;
+        case 'News & Media': return <Rss {...props} />;
+        case 'E-commerce': return <Tag {...props} />;
+        case 'Reviews': return <Award {...props} />;
+        case 'Forums & Q&A': return <MessagesSquare {...props} />;
+        case 'Government': return <Building2 {...props} />;
+        case 'Blogs': return <Feather {...props} />;
+        case 'Travel': return <MapPin {...props} />;
+        case 'Finance': return <TrendingUp {...props} />;
+        default: return <Circle {...props} />;
       }
     };
 
