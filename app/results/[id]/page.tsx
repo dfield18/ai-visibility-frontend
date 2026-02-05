@@ -8593,16 +8593,7 @@ export default function ResultsPage() {
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full table-fixed">
-                <colgroup>
-                  <col className="w-[18%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[15%]" />
-                </colgroup>
+              <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
                     <th
@@ -8667,16 +8658,7 @@ export default function ResultsPage() {
               </table>
               {/* Scrollable tbody wrapper */}
               <div className="max-h-[540px] overflow-y-auto">
-                <table className="w-full table-fixed">
-                  <colgroup>
-                    <col className="w-[18%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[10%]" />
-                    <col className="w-[18%]" />
-                    <col className="w-[15%]" />
-                    <col className="w-[15%]" />
-                  </colgroup>
+                <table className="w-full">
                   <tbody>
                   {sortedDomainTableData.map((row) => {
                     // Sentiment badge styling
