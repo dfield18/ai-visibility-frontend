@@ -8608,9 +8608,18 @@ export default function ResultsPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-              <table className="w-full">
-                <thead className="sticky top-0 z-10">
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed">
+                <colgroup>
+                  <col className="w-[18%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[15%]" />
+                </colgroup>
+                <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
                     <th
                       className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
@@ -8671,7 +8680,20 @@ export default function ResultsPage() {
                     <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brands</th>
                   </tr>
                 </thead>
-                <tbody>
+              </table>
+              {/* Scrollable tbody wrapper */}
+              <div className="max-h-[540px] overflow-y-auto">
+                <table className="w-full table-fixed">
+                  <colgroup>
+                    <col className="w-[18%]" />
+                    <col className="w-[12%]" />
+                    <col className="w-[12%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[18%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[15%]" />
+                  </colgroup>
+                  <tbody>
                   {sortedDomainTableData.map((row) => {
                     // Sentiment badge styling
                     const getSentimentBadge = () => {
@@ -8752,8 +8774,9 @@ export default function ResultsPage() {
                       </tr>
                     );
                   })}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Footer */}
