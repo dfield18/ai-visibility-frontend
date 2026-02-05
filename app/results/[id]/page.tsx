@@ -9569,20 +9569,20 @@ export default function ResultsPage() {
                   Showing {filteredSentimentResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results
                 </p>
 
-                <div className="overflow-x-auto max-h-[500px] overflow-y-auto border border-gray-200 rounded-lg">
+                <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
                   <table className="w-full">
-                    <thead className="sticky top-0 bg-gray-50 z-10">
+                    <thead className="sticky top-0 bg-white z-10">
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-gray-50">Prompt</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-gray-50">Provider</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-gray-50">{runStatus?.brand || 'Brand'} Position & Sentiment</th>
-                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-600 bg-gray-50">Competitors</th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Competitors</th>
+                        <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredSentimentResults.map((result: Result, index: number) => {
-                        const isRowExpanded = expandedResponseRows.has(result.id);
-
+                      {filteredSentimentResults.map((result: Result) => {
                         // Calculate rank
                         let rank = 0;
                         const brandLower = (runStatus?.brand || '').toLowerCase();
@@ -9621,107 +9621,63 @@ export default function ResultsPage() {
 
                         return (
                           <React.Fragment key={result.id}>
-                            <tr
-                              className={`border-b border-gray-100 cursor-pointer transition-colors ${
-                                index % 2 === 0 ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/50 hover:bg-gray-100/50'
-                              } ${isRowExpanded ? 'bg-blue-50/30' : ''}`}
-                              onClick={() => {
-                                const newExpanded = new Set(expandedResponseRows);
-                                if (isRowExpanded) {
-                                  newExpanded.delete(result.id);
-                                } else {
-                                  newExpanded.add(result.id);
-                                }
-                                setExpandedResponseRows(newExpanded);
-                              }}
-                            >
+                            <tr className="border-b border-gray-100 hover:bg-gray-50">
                               <td className="py-3 px-4">
-                                <div className="flex items-center gap-2">
-                                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${isRowExpanded ? 'rotate-90' : ''}`} />
-                                  <p className="text-sm text-gray-900 max-w-sm" title={result.prompt}>
-                                    {truncate(result.prompt, 55)}
-                                  </p>
-                                </div>
+                                <p className="text-sm text-gray-900" title={result.prompt}>
+                                  {truncate(result.prompt, 50)}
+                                </p>
                               </td>
                               <td className="py-3 px-4">
-                                <span className="text-sm text-gray-600">{getProviderLabel(result.provider)}</span>
+                                <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
                               </td>
                               <td className="py-3 px-4">
-                                <div className="flex items-center gap-2">
-                                  {rank > 0 ? (
-                                    <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full ${
-                                      rank === 1 ? 'bg-green-500 text-white' :
-                                      rank <= 3 ? 'bg-yellow-400 text-gray-800' :
-                                      'bg-gray-200 text-gray-600'
-                                    }`}>
-                                      {rank}
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-medium rounded-full bg-gray-100 text-gray-400">
-                                      -
-                                    </span>
-                                  )}
-                                  <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium rounded border ${getSentimentColor(result.brand_sentiment)}`}>
+                                {rank > 0 ? (
+                                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
+                                    rank === 1 ? 'bg-green-100 text-green-700' :
+                                    rank <= 3 ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    #{rank}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
+                                    Not shown
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                {result.brand_sentiment ? (
+                                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
+                                    result.brand_sentiment === 'strong_endorsement' ? 'bg-green-100 text-green-700' :
+                                    result.brand_sentiment === 'positive_endorsement' ? 'bg-lime-100 text-lime-700' :
+                                    result.brand_sentiment === 'conditional' ? 'bg-orange-100 text-orange-700' :
+                                    result.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-700' :
+                                    'bg-gray-100 text-gray-600'
+                                  }`}>
                                     {getSentimentLabel(result.brand_sentiment)}
                                   </span>
-                                </div>
+                                ) : (
+                                  <span className="text-sm text-gray-400">-</span>
+                                )}
                               </td>
                               <td className="py-3 px-4">
                                 {mentionedCompetitors.length > 0 ? (
-                                  <span className="text-sm text-gray-600">
-                                    {mentionedCompetitors.length} competitor{mentionedCompetitors.length !== 1 ? 's' : ''} mentioned
+                                  <span className="text-sm text-gray-700">
+                                    {mentionedCompetitors.length} mentioned
                                   </span>
                                 ) : (
-                                  <span className="text-sm text-gray-400">None mentioned</span>
+                                  <span className="text-sm text-gray-400">None</span>
                                 )}
                               </td>
+                              <td className="py-3 px-4 text-right">
+                                <button
+                                  onClick={() => setSelectedResult(result)}
+                                  className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+                                >
+                                  View
+                                </button>
+                              </td>
                             </tr>
-                            {/* Expanded row content */}
-                            {isRowExpanded && (
-                              <tr className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                                <td colSpan={4} className="px-4 pb-4">
-                                  <div className="ml-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <div className="grid grid-cols-2 gap-6">
-                                      {/* Left side - Response preview */}
-                                      <div>
-                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Response Preview</p>
-                                        <p className="text-sm text-gray-700 line-clamp-4">
-                                          {result.response_text ? truncate(result.response_text, 300) : 'No response text available'}
-                                        </p>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedResult(result);
-                                          }}
-                                          className="mt-2 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-                                        >
-                                          View full response
-                                        </button>
-                                      </div>
-                                      {/* Right side - Competitor sentiments */}
-                                      <div>
-                                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Competitor Sentiments</p>
-                                        {mentionedCompetitors.length > 0 ? (
-                                          <div className="flex flex-wrap gap-1.5">
-                                            {mentionedCompetitors.map(([comp, sentiment]) => (
-                                              <span
-                                                key={comp}
-                                                className={`inline-flex items-center px-2 py-1 text-xs rounded border ${getSentimentColor(sentiment)}`}
-                                                title={getSentimentLabel(sentiment)}
-                                              >
-                                                {truncate(comp, 15)}
-                                              </span>
-                                            ))}
-                                          </div>
-                                        ) : (
-                                          <p className="text-sm text-gray-400">No competitors mentioned in this response</p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
                           </React.Fragment>
                         );
                       })}
