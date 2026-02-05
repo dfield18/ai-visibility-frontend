@@ -4096,6 +4096,116 @@ export default function ResultsPage() {
         )}
       </div>
 
+      {/* Prompt Breakdown Table */}
+      {promptBreakdownStats.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Prompt Breakdown</h2>
+              <p className="text-sm text-gray-500 mt-1">Performance metrics for {runStatus?.brand} across all prompts</p>
+            </div>
+            <select
+              value={promptBreakdownLlmFilter}
+              onChange={(e) => setPromptBreakdownLlmFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+            >
+              <option value="all">All Models</option>
+              {availableProviders.map((provider) => (
+                <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+              ))}
+            </select>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Prompt</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="whitespace-nowrap">AI Visibility</div>
+                    <div className="text-xs text-gray-400 font-normal">% mentioned</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="whitespace-nowrap">Share of Voice</div>
+                    <div className="text-xs text-gray-400 font-normal">% of brand mentions</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="whitespace-nowrap">First Position</div>
+                    <div className="text-xs text-gray-400 font-normal">% ranked #1</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="whitespace-nowrap">Avg. Position</div>
+                    <div className="text-xs text-gray-400 font-normal">position when shown</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Avg. Sentiment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {promptBreakdownStats.map((stat, index) => {
+                  const getSentimentLabel = (score: number | null): string => {
+                    if (score === null) return '-';
+                    if (score >= 4.5) return 'Highly Recommended';
+                    if (score >= 3.5) return 'Recommended';
+                    if (score >= 2.5) return 'Neutral';
+                    if (score >= 1.5) return 'With Caveats';
+                    if (score >= 0.5) return 'Not Recommended';
+                    return '-';
+                  };
+
+                  const getSentimentColor = (score: number | null): string => {
+                    if (score === null) return 'text-gray-400';
+                    if (score >= 4.5) return 'text-green-600';
+                    if (score >= 3.5) return 'text-lime-600';
+                    if (score >= 2.5) return 'text-gray-600';
+                    if (score >= 1.5) return 'text-amber-500';
+                    if (score >= 0.5) return 'text-red-500';
+                    return 'text-gray-400';
+                  };
+
+                  return (
+                    <tr key={stat.prompt} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                      <td className="py-3 px-3 max-w-[300px]">
+                        <span className="text-gray-900 line-clamp-2" title={stat.prompt}>
+                          {stat.prompt}
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${stat.visibilityScore >= 50 ? 'text-green-600' : stat.visibilityScore >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                          {stat.visibilityScore.toFixed(0)}%
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${stat.shareOfVoice >= 50 ? 'text-green-600' : stat.shareOfVoice >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                          {stat.shareOfVoice.toFixed(0)}%
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${stat.firstPositionRate >= 50 ? 'text-green-600' : stat.firstPositionRate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                          {stat.firstPositionRate.toFixed(0)}%
+                        </span>
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        {stat.avgRank !== null ? (
+                          <span className={`font-medium ${stat.avgRank <= 1.5 ? 'text-green-600' : stat.avgRank <= 3 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                            #{stat.avgRank.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${getSentimentColor(stat.avgSentimentScore)}`}>
+                          {getSentimentLabel(stat.avgSentimentScore)}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* AI Brand Position by Platform */}
       {Object.keys(positionByPlatformData).length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -4397,116 +4507,6 @@ export default function ResultsPage() {
                 </div>
               );
             })}
-          </div>
-        </div>
-      )}
-
-      {/* Prompt Breakdown Table */}
-      {promptBreakdownStats.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Prompt Breakdown</h2>
-              <p className="text-sm text-gray-500 mt-1">Performance metrics for {runStatus?.brand} across all prompts</p>
-            </div>
-            <select
-              value={promptBreakdownLlmFilter}
-              onChange={(e) => setPromptBreakdownLlmFilter(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-            >
-              <option value="all">All Models</option>
-              {availableProviders.map((provider) => (
-                <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
-              ))}
-            </select>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Prompt</th>
-                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                    <div className="whitespace-nowrap">AI Visibility</div>
-                    <div className="text-xs text-gray-400 font-normal">% mentioned</div>
-                  </th>
-                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                    <div className="whitespace-nowrap">Share of Voice</div>
-                    <div className="text-xs text-gray-400 font-normal">% of brand mentions</div>
-                  </th>
-                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                    <div className="whitespace-nowrap">First Position</div>
-                    <div className="text-xs text-gray-400 font-normal">% ranked #1</div>
-                  </th>
-                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                    <div className="whitespace-nowrap">Avg. Position</div>
-                    <div className="text-xs text-gray-400 font-normal">position when shown</div>
-                  </th>
-                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Avg. Sentiment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {promptBreakdownStats.map((stat, index) => {
-                  const getSentimentLabel = (score: number | null): string => {
-                    if (score === null) return '-';
-                    if (score >= 4.5) return 'Highly Recommended';
-                    if (score >= 3.5) return 'Recommended';
-                    if (score >= 2.5) return 'Neutral';
-                    if (score >= 1.5) return 'With Caveats';
-                    if (score >= 0.5) return 'Not Recommended';
-                    return '-';
-                  };
-
-                  const getSentimentColor = (score: number | null): string => {
-                    if (score === null) return 'text-gray-400';
-                    if (score >= 4.5) return 'text-green-600';
-                    if (score >= 3.5) return 'text-lime-600';
-                    if (score >= 2.5) return 'text-gray-600';
-                    if (score >= 1.5) return 'text-amber-500';
-                    if (score >= 0.5) return 'text-red-500';
-                    return 'text-gray-400';
-                  };
-
-                  return (
-                    <tr key={stat.prompt} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                      <td className="py-3 px-3 max-w-[300px]">
-                        <span className="text-gray-900 line-clamp-2" title={stat.prompt}>
-                          {stat.prompt}
-                        </span>
-                      </td>
-                      <td className="text-center py-3 px-3">
-                        <span className={`font-medium ${stat.visibilityScore >= 50 ? 'text-green-600' : stat.visibilityScore >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                          {stat.visibilityScore.toFixed(0)}%
-                        </span>
-                      </td>
-                      <td className="text-center py-3 px-3">
-                        <span className={`font-medium ${stat.shareOfVoice >= 50 ? 'text-green-600' : stat.shareOfVoice >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                          {stat.shareOfVoice.toFixed(0)}%
-                        </span>
-                      </td>
-                      <td className="text-center py-3 px-3">
-                        <span className={`font-medium ${stat.firstPositionRate >= 50 ? 'text-green-600' : stat.firstPositionRate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                          {stat.firstPositionRate.toFixed(0)}%
-                        </span>
-                      </td>
-                      <td className="text-center py-3 px-3">
-                        {stat.avgRank !== null ? (
-                          <span className={`font-medium ${stat.avgRank <= 1.5 ? 'text-green-600' : stat.avgRank <= 3 ? 'text-yellow-600' : 'text-gray-600'}`}>
-                            #{stat.avgRank.toFixed(1)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="text-center py-3 px-3">
-                        <span className={`font-medium ${getSentimentColor(stat.avgSentimentScore)}`}>
-                          {getSentimentLabel(stat.avgSentimentScore)}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
           </div>
         </div>
       )}
