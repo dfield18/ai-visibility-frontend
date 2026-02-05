@@ -8498,7 +8498,7 @@ export default function ResultsPage() {
                 return (
                   <div key={citation.brand} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
                     <div
-                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100"
                       onClick={(e) => {
                         e.preventDefault();
                         const newExpanded = new Set(expandedBrandCitations);
@@ -8510,18 +8510,18 @@ export default function ResultsPage() {
                         setExpandedBrandCitations(newExpanded);
                       }}
                     >
-                      <span className="text-sm font-medium text-gray-400 w-6">{index + 1}.</span>
-                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
+                      <span className="text-sm font-medium text-gray-400 w-6 pointer-events-none">{index + 1}.</span>
+                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59] pointer-events-none">
                         {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
-                        {capitalizeFirst(citation.brand)}'s website
+                        <span>{capitalizeFirst(citation.brand)}&apos;s website</span>
                         {citation.isSearchedBrand && (
                           <span className="text-xs px-1.5 py-0.5 bg-[#4A7C59] text-white rounded">searched</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 pointer-events-none">
                         <div className="flex gap-1">
                           {citation.providers.map((provider) => (
-                            <span key={provider} className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
+                            <span key={provider} className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">
                               {getProviderShortLabel(provider)}
                             </span>
                           ))}
