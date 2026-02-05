@@ -9365,9 +9365,9 @@ export default function ResultsPage() {
 
         {/* Key Sentiment & Framing Insights */}
         {sentimentInsights.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl shadow-sm border border-teal-100 p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Lightbulb className="w-5 h-5 text-[#4A7C59]" />
+              <Lightbulb className="w-5 h-5 text-teal-600" />
               <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Framing Insights</h2>
             </div>
             <ul className="space-y-3">
@@ -12110,6 +12110,7 @@ export default function ResultsPage() {
                       />
                       <Tooltip
                         cursor={false}
+                        isAnimationActive={false}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length > 0) {
                             const data = payload[0].payload;
