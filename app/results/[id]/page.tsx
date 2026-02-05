@@ -6860,6 +6860,173 @@ export default function ResultsPage() {
     const [brandCitationsProviderFilter, setBrandCitationsProviderFilter] = useState<string>('all');
     const [expandedBrandCitations, setExpandedBrandCitations] = useState<Set<string>>(new Set());
 
+    // State for Source Positioning chart
+    const [sourcePositioningBrandFilter, setSourcePositioningBrandFilter] = useState<string>('all');
+
+    // Calculate Source Positioning data - sources plotted by importance vs sentiment
+    const sourcePositioningData = useMemo(() => {
+      if (!runStatus) return [];
+
+      const selectedBrand = sourcePositioningBrandFilter === 'all' ? null : sourcePositioningBrandFilter;
+
+      // Get results with sources
+      const resultsWithSources = globallyFilteredResults.filter(
+        (r: Result) => !r.error && r.sources && r.sources.length > 0
+      );
+
+      if (resultsWithSources.length === 0) return [];
+
+      // Aggregate data per domain
+      const domainStats: Record<string, {
+        domain: string;
+        citationCount: number;
+        providers: Set<string>;
+        sentimentScores: number[];
+        positions: number[];
+        brandMentioned: number; // times cited when selected brand was mentioned
+        totalCitations: number;
+      }> = {};
+
+      resultsWithSources.forEach((r: Result) => {
+        // Check if this result mentions the selected brand (or any brand if all)
+        const brandMentioned = selectedBrand
+          ? (r.brand_mentioned && runStatus.brand === selectedBrand) ||
+            r.competitors_mentioned?.includes(selectedBrand)
+          : r.brand_mentioned || (r.competitors_mentioned && r.competitors_mentioned.length > 0);
+
+        r.sources?.forEach((source) => {
+          if (!source.url) return;
+          const domain = extractDomain(source.url);
+
+          if (!domainStats[domain]) {
+            domainStats[domain] = {
+              domain,
+              citationCount: 0,
+              providers: new Set(),
+              sentimentScores: [],
+              positions: [],
+              brandMentioned: 0,
+              totalCitations: 0,
+            };
+          }
+
+          domainStats[domain].citationCount++;
+          domainStats[domain].totalCitations++;
+          domainStats[domain].providers.add(r.provider);
+
+          // Track sentiment when brand is mentioned
+          if (brandMentioned) {
+            domainStats[domain].brandMentioned++;
+
+            // Get sentiment score for the selected brand
+            let sentimentScore = 3; // Default neutral
+            if (selectedBrand) {
+              if (selectedBrand === runStatus.brand && r.brand_sentiment) {
+                const sentimentMap: Record<string, number> = {
+                  'strong_endorsement': 5,
+                  'positive_endorsement': 4,
+                  'neutral_mention': 3,
+                  'conditional': 2,
+                  'negative_comparison': 1,
+                };
+                sentimentScore = sentimentMap[r.brand_sentiment] || 3;
+              } else if (r.competitor_sentiments?.[selectedBrand]) {
+                const sentimentMap: Record<string, number> = {
+                  'strong_endorsement': 5,
+                  'positive_endorsement': 4,
+                  'neutral_mention': 3,
+                  'conditional': 2,
+                  'negative_comparison': 1,
+                };
+                sentimentScore = sentimentMap[r.competitor_sentiments[selectedBrand]] || 3;
+              }
+            } else if (r.brand_sentiment) {
+              const sentimentMap: Record<string, number> = {
+                'strong_endorsement': 5,
+                'positive_endorsement': 4,
+                'neutral_mention': 3,
+                'conditional': 2,
+                'negative_comparison': 1,
+              };
+              sentimentScore = sentimentMap[r.brand_sentiment] || 3;
+            }
+            domainStats[domain].sentimentScores.push(sentimentScore);
+
+            // Get position using the helper function
+            const position = getResultPosition(r);
+            if (position && position > 0) {
+              domainStats[domain].positions.push(position);
+            }
+          }
+        });
+      });
+
+      // Calculate importance score and average sentiment for each domain
+      const maxCitations = Math.max(...Object.values(domainStats).map(d => d.citationCount), 1);
+
+      return Object.values(domainStats)
+        .filter(d => d.citationCount >= 2) // Only show sources with at least 2 citations
+        .map(d => {
+          // Source Importance Score (0-100):
+          // - 40% based on citation count (normalized)
+          // - 30% based on provider diversity (cited by multiple models = more important)
+          // - 30% based on brand mention rate when cited
+          const citationScore = (d.citationCount / maxCitations) * 40;
+          const providerDiversityScore = Math.min(d.providers.size / 4, 1) * 30; // Max out at 4 providers
+          const brandMentionRate = d.totalCitations > 0 ? (d.brandMentioned / d.totalCitations) : 0;
+          const brandMentionScore = brandMentionRate * 30;
+
+          const importanceScore = citationScore + providerDiversityScore + brandMentionScore;
+
+          // Average sentiment (default to 3/neutral if no sentiment data)
+          const avgSentiment = d.sentimentScores.length > 0
+            ? d.sentimentScores.reduce((a, b) => a + b, 0) / d.sentimentScores.length
+            : 3;
+
+          // Average position
+          const avgPosition = d.positions.length > 0
+            ? d.positions.reduce((a, b) => a + b, 0) / d.positions.length
+            : null;
+
+          return {
+            domain: d.domain,
+            citationCount: d.citationCount,
+            providerCount: d.providers.size,
+            providers: Array.from(d.providers),
+            importanceScore: Math.round(importanceScore),
+            avgSentiment: Math.round(avgSentiment * 10) / 10,
+            avgPosition,
+            brandMentionRate: Math.round(brandMentionRate * 100),
+          };
+        })
+        .sort((a, b) => b.importanceScore - a.importanceScore)
+        .slice(0, 20); // Top 20 sources
+    }, [runStatus, globallyFilteredResults, sourcePositioningBrandFilter]);
+
+    // Get list of brands for the source positioning filter
+    const sourcePositioningBrandOptions = useMemo(() => {
+      if (!runStatus) return [];
+      const options: { value: string; label: string }[] = [
+        { value: 'all', label: 'All Brands' }
+      ];
+
+      // Add searched brand
+      if (runStatus.brand) {
+        options.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)` });
+      }
+
+      // Add competitors
+      const competitors = new Set<string>();
+      globallyFilteredResults.forEach((r: Result) => {
+        r.competitors_mentioned?.forEach(comp => competitors.add(comp));
+      });
+      Array.from(competitors).sort().forEach(comp => {
+        options.push({ value: comp, label: comp });
+      });
+
+      return options;
+    }, [runStatus, globallyFilteredResults]);
+
     // Calculate brand website citations with URL details
     const brandWebsiteCitations = useMemo(() => {
       const brandDomain = runStatus?.brand?.toLowerCase().replace(/\s+/g, '') || '';
@@ -7735,6 +7902,209 @@ export default function ResultsPage() {
             ))}
           </div>
         )}
+
+        {/* Source Positioning Chart */}
+        {sourcePositioningData.length > 0 && (() => {
+          // Calculate dynamic axis ranges
+          const importanceValues = sourcePositioningData.map(d => d.importanceScore);
+          const maxImportance = Math.max(...importanceValues, 10);
+          const sentimentValues = sourcePositioningData.map(d => d.avgSentiment);
+          const minSentiment = Math.min(...sentimentValues, 1);
+          const maxSentiment = Math.max(...sentimentValues, 5);
+          const xMin = Math.max(0.5, Math.floor(minSentiment) - 0.5);
+          const xMax = Math.min(5.5, Math.ceil(maxSentiment) + 0.5);
+          const xTicks = [1, 2, 3, 4, 5].filter(t => t >= xMin && t <= xMax);
+
+          // Group points by position to handle overlaps
+          const positionGroups: Record<string, typeof sourcePositioningData> = {};
+          sourcePositioningData.forEach(point => {
+            const key = `${point.importanceScore}-${point.avgSentiment.toFixed(1)}`;
+            if (!positionGroups[key]) {
+              positionGroups[key] = [];
+            }
+            positionGroups[key].push(point);
+          });
+
+          const processedData = sourcePositioningData.map(point => {
+            const key = `${point.importanceScore}-${point.avgSentiment.toFixed(1)}`;
+            const group = positionGroups[key];
+            const indexInGroup = group.findIndex(p => p.domain === point.domain);
+            return {
+              ...point,
+              groupSize: group.length,
+              indexInGroup,
+            };
+          });
+
+          return (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Source Positioning</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    How sources rank by importance and typical sentiment when cited
+                  </p>
+                </div>
+                <select
+                  value={sourcePositioningBrandFilter}
+                  onChange={(e) => setSourcePositioningBrandFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                >
+                  {sourcePositioningBrandOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-600">
+                  <span className="font-medium">Source Importance Score</span> combines: citation frequency (40%), provider diversity (30%), and brand mention rate when cited (30%).
+                  Higher scores indicate sources that AI models rely on more heavily.
+                </p>
+              </div>
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      type="number"
+                      dataKey="avgSentiment"
+                      name="Avg. Sentiment"
+                      domain={[xMin, xMax]}
+                      ticks={xTicks}
+                      tickFormatter={(value) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][Math.round(value)] || ''}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      label={{ value: 'Typical Sentiment When Cited', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="importanceScore"
+                      name="Importance"
+                      domain={[0, Math.ceil(maxImportance / 10) * 10 + 10]}
+                      tick={{ fill: '#6b7280', fontSize: 12 }}
+                      label={{
+                        value: 'Source Importance Score',
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: 10,
+                        style: { fill: '#374151', fontSize: 14, fontWeight: 500, textAnchor: 'middle' }
+                      }}
+                    />
+                    <Tooltip
+                      cursor={false}
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length > 0) {
+                          const data = payload[0].payload;
+                          const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
+                          return (
+                            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm max-w-[280px]">
+                              <p className="font-medium text-gray-900 mb-2">{data.domain}</p>
+                              <div className="space-y-1 text-gray-600">
+                                <p>Importance Score: <span className="font-medium text-gray-900">{data.importanceScore}</span></p>
+                                <p>Citations: <span className="font-medium">{data.citationCount}</span></p>
+                                <p>Models: <span className="font-medium">{data.providerCount}</span> ({data.providers.map((p: string) => getProviderLabel(p)).join(', ')})</p>
+                                <p>Typical Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentiment)] || 'N/A'}</span></p>
+                                {data.avgPosition && (
+                                  <p>Avg. Brand Position: <span className="font-medium">#{data.avgPosition.toFixed(1)}</span></p>
+                                )}
+                                <p>Brand Mention Rate: <span className="font-medium">{data.brandMentionRate}%</span></p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Scatter
+                      data={processedData}
+                      shape={(props: any) => {
+                        const { cx, cy, payload } = props;
+                        const groupSize = payload.groupSize || 1;
+                        const indexInGroup = payload.indexInGroup || 0;
+
+                        // Size based on citation count
+                        const minSize = 6;
+                        const maxSize = 14;
+                        const maxCitations = Math.max(...sourcePositioningData.map(d => d.citationCount), 1);
+                        const circleRadius = minSize + ((payload.citationCount / maxCitations) * (maxSize - minSize));
+
+                        // Color based on provider count (more providers = more authoritative = darker)
+                        const getColor = () => {
+                          if (payload.providerCount >= 4) return '#15803d'; // dark green
+                          if (payload.providerCount >= 3) return '#22c55e'; // green
+                          if (payload.providerCount >= 2) return '#4ade80'; // light green
+                          return '#86efac'; // very light green
+                        };
+
+                        // Offset for overlapping points
+                        const spacing = 22;
+                        const totalWidth = (groupSize - 1) * spacing;
+                        const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
+
+                        // Label positioning
+                        let labelYOffset = -(circleRadius + 4);
+                        if (groupSize === 2 && indexInGroup === 1) {
+                          labelYOffset = circleRadius + 12;
+                        }
+
+                        // Truncate long domain names
+                        const displayDomain = payload.domain.length > 18
+                          ? payload.domain.substring(0, 16) + '...'
+                          : payload.domain;
+
+                        return (
+                          <g>
+                            <circle
+                              cx={cx + xOffset}
+                              cy={cy}
+                              r={circleRadius}
+                              fill={getColor()}
+                              stroke="#166534"
+                              strokeWidth={1.5}
+                              opacity={0.85}
+                            />
+                            <text
+                              x={cx + xOffset}
+                              y={cy + labelYOffset}
+                              textAnchor="middle"
+                              fill="#374151"
+                              fontSize={10}
+                              fontWeight={500}
+                            >
+                              {displayDomain}
+                            </text>
+                          </g>
+                        );
+                      }}
+                    />
+                  </ScatterChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex items-center justify-center gap-6 text-xs text-gray-500">
+                <div className="flex items-center gap-2">
+                  <span>Dot size = citation count</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#86efac]"></div>
+                    <span>1 model</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#4ade80]"></div>
+                    <span>2 models</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
+                    <span>3 models</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#15803d]"></div>
+                    <span>4+ models</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Top Cited Sources with Pie Chart */}
         {hasAnySources && (
