@@ -1261,6 +1261,10 @@ export default function ResultsPage() {
   const [brandBreakdownPromptFilter, setBrandBreakdownPromptFilter] = useState<string>('all');
   const [expandedBrandBreakdownRows, setExpandedBrandBreakdownRows] = useState<Set<string>>(new Set());
 
+  // State for Brand Positioning chart filters
+  const [brandPositioningLlmFilter, setBrandPositioningLlmFilter] = useState<string>('all');
+  const [brandPositioningPromptFilter, setBrandPositioningPromptFilter] = useState<string>('all');
+
   // Calculate brand breakdown stats for competitive landscape
   const brandBreakdownStats = useMemo(() => {
     if (!runStatus) return [];
@@ -1423,6 +1427,85 @@ export default function ResultsPage() {
     // Sort by visibility score descending
     return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
   }, [runStatus, globallyFilteredResults, brandBreakdownLlmFilter, brandBreakdownPromptFilter]);
+
+  // Calculate brand positioning stats with separate filters
+  const brandPositioningStats = useMemo(() => {
+    if (!runStatus) return [];
+
+    const results = globallyFilteredResults.filter((r: Result) => {
+      if (r.error) return false;
+      if (brandPositioningLlmFilter !== 'all' && r.provider !== brandPositioningLlmFilter) return false;
+      if (brandPositioningPromptFilter !== 'all' && r.prompt !== brandPositioningPromptFilter) return false;
+      return true;
+    });
+
+    const searchedBrand = runStatus.brand;
+
+    // Get all brands: searched brand + competitors
+    const allBrands = new Set<string>([searchedBrand]);
+    results.forEach(r => {
+      if (r.competitors_mentioned) {
+        r.competitors_mentioned.forEach(c => allBrands.add(c));
+      }
+    });
+
+    const sentimentScoreMap: Record<string, number> = {
+      'strong_endorsement': 5,
+      'positive_endorsement': 4,
+      'neutral_mention': 3,
+      'conditional': 2,
+      'negative_comparison': 1,
+      'not_mentioned': 0,
+    };
+
+    const brandStats = Array.from(allBrands).map(brand => {
+      const isSearchedBrand = brand === searchedBrand;
+      const total = results.length;
+
+      // Count mentions for this brand
+      const mentioned = results.filter(r => {
+        if (isSearchedBrand) {
+          return r.brand_mentioned;
+        } else {
+          return r.competitors_mentioned?.includes(brand);
+        }
+      }).length;
+
+      const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
+
+      // Average sentiment
+      const sentimentResults = results.filter(r => {
+        if (isSearchedBrand) {
+          return r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned';
+        } else {
+          return r.competitors_mentioned?.includes(brand) && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned';
+        }
+      });
+
+      let avgSentimentScore: number | null = null;
+      if (sentimentResults.length > 0) {
+        const sentimentSum = sentimentResults.reduce((sum, r) => {
+          if (isSearchedBrand) {
+            return sum + (sentimentScoreMap[r.brand_sentiment || ''] || 0);
+          } else {
+            return sum + (sentimentScoreMap[r.competitor_sentiments?.[brand] || ''] || 0);
+          }
+        }, 0);
+        avgSentimentScore = sentimentSum / sentimentResults.length;
+      }
+
+      return {
+        brand,
+        isSearchedBrand,
+        mentioned,
+        visibilityScore,
+        avgSentimentScore,
+      };
+    });
+
+    // Sort by visibility score descending
+    return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
+  }, [runStatus, globallyFilteredResults, brandPositioningLlmFilter, brandPositioningPromptFilter]);
 
   // Prompt Performance Matrix - brands vs prompts heatmap data
   const promptPerformanceMatrix = useMemo(() => {
@@ -3498,7 +3581,7 @@ export default function ResultsPage() {
           return (
             <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(visibilityTone)}`}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-gray-700">AI Visibility</p>
+                <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">AI Visibility</p>
                 <div className="relative group">
                   <button
                     className="p-1 rounded-full hover:bg-gray-100 transition-colors"
@@ -3536,7 +3619,7 @@ export default function ResultsPage() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold text-gray-900">{overviewMetrics?.overallVisibility?.toFixed(1) || 0}%</span>
+                    <span className="text-sm font-bold text-gray-900 tracking-tight tabular-nums">{overviewMetrics?.overallVisibility?.toFixed(1) || 0}%</span>
                   </div>
                 </div>
               </div>
@@ -3558,7 +3641,7 @@ export default function ResultsPage() {
           return (
             <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(sovTone)}`}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-gray-700">Share of Voice</p>
+                <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Share of Voice</p>
                 <div className="relative group">
                   <button
                     className="p-1 rounded-full hover:bg-gray-100 transition-colors"
@@ -3596,7 +3679,7 @@ export default function ResultsPage() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold text-gray-900">{overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%</span>
+                    <span className="text-sm font-bold text-gray-900 tracking-tight tabular-nums">{overviewMetrics?.shareOfVoice?.toFixed(1) || 0}%</span>
                   </div>
                 </div>
               </div>
@@ -3607,7 +3690,7 @@ export default function ResultsPage() {
                 </span>
               </div>
               {/* Description - pushed to bottom */}
-              <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your brand's share of all brand mentions</p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">{runStatus?.brand || 'Your brand'}'s share of all brand mentions</p>
             </div>
           );
         })()}
@@ -3618,7 +3701,7 @@ export default function ResultsPage() {
           return (
             <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(topRateTone)}`}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-gray-700">Top Result Rate</p>
+                <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Top Result Rate</p>
                 <div className="relative group">
                   <button
                     className="p-1 rounded-full hover:bg-gray-100 transition-colors"
@@ -3656,7 +3739,7 @@ export default function ResultsPage() {
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-bold text-gray-900">{overviewMetrics?.top1Rate?.toFixed(0) || 0}%</span>
+                    <span className="text-sm font-bold text-gray-900 tracking-tight tabular-nums">{overviewMetrics?.top1Rate?.toFixed(0) || 0}%</span>
                   </div>
                 </div>
               </div>
@@ -3667,7 +3750,7 @@ export default function ResultsPage() {
                 </span>
               </div>
               {/* Description - pushed to bottom */}
-              <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often your brand is the #1 result</p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often {runStatus?.brand || 'your brand'} is the #1 result</p>
             </div>
           );
         })()}
@@ -3679,7 +3762,7 @@ export default function ResultsPage() {
           return (
             <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[240px] ${getCardBackground(avgPosTone)}`}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-gray-700">Avg. Position</p>
+                <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Avg. Position</p>
                 <div className="relative group">
                   <button
                     className="p-1 rounded-full hover:bg-gray-100 transition-colors"
@@ -3697,13 +3780,17 @@ export default function ResultsPage() {
               <div className="h-[100px]">
                 {/* Large Position Number */}
                 <div className="text-center mb-3">
-                  <span className="text-4xl font-bold" style={{ color: avgRank <= 1.5 ? '#16a34a' : avgRank <= 3 ? '#eab308' : '#f97316' }}>
+                  <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: avgRank <= 1.5 ? '#16a34a' : avgRank <= 3 ? '#eab308' : '#f97316' }}>
                     {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
                   </span>
                 </div>
                 {/* Position Scale */}
-                <div className="px-4">
-                  <div className="flex justify-center gap-1.5 mb-2">
+                <div className="px-6">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[10px] text-gray-400">Best</span>
+                    <span className="text-[10px] text-gray-400">Worst</span>
+                  </div>
+                  <div className="flex justify-center gap-1">
                     {[1, 2, 3, 4, 5].map((pos) => {
                       const isHighlighted = avgRank > 0 && Math.round(avgRank) === pos;
                       // Color based on position value
@@ -3718,16 +3805,12 @@ export default function ResultsPage() {
                       return (
                         <div
                           key={pos}
-                          className={`w-8 h-8 rounded-md flex items-center justify-center text-sm font-semibold ${getPositionColor()}`}
+                          className={`w-6 h-6 rounded flex items-center justify-center text-xs font-semibold ${getPositionColor()}`}
                         >
                           {pos}
                         </div>
                       );
                     })}
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[10px] text-gray-400">Best</span>
-                    <span className="text-[10px] text-gray-400">Worst</span>
                   </div>
                 </div>
               </div>
@@ -3738,7 +3821,7 @@ export default function ResultsPage() {
                 </span>
               </div>
               {/* Description - pushed to bottom */}
-              <p className="text-xs text-gray-500 leading-relaxed mt-auto">Your average ranking when mentioned</p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">{runStatus?.brand || 'Your brand'}'s average ranking when mentioned</p>
             </div>
           );
         })()}
@@ -3869,7 +3952,7 @@ export default function ResultsPage() {
                           <div key={idx} className="relative group">
                             <div
                               className="w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
-                              style={{ backgroundColor: showSentimentColors ? getSentimentDotColor(dot.sentiment) : '#16a34a' }}
+                              style={{ backgroundColor: showSentimentColors ? getSentimentDotColor(dot.sentiment) : '#9ca3af' }}
                               onClick={() => setSelectedResult(dot.originalResult)}
                             />
                             {/* Tooltip on hover */}
@@ -10289,14 +10372,16 @@ export default function ResultsPage() {
                           };
 
                           // Get visibility score color based on value
+                          // Gradient: light green (75+) -> light brown (50) -> light gray (0)
                           const getScoreColor = (score: number) => {
-                            if (score >= 90) return '#15803d'; // Dark green (green-700)
-                            if (score >= 75) return '#16a34a'; // Green (green-600)
-                            if (score >= 60) return '#22c55e'; // Light green (green-500)
-                            if (score >= 45) return '#86efac'; // Lighter green (green-300)
-                            if (score >= 30) return '#a3a095'; // Brown/tan
-                            if (score >= 15) return '#8b8578'; // Darker brown
-                            return '#6b7280'; // Gray
+                            if (score >= 75) return '#86efac'; // Light green (green-300)
+                            if (score >= 65) return '#a7f3d0'; // Lighter green (green-200)
+                            if (score >= 55) return '#c4d4a5'; // Green-tan transition
+                            if (score >= 45) return '#d4c9a5'; // Light tan/brown
+                            if (score >= 35) return '#c9bfa0'; // Tan
+                            if (score >= 25) return '#bfb8a8'; // Gray-tan
+                            if (score >= 15) return '#b8b8b8'; // Light gray
+                            return '#d1d5db'; // Lighter gray (gray-300)
                           };
 
                           return (
@@ -10351,9 +10436,11 @@ export default function ResultsPage() {
                                 )}
 
                                 {/* Score Definition */}
-                                <p className="text-xs text-gray-400 text-center">
-                                  Visibility Score = % of AI responses mentioning this brand
-                                </p>
+                                <div className="flex justify-center mt-auto">
+                                  <p className="text-xs text-gray-400 text-center">
+                                    Visibility Score = % of AI responses mentioning this brand
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           );
@@ -10516,6 +10603,16 @@ export default function ResultsPage() {
 
                         const isExpanded = expandedBrandBreakdownRows.has(stat.brand);
 
+                        // Get score text color matching the card color scheme
+                        // Gradient: light green (75+) -> tan/brown (50) -> gray (0)
+                        const getScoreTextColor = (score: number): string => {
+                          if (score >= 75) return '#16a34a'; // Green
+                          if (score >= 60) return '#65a30d'; // Lime-green
+                          if (score >= 45) return '#a3a065'; // Tan/olive
+                          if (score >= 30) return '#a39580'; // Brown/tan
+                          return '#6b7280'; // Gray
+                        };
+
                         return (
                           <React.Fragment key={stat.brand}>
                             <tr
@@ -10546,23 +10643,23 @@ export default function ResultsPage() {
                                 </div>
                               </td>
                               <td className="text-center py-3 px-3">
-                                <span className={`font-medium ${stat.visibilityScore >= 50 ? 'text-green-600' : stat.visibilityScore >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                <span className="font-medium" style={{ color: getScoreTextColor(stat.visibilityScore) }}>
                                   {stat.visibilityScore.toFixed(0)}%
                                 </span>
                               </td>
                               <td className="text-center py-3 px-3">
-                                <span className={`font-medium ${stat.shareOfVoice >= 50 ? 'text-green-600' : stat.shareOfVoice >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                <span className="font-medium" style={{ color: getScoreTextColor(stat.shareOfVoice) }}>
                                   {stat.shareOfVoice.toFixed(0)}%
                                 </span>
                               </td>
                               <td className="text-center py-3 px-3">
-                                <span className={`font-medium ${stat.firstPositionRate >= 50 ? 'text-green-600' : stat.firstPositionRate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                <span className="font-medium" style={{ color: getScoreTextColor(stat.firstPositionRate) }}>
                                   {stat.firstPositionRate.toFixed(0)}%
                                 </span>
                               </td>
                               <td className="text-center py-3 px-3">
                                 {stat.avgRank !== null ? (
-                                  <span className={`font-medium ${stat.avgRank <= 1.5 ? 'text-green-600' : stat.avgRank <= 3 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                  <span className="font-medium" style={{ color: stat.avgRank <= 1.5 ? '#16a34a' : stat.avgRank <= 2.5 ? '#65a30d' : stat.avgRank <= 3.5 ? '#a3a065' : '#6b7280' }}>
                                     #{stat.avgRank.toFixed(1)}
                                   </span>
                                 ) : (
@@ -10624,9 +10721,9 @@ export default function ResultsPage() {
             )}
 
             {/* Brand Positioning Chart - Mentions vs Sentiment */}
-            {brandBreakdownStats.length > 0 && (() => {
+            {brandPositioningStats.length > 0 && (() => {
               // Calculate dynamic x-axis range based on actual sentiment values
-              const sentimentData = brandBreakdownStats
+              const sentimentData = brandPositioningStats
                 .filter(stat => stat.avgSentimentScore !== null && stat.mentioned > 0)
                 .map(stat => stat.avgSentimentScore || 0);
               const minSentiment = sentimentData.length > 0 ? Math.min(...sentimentData) : 1;
@@ -10638,7 +10735,7 @@ export default function ResultsPage() {
               const xTicks = [1, 2, 3, 4, 5].filter(t => t >= xMin && t <= xMax);
 
               // Pre-process data to handle overlapping points
-              const rawData = brandBreakdownStats
+              const rawData = brandPositioningStats
                 .filter(stat => stat.avgSentimentScore !== null && stat.mentioned > 0)
                 .map(stat => ({
                   brand: stat.brand,
@@ -10678,11 +10775,37 @@ export default function ResultsPage() {
 
               return (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="mb-4">
-                  <h2 className="text-base font-semibold text-gray-900">Brand Positioning</h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    How brands compare by mention frequency and sentiment
-                  </p>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">Brand Positioning</h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      How brands compare by mention frequency and sentiment
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={brandPositioningPromptFilter}
+                      onChange={(e) => setBrandPositioningPromptFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+                    >
+                      <option value="all">All Prompts</option>
+                      {availablePrompts.map((prompt) => (
+                        <option key={prompt} value={prompt} title={prompt}>
+                          {prompt.length > 30 ? prompt.substring(0, 30) + '...' : prompt}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={brandPositioningLlmFilter}
+                      onChange={(e) => setBrandPositioningLlmFilter(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    >
+                      <option value="all">All Models</option>
+                      {availableProviders.map((provider) => (
+                        <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="h-[400px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -10831,9 +10954,9 @@ export default function ResultsPage() {
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
-                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[140px] max-w-[180px] relative group"
+                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[160px] max-w-[200px] relative group"
                           >
-                            <span className={`text-xs block truncate ${prompt.length > 40 ? 'cursor-default' : ''}`}>
+                            <span className={`text-sm block truncate ${prompt.length > 40 ? 'cursor-default' : ''}`}>
                               {prompt.length > 40 ? prompt.substring(0, 38) + '...' : prompt}
                             </span>
                             {prompt.length > 40 && (
@@ -10999,8 +11122,8 @@ export default function ResultsPage() {
 
                   const maxCount = Math.max(...cooccurringBrands.map(b => b.count));
 
-                  // Colors for competitor circles - green and blue variants
-                  const colors = ['#4A7C59', '#3b82f6', '#6B9B7A', '#60a5fa'];
+                  // Colors for competitor circles - light green variants
+                  const colors = ['#86efac', '#a7f3d0', '#6ee7b7', '#bbf7d0'];
 
                   return (
                     <div>
@@ -11100,6 +11223,7 @@ export default function ResultsPage() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
                     <p className="text-sm text-gray-500">
                       {heatmapShowSentiment ? 'Overall sentiment of each source toward brand' : 'Sources cited when each brand is mentioned'}
+                      <span className="ml-2 text-gray-400">Click any cell to view full prompts</span>
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
