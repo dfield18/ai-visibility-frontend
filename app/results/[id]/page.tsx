@@ -8259,18 +8259,30 @@ export default function ResultsPage() {
           const maxProviders = Math.max(...dataWithPosition.map(d => d.providerCount), 1);
           const maxPosition = Math.max(...dataWithPosition.map(d => d.avgPosition || 1), 5);
 
-          // Group points by position to handle overlaps
+          // Group points by proximity (within 1 provider and 0.5 position)
+          // This catches labels that would visually overlap even if not at exact same position
+          const getClusterKey = (providerCount: number, avgPosition: number) => {
+            const providerBucket = providerCount; // Keep exact since it's already integer
+            const positionBucket = Math.round((avgPosition || 0) * 2) / 2; // Round to nearest 0.5
+            return `${providerBucket}-${positionBucket}`;
+          };
+
           const positionGroups: Record<string, typeof dataWithPosition> = {};
           dataWithPosition.forEach(point => {
-            const key = `${point.providerCount}-${(point.avgPosition || 0).toFixed(1)}`;
+            const key = getClusterKey(point.providerCount, point.avgPosition || 0);
             if (!positionGroups[key]) {
               positionGroups[key] = [];
             }
             positionGroups[key].push(point);
           });
 
+          // Sort each group by position for consistent ordering
+          Object.values(positionGroups).forEach(group => {
+            group.sort((a, b) => (a.avgPosition || 0) - (b.avgPosition || 0));
+          });
+
           const processedData = dataWithPosition.map(point => {
-            const key = `${point.providerCount}-${(point.avgPosition || 0).toFixed(1)}`;
+            const key = getClusterKey(point.providerCount, point.avgPosition || 0);
             const group = positionGroups[key];
             const indexInGroup = group.findIndex(p => p.domain === point.domain);
             return {
@@ -8388,30 +8400,41 @@ export default function ResultsPage() {
                         const totalWidth = (groupSize - 1) * spacing;
                         const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
-                        // Calculate label offset - spread labels for 3+ items
+                        // Calculate label offset - spread labels to avoid overlaps
                         let labelXOffset = 0;
-                        let labelYOffset = -11; // Default: above
+                        let labelYOffset = -14; // Default: above
                         let textAnchor: 'start' | 'middle' | 'end' = 'middle';
 
                         if (groupSize === 1) {
                           // Single item: label above center
                           labelXOffset = 0;
-                          labelYOffset = -11;
+                          labelYOffset = -14;
                         } else if (groupSize === 2) {
-                          // Two items: alternate above/below
-                          labelYOffset = indexInGroup === 0 ? -11 : 18;
+                          // Two items: one above-left, one above-right
+                          const labelDistance = 20;
+                          if (indexInGroup === 0) {
+                            labelXOffset = -labelDistance;
+                            labelYOffset = -12;
+                            textAnchor = 'end';
+                          } else {
+                            labelXOffset = labelDistance;
+                            labelYOffset = -12;
+                            textAnchor = 'start';
+                          }
                         } else {
-                          // 3+ items: spread labels in different directions
-                          const labelDistance = 15;
-                          const angles = [-90, 150, 30, -45, -135, 90];
-                          const angle = angles[indexInGroup % angles.length];
+                          // 3+ items: spread labels radially with larger distance
+                          const labelDistance = 24;
+                          // Evenly distribute angles starting from top, going clockwise
+                          const startAngle = -90; // Start from top
+                          const angleStep = 360 / groupSize;
+                          const angle = startAngle + (indexInGroup * angleStep);
                           const radians = (angle * Math.PI) / 180;
                           labelXOffset = Math.cos(radians) * labelDistance;
                           labelYOffset = Math.sin(radians) * labelDistance;
 
                           // Adjust text anchor based on horizontal position
-                          if (labelXOffset < -5) textAnchor = 'end';
-                          else if (labelXOffset > 5) textAnchor = 'start';
+                          if (labelXOffset < -8) textAnchor = 'end';
+                          else if (labelXOffset > 8) textAnchor = 'start';
                         }
 
                         // Truncate domain for display
@@ -8590,173 +8613,168 @@ export default function ResultsPage() {
 
         {/* Domain Breakdown Table */}
         {domainTableData.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Globe className="w-5 h-5 text-[#4A7C59]" />
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Domain Breakdown</h3>
-                <p className="text-sm text-gray-500">Detailed view of how often each domain is cited across LLM responses</p>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Showing {sortedDomainTableData.length} domains cited across LLM responses
+                </p>
               </div>
             </div>
-            <div className="max-h-[500px] overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white z-10">
-                  <tr className="border-b border-gray-200">
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50/50">
                     <th
-                      className="text-left py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
+                      className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('domain')}
                     >
-                      <div className="flex items-center gap-1">
+                      <span className="flex items-center gap-1">
                         Domain
                         {domainSortColumn === 'domain' && (
                           <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
-                      </div>
+                      </span>
                     </th>
                     <th
-                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
+                      className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('usedPercent')}
                     >
-                      <div className="flex items-center justify-center gap-1">
-                        <div>
-                          <div>Used</div>
-                          <div className="text-xs font-normal text-gray-400">% of responses</div>
-                        </div>
+                      <span className="flex items-center justify-center gap-1">
+                        Used %
                         {domainSortColumn === 'usedPercent' && (
                           <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
-                      </div>
+                      </span>
                     </th>
                     <th
-                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
+                      className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('avgCitation')}
                     >
-                      <div className="flex items-center justify-center gap-1">
-                        <div>
-                          <div>Avg. Citation</div>
-                          <div className="text-xs font-normal text-gray-400">per response</div>
-                        </div>
+                      <span className="flex items-center justify-center gap-1">
+                        Avg Citations
                         {domainSortColumn === 'avgCitation' && (
                           <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
-                      </div>
+                      </span>
                     </th>
                     <th
-                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
+                      className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('category')}
                     >
-                      <div className="flex items-center justify-center gap-1">
+                      <span className="flex items-center justify-center gap-1">
                         Type
                         {domainSortColumn === 'category' && (
                           <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
-                      </div>
+                      </span>
                     </th>
                     <th
-                      className="text-center py-3 px-3 font-medium text-gray-600 cursor-pointer hover:bg-gray-50 select-none bg-white"
+                      className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('avgSentiment')}
                     >
-                      <div className="flex items-center justify-center gap-1">
-                        Sentiment for {runStatus?.brand || 'Brand'}
+                      <span className="flex items-center justify-center gap-1">
+                        Sentiment
                         {domainSortColumn === 'avgSentiment' && (
                           <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
-                      </div>
+                      </span>
                     </th>
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 bg-white">Models</th>
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 bg-white">Brands Mentioned</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Models</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brands</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedDomainTableData.map((row, index) => (
-                    <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                      <td className="py-2.5 px-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[#4A7C59] font-medium">{row.domain}</span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-[#4A7C59] rounded-full"
-                              style={{ width: `${Math.min(row.usedPercent, 100)}%` }}
-                            />
+                  {sortedDomainTableData.map((row) => {
+                    // Sentiment badge styling
+                    const getSentimentBadge = () => {
+                      if (row.avgSentiment === null) {
+                        return <span className="text-sm text-gray-400">-</span>;
+                      }
+                      const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
+                        'strong': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
+                        'positive': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
+                        'neutral': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
+                        'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
+                        'negative': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
+                      };
+                      const key = row.avgSentiment >= 4.5 ? 'strong' :
+                                  row.avgSentiment >= 3.5 ? 'positive' :
+                                  row.avgSentiment >= 2.5 ? 'neutral' :
+                                  row.avgSentiment >= 1.5 ? 'conditional' : 'negative';
+                      const config = configs[key];
+                      return (
+                        <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${config.bg} ${config.text} ${config.border}`}>
+                          {config.label}
+                        </span>
+                      );
+                    };
+
+                    return (
+                      <tr key={row.domain} className="border-b border-gray-100 hover:bg-gray-50/40 transition-colors">
+                        <td className="py-4 px-4">
+                          <span className="text-sm text-gray-900 font-medium">{row.domain}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-[#4A7C59] rounded-full"
+                                style={{ width: `${Math.min(row.usedPercent, 100)}%` }}
+                              />
+                            </div>
+                            <span className="text-sm text-gray-600 min-w-[40px]">{row.usedPercent.toFixed(1)}%</span>
                           </div>
-                          <span className="text-gray-700 min-w-[40px]">{row.usedPercent.toFixed(1)}%</span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-3 text-center text-gray-700">
-                        {row.avgCitation.toFixed(2)}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {getCategoryIcon(row.category, "w-3.5 h-3.5")}
-                          <span className="text-gray-600 text-xs">{row.category}</span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        {row.avgSentiment !== null ? (
-                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                            row.avgSentiment >= 4.5 ? 'bg-green-100 text-green-700' :
-                            row.avgSentiment >= 3.5 ? 'bg-lime-100 text-lime-700' :
-                            row.avgSentiment >= 2.5 ? 'bg-gray-100 text-gray-600' :
-                            row.avgSentiment >= 1.5 ? 'bg-orange-100 text-orange-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {getSentimentLabel(row.avgSentiment)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        {row.providers.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {row.providers.map((provider) => (
-                              <span
-                                key={provider}
-                                className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700"
-                              >
-                                {getProviderLabel(provider)}
-                              </span>
-                            ))}
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <span className="text-sm text-gray-600">{row.avgCitation.toFixed(2)}</span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {getCategoryIcon(row.category, "w-3.5 h-3.5")}
+                            <span className="text-sm text-gray-600">{row.category}</span>
                           </div>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-3">
-                        {row.brands.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {row.brands.map((brand) => (
-                              <span
-                                key={brand}
-                                className={`text-xs px-2 py-0.5 rounded-full ${
-                                  brand === runStatus?.brand
-                                    ? 'bg-[#4A7C59] text-white font-medium'
-                                    : 'bg-gray-100 text-gray-600'
-                                }`}
-                              >
-                                {brand}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          {getSentimentBadge()}
+                        </td>
+                        <td className="py-4 px-4">
+                          {row.providers.length > 0 ? (
+                            <span className="text-sm text-gray-700">
+                              {row.providers.slice(0, 2).map(p => getProviderLabel(p)).join(', ')}
+                              {row.providers.length > 2 && (
+                                <span className="text-gray-400 ml-1">+{row.providers.length - 2}</span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4">
+                          {row.brands.length > 0 ? (
+                            <span className="text-sm text-gray-700">
+                              {row.brands.slice(0, 2).join(', ')}
+                              {row.brands.length > 2 && (
+                                <span className="text-gray-400 ml-1">+{row.brands.length - 2}</span>
+                              )}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-400">None</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-            {sortedDomainTableData.length > 10 && (
-              <p className="text-sm text-gray-500 text-center mt-3">
-                Scroll to see all {sortedDomainTableData.length} domains
-              </p>
-            )}
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 p-4 bg-gray-50/50 border-t border-gray-100 rounded-b-2xl">
               <button
                 onClick={handleExportDomainBreakdownCSV}
                 className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
@@ -10001,17 +10019,18 @@ export default function ResultsPage() {
         )}
 
         {/* Individual Results with Sentiment */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-start justify-between mb-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Response-Level Sentiment</h3>
-              <p className="text-sm text-gray-500">Detailed sentiment for each AI response</p>
+              <h3 className="text-lg font-semibold text-gray-900">Response-Level Sentiment</h3>
+              <p className="text-sm text-gray-500 mt-0.5">Detailed sentiment for each AI response</p>
             </div>
             <div className="flex items-center gap-3">
               <select
                 value={responseSentimentFilter}
                 onChange={(e) => setResponseSentimentFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
               >
                 <option value="all">All Sentiments</option>
                 <option value="strong_endorsement">Highly Recommended</option>
@@ -10023,7 +10042,7 @@ export default function ResultsPage() {
               <select
                 value={responseLlmFilter}
                 onChange={(e) => setResponseLlmFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
               >
                 <option value="all">All Models</option>
                 {availableProviders.map((provider) => (
@@ -10041,24 +10060,30 @@ export default function ResultsPage() {
 
             return (
               <>
-                <p className="text-sm text-gray-500 mb-4">
-                  Showing {filteredSentimentResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results
-                </p>
+                <div className="px-6 py-3 border-b border-gray-100">
+                  <p className="text-sm text-gray-500">
+                    Showing {filteredSentimentResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length} results
+                  </p>
+                </div>
 
-                <div className="overflow-x-auto max-h-[560px] overflow-y-auto">
+                {/* Table */}
+                <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="sticky top-0 bg-white z-10">
-                      <tr className="border-b border-gray-200">
+                    <thead>
+                      <tr className="border-b border-gray-200 bg-gray-50/50">
+                        <th className="w-10 py-3 px-4"></th>
                         <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
                         <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                        <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                        <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
                         <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Competitors</th>
                         <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredSentimentResults.map((result: Result) => {
+                        const isExpanded = expandedResponseRows.has(result.id);
+
                         // Calculate rank
                         let rank = 0;
                         const brandLower = (runStatus?.brand || '').toLowerCase();
@@ -10090,70 +10115,170 @@ export default function ResultsPage() {
                           }
                         }
 
+                        // Position badge styling
+                        const getPositionBadge = () => {
+                          if (rank === 0) {
+                            return (
+                              <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg bg-white">
+                                Not shown
+                              </span>
+                            );
+                          }
+                          const colors = rank === 1
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : rank === 2
+                            ? 'bg-gray-50 text-gray-600 border-gray-200'
+                            : rank === 3
+                            ? 'bg-orange-50 text-orange-700 border-orange-200'
+                            : 'bg-gray-50 text-gray-500 border-gray-200';
+                          return (
+                            <span className={`inline-flex items-center justify-center w-10 h-10 text-sm font-semibold rounded-full border-2 ${colors}`}>
+                              #{rank}
+                            </span>
+                          );
+                        };
+
+                        // Sentiment badge
+                        const getSentimentBadge = () => {
+                          const sentiment = result.brand_sentiment;
+                          if (!sentiment || sentiment === 'not_mentioned') {
+                            return (
+                              <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-full bg-white">
+                                Not mentioned
+                              </span>
+                            );
+                          }
+                          const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
+                            'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
+                            'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
+                            'neutral_mention': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
+                            'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
+                            'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
+                          };
+                          const config = configs[sentiment] || { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200', label: 'Unknown' };
+                          return (
+                            <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${config.bg} ${config.text} ${config.border}`}>
+                              {config.label}
+                            </span>
+                          );
+                        };
+
                         // Get competitor info
-                        const mentionedCompetitors = result.competitor_sentiments
-                          ? Object.entries(result.competitor_sentiments).filter(([_, sentiment]) => sentiment !== 'not_mentioned')
-                          : [];
+                        const competitors = result.competitors_mentioned || [];
+                        const getCompetitorsList = () => {
+                          if (competitors.length === 0) {
+                            return <span className="text-sm text-gray-400">None</span>;
+                          }
+                          const displayed = competitors.slice(0, 2);
+                          const remaining = competitors.length - 2;
+                          return (
+                            <span className="text-sm text-gray-700">
+                              {displayed.join(', ')}
+                              {remaining > 0 && (
+                                <span className="text-gray-400 ml-1">+{remaining}</span>
+                              )}
+                            </span>
+                          );
+                        };
 
                         return (
                           <React.Fragment key={result.id}>
-                            <tr className="border-b border-gray-100 hover:bg-gray-50">
-                              <td className="py-3 px-4">
-                                <p className="text-sm text-gray-900" title={result.prompt}>
-                                  {truncate(result.prompt, 50)}
-                                </p>
+                            <tr
+                              className={`border-b border-gray-100 cursor-pointer transition-colors ${isExpanded ? 'bg-gray-50/60' : 'hover:bg-gray-50/40'}`}
+                              onClick={() => {
+                                const newExpanded = new Set(expandedResponseRows);
+                                if (isExpanded) {
+                                  newExpanded.delete(result.id);
+                                } else {
+                                  newExpanded.add(result.id);
+                                }
+                                setExpandedResponseRows(newExpanded);
+                              }}
+                            >
+                              <td className="py-4 px-4">
+                                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                               </td>
-                              <td className="py-3 px-4">
-                                <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
+                              <td className="py-4 px-4">
+                                <p className="text-sm text-gray-900 font-medium">{truncate(result.prompt, 40)}</p>
                               </td>
-                              <td className="py-3 px-4">
-                                {rank > 0 ? (
-                                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
-                                    rank === 1 ? 'bg-green-100 text-green-700' :
-                                    rank <= 3 ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-gray-100 text-gray-600'
-                                  }`}>
-                                    #{rank}
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-lg">
-                                    Not shown
-                                  </span>
-                                )}
+                              <td className="py-4 px-4">
+                                <span className="text-sm text-gray-600">{getProviderLabel(result.provider)}</span>
                               </td>
-                              <td className="py-3 px-4">
-                                {result.brand_sentiment ? (
-                                  <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
-                                    result.brand_sentiment === 'strong_endorsement' ? 'bg-green-100 text-green-700' :
-                                    result.brand_sentiment === 'positive_endorsement' ? 'bg-lime-100 text-lime-700' :
-                                    result.brand_sentiment === 'conditional' ? 'bg-orange-100 text-orange-700' :
-                                    result.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-700' :
-                                    'bg-gray-100 text-gray-600'
-                                  }`}>
-                                    {getSentimentLabel(result.brand_sentiment)}
-                                  </span>
-                                ) : (
-                                  <span className="text-sm text-gray-400">-</span>
-                                )}
+                              <td className="py-4 px-4 text-center">
+                                {getPositionBadge()}
                               </td>
-                              <td className="py-3 px-4">
-                                {mentionedCompetitors.length > 0 ? (
-                                  <span className="text-sm text-gray-700">
-                                    {mentionedCompetitors.length} mentioned
-                                  </span>
-                                ) : (
-                                  <span className="text-sm text-gray-400">None</span>
-                                )}
+                              <td className="py-4 px-4 text-center">
+                                {getSentimentBadge()}
                               </td>
-                              <td className="py-3 px-4 text-right">
+                              <td className="py-4 px-4">
+                                {getCompetitorsList()}
+                              </td>
+                              <td className="py-4 px-4 text-right">
                                 <button
-                                  onClick={() => setSelectedResult(result)}
-                                  className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedResult(result);
+                                  }}
+                                  className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
                                 >
-                                  View
+                                  View <ExternalLink className="w-3 h-3" />
                                 </button>
                               </td>
                             </tr>
+                            {/* Expanded Content */}
+                            {isExpanded && (
+                              <tr className="bg-gray-50/60">
+                                <td colSpan={7} className="px-6 py-4">
+                                  <div className="pl-8 space-y-4">
+                                    {/* Full Response */}
+                                    <div>
+                                      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Full Response</h4>
+                                      <div className="text-sm text-gray-700 bg-white rounded-lg border border-gray-200 p-4 max-h-48 overflow-y-auto">
+                                        <div className="prose prose-sm max-w-none">
+                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {result.response_text || 'No response text available'}
+                                          </ReactMarkdown>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    {/* Sources */}
+                                    {result.sources && result.sources.length > 0 && (
+                                      <div>
+                                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Sources</h4>
+                                        <div className="flex flex-wrap gap-2">
+                                          {result.sources.slice(0, 5).map((source, idx) => {
+                                            let domain = source.url;
+                                            try {
+                                              domain = new URL(source.url).hostname.replace(/^www\./, '');
+                                            } catch {
+                                              domain = source.url.split('/')[2] || source.url;
+                                            }
+                                            return (
+                                              <a
+                                                key={idx}
+                                                href={source.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-md text-xs text-gray-600 hover:border-[#4A7C59] hover:text-[#4A7C59] transition-colors"
+                                              >
+                                                <Globe className="w-3 h-3" />
+                                                {domain}
+                                              </a>
+                                            );
+                                          })}
+                                          {result.sources.length > 5 && (
+                                            <span className="inline-flex items-center px-2 py-1 text-xs text-gray-400">
+                                              +{result.sources.length - 5} more
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
                           </React.Fragment>
                         );
                       })}
@@ -10164,23 +10289,22 @@ export default function ResultsPage() {
             );
           })()}
 
-          <div className="flex items-center justify-end mt-4">
-            <div className="flex gap-2">
-              <button
-                onClick={handleExportSentimentCSV}
-                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-              >
-                <Download className="w-4 h-4" />
-                Export CSV
-              </button>
-              <button
-                onClick={handleCopyLink}
-                className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
-              >
-                <Link2 className="w-4 h-4" />
-                {copied ? 'Copied!' : 'Share'}
-              </button>
-            </div>
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 p-4 bg-gray-50/50 border-t border-gray-100 rounded-b-2xl">
+            <button
+              onClick={handleExportSentimentCSV}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Link2 className="w-4 h-4" />
+              {copied ? 'Copied!' : 'Share'}
+            </button>
           </div>
         </div>
       </div>
@@ -11925,20 +12049,32 @@ export default function ResultsPage() {
                   isSearchedBrand: stat.isSearchedBrand,
                 }));
 
-              // Group points by their position (same mentions and similar sentiment)
+              // Group points by proximity (within 1 mention and 0.5 sentiment)
+              // This catches labels that would visually overlap even if not at exact same position
+              const getClusterKey = (mentions: number, sentiment: number) => {
+                // Round to nearest integer for mentions, round to 0.5 for sentiment
+                const mentionBucket = Math.round(mentions);
+                const sentimentBucket = Math.round(sentiment * 2) / 2;
+                return `${mentionBucket}-${sentimentBucket}`;
+              };
+
               const positionGroups: Record<string, typeof rawData> = {};
               rawData.forEach(point => {
-                // Round sentiment to 1 decimal for grouping
-                const key = `${point.mentions}-${point.sentiment.toFixed(1)}`;
+                const key = getClusterKey(point.mentions, point.sentiment);
                 if (!positionGroups[key]) {
                   positionGroups[key] = [];
                 }
                 positionGroups[key].push(point);
               });
 
+              // Sort each group by sentiment for consistent ordering
+              Object.values(positionGroups).forEach(group => {
+                group.sort((a, b) => a.sentiment - b.sentiment);
+              });
+
               // Add offset information to each point
               const processedData = rawData.map(point => {
-                const key = `${point.mentions}-${point.sentiment.toFixed(1)}`;
+                const key = getClusterKey(point.mentions, point.sentiment);
                 const group = positionGroups[key];
                 const indexInGroup = group.findIndex(p => p.brand === point.brand);
                 const groupSize = group.length;
@@ -12049,40 +12185,41 @@ export default function ResultsPage() {
                           const totalWidth = (groupSize - 1) * spacing;
                           const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
-                          // Calculate label offset - spread labels for 3+ items
+                          // Calculate label offset - spread labels to avoid overlaps
                           let labelXOffset = 0;
-                          let labelYOffset = -(isSearched ? 14 : 11); // Default: above
+                          let labelYOffset = -(isSearched ? 16 : 14); // Default: above
                           let textAnchor: 'start' | 'middle' | 'end' = 'middle';
 
                           if (groupSize === 1) {
                             // Single item: label above center
                             labelXOffset = 0;
-                            labelYOffset = -(isSearched ? 14 : 11);
+                            labelYOffset = -(isSearched ? 16 : 14);
                           } else if (groupSize === 2) {
-                            // Two items: alternate above/below
-                            labelYOffset = indexInGroup === 0
-                              ? -(isSearched ? 14 : 11)
-                              : (isSearched ? 22 : 18);
+                            // Two items: one above-left, one above-right
+                            const labelDistance = 20;
+                            if (indexInGroup === 0) {
+                              labelXOffset = -labelDistance;
+                              labelYOffset = -(isSearched ? 14 : 12);
+                              textAnchor = 'end';
+                            } else {
+                              labelXOffset = labelDistance;
+                              labelYOffset = -(isSearched ? 14 : 12);
+                              textAnchor = 'start';
+                            }
                           } else {
-                            // 3+ items: spread labels in different directions
-                            // Position labels at different angles around the cluster
-                            const labelDistance = isSearched ? 18 : 15;
-                            const angles = [
-                              -90,   // top
-                              150,   // bottom-left
-                              30,    // bottom-right
-                              -45,   // top-right
-                              -135,  // top-left
-                              90,    // bottom
-                            ];
-                            const angle = angles[indexInGroup % angles.length];
+                            // 3+ items: spread labels radially with larger distance
+                            const labelDistance = isSearched ? 28 : 24;
+                            // Evenly distribute angles starting from top, going clockwise
+                            const startAngle = -90; // Start from top
+                            const angleStep = 360 / groupSize;
+                            const angle = startAngle + (indexInGroup * angleStep);
                             const radians = (angle * Math.PI) / 180;
                             labelXOffset = Math.cos(radians) * labelDistance;
                             labelYOffset = Math.sin(radians) * labelDistance;
 
                             // Adjust text anchor based on horizontal position
-                            if (labelXOffset < -5) textAnchor = 'end';
-                            else if (labelXOffset > 5) textAnchor = 'start';
+                            if (labelXOffset < -8) textAnchor = 'end';
+                            else if (labelXOffset > 8) textAnchor = 'start';
                           }
 
                           return (
