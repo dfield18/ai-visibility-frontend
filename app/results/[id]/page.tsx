@@ -3776,41 +3776,43 @@ export default function ResultsPage() {
                   </div>
                 </div>
               </div>
-              {/* Position Visual Container */}
-              <div className="h-[100px]">
-                {/* Large Position Number */}
-                <div className="text-center mb-3">
-                  <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: avgRank <= 1.5 ? '#16a34a' : avgRank <= 3 ? '#eab308' : '#f97316' }}>
-                    {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
-                  </span>
-                </div>
-                {/* Position Scale */}
-                <div className="px-6">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[10px] text-gray-400">Best</span>
-                    <span className="text-[10px] text-gray-400">Worst</span>
+              {/* Position Visual Container - matches donut chart container */}
+              <div className="h-[100px] flex items-start">
+                <div className="w-full">
+                  {/* Large Position Number */}
+                  <div className="text-center mb-2">
+                    <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: avgRank <= 1.5 ? '#16a34a' : avgRank <= 3 ? '#eab308' : '#f97316' }}>
+                      {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
+                    </span>
                   </div>
-                  <div className="flex justify-center gap-1">
-                    {[1, 2, 3, 4, 5].map((pos) => {
-                      const isHighlighted = avgRank > 0 && Math.round(avgRank) === pos;
-                      // Color based on position value
-                      const getPositionColor = () => {
-                        if (!isHighlighted) return 'bg-gray-100 text-gray-400';
-                        if (pos <= 1) return 'bg-green-600 text-white';
-                        if (pos <= 2) return 'bg-green-500 text-white';
-                        if (pos <= 3) return 'bg-yellow-500 text-white';
-                        if (pos <= 4) return 'bg-orange-500 text-white';
-                        return 'bg-orange-600 text-white';
-                      };
-                      return (
-                        <div
-                          key={pos}
-                          className={`w-6 h-6 rounded flex items-center justify-center text-xs font-semibold ${getPositionColor()}`}
-                        >
-                          {pos}
-                        </div>
-                      );
-                    })}
+                  {/* Position Scale */}
+                  <div className="px-4">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-[10px] text-gray-400">Best</span>
+                      <span className="text-[10px] text-gray-400">Worst</span>
+                    </div>
+                    <div className="flex justify-center gap-1.5">
+                      {[1, 2, 3, 4, 5].map((pos) => {
+                        const isHighlighted = avgRank > 0 && Math.round(avgRank) === pos;
+                        // Color based on position value
+                        const getPositionColor = () => {
+                          if (!isHighlighted) return 'bg-gray-100 text-gray-400';
+                          if (pos <= 1) return 'bg-green-600 text-white';
+                          if (pos <= 2) return 'bg-green-500 text-white';
+                          if (pos <= 3) return 'bg-yellow-500 text-white';
+                          if (pos <= 4) return 'bg-orange-500 text-white';
+                          return 'bg-orange-600 text-white';
+                        };
+                        return (
+                          <div
+                            key={pos}
+                            className={`w-7 h-7 rounded flex items-center justify-center text-xs font-semibold ${getPositionColor()}`}
+                          >
+                            {pos}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -8283,18 +8285,19 @@ export default function ResultsPage() {
       provider,
       sentiment,
       count,
-      bgColor,
-      textColor,
       popupPosition = 'bottom'
     }: {
       provider: string;
       sentiment: string;
       count: number;
-      bgColor: string;
-      textColor: string;
+      bgColor?: string;
+      textColor?: string;
       popupPosition?: 'top' | 'bottom';
     }) => {
-      if (count === 0) return null;
+      // Show dash for zero count
+      if (count === 0) {
+        return <span className="text-gray-400">-</span>;
+      }
 
       const isHovered = hoveredSentimentBadge?.provider === provider && hoveredSentimentBadge?.sentiment === sentiment;
       const matchingResults = isHovered ? getResultsForProviderSentiment(provider, sentiment) : [];
@@ -8327,6 +8330,26 @@ export default function ResultsPage() {
 
       const hasMultipleResults = resultsForClick.length > 1;
 
+      // Get badge style based on sentiment type
+      const getBadgeStyle = () => {
+        switch (sentiment) {
+          case 'strong_endorsement':
+            return 'bg-green-500 text-white'; // Filled green
+          case 'positive_endorsement':
+            return 'bg-white border-2 border-green-500 text-green-600'; // Outline green
+          case 'neutral_mention':
+            return 'bg-white border-2 border-gray-300 text-gray-600'; // Outline gray
+          case 'conditional':
+            return 'bg-amber-100 border-2 border-amber-300 text-amber-700'; // Filled amber/yellow
+          case 'negative_comparison':
+            return 'bg-white border-2 border-red-400 text-red-500'; // Outline red
+          case 'not_mentioned':
+            return 'bg-white border-2 border-gray-300 text-gray-500'; // Outline gray
+          default:
+            return 'bg-gray-100 text-gray-600';
+        }
+      };
+
       return (
         <div
           className="relative inline-block"
@@ -8334,7 +8357,7 @@ export default function ResultsPage() {
           onMouseLeave={handleMouseLeave}
         >
           <div
-            className={`inline-flex items-center justify-center w-8 h-8 ${bgColor} ${textColor} text-sm font-medium rounded-lg cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all`}
+            className={`inline-flex items-center justify-center w-9 h-9 text-sm font-semibold rounded-full cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all ${getBadgeStyle()}`}
             onClick={handleClick}
           >
             {count}
@@ -8527,18 +8550,25 @@ export default function ResultsPage() {
               <div className="space-y-3">
                 {brandSentimentData.map((d) => (
                   <div key={d.sentiment} className="flex items-center gap-3">
-                    <div className="w-44 text-sm text-gray-600 shrink-0">{d.label}</div>
-                    <div className="flex-1 bg-gray-100 rounded-full h-6 overflow-hidden">
+                    <div className="w-36 text-sm text-gray-600 shrink-0">{d.label}</div>
+                    <div className="flex-1 bg-gray-100 rounded-lg h-7 overflow-hidden relative">
                       <div
-                        className="h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-lg transition-all duration-500 flex items-center"
                         style={{
-                          width: `${d.percentage}%`,
+                          width: `${Math.max(d.percentage, d.percentage > 0 ? 15 : 0)}%`,
                           backgroundColor: d.color,
+                          minWidth: d.percentage > 0 ? '48px' : '0',
                         }}
-                      />
+                      >
+                        {d.percentage > 0 && (
+                          <span className="text-xs font-semibold text-white ml-2 whitespace-nowrap">
+                            {d.percentage.toFixed(0)}%
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="w-20 text-right">
-                      <span className="text-sm font-medium text-gray-900">{d.count}</span>
+                    <div className="w-20 text-right shrink-0">
+                      <span className="text-sm font-semibold text-gray-900">{d.count}</span>
                       <span className="text-xs text-gray-500 ml-1">({d.percentage.toFixed(0)}%)</span>
                     </div>
                   </div>
@@ -8617,13 +8647,28 @@ export default function ResultsPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-green-600">Highly Recommended</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-lime-600">Recommended</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-blue-600">Mentioned</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-yellow-600">With Caveats</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-red-600">Not Recommended</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Not Mentioned</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Endorsement Rate</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-green-600">
+                    <div>Highly</div>
+                    <div>Recommended</div>
+                  </th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-green-500">Recommended</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Mentioned</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">
+                    <div>With</div>
+                    <div>Caveats</div>
+                  </th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-red-500">
+                    <div>Not</div>
+                    <div>Recommended</div>
+                  </th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-400">
+                    <div>Not</div>
+                    <div>Mentioned</div>
+                  </th>
+                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">
+                    <div>Endorsement</div>
+                    <div>Rate</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -8698,8 +8743,8 @@ export default function ResultsPage() {
                           popupPosition={popupPos}
                         />
                       </td>
-                      <td className="text-right py-3 px-4">
-                        <span className={`text-sm font-medium ${row.strongRate >= 50 ? 'text-green-600' : row.strongRate >= 25 ? 'text-blue-600' : 'text-gray-600'}`}>
+                      <td className="text-center py-3 px-4">
+                        <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-green-500' : row.strongRate >= 25 ? 'text-green-400' : 'text-gray-500'}`}>
                           {row.strongRate.toFixed(0)}%
                         </span>
                       </td>
@@ -8722,12 +8767,24 @@ export default function ResultsPage() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-green-600">Highly Recommended</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-lime-600">Recommended</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-blue-600">Mentioned</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-yellow-600">With Caveats</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-red-600">Not Recommended</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Endorsement Rate</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-green-600">
+                      <div>Highly</div>
+                      <div>Recommended</div>
+                    </th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-green-500">Recommended</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Mentioned</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">
+                      <div>With</div>
+                      <div>Caveats</div>
+                    </th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-red-500">
+                      <div>Not</div>
+                      <div>Recommended</div>
+                    </th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">
+                      <div>Endorsement</div>
+                      <div>Rate</div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -8817,8 +8874,8 @@ export default function ResultsPage() {
                           </span>
                         )}
                       </td>
-                      <td className="text-right py-3 px-4">
-                        <span className={`text-sm font-medium ${row.strongRate >= 50 ? 'text-green-600' : row.strongRate >= 25 ? 'text-blue-600' : 'text-gray-600'}`}>
+                      <td className="text-center py-3 px-4">
+                        <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-green-500' : row.strongRate >= 25 ? 'text-green-400' : 'text-gray-500'}`}>
                           {row.strongRate.toFixed(0)}%
                         </span>
                       </td>
@@ -11427,8 +11484,8 @@ export default function ResultsPage() {
                   </table>
                 </div>
 
-                {/* Export buttons */}
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                {/* Export buttons - bottom right */}
+                <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                   <button
                     onClick={handleExportHeatmapCSV}
                     className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
