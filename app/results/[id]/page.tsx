@@ -7903,24 +7903,31 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Source Positioning Chart */}
+        {/* Source Influence Map */}
         {sourcePositioningData.length > 0 && (() => {
+          // Filter to only sources with position data
+          const dataWithPosition = sourcePositioningData.filter(d => d.avgPosition !== null && d.avgPosition > 0);
+
+          if (dataWithPosition.length === 0) {
+            return null; // No data to display
+          }
+
           // Calculate dynamic axis ranges
-          const maxProviders = Math.max(...sourcePositioningData.map(d => d.providerCount), 1);
-          const maxBrandMentionRate = Math.max(...sourcePositioningData.map(d => d.brandMentionRate), 10);
+          const maxProviders = Math.max(...dataWithPosition.map(d => d.providerCount), 1);
+          const maxPosition = Math.max(...dataWithPosition.map(d => d.avgPosition || 1), 5);
 
           // Group points by position to handle overlaps
-          const positionGroups: Record<string, typeof sourcePositioningData> = {};
-          sourcePositioningData.forEach(point => {
-            const key = `${point.providerCount}-${point.brandMentionRate}`;
+          const positionGroups: Record<string, typeof dataWithPosition> = {};
+          dataWithPosition.forEach(point => {
+            const key = `${point.providerCount}-${(point.avgPosition || 0).toFixed(1)}`;
             if (!positionGroups[key]) {
               positionGroups[key] = [];
             }
             positionGroups[key].push(point);
           });
 
-          const processedData = sourcePositioningData.map(point => {
-            const key = `${point.providerCount}-${point.brandMentionRate}`;
+          const processedData = dataWithPosition.map(point => {
+            const key = `${point.providerCount}-${(point.avgPosition || 0).toFixed(1)}`;
             const group = positionGroups[key];
             const indexInGroup = group.findIndex(p => p.domain === point.domain);
             return {
@@ -7936,7 +7943,7 @@ export default function ResultsPage() {
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">Source Influence Map</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    How sources perform across AI model coverage and brand association
+                    Which sources correlate with better brand positioning across AI models
                   </p>
                 </div>
                 <select
@@ -7954,7 +7961,7 @@ export default function ResultsPage() {
                   <span className="font-medium">Provider Diversity (X-axis):</span> Number of different AI models that cite this source. Higher = more widely trusted.
                 </p>
                 <p className="text-xs text-gray-600">
-                  <span className="font-medium">Brand Mention Rate (Y-axis):</span> Percentage of citations where your brand was mentioned alongside this source.
+                  <span className="font-medium">Avg. Brand Position (Y-axis):</span> Where your brand typically ranks when this source is cited. Lower = better (e.g., #1 is top).
                 </p>
                 <p className="text-xs text-gray-600">
                   <span className="font-medium">Color:</span> Average sentiment when this source is cited. Green = positive, yellow = neutral, red = negative.
@@ -7976,13 +7983,15 @@ export default function ResultsPage() {
                     />
                     <YAxis
                       type="number"
-                      dataKey="brandMentionRate"
-                      name="Brand Mention Rate"
-                      domain={[0, Math.min(Math.ceil(maxBrandMentionRate / 10) * 10 + 10, 100)]}
-                      tickFormatter={(value) => `${value}%`}
+                      dataKey="avgPosition"
+                      name="Avg. Brand Position"
+                      domain={[0.5, Math.ceil(maxPosition) + 0.5]}
+                      reversed={true}
+                      ticks={Array.from({ length: Math.ceil(maxPosition) }, (_, i) => i + 1)}
+                      tickFormatter={(value) => `#${value}`}
                       tick={{ fill: '#6b7280', fontSize: 12 }}
                       label={{
-                        value: 'Brand Mention Rate (%)',
+                        value: 'Avg. Brand Position (lower is better)',
                         angle: -90,
                         position: 'insideLeft',
                         offset: 10,
@@ -7999,13 +8008,11 @@ export default function ResultsPage() {
                             <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm max-w-[280px]">
                               <p className="font-medium text-gray-900 mb-2">{data.domain}</p>
                               <div className="space-y-1 text-gray-600">
-                                <p>Citations: <span className="font-medium">{data.citationCount}</span></p>
+                                <p>Avg. Brand Position: <span className="font-medium text-[#4A7C59]">#{data.avgPosition?.toFixed(1)}</span></p>
                                 <p>AI Models: <span className="font-medium">{data.providerCount}</span> ({data.providers.map((p: string) => getProviderLabel(p)).join(', ')})</p>
-                                <p>Brand Mention Rate: <span className="font-medium">{data.brandMentionRate}%</span></p>
+                                <p>Citations: <span className="font-medium">{data.citationCount}</span></p>
                                 <p>Avg. Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentiment)] || 'N/A'}</span></p>
-                                {data.avgPosition && (
-                                  <p>Avg. Brand Position: <span className="font-medium">#{data.avgPosition.toFixed(1)}</span></p>
-                                )}
+                                <p>Brand Mention Rate: <span className="font-medium">{data.brandMentionRate}%</span></p>
                               </div>
                             </div>
                           );
