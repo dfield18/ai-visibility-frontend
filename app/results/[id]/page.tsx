@@ -8478,10 +8478,10 @@ export default function ResultsPage() {
                 const isExpanded = expandedBrandCitations.has(citation.brand);
                 return (
                   <div key={citation.brand} className="bg-[#FAFAF8] rounded-lg overflow-hidden">
-                    <div
-                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100"
-                      onClick={(e) => {
-                        e.preventDefault();
+                    <button
+                      type="button"
+                      className="w-full flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 text-left"
+                      onClick={() => {
                         const newExpanded = new Set(expandedBrandCitations);
                         if (isExpanded) {
                           newExpanded.delete(citation.brand);
@@ -8491,15 +8491,15 @@ export default function ResultsPage() {
                         setExpandedBrandCitations(newExpanded);
                       }}
                     >
-                      <span className="text-sm font-medium text-gray-400 w-6 pointer-events-none">{index + 1}.</span>
-                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59] pointer-events-none">
+                      <span className="text-sm font-medium text-gray-400 w-6">{index + 1}.</span>
+                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
                         {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
                         <span>{capitalizeFirst(citation.brand)}&apos;s website</span>
                         {citation.isSearchedBrand && (
                           <span className="text-xs px-1.5 py-0.5 bg-[#4A7C59] text-white rounded">searched</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 pointer-events-none">
+                      <div className="flex items-center gap-3">
                         <div className="flex gap-1">
                           {citation.providers.map((provider) => (
                             <span key={provider} className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">
@@ -8512,7 +8512,7 @@ export default function ResultsPage() {
                           <span className="text-xs text-gray-400 ml-1">({citation.rate.toFixed(0)}%)</span>
                         </span>
                       </div>
-                    </div>
+                    </button>
                     {isExpanded && citation.urls.length > 0 && (
                       <div className="px-3 pb-3 pt-1 border-t border-gray-200 ml-9">
                         <p className="text-xs text-gray-500 mb-2">
