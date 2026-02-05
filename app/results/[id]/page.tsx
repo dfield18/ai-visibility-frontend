@@ -4219,21 +4219,24 @@ export default function ResultsPage() {
       {/* AI Brand Position by Platform */}
       {Object.keys(positionByPlatformData).length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-gray-900">AI Brand Position by Platform</h2>
-              <div className="relative group">
-                <button
-                  className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                  aria-label="Learn more about AI Brand Position"
-                  tabIndex={0}
-                >
-                  <HelpCircle className="w-4 h-4 text-gray-400" />
-                </button>
-                <div className="absolute left-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                  Shows where your brand appears in AI responses across different platforms{showSentimentColors ? ', colored by sentiment' : ''}.
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-gray-900">AI Brand Position by Platform</h2>
+                <div className="relative group">
+                  <button
+                    className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Learn more about AI Brand Position"
+                    tabIndex={0}
+                  >
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                  </button>
+                  <div className="absolute left-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                    Shows where your brand appears in AI responses across different platforms{showSentimentColors ? ', colored by sentiment' : ''}.
+                  </div>
                 </div>
               </div>
+              <p className="text-sm text-gray-500 mt-1">How often {runStatus?.brand} ranks in each position across AI platforms</p>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
               <span className="text-xs text-gray-500">Show sentiment</span>
@@ -8055,25 +8058,38 @@ export default function ResultsPage() {
                             <p className="text-xs text-gray-500 mb-1.5">
                               {source.urlDetails.length > 1 ? `${source.urlDetails.length} unique pages:` : `${source.count} citation from this page:`}
                             </p>
-                            <div className="space-y-1">
+                            <div className="space-y-1.5">
                               {source.urlDetails.map((urlDetail, idx) => {
                                 const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
                                 const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
                                 return (
-                                  <a
-                                    key={idx}
-                                    href={urlDetail.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-1.5 text-xs text-[#4A7C59] hover:text-[#3d6649] hover:underline"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
-                                    <span className="truncate">
-                                      {displayTitle && displayTitle !== source.domain ? displayTitle : source.domain}
-                                    </span>
-                                    <span className="text-gray-400 flex-shrink-0">({urlDetail.count})</span>
-                                  </a>
+                                  <div key={idx} className="flex items-center justify-between gap-2">
+                                    <a
+                                      href={urlDetail.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="flex items-center gap-1.5 text-xs text-[#4A7C59] hover:text-[#3d6649] hover:underline min-w-0 flex-1"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
+                                      <span className="truncate">
+                                        {displayTitle && displayTitle !== source.domain ? displayTitle : source.domain}
+                                      </span>
+                                    </a>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      <div className="flex gap-0.5">
+                                        {urlDetail.providers.slice(0, 3).map((provider) => (
+                                          <span key={provider} className="text-[9px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
+                                            {getProviderShortLabel(provider)}
+                                          </span>
+                                        ))}
+                                        {urlDetail.providers.length > 3 && (
+                                          <span className="text-[9px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded">+{urlDetail.providers.length - 3}</span>
+                                        )}
+                                      </div>
+                                      <span className="text-[10px] text-gray-400">({urlDetail.count})</span>
+                                    </div>
+                                  </div>
                                 );
                               })}
                             </div>
@@ -12030,13 +12046,13 @@ export default function ResultsPage() {
                             const data = payload[0].payload;
                             const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
                             return (
-                              <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
-                                <p className="font-medium text-gray-900 mb-1">{data.brand}</p>
-                                <p className="text-gray-600">Mentions: {data.mentions}</p>
-                                <p className="text-gray-600">
-                                  Sentiment: {sentimentLabels[Math.round(data.sentiment)] || 'N/A'}
-                                </p>
-                                <p className="text-gray-600">Visibility: {data.visibility.toFixed(0)}%</p>
+                              <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm max-w-[300px]">
+                                <p className="font-medium text-gray-900 mb-2">{data.brand}{data.isSearchedBrand ? ' (searched)' : ''}</p>
+                                <div className="space-y-1 text-gray-600">
+                                  <p>Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.sentiment)] || 'N/A'}</span></p>
+                                  <p>Mentions: <span className="font-medium">{data.mentions}</span></p>
+                                  <p>Visibility: <span className="font-medium">{data.visibility.toFixed(0)}%</span></p>
+                                </div>
                               </div>
                             );
                           }
@@ -12051,47 +12067,49 @@ export default function ResultsPage() {
                           const groupSize = payload.groupSize || 1;
                           const indexInGroup = payload.indexInGroup || 0;
 
+                          // Color based on sentiment (green = good, red = bad)
+                          const sentiment = payload.sentiment || 3;
+                          const getColor = () => {
+                            if (sentiment >= 4.5) return '#15803d'; // Strong - dark green
+                            if (sentiment >= 3.5) return '#22c55e'; // Positive - green
+                            if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
+                            if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
+                            return '#dc2626'; // Negative - red
+                          };
+                          const getStroke = () => {
+                            if (sentiment >= 4.5) return '#166534';
+                            if (sentiment >= 3.5) return '#166534';
+                            if (sentiment >= 2.5) return '#a16207';
+                            if (sentiment >= 1.5) return '#c2410c';
+                            return '#991b1b';
+                          };
+
                           // Calculate horizontal offset for overlapping points
-                          const circleRadius = isSearched ? 10 : 7;
-                          const spacing = 20; // Space between circles
+                          const circleRadius = isSearched ? 10 : 8;
+                          const spacing = 22; // Space between circles
                           const totalWidth = (groupSize - 1) * spacing;
                           const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
+                          // Truncate brand name for label
+                          const shortBrand = payload.brand.length > 15
+                            ? payload.brand.substring(0, 13) + '...'
+                            : payload.brand;
+
                           // Calculate label offset - spread labels to avoid overlaps
                           let labelXOffset = 0;
-                          let labelYOffset = -(isSearched ? 16 : 14); // Default: above
+                          let labelYOffset = -14; // Default: above
                           let textAnchor: 'start' | 'middle' | 'end' = 'middle';
 
-                          if (groupSize === 1) {
-                            // Single item: label above center
-                            labelXOffset = 0;
-                            labelYOffset = -(isSearched ? 16 : 14);
-                          } else if (groupSize === 2) {
-                            // Two items: one above-left, one above-right
-                            const labelDistance = 20;
-                            if (indexInGroup === 0) {
-                              labelXOffset = -labelDistance;
-                              labelYOffset = -(isSearched ? 14 : 12);
-                              textAnchor = 'end';
-                            } else {
-                              labelXOffset = labelDistance;
-                              labelYOffset = -(isSearched ? 14 : 12);
-                              textAnchor = 'start';
-                            }
-                          } else {
-                            // 3+ items: spread labels radially with larger distance
-                            const labelDistance = isSearched ? 28 : 24;
-                            // Evenly distribute angles starting from top, going clockwise
-                            const startAngle = -90; // Start from top
-                            const angleStep = 360 / groupSize;
-                            const angle = startAngle + (indexInGroup * angleStep);
+                          if (groupSize === 2) {
+                            labelYOffset = indexInGroup === 0 ? -14 : 22;
+                          } else if (groupSize >= 3) {
+                            const angles = [-90, 150, 30, -45, -135, 90];
+                            const angle = angles[indexInGroup % angles.length];
                             const radians = (angle * Math.PI) / 180;
-                            labelXOffset = Math.cos(radians) * labelDistance;
-                            labelYOffset = Math.sin(radians) * labelDistance;
-
-                            // Adjust text anchor based on horizontal position
-                            if (labelXOffset < -8) textAnchor = 'end';
-                            else if (labelXOffset > 8) textAnchor = 'start';
+                            labelXOffset = Math.cos(radians) * 18;
+                            labelYOffset = Math.sin(radians) * 18;
+                            if (labelXOffset < -5) textAnchor = 'end';
+                            else if (labelXOffset > 5) textAnchor = 'start';
                           }
 
                           return (
@@ -12100,20 +12118,21 @@ export default function ResultsPage() {
                                 cx={cx + xOffset}
                                 cy={cy}
                                 r={circleRadius}
-                                fill={isSearched ? '#4A7C59' : '#3b82f6'}
-                                stroke={isSearched ? '#3d6649' : '#2563eb'}
-                                strokeWidth={2}
-                                opacity={0.8}
+                                fill={getColor()}
+                                stroke={isSearched ? '#1f2937' : getStroke()}
+                                strokeWidth={isSearched ? 3 : 2}
+                                opacity={0.85}
+                                style={{ cursor: 'pointer' }}
                               />
                               <text
                                 x={cx + xOffset + labelXOffset}
                                 y={cy + labelYOffset}
                                 textAnchor={textAnchor}
-                                fill={isSearched ? '#4A7C59' : '#3b82f6'}
-                                fontSize={isSearched ? 12 : 11}
+                                fill="#374151"
+                                fontSize={isSearched ? 11 : 10}
                                 fontWeight={isSearched ? 600 : 500}
                               >
-                                {payload.brand.length > 15 ? payload.brand.substring(0, 13) + '...' : payload.brand}
+                                {shortBrand}
                               </text>
                             </g>
                           );
@@ -12121,6 +12140,32 @@ export default function ResultsPage() {
                       />
                     </ScatterChart>
                   </ResponsiveContainer>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500">
+                  <span className="text-gray-400 italic">Hover over dots for details • Searched brand has thicker border</span>
+                  <span className="text-gray-300">|</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-[#dc2626]"></div>
+                      <span>Negative</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-[#f97316]"></div>
+                      <span>Conditional</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
+                      <span>Neutral</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
+                      <span>Positive</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full bg-[#15803d]"></div>
+                      <span>Strong</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               );
@@ -12531,7 +12576,7 @@ export default function ResultsPage() {
                     <>
                       <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(74, 124, 89, 0.5)' }} />
-                        <span>Searched brand</span>
+                        <span>{runStatus?.brand || 'Searched brand'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(91, 163, 192, 0.5)' }} />
@@ -12779,8 +12824,10 @@ export default function ResultsPage() {
                   Temperature: {selectedResult.temperature}
                   {selectedResultHighlight && (
                     <span className="ml-2 text-[#4A7C59]">
-                      • Highlighting mentions of {selectedResultHighlight.brand}
-                      {selectedResultHighlight.domain && <> from {selectedResultHighlight.domain}</>}
+                      • Highlighting {selectedResultHighlight.domain
+                        ? <>references to <span className="font-medium">{selectedResultHighlight.domain}</span></>
+                        : <>mentions of <span className="font-medium">{selectedResultHighlight.brand}</span></>
+                      }
                     </span>
                   )}
                 </p>
@@ -12855,24 +12902,36 @@ export default function ResultsPage() {
                           </div>
                         ),
                         p: ({ children }) => {
-                          // Highlight paragraphs containing the highlighted brand
+                          // Highlight paragraphs containing the highlighted domain (from heatmap) or brand
                           if (selectedResultHighlight) {
                             const text = typeof children === 'string' ? children :
                               (Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '');
-                            const containsBrand = text.toLowerCase().includes(selectedResultHighlight.brand.toLowerCase());
-                            if (containsBrand) {
+                            const textLower = text.toLowerCase();
+                            // Prioritize domain highlighting when coming from heatmap
+                            const containsDomain = selectedResultHighlight.domain &&
+                              textLower.includes(selectedResultHighlight.domain.toLowerCase().replace('.com', '').replace('.org', '').replace('.net', ''));
+                            const containsBrand = textLower.includes(selectedResultHighlight.brand.toLowerCase());
+                            if (containsDomain) {
+                              return <p className="bg-yellow-100 rounded px-2 py-1 -mx-2 border-l-4 border-yellow-400">{children}</p>;
+                            } else if (containsBrand && !selectedResultHighlight.domain) {
                               return <p className="bg-yellow-100 rounded px-2 py-1 -mx-2 border-l-4 border-yellow-400">{children}</p>;
                             }
                           }
                           return <p>{children}</p>;
                         },
                         li: ({ children }) => {
-                          // Highlight list items containing the highlighted brand
+                          // Highlight list items containing the highlighted domain (from heatmap) or brand
                           if (selectedResultHighlight) {
                             const text = typeof children === 'string' ? children :
                               (Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '');
-                            const containsBrand = text.toLowerCase().includes(selectedResultHighlight.brand.toLowerCase());
-                            if (containsBrand) {
+                            const textLower = text.toLowerCase();
+                            // Prioritize domain highlighting when coming from heatmap
+                            const containsDomain = selectedResultHighlight.domain &&
+                              textLower.includes(selectedResultHighlight.domain.toLowerCase().replace('.com', '').replace('.org', '').replace('.net', ''));
+                            const containsBrand = textLower.includes(selectedResultHighlight.brand.toLowerCase());
+                            if (containsDomain) {
+                              return <li className="bg-yellow-100 rounded px-2 py-0.5 -mx-2 border-l-4 border-yellow-400">{children}</li>;
+                            } else if (containsBrand && !selectedResultHighlight.domain) {
                               return <li className="bg-yellow-100 rounded px-2 py-0.5 -mx-2 border-l-4 border-yellow-400">{children}</li>;
                             }
                           }
