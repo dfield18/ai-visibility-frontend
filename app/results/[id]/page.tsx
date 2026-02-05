@@ -1272,6 +1272,9 @@ export default function ResultsPage() {
   const [brandPositioningLlmFilter, setBrandPositioningLlmFilter] = useState<string>('all');
   const [brandPositioningPromptFilter, setBrandPositioningPromptFilter] = useState<string>('all');
 
+  // State for Prompt Performance Matrix filter
+  const [promptMatrixLlmFilter, setPromptMatrixLlmFilter] = useState<string>('all');
+
   // Calculate brand breakdown stats for competitive landscape
   const brandBreakdownStats = useMemo(() => {
     if (!runStatus) return [];
@@ -1518,7 +1521,11 @@ export default function ResultsPage() {
   const promptPerformanceMatrix = useMemo(() => {
     if (!runStatus) return { brands: [], prompts: [], matrix: [] };
 
-    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    const results = globallyFilteredResults.filter((r: Result) => {
+      if (r.error) return false;
+      if (promptMatrixLlmFilter !== 'all' && r.provider !== promptMatrixLlmFilter) return false;
+      return true;
+    });
     if (results.length === 0) return { brands: [], prompts: [], matrix: [] };
 
     const searchedBrand = runStatus.brand;
@@ -1547,7 +1554,7 @@ export default function ResultsPage() {
     });
 
     return { brands, prompts, matrix };
-  }, [runStatus, globallyFilteredResults]);
+  }, [runStatus, globallyFilteredResults, promptMatrixLlmFilter]);
 
   // Model Preference Analysis - which LLMs favor which brands
   const modelPreferenceData = useMemo(() => {
@@ -3773,24 +3780,24 @@ export default function ResultsPage() {
     return grouped;
   }, [scatterPlotData]);
 
-  // Get sentiment color for dot - matches the scatter chart colors
+  // Get sentiment color for dot - matches the legend colors consistently
   const getSentimentDotColor = (sentiment: string | null): string => {
-    if (!sentiment) return '#6b7280'; // gray for no sentiment
+    if (!sentiment) return '#9ca3af'; // gray for no sentiment
     switch (sentiment) {
       case 'strong_endorsement':
-        return '#22c55e'; // green-500 - Highly Recommended
+        return '#16a34a'; // green-600 - Highly Recommended
       case 'positive_endorsement':
-        return '#84cc16'; // lime-500 - Recommended
+        return '#4ade80'; // green-400 - Recommended
       case 'neutral_mention':
-        return '#6b7280'; // gray-500 - Neutral
+        return '#9ca3af'; // gray-400 - Neutral
       case 'conditional':
-        return '#fcd34d'; // amber-300 - With Caveats
+        return '#fbbf24'; // amber-400 - With Caveats
       case 'negative_comparison':
-        return '#f87171'; // red-400 - Not Recommended
+        return '#ef4444'; // red-500 - Not Recommended
       case 'not_mentioned':
         return '#d1d5db'; // gray-300 - Not mentioned
       default:
-        return '#6b7280'; // gray for unknown
+        return '#9ca3af'; // gray for unknown
     }
   };
 
@@ -4248,26 +4255,26 @@ export default function ResultsPage() {
           {/* Legend - only show when sentiment colors are enabled */}
           {showSentimentColors && (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
-              <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
+              <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                <span className="text-xs text-gray-500">Not Recommended</span>
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+                <span className="text-xs text-gray-500">Highly Recommended</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
-                <span className="text-xs text-gray-500">With Caveats</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                <span className="text-xs text-gray-500">Neutral</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4ade80' }} />
                 <span className="text-xs text-gray-500">Recommended</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                <span className="text-xs text-gray-500">Highly Recommended</span>
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
+                <span className="text-xs text-gray-500">Neutral</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
+                <span className="text-xs text-gray-500">With Caveats</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
+                <span className="text-xs text-gray-500">Not Recommended</span>
               </div>
             </div>
           )}
@@ -4729,7 +4736,7 @@ export default function ResultsPage() {
                   const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
                     'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
                     'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
-                    'neutral_mention': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
+                    'neutral_mention': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Neutral' },
                     'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
                     'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
                   };
@@ -4994,26 +5001,26 @@ export default function ResultsPage() {
               {/* Legend for All Answers view - shows sentiment when toggle is on */}
               {showSentimentColors && (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
-                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
+                  <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+                    <span className="text-xs text-gray-500">Highly Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
-                    <span className="text-xs text-gray-500">With Caveats</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-500">Neutral</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4ade80' }} />
                     <span className="text-xs text-gray-500">Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
+                    <span className="text-xs text-gray-500">With Caveats</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
+                    <span className="text-xs text-gray-500">Not Recommended</span>
                   </div>
                 </div>
               )}
@@ -5234,26 +5241,26 @@ export default function ResultsPage() {
               {/* Legend for Performance Range view - shows sentiment when toggle is on */}
               {showSentimentColors && (
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
-                  <span className="text-xs text-gray-500 font-medium">How AI presents your brand:</span>
+                  <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400 opacity-80" />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+                    <span className="text-xs text-gray-500">Highly Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-300" />
-                    <span className="text-xs text-gray-500">With Caveats</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-500 opacity-60" />
-                    <span className="text-xs text-gray-500">Neutral</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-lime-500 opacity-80" />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4ade80' }} />
                     <span className="text-xs text-gray-500">Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500 opacity-80" />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
+                    <span className="text-xs text-gray-500">Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
+                    <span className="text-xs text-gray-500">With Caveats</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
+                    <span className="text-xs text-gray-500">Not Recommended</span>
                   </div>
                 </div>
               )}
@@ -6608,7 +6615,7 @@ export default function ResultsPage() {
                                   const sentimentColors: Record<string, string> = {
                                     'strong_endorsement': 'bg-green-100 text-green-700',
                                     'positive_endorsement': 'bg-green-50 text-green-600',
-                                    'neutral_mention': 'bg-gray-100 text-gray-600',
+                                    'neutral_mention': 'bg-blue-100 text-blue-700',
                                     'conditional': 'bg-yellow-100 text-yellow-700',
                                     'negative_comparison': 'bg-red-100 text-red-700',
                                   };
@@ -6763,31 +6770,39 @@ export default function ResultsPage() {
 
       if (brandsInResult.length === 0) continue;
 
-      const seenDomains = new Set<string>();
+      // Track which domains have been counted for each brand in this response
+      const seenDomainBrandPairs = new Set<string>();
+
       for (const source of result.sources) {
         if (!source.url) continue;
         const domain = getDomain(source.url);
-
-        // Count each domain only once per response
-        if (seenDomains.has(domain)) continue;
-        seenDomains.add(domain);
+        const sourceText = `${source.title || ''} ${source.url}`.toLowerCase();
 
         if (!sourceBrandCounts[domain]) {
           sourceBrandCounts[domain] = {};
           sourceBrandSentiments[domain] = {};
         }
 
-        // Associate this source with all brands mentioned in the response
+        // Only associate this source with brands that are mentioned in the source title/URL
         brandsInResult.forEach(({ brand, sentiment }) => {
-          sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
+          const brandLower = brand.toLowerCase();
+          const pairKey = `${domain}:${brand}`;
 
-          // Track sentiment
-          if (!sourceBrandSentiments[domain][brand]) {
-            sourceBrandSentiments[domain][brand] = { total: 0, sum: 0 };
-          }
-          if (sentiment && sentimentScores[sentiment] !== undefined) {
-            sourceBrandSentiments[domain][brand].total += 1;
-            sourceBrandSentiments[domain][brand].sum += sentimentScores[sentiment];
+          // Check if brand is mentioned in the source title or URL
+          const brandMentionedInSource = sourceText.includes(brandLower);
+
+          if (brandMentionedInSource && !seenDomainBrandPairs.has(pairKey)) {
+            seenDomainBrandPairs.add(pairKey);
+            sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
+
+            // Track sentiment
+            if (!sourceBrandSentiments[domain][brand]) {
+              sourceBrandSentiments[domain][brand] = { total: 0, sum: 0 };
+            }
+            if (sentiment && sentimentScores[sentiment] !== undefined) {
+              sourceBrandSentiments[domain][brand].total += 1;
+              sourceBrandSentiments[domain][brand].sum += sentimentScores[sentiment];
+            }
           }
         });
       }
@@ -6854,25 +6869,28 @@ export default function ResultsPage() {
     if (!runStatus) return;
 
     // Find results that:
-    // 1. Have the specified domain in their sources
-    // 2. Mention the specified brand
+    // 1. Have a source from the specified domain that mentions the brand in title/URL
+    // 2. Mention the specified brand in the response
     const matchingResults = globallyFilteredResults.filter((result: Result) => {
       if (result.error || !result.sources || result.sources.length === 0) return false;
       if (heatmapProviderFilter !== 'all' && result.provider !== heatmapProviderFilter) return false;
 
-      // Check if source domain is cited
-      const hasDomain = result.sources.some((source: Source) => {
-        if (!source.url) return false;
-        return getDomain(source.url) === domain;
-      });
-      if (!hasDomain) return false;
+      // Check if brand is mentioned in the response
+      const brandMentioned = brand === runStatus.brand
+        ? result.brand_mentioned
+        : result.competitors_mentioned?.includes(brand);
+      if (!brandMentioned) return false;
 
-      // Check if brand is mentioned
-      if (brand === runStatus.brand) {
-        return result.brand_mentioned;
-      } else {
-        return result.competitors_mentioned?.includes(brand);
-      }
+      // Check if source domain is cited AND the source mentions the brand
+      const brandLower = brand.toLowerCase();
+      const hasMatchingSource = result.sources.some((source: Source) => {
+        if (!source.url) return false;
+        if (getDomain(source.url) !== domain) return false;
+        const sourceText = `${source.title || ''} ${source.url}`.toLowerCase();
+        return sourceText.includes(brandLower);
+      });
+
+      return hasMatchingSource;
     });
 
     if (matchingResults.length === 1) {
@@ -10077,7 +10095,7 @@ export default function ResultsPage() {
                           const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
                             'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
                             'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
-                            'neutral_mention': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
+                            'neutral_mention': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Neutral' },
                             'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
                             'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
                           };
@@ -12111,11 +12129,23 @@ export default function ResultsPage() {
             {/* Prompt Performance Matrix (Heatmap) */}
             {promptPerformanceMatrix.brands.length > 0 && promptPerformanceMatrix.prompts.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Prompt Performance Matrix</h2>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Visibility rates for each brand across different prompts
-                  </p>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Prompt Performance Matrix</h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Visibility rates for each brand across different prompts
+                    </p>
+                  </div>
+                  <select
+                    value={promptMatrixLlmFilter}
+                    onChange={(e) => setPromptMatrixLlmFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                  >
+                    <option value="all">All Models</option>
+                    {availableProviders.map((provider) => (
+                      <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -12943,7 +12973,6 @@ export default function ResultsPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-gray-400">#{idx + 1}</span>
                       <span className="text-sm font-medium text-gray-900">{getProviderLabel(result.provider)}</span>
-                      <span className="text-xs text-gray-500">T={result.temperature}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {result.brand_sentiment && result.brand_sentiment !== 'not_mentioned' && (
@@ -12965,7 +12994,7 @@ export default function ResultsPage() {
                   </div>
                   <p className="text-sm text-gray-600 mb-2 line-clamp-1">{result.prompt}</p>
                   <p className="text-xs text-gray-500 line-clamp-2">
-                    {result.response_text?.substring(0, 200)}...
+                    {stripMarkdown(result.response_text || '').substring(0, 200)}...
                   </p>
                 </div>
               ))}
