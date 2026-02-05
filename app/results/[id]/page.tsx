@@ -7811,26 +7811,6 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
-        {/* Key Sources Insights */}
-        {sourcesInsights.length > 0 && (
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Lightbulb className="w-5 h-5 text-purple-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Key Sources Insights</h2>
-            </div>
-            <ul className="space-y-3">
-              {sourcesInsights.map((insight, idx) => (
-                <li key={idx} className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
-                    {idx + 1}
-                  </div>
-                  <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {/* Key Influencers */}
         {keyInfluencers.length > 0 && (
           <div className="bg-gradient-to-r from-[#E8F0E8] to-[#F0F4F0] rounded-xl border border-[#4A7C59]/20 p-6">
@@ -7900,6 +7880,26 @@ export default function ResultsPage() {
                 })}
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Key Sources Insights */}
+        {sourcesInsights.length > 0 && (
+          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Lightbulb className="w-5 h-5 text-purple-600" />
+              <h2 className="text-lg font-semibold text-gray-900">Key Sources Insights</h2>
+            </div>
+            <ul className="space-y-3">
+              {sourcesInsights.map((insight, idx) => (
+                <li key={idx} className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
+                    {idx + 1}
+                  </div>
+                  <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 
