@@ -8222,11 +8222,10 @@ export default function ResultsPage() {
           const maxProviders = Math.max(...dataWithPosition.map(d => d.providerCount), 1);
           const maxPosition = Math.max(...dataWithPosition.map(d => d.avgPosition || 1), 5);
 
-          // Group points by proximity (within 1 provider and 0.5 position)
-          // This catches labels that would visually overlap even if not at exact same position
+          // Group points by proximity for label positioning
           const getClusterKey = (providerCount: number, avgPosition: number) => {
-            const providerBucket = providerCount; // Keep exact since it's already integer
-            const positionBucket = Math.round((avgPosition || 0) * 2) / 2; // Round to nearest 0.5
+            const providerBucket = providerCount;
+            const positionBucket = Math.round((avgPosition || 0) * 2) / 2;
             return `${providerBucket}-${positionBucket}`;
           };
 
@@ -8239,7 +8238,6 @@ export default function ResultsPage() {
             positionGroups[key].push(point);
           });
 
-          // Sort each group by position for consistent ordering
           Object.values(positionGroups).forEach(group => {
             group.sort((a, b) => (a.avgPosition || 0) - (b.avgPosition || 0));
           });
@@ -8276,7 +8274,7 @@ export default function ResultsPage() {
               </div>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
+                  <ScatterChart margin={{ top: 20, right: 40, bottom: 60, left: 60 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       type="number"
@@ -8312,14 +8310,14 @@ export default function ResultsPage() {
                           const data = payload[0].payload;
                           const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
                           return (
-                            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
-                              <p className="font-medium text-gray-900 mb-1">{data.domain}</p>
-                              <p className="text-gray-600">Avg. Position: #{data.avgPosition?.toFixed(1)}</p>
-                              <p className="text-gray-600">AI Models: {data.providerCount}</p>
-                              <p className="text-gray-600">Citations: {data.citationCount}</p>
-                              <p className="text-gray-600">
-                                Sentiment: {sentimentLabels[Math.round(data.avgSentiment)] || 'N/A'}
-                              </p>
+                            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm max-w-[280px]">
+                              <p className="font-medium text-gray-900 mb-2">{data.domain}</p>
+                              <div className="space-y-1 text-gray-600">
+                                <p>Avg. Position: <span className="font-medium">#{data.avgPosition?.toFixed(1)}</span></p>
+                                <p>AI Models: <span className="font-medium">{data.providerCount}</span></p>
+                                <p>Citations: <span className="font-medium">{data.citationCount}</span></p>
+                                <p>Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentiment)] || 'N/A'}</span></p>
+                              </div>
                             </div>
                           );
                         }
@@ -8333,24 +8331,19 @@ export default function ResultsPage() {
                         const groupSize = payload.groupSize || 1;
                         const indexInGroup = payload.indexInGroup || 0;
 
-                        // Size based on citation count
-                        const minSize = 7;
-                        const maxSize = 12;
-                        const maxCitations = Math.max(...sourcePositioningData.map(d => d.citationCount), 1);
-                        const circleRadius = minSize + ((payload.citationCount / maxCitations) * (maxSize - minSize));
+                        // Fixed size for cleaner look
+                        const circleRadius = 10;
 
                         // Color based on sentiment (1-5 scale)
-                        const getSentimentColor = () => {
-                          const sentiment = payload.avgSentiment;
-                          if (sentiment >= 4.5) return '#15803d'; // Strong - dark green
-                          if (sentiment >= 3.5) return '#22c55e'; // Positive - green
-                          if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
-                          if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
-                          return '#dc2626'; // Negative - red
+                        const sentiment = payload.avgSentiment;
+                        const getColor = () => {
+                          if (sentiment >= 4.5) return '#15803d';
+                          if (sentiment >= 3.5) return '#22c55e';
+                          if (sentiment >= 2.5) return '#eab308';
+                          if (sentiment >= 1.5) return '#f97316';
+                          return '#dc2626';
                         };
-
-                        const getStrokeColor = () => {
-                          const sentiment = payload.avgSentiment;
+                        const getStroke = () => {
                           if (sentiment >= 4.5) return '#166534';
                           if (sentiment >= 3.5) return '#166534';
                           if (sentiment >= 2.5) return '#a16207';
@@ -8358,52 +8351,52 @@ export default function ResultsPage() {
                           return '#991b1b';
                         };
 
-                        // Offset for overlapping points
-                        const spacing = 20;
+                        // Offset for overlapping points - spread horizontally
+                        const spacing = 22;
                         const totalWidth = (groupSize - 1) * spacing;
                         const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
-                        // Calculate label offset - spread labels to avoid overlaps
-                        let labelXOffset = 0;
-                        let labelYOffset = -14; // Default: above
-                        let textAnchor: 'start' | 'middle' | 'end' = 'middle';
-
-                        if (groupSize === 1) {
-                          // Single item: label above center
-                          labelXOffset = 0;
-                          labelYOffset = -14;
-                        } else if (groupSize === 2) {
-                          // Two items: one above-left, one above-right
-                          const labelDistance = 20;
-                          if (indexInGroup === 0) {
-                            labelXOffset = -labelDistance;
-                            labelYOffset = -12;
-                            textAnchor = 'end';
-                          } else {
-                            labelXOffset = labelDistance;
-                            labelYOffset = -12;
-                            textAnchor = 'start';
-                          }
-                        } else {
-                          // 3+ items: spread labels radially with larger distance
-                          const labelDistance = 24;
-                          // Evenly distribute angles starting from top, going clockwise
-                          const startAngle = -90; // Start from top
-                          const angleStep = 360 / groupSize;
-                          const angle = startAngle + (indexInGroup * angleStep);
-                          const radians = (angle * Math.PI) / 180;
-                          labelXOffset = Math.cos(radians) * labelDistance;
-                          labelYOffset = Math.sin(radians) * labelDistance;
-
-                          // Adjust text anchor based on horizontal position
-                          if (labelXOffset < -8) textAnchor = 'end';
-                          else if (labelXOffset > 8) textAnchor = 'start';
-                        }
-
                         // Truncate domain for display
-                        const displayDomain = payload.domain.length > 18
-                          ? payload.domain.substring(0, 16) + '...'
+                        const displayDomain = payload.domain.length > 15
+                          ? payload.domain.substring(0, 13) + '...'
                           : payload.domain;
+
+                        // Label positioning - simpler approach matching other charts
+                        let labelYOffset = -14;
+                        if (groupSize === 2) {
+                          labelYOffset = indexInGroup === 0 ? -14 : 22;
+                        } else if (groupSize >= 3) {
+                          const angles = [-90, 150, 30, -45, -135, 90];
+                          const angle = angles[indexInGroup % angles.length];
+                          const radians = (angle * Math.PI) / 180;
+                          const labelXOffset = Math.cos(radians) * 18;
+                          labelYOffset = Math.sin(radians) * 18;
+                          const textAnchor = labelXOffset < -5 ? 'end' : labelXOffset > 5 ? 'start' : 'middle';
+                          return (
+                            <g>
+                              <circle
+                                cx={cx + xOffset}
+                                cy={cy}
+                                r={circleRadius}
+                                fill={getColor()}
+                                stroke={getStroke()}
+                                strokeWidth={2}
+                                opacity={0.85}
+                                style={{ cursor: 'pointer' }}
+                              />
+                              <text
+                                x={cx + xOffset + labelXOffset}
+                                y={cy + labelYOffset}
+                                textAnchor={textAnchor}
+                                fill="#374151"
+                                fontSize={10}
+                                fontWeight={500}
+                              >
+                                {displayDomain}
+                              </text>
+                            </g>
+                          );
+                        }
 
                         return (
                           <g>
@@ -8411,17 +8404,18 @@ export default function ResultsPage() {
                               cx={cx + xOffset}
                               cy={cy}
                               r={circleRadius}
-                              fill={getSentimentColor()}
-                              stroke={getStrokeColor()}
+                              fill={getColor()}
+                              stroke={getStroke()}
                               strokeWidth={2}
-                              opacity={0.8}
+                              opacity={0.85}
+                              style={{ cursor: 'pointer' }}
                             />
                             <text
-                              x={cx + xOffset + labelXOffset}
+                              x={cx + xOffset}
                               y={cy + labelYOffset}
-                              textAnchor={textAnchor}
-                              fill={getStrokeColor()}
-                              fontSize={11}
+                              textAnchor="middle"
+                              fill="#374151"
+                              fontSize={10}
                               fontWeight={500}
                             >
                               {displayDomain}
@@ -8432,6 +8426,32 @@ export default function ResultsPage() {
                     />
                   </ScatterChart>
                 </ResponsiveContainer>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500">
+                <span className="text-gray-400 italic">Hover over dots for details</span>
+                <span className="text-gray-300">|</span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#dc2626]"></div>
+                    <span>Negative</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#f97316]"></div>
+                    <span>Conditional</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
+                    <span>Neutral</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
+                    <span>Positive</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full bg-[#15803d]"></div>
+                    <span>Strong</span>
+                  </div>
+                </div>
               </div>
             </div>
           );
@@ -9325,15 +9345,15 @@ export default function ResultsPage() {
 
         {/* Key Sentiment & Framing Insights */}
         {sentimentInsights.length > 0 && (
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Lightbulb className="w-5 h-5 text-amber-600" />
+              <Lightbulb className="w-5 h-5 text-[#4A7C59]" />
               <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Framing Insights</h2>
             </div>
             <ul className="space-y-3">
               {sentimentInsights.map((insight, idx) => (
                 <li key={idx} className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 rounded-full bg-[#E8F0E8] text-[#4A7C59] flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
                     {idx + 1}
                   </div>
                   <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
