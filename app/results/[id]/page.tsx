@@ -3844,7 +3844,7 @@ export default function ResultsPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-blue-600" />
-            <h2 className="text-base font-semibold text-gray-900">AI Analysis</h2>
+            <h2 className="text-lg font-semibold text-gray-900">AI Analysis</h2>
           </div>
           {aiSummary?.summary && (
             <button
@@ -3890,7 +3890,7 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-gray-900">AI Brand Position by Platform</h2>
+              <h2 className="text-lg font-semibold text-gray-900">AI Brand Position by Platform</h2>
               <div className="relative group">
                 <button
                   className="p-1 rounded-full hover:bg-gray-100 transition-colors"
@@ -4026,7 +4026,7 @@ export default function ResultsPage() {
       {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">LLM Model Breakdown</h2>
+            <h2 className="text-lg font-semibold text-gray-900">LLM Model Breakdown</h2>
             <select
               value={llmBreakdownBrandFilter || llmBreakdownBrands[0] || ''}
               onChange={(e) => setLlmBreakdownBrandFilter(e.target.value)}
@@ -4195,7 +4195,7 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Prompt Breakdown</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Prompt Breakdown</h2>
               <p className="text-sm text-gray-500 mt-1">Performance metrics for {runStatus?.brand} across all prompts</p>
             </div>
             <select
@@ -4213,24 +4213,24 @@ export default function ResultsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-3 font-medium text-gray-600">Prompt</th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Prompt</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="whitespace-nowrap">AI Visibility</div>
                     <div className="text-xs text-gray-400 font-normal">% mentioned</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="whitespace-nowrap">Share of Voice</div>
                     <div className="text-xs text-gray-400 font-normal">% of brand mentions</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="whitespace-nowrap">First Position</div>
                     <div className="text-xs text-gray-400 font-normal">% ranked #1</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="whitespace-nowrap">Avg. Position</div>
                     <div className="text-xs text-gray-400 font-normal">position when shown</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">Avg. Sentiment</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Avg. Sentiment</th>
                 </tr>
               </thead>
               <tbody>
@@ -4303,7 +4303,7 @@ export default function ResultsPage() {
       {/* All Results Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <h2 className="text-base font-semibold text-gray-900">All Results</h2>
+          <h2 className="text-lg font-semibold text-gray-900">All Results</h2>
           <select
             value={providerFilter}
             onChange={(e) => setProviderFilter(e.target.value)}
@@ -4658,7 +4658,7 @@ export default function ResultsPage() {
       {scatterPlotData.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           {/* Chart Title */}
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Where your brand appears in AI-generated answers</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Where your brand appears in AI-generated answers</h2>
 
           {/* Key takeaway - shown above tabs for Ranking in AI Results and Performance Range */}
           {(chartTab === 'allAnswers' || chartTab === 'performanceRange') && (() => {
@@ -5412,7 +5412,7 @@ export default function ResultsPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-blue-600" />
-            <h2 className="text-base font-semibold text-gray-900">AI Analysis</h2>
+            <h2 className="text-lg font-semibold text-gray-900">AI Analysis</h2>
           </div>
           {aiSummary?.summary && (
             <button
@@ -5471,7 +5471,7 @@ export default function ResultsPage() {
       {/* Detailed Results */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <h2 className="text-base font-semibold text-gray-900">Detailed Results</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Detailed Results</h2>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
               <button
@@ -5705,7 +5705,7 @@ export default function ResultsPage() {
 
       {/* Export Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-1">Export & Share</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Export & Share</h2>
         <p className="text-sm text-gray-500 mb-4">Download results or share a link to this page</p>
         <div className="flex flex-wrap gap-3">
           <button
@@ -5730,7 +5730,7 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Source Gap Analysis</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Source Gap Analysis</h2>
               <p className="text-sm text-gray-500 mt-1">
                 Sources where competitors are cited more often than {runStatus?.brand || 'your brand'}
               </p>
@@ -5924,23 +5924,23 @@ export default function ResultsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Source</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div>{runStatus?.brand || 'Brand'} Rate</div>
                     <div className="text-xs text-gray-400 font-normal">% when source cited</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div>Top Competitor</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div>Competitor Rate</div>
                     <div className="text-xs text-gray-400 font-normal">% when source cited</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div>Gap</div>
                     <div className="text-xs text-gray-400 font-normal">competitor advantage</div>
                   </th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div>Opportunity</div>
                     <div className="text-xs text-gray-400 font-normal">priority score</div>
                   </th>
@@ -6121,7 +6121,7 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">Relative Sentiment Advantage</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Relative Sentiment Advantage</h2>
               <p className="text-sm text-gray-500 mt-1">
                 Comparing how sources portray {sentimentComparisonBrand || runStatus?.brand || 'your brand'} vs. other brands
               </p>
@@ -6259,11 +6259,11 @@ export default function ResultsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-3 font-medium text-gray-600">Source</th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">Models</th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">{runStatus?.brand || 'Brand'}</th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">Top Competitor</th>
-                  <th className="text-center py-3 px-3 font-medium text-gray-600">Advantage</th>
+                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Source</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Models</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">{runStatus?.brand || 'Brand'}</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Top Competitor</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Advantage</th>
                 </tr>
               </thead>
               <tbody>
@@ -7438,9 +7438,9 @@ export default function ResultsPage() {
           <div className="bg-gradient-to-r from-[#E8F0E8] to-[#F0F4F0] rounded-xl border border-[#4A7C59]/20 p-6">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-5 h-5 text-[#4A7C59]" />
-              <h2 className="text-base font-semibold text-gray-900">Key Influencers</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Key Influencers</h2>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-500 mb-4">
               Sources cited by multiple Models — these likely have outsized influence on AI recommendations.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -7511,7 +7511,7 @@ export default function ResultsPage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Link2 className="w-5 h-5 text-[#4A7C59]" />
-                  <h2 className="text-base font-semibold text-gray-900">Top Cited Sources</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Top Cited Sources</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   <select
@@ -7949,8 +7949,8 @@ export default function ResultsPage() {
                         )}
                       </div>
                     </th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-600 bg-white">Models</th>
-                    <th className="text-left py-3 px-3 font-medium text-gray-600 bg-white">Brands Mentioned</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 bg-white">Models</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 bg-white">Brands Mentioned</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -8629,7 +8629,7 @@ export default function ResultsPage() {
         </div>
 
         {/* Sentiment by Provider */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Provider</h3>
             <div className="flex items-center gap-2">
@@ -8658,7 +8658,7 @@ export default function ResultsPage() {
           </div>
           <p className="text-sm text-gray-500 mb-6">How different AI models describe {effectiveSentimentBrand || 'your brand'}</p>
 
-          <div className="overflow-x-auto overflow-y-visible">
+          <div className="overflow-visible pb-4">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
@@ -10607,7 +10607,7 @@ export default function ResultsPage() {
               <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Lightbulb className="w-5 h-5 text-blue-600" />
-                  <h2 className="text-base font-semibold text-gray-900">Key Competitive Insights</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Key Competitive Insights</h2>
                 </div>
                 <ul className="space-y-3">
                   {competitiveInsights.map((insight, idx) => (
@@ -10627,7 +10627,7 @@ export default function ResultsPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-base font-semibold text-gray-900">Brand Breakdown</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Brand Breakdown</h2>
                     <p className="text-sm text-gray-500 mt-1">Performance comparison across all brands</p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -10659,24 +10659,24 @@ export default function ResultsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-3 font-medium text-gray-600">Brand</th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Brand</th>
+                        <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                           <div className="whitespace-nowrap">AI Visibility</div>
                           <div className="text-xs text-gray-400 font-normal">How often brand appears</div>
                         </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                        <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                           <div className="whitespace-nowrap">Share of Voice</div>
                           <div className="text-xs text-gray-400 font-normal">Brand's share of mentions</div>
                         </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                        <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                           <div className="whitespace-nowrap">Top Result Rate</div>
                           <div className="text-xs text-gray-400 font-normal">How often brand is #1</div>
                         </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                        <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                           <div className="whitespace-nowrap">Avg. Position</div>
                           <div className="text-xs text-gray-400 font-normal">Avg. ranking when mentioned</div>
                         </th>
-                        <th className="text-center py-3 px-3 font-medium text-gray-600">
+                        <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                           <div className="whitespace-nowrap">Avg. Sentiment</div>
                           <div className="text-xs text-gray-400 font-normal">How AI presents brand</div>
                         </th>
@@ -10904,7 +10904,7 @@ export default function ResultsPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-base font-semibold text-gray-900">Brand Positioning</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Brand Positioning</h2>
                     <p className="text-sm text-gray-500 mt-1">
                       How brands compare by mention frequency and sentiment
                     </p>
@@ -11068,7 +11068,7 @@ export default function ResultsPage() {
             {promptPerformanceMatrix.brands.length > 0 && promptPerformanceMatrix.prompts.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="mb-4">
-                  <h2 className="text-base font-semibold text-gray-900">Prompt Performance Matrix</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Prompt Performance Matrix</h2>
                   <p className="text-sm text-gray-500 mt-1">
                     Visibility rates for each brand across different prompts
                   </p>
@@ -11077,7 +11077,7 @@ export default function ResultsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-2 font-medium text-gray-600 sticky left-0 bg-white min-w-[120px]">Brand</th>
+                        <th className="text-left py-3 px-2 text-sm font-medium text-gray-600 sticky left-0 bg-white min-w-[120px]">Brand</th>
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
@@ -11095,7 +11095,7 @@ export default function ResultsPage() {
                             )}
                           </th>
                         ))}
-                        <th className="text-center py-3 px-2 font-medium text-gray-600 min-w-[80px]">Avg</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-600 min-w-[80px]">Avg</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -11154,7 +11154,7 @@ export default function ResultsPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-base font-semibold text-gray-900">Brand Co-occurrence Analysis</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Brand Co-occurrence Analysis</h2>
                     <p className="text-sm text-gray-500 mt-1">
                       Brands frequently mentioned together in AI responses. Numbers show co-occurrence count.
                     </p>
@@ -11444,7 +11444,7 @@ export default function ResultsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr>
-                        <th className="text-left py-2 px-3 font-medium text-gray-600 border-b border-gray-200 sticky left-0 bg-white z-10">Source</th>
+                        <th className="text-left py-2 px-3 text-sm font-medium text-gray-600 border-b border-gray-200 sticky left-0 bg-white z-10">Source</th>
                         {brandSourceHeatmap.brands.map(brand => (
                           <th
                             key={brand}

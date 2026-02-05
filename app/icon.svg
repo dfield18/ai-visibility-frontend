@@ -1,0 +1,8 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Three overlapping circles representing brand visibility across AI providers -->
+  <circle cx="12" cy="13" r="9" fill="#4A7C59" fill-opacity="0.7"/>
+  <circle cx="20" cy="13" r="9" fill="#6B9B7A" fill-opacity="0.7"/>
+  <circle cx="16" cy="20" r="9" fill="#8BB89A" fill-opacity="0.7"/>
+  <!-- Center intersection highlight -->
+  <circle cx="16" cy="15" r="3" fill="#2D4A36"/>
+</svg>
