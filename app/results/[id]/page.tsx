@@ -12076,11 +12076,11 @@ export default function ResultsPage() {
                         domain={[0, yMax]}
                         tick={{ fill: '#6b7280', fontSize: 12 }}
                         label={{
-                          value: 'Number of Mentions',
-                          angle: -90,
-                          position: 'insideLeft',
-                          offset: 10,
-                          style: { fill: '#374151', fontSize: 14, fontWeight: 500, textAnchor: 'middle' }
+                          value: 'Mention Count',
+                          position: 'insideTopLeft',
+                          offset: 15,
+                          dy: -20,
+                          style: { fill: '#374151', fontSize: 12, fontWeight: 500, textAnchor: 'start' }
                         }}
                       />
                       <Tooltip
