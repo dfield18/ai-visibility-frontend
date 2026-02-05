@@ -8343,11 +8343,16 @@ export default function ResultsPage() {
                       tickFormatter={(value) => `#${value}`}
                       tick={{ fill: '#6b7280', fontSize: 12 }}
                       label={{
-                        value: 'Avg Position',
-                        position: 'insideTopLeft',
-                        offset: 15,
-                        dy: -15,
-                        style: { fill: '#374151', fontSize: 12, fontWeight: 500, textAnchor: 'start' }
+                        content: (props: any) => {
+                          const { viewBox } = props;
+                          if (!viewBox) return null;
+                          return (
+                            <text x={viewBox.x + 5} y={viewBox.y - 8} fill="#374151" fontSize={11} fontWeight={500}>
+                              <tspan x={viewBox.x + 5} dy="0">Avg</tspan>
+                              <tspan x={viewBox.x + 5} dy="12">Position</tspan>
+                            </text>
+                          );
+                        }
                       }}
                     />
                     <Tooltip
