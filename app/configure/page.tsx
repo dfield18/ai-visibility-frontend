@@ -113,13 +113,27 @@ export default function ConfigurePage() {
   useEffect(() => {
     if (suggestions) {
       if (prompts.length === 0) {
-        setPrompts(suggestions.prompts);
+        const basePrompts = [...suggestions.prompts];
+
+        // For brand searches, add a comparison question if there's a known competitor
+        if (!isCategory && suggestions.competitors.length > 0) {
+          const rival = suggestions.competitors[0];
+          const comparisonPrompt = `How does ${brand} compare to ${rival}?`;
+          const alreadyHasComparison = basePrompts.some(
+            (p) => p.toLowerCase().includes('compare') || p.toLowerCase().includes(' vs ')
+          );
+          if (!alreadyHasComparison) {
+            basePrompts.push(comparisonPrompt);
+          }
+        }
+
+        setPrompts(basePrompts);
       }
       if (competitors.length === 0) {
         setCompetitors(suggestions.competitors);
       }
     }
-  }, [suggestions, prompts.length, competitors.length, setPrompts, setCompetitors]);
+  }, [suggestions, prompts.length, competitors.length, setPrompts, setCompetitors, isCategory, brand]);
 
   // Calculate estimates
   const selectedPromptsArray = Array.from(selectedPrompts);
