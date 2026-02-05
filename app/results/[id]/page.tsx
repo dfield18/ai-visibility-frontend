@@ -12971,7 +12971,30 @@ export default function ResultsPage() {
                             const containsDomain = domainBase && fullText.includes(domainBase);
                             const containsBrand = fullText.includes(selectedResultHighlight.brand.toLowerCase());
 
-                            if (containsDomain) {
+                            // Also check if paragraph contains keywords from the source titles
+                            let containsSourceKeywords = false;
+                            if (selectedResultHighlight.domain && selectedResult?.sources) {
+                              const matchingSources = selectedResult.sources.filter((s: { url: string; title?: string }) => {
+                                const sourceDomain = getDomain(s.url).toLowerCase();
+                                return sourceDomain.includes(domainBase || '') || (domainBase && domainBase.includes(sourceDomain.replace('.com', '').replace('.org', '').replace('.net', '')));
+                              });
+                              // Extract significant keywords from source titles (3+ chars, not common words)
+                              const commonWords = new Set(['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'has', 'her', 'was', 'one', 'our', 'out', 'with', 'from', 'this', 'that', 'what', 'how', 'why', 'best', 'top', 'new']);
+                              const keywords: string[] = [];
+                              matchingSources.forEach((s: { url: string; title?: string }) => {
+                                if (s.title) {
+                                  const words = s.title.toLowerCase().split(/[\s\-–—:,.|()[\]]+/).filter(w => w.length >= 4 && !commonWords.has(w));
+                                  keywords.push(...words);
+                                }
+                              });
+                              // Check if paragraph contains at least 2 significant keywords from source titles
+                              if (keywords.length > 0) {
+                                const matchCount = keywords.filter(kw => fullText.includes(kw)).length;
+                                containsSourceKeywords = matchCount >= 2 || (keywords.length === 1 && matchCount === 1);
+                              }
+                            }
+
+                            if (containsDomain || containsSourceKeywords) {
                               return <p className="bg-yellow-100 rounded px-2 py-1 -mx-2 border-l-4 border-yellow-400">{children}</p>;
                             } else if (containsBrand && !selectedResultHighlight.domain) {
                               return <p className="bg-yellow-100 rounded px-2 py-1 -mx-2 border-l-4 border-yellow-400">{children}</p>;
@@ -13002,7 +13025,28 @@ export default function ResultsPage() {
                             const containsDomain = domainBase && fullText.includes(domainBase);
                             const containsBrand = fullText.includes(selectedResultHighlight.brand.toLowerCase());
 
-                            if (containsDomain) {
+                            // Also check if list item contains keywords from the source titles
+                            let containsSourceKeywords = false;
+                            if (selectedResultHighlight.domain && selectedResult?.sources) {
+                              const matchingSources = selectedResult.sources.filter((s: { url: string; title?: string }) => {
+                                const sourceDomain = getDomain(s.url).toLowerCase();
+                                return sourceDomain.includes(domainBase || '') || (domainBase && domainBase.includes(sourceDomain.replace('.com', '').replace('.org', '').replace('.net', '')));
+                              });
+                              const commonWords = new Set(['the', 'and', 'for', 'are', 'but', 'not', 'you', 'all', 'can', 'has', 'her', 'was', 'one', 'our', 'out', 'with', 'from', 'this', 'that', 'what', 'how', 'why', 'best', 'top', 'new']);
+                              const keywords: string[] = [];
+                              matchingSources.forEach((s: { url: string; title?: string }) => {
+                                if (s.title) {
+                                  const words = s.title.toLowerCase().split(/[\s\-–—:,.|()[\]]+/).filter(w => w.length >= 4 && !commonWords.has(w));
+                                  keywords.push(...words);
+                                }
+                              });
+                              if (keywords.length > 0) {
+                                const matchCount = keywords.filter(kw => fullText.includes(kw)).length;
+                                containsSourceKeywords = matchCount >= 2 || (keywords.length === 1 && matchCount === 1);
+                              }
+                            }
+
+                            if (containsDomain || containsSourceKeywords) {
                               return <li className="bg-yellow-100 rounded px-2 py-0.5 -mx-2 border-l-4 border-yellow-400">{children}</li>;
                             } else if (containsBrand && !selectedResultHighlight.domain) {
                               return <li className="bg-yellow-100 rounded px-2 py-0.5 -mx-2 border-l-4 border-yellow-400">{children}</li>;
