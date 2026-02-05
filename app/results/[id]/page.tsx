@@ -8608,10 +8608,10 @@ export default function ResultsPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50/50">
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-gray-200 bg-gray-50">
                     <th
                       className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('domain')}
