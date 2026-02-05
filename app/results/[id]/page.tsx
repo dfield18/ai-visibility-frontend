@@ -6795,15 +6795,12 @@ export default function ResultsPage() {
           sourceBrandSentiments[domain] = {};
         }
 
-        // Only associate this source with brands that are mentioned in the source title/URL
+        // Associate this source with all brands mentioned in the same response
+        // This shows which sources are cited when each brand is discussed
         brandsInResult.forEach(({ brand, sentiment }) => {
-          const brandLower = brand.toLowerCase();
           const pairKey = `${domain}:${brand}`;
 
-          // Check if brand is mentioned in the source title or URL
-          const brandMentionedInSource = sourceText.includes(brandLower);
-
-          if (brandMentionedInSource && !seenDomainBrandPairs.has(pairKey)) {
+          if (!seenDomainBrandPairs.has(pairKey)) {
             seenDomainBrandPairs.add(pairKey);
             sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
 
@@ -6820,7 +6817,7 @@ export default function ResultsPage() {
       }
     }
 
-    // Get top 10 sources by total citations
+    // Get top 15 sources by total citations (increased from 10 to show more coverage)
     const topSources = Object.entries(sourceBrandCounts)
       .map(([domain, brands]) => ({
         domain,
@@ -6828,7 +6825,7 @@ export default function ResultsPage() {
         brands,
       }))
       .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
+      .slice(0, 15);
 
     // Sort brands: searched brand first, then by total mentions
     const searchedBrand = runStatus.brand;
