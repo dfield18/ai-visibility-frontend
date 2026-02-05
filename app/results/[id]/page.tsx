@@ -12948,16 +12948,29 @@ export default function ResultsPage() {
                             <table className="min-w-full">{children}</table>
                           </div>
                         ),
-                        p: ({ children }) => {
+                        p: ({ children, node }) => {
                           // Highlight paragraphs containing the highlighted domain (from heatmap) or brand
                           if (selectedResultHighlight) {
-                            const text = typeof children === 'string' ? children :
-                              (Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '');
-                            const textLower = text.toLowerCase();
-                            // Prioritize domain highlighting when coming from heatmap
-                            const containsDomain = selectedResultHighlight.domain &&
-                              textLower.includes(selectedResultHighlight.domain.toLowerCase().replace('.com', '').replace('.org', '').replace('.net', ''));
-                            const containsBrand = textLower.includes(selectedResultHighlight.brand.toLowerCase());
+                            const domainBase = selectedResultHighlight.domain?.toLowerCase().replace('.com', '').replace('.org', '').replace('.net', '');
+
+                            // Extract all text and hrefs from the node
+                            const extractTextAndHrefs = (n: any): string => {
+                              if (!n) return '';
+                              if (typeof n === 'string') return n;
+                              if (n.type === 'text') return n.value || '';
+                              if (n.type === 'link' || n.type === 'element' && n.tagName === 'a') {
+                                const href = n.properties?.href || n.url || '';
+                                const childText = n.children?.map(extractTextAndHrefs).join('') || '';
+                                return childText + ' ' + href;
+                              }
+                              if (n.children) return n.children.map(extractTextAndHrefs).join('');
+                              return '';
+                            };
+
+                            const fullText = extractTextAndHrefs(node).toLowerCase();
+                            const containsDomain = domainBase && fullText.includes(domainBase);
+                            const containsBrand = fullText.includes(selectedResultHighlight.brand.toLowerCase());
+
                             if (containsDomain) {
                               return <p className="bg-yellow-100 rounded px-2 py-1 -mx-2 border-l-4 border-yellow-400">{children}</p>;
                             } else if (containsBrand && !selectedResultHighlight.domain) {
@@ -12966,16 +12979,29 @@ export default function ResultsPage() {
                           }
                           return <p>{children}</p>;
                         },
-                        li: ({ children }) => {
+                        li: ({ children, node }) => {
                           // Highlight list items containing the highlighted domain (from heatmap) or brand
                           if (selectedResultHighlight) {
-                            const text = typeof children === 'string' ? children :
-                              (Array.isArray(children) ? children.map(c => typeof c === 'string' ? c : '').join('') : '');
-                            const textLower = text.toLowerCase();
-                            // Prioritize domain highlighting when coming from heatmap
-                            const containsDomain = selectedResultHighlight.domain &&
-                              textLower.includes(selectedResultHighlight.domain.toLowerCase().replace('.com', '').replace('.org', '').replace('.net', ''));
-                            const containsBrand = textLower.includes(selectedResultHighlight.brand.toLowerCase());
+                            const domainBase = selectedResultHighlight.domain?.toLowerCase().replace('.com', '').replace('.org', '').replace('.net', '');
+
+                            // Extract all text and hrefs from the node
+                            const extractTextAndHrefs = (n: any): string => {
+                              if (!n) return '';
+                              if (typeof n === 'string') return n;
+                              if (n.type === 'text') return n.value || '';
+                              if (n.type === 'link' || n.type === 'element' && n.tagName === 'a') {
+                                const href = n.properties?.href || n.url || '';
+                                const childText = n.children?.map(extractTextAndHrefs).join('') || '';
+                                return childText + ' ' + href;
+                              }
+                              if (n.children) return n.children.map(extractTextAndHrefs).join('');
+                              return '';
+                            };
+
+                            const fullText = extractTextAndHrefs(node).toLowerCase();
+                            const containsDomain = domainBase && fullText.includes(domainBase);
+                            const containsBrand = fullText.includes(selectedResultHighlight.brand.toLowerCase());
+
                             if (containsDomain) {
                               return <li className="bg-yellow-100 rounded px-2 py-0.5 -mx-2 border-l-4 border-yellow-400">{children}</li>;
                             } else if (containsBrand && !selectedResultHighlight.domain) {
