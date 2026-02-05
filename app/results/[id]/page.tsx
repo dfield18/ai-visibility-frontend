@@ -4541,82 +4541,88 @@ export default function ResultsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/50">
-                <th className="w-10 py-3 px-4"></th>
                 <th
-                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  className="text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('prompt')}
                 >
-                  <span className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Prompt
                     {tableSortColumn === 'prompt' && (
                       <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </span>
+                  </div>
+                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Question sent to AI</div>
                 </th>
                 <th
-                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  className="text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('llm')}
                 >
-                  <span className="flex items-center gap-1">
-                    LLM
+                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    LLM Model
                     {tableSortColumn === 'llm' && (
                       <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </span>
+                  </div>
+                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">AI model used</div>
                 </th>
                 <th
-                  className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  className="text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('position')}
                 >
-                  <span className="flex items-center justify-center gap-1">
+                  <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Position
                     {tableSortColumn === 'position' && (
                       <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </span>
+                  </div>
+                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Rank in response</div>
                 </th>
                 {!isCategory && (
                   <th
-                    className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                    className="text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleTableSort('mentioned')}
                   >
-                    <span className="flex items-center justify-center gap-1">
-                      {runStatus?.brand} Mentioned
+                    <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Mentioned
                       {tableSortColumn === 'mentioned' && (
                         <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
-                    </span>
+                    </div>
+                    <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Brand included</div>
                   </th>
                 )}
                 <th
-                  className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  className="text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('sentiment')}
                 >
-                  <span className="flex items-center justify-center gap-1">
+                  <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Sentiment
                     {tableSortColumn === 'sentiment' && (
                       <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </span>
+                  </div>
+                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">How AI framed brand</div>
                 </th>
                 <th
-                  className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                  className="text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('competitors')}
                 >
-                  <span className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {isCategory ? 'Brands' : 'Competitors'}
                     {tableSortColumn === 'competitors' && (
                       <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </span>
+                  </div>
+                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Other brands shown</div>
                 </th>
-                <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="text-right py-3 px-4">
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</div>
+                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">View details</div>
+                </th>
               </tr>
             </thead>
             <tbody>
               {sortedResults.map((result: Result) => {
-                const isExpanded = expandedResultRows.has(result.id);
-
                 // Calculate position for this result
                 let position: number | null = null;
                 if (result.response_text && !result.error) {
@@ -4755,23 +4761,12 @@ export default function ResultsPage() {
                 };
 
                 return (
-                  <React.Fragment key={result.id}>
-                    <tr
-                      className={`border-b border-gray-100 cursor-pointer transition-colors ${isExpanded ? 'bg-gray-50/60' : 'hover:bg-gray-50/40'}`}
-                      onClick={() => {
-                        const newExpanded = new Set(expandedResultRows);
-                        if (isExpanded) {
-                          newExpanded.delete(result.id);
-                        } else {
-                          newExpanded.add(result.id);
-                        }
-                        setExpandedResultRows(newExpanded);
-                      }}
-                    >
-                      <td className="py-4 px-4">
-                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                      </td>
-                      <td className="py-4 px-4">
+                  <tr
+                    key={result.id}
+                    className="border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50/40"
+                    onClick={() => setSelectedResult(result)}
+                  >
+                    <td className="py-4 px-4">
                         <p className="text-sm text-gray-900 font-medium">{truncate(result.prompt, 40)}</p>
                       </td>
                       <td className="py-4 px-4">
@@ -4792,84 +4787,11 @@ export default function ResultsPage() {
                         {getCompetitorsList()}
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedResult(result);
-                          }}
-                          className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-                        >
+                        <span className="inline-flex items-center gap-1 text-sm text-[#4A7C59] font-medium">
                           View <ExternalLink className="w-3 h-3" />
-                        </button>
+                        </span>
                       </td>
-                    </tr>
-                    {/* Expanded Content */}
-                    {isExpanded && (
-                      <tr className="bg-gray-50/60">
-                        <td colSpan={isCategory ? 7 : 8} className="px-6 py-4">
-                          <div className="pl-8 space-y-4">
-                            {/* Full Prompt */}
-                            <div>
-                              <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Prompt</h4>
-                              <div className="text-sm text-gray-700 bg-white rounded-lg border border-gray-200 p-3">
-                                {result.prompt}
-                              </div>
-                            </div>
-                            {/* Full Response */}
-                            <div>
-                              <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Full Response</h4>
-                              <div className="text-sm text-gray-700 bg-white rounded-lg border border-gray-200 p-4 max-h-48 overflow-y-auto">
-                                {result.error ? (
-                                  <span className="text-red-600">{result.error}</span>
-                                ) : (
-                                  <div className="prose prose-sm max-w-none">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                      {result.response_text || 'No response text available'}
-                                    </ReactMarkdown>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            {/* Sources */}
-                            {result.sources && result.sources.length > 0 && (
-                              <div>
-                                <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Sources</h4>
-                                <div className="flex flex-wrap gap-2">
-                                  {result.sources.slice(0, 5).map((source, idx) => {
-                                    // Extract domain inline
-                                    let domain = source.url;
-                                    try {
-                                      domain = new URL(source.url).hostname.replace(/^www\./, '');
-                                    } catch {
-                                      domain = source.url.split('/')[2] || source.url;
-                                    }
-                                    return (
-                                      <a
-                                        key={idx}
-                                        href={source.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-md text-xs text-gray-600 hover:border-[#4A7C59] hover:text-[#4A7C59] transition-colors"
-                                      >
-                                        <Globe className="w-3 h-3" />
-                                        {domain}
-                                      </a>
-                                    );
-                                  })}
-                                  {result.sources.length > 5 && (
-                                    <span className="inline-flex items-center px-2 py-1 text-xs text-gray-400">
-                                      +{result.sources.length - 5} more
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
+                  </tr>
                 );
               })}
             </tbody>
@@ -10078,7 +10000,6 @@ export default function ResultsPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-200 bg-gray-50/50">
-                        <th className="w-10 py-3 px-4"></th>
                         <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
                         <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
                         <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
@@ -10089,8 +10010,6 @@ export default function ResultsPage() {
                     </thead>
                     <tbody>
                       {filteredSentimentResults.map((result: Result) => {
-                        const isExpanded = expandedResponseRows.has(result.id);
-
                         // Calculate rank
                         let rank = 0;
                         const brandLower = (runStatus?.brand || '').toLowerCase();
@@ -10189,111 +10108,32 @@ export default function ResultsPage() {
                         };
 
                         return (
-                          <React.Fragment key={result.id}>
-                            <tr
-                              className={`border-b border-gray-100 cursor-pointer transition-colors ${isExpanded ? 'bg-gray-50/60' : 'hover:bg-gray-50/40'}`}
-                              onClick={() => {
-                                const newExpanded = new Set(expandedResponseRows);
-                                if (isExpanded) {
-                                  newExpanded.delete(result.id);
-                                } else {
-                                  newExpanded.add(result.id);
-                                }
-                                setExpandedResponseRows(newExpanded);
-                              }}
-                            >
-                              <td className="py-4 px-4">
-                                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                              </td>
-                              <td className="py-4 px-4">
-                                <p className="text-sm text-gray-900 font-medium">{truncate(result.prompt, 40)}</p>
-                              </td>
-                              <td className="py-4 px-4">
-                                <span className="text-sm text-gray-600">{getProviderLabel(result.provider)}</span>
-                              </td>
-                              <td className="py-4 px-4 text-center">
-                                {getPositionBadge()}
-                              </td>
-                              <td className="py-4 px-4 text-center">
-                                {getSentimentBadge()}
-                              </td>
-                              <td className="py-4 px-4">
-                                {getCompetitorsList()}
-                              </td>
-                              <td className="py-4 px-4 text-right">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedResult(result);
-                                  }}
-                                  className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-                                >
-                                  View <ExternalLink className="w-3 h-3" />
-                                </button>
-                              </td>
-                            </tr>
-                            {/* Expanded Content */}
-                            {isExpanded && (
-                              <tr className="bg-gray-50/60">
-                                <td colSpan={7} className="px-6 py-4">
-                                  <div className="pl-8 space-y-4">
-                                    {/* Full Prompt */}
-                                    <div>
-                                      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Prompt</h4>
-                                      <div className="text-sm text-gray-700 bg-white rounded-lg border border-gray-200 p-3">
-                                        {result.prompt}
-                                      </div>
-                                    </div>
-                                    {/* Full Response */}
-                                    <div>
-                                      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Full Response</h4>
-                                      <div className="text-sm text-gray-700 bg-white rounded-lg border border-gray-200 p-4 max-h-48 overflow-y-auto">
-                                        <div className="prose prose-sm max-w-none">
-                                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                            {result.response_text || 'No response text available'}
-                                          </ReactMarkdown>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    {/* Sources */}
-                                    {result.sources && result.sources.length > 0 && (
-                                      <div>
-                                        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Sources</h4>
-                                        <div className="flex flex-wrap gap-2">
-                                          {result.sources.slice(0, 5).map((source, idx) => {
-                                            let domain = source.url;
-                                            try {
-                                              domain = new URL(source.url).hostname.replace(/^www\./, '');
-                                            } catch {
-                                              domain = source.url.split('/')[2] || source.url;
-                                            }
-                                            return (
-                                              <a
-                                                key={idx}
-                                                href={source.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-200 rounded-md text-xs text-gray-600 hover:border-[#4A7C59] hover:text-[#4A7C59] transition-colors"
-                                              >
-                                                <Globe className="w-3 h-3" />
-                                                {domain}
-                                              </a>
-                                            );
-                                          })}
-                                          {result.sources.length > 5 && (
-                                            <span className="inline-flex items-center px-2 py-1 text-xs text-gray-400">
-                                              +{result.sources.length - 5} more
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
+                          <tr
+                            key={result.id}
+                            className="border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50/40"
+                            onClick={() => setSelectedResult(result)}
+                          >
+                            <td className="py-4 px-4">
+                              <p className="text-sm text-gray-900 font-medium">{truncate(result.prompt, 40)}</p>
+                            </td>
+                            <td className="py-4 px-4">
+                              <span className="text-sm text-gray-600">{getProviderLabel(result.provider)}</span>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              {getPositionBadge()}
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                              {getSentimentBadge()}
+                            </td>
+                            <td className="py-4 px-4">
+                              {getCompetitorsList()}
+                            </td>
+                            <td className="py-4 px-4 text-right">
+                              <span className="inline-flex items-center gap-1 text-sm text-[#4A7C59] font-medium">
+                                View <ExternalLink className="w-3 h-3" />
+                              </span>
+                            </td>
+                          </tr>
                         );
                       })}
                     </tbody>
