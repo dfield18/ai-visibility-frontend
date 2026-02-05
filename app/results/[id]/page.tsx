@@ -11804,52 +11804,67 @@ export default function ResultsPage() {
                   </div>
                 </div>
 
-                {cooccurrenceView === 'pairs' && (
-                <>
-                <div className="space-y-3">
-                  {brandCooccurrence.map((pair, idx) => {
-                    const maxCount = brandCooccurrence[0]?.count || 1;
-                    const widthPercent = (pair.count / maxCount) * 100;
-                    const isYourBrand = pair.brand1 === runStatus?.brand || pair.brand2 === runStatus?.brand;
-                    return (
-                      <div key={idx} className="flex items-center gap-4">
-                        <div className="w-48 flex-shrink-0">
-                          <div className="flex items-center gap-1 text-sm">
-                            <span className={pair.brand1 === runStatus?.brand ? 'font-semibold text-[#4A7C59]' : 'text-gray-700'}>
-                              {pair.brand1.length > 12 ? pair.brand1.substring(0, 10) + '...' : pair.brand1}
-                            </span>
-                            <span className="text-gray-400">+</span>
-                            <span className={pair.brand2 === runStatus?.brand ? 'font-semibold text-[#4A7C59]' : 'text-gray-700'}>
-                              {pair.brand2.length > 12 ? pair.brand2.substring(0, 10) + '...' : pair.brand2}
-                            </span>
+                {cooccurrenceView === 'pairs' && (() => {
+                  const maxCount = brandCooccurrence[0]?.count || 1;
+                  const minCount = brandCooccurrence[brandCooccurrence.length - 1]?.count || 1;
+
+                  // Get bar color based on count - lighter for smaller, darker for larger
+                  const getBarColor = (count: number) => {
+                    const range = maxCount - minCount || 1;
+                    const normalized = (count - minCount) / range;
+                    if (normalized < 0.25) return '#bbf7d0'; // Very light green
+                    if (normalized < 0.5) return '#86efac';  // Light green
+                    if (normalized < 0.75) return '#4ade80'; // Medium green
+                    return '#22c55e'; // Darker green
+                  };
+
+                  return (
+                  <>
+                  <div className="space-y-3">
+                    {brandCooccurrence.map((pair, idx) => {
+                      const widthPercent = (pair.count / maxCount) * 100;
+                      const barColor = getBarColor(pair.count);
+                      return (
+                        <div key={idx} className="flex items-center gap-4">
+                          <div className="w-48 flex-shrink-0">
+                            <div className="flex items-center gap-1 text-sm">
+                              <span className={pair.brand1 === runStatus?.brand ? 'font-semibold text-[#4A7C59]' : 'text-gray-700'}>
+                                {pair.brand1.length > 12 ? pair.brand1.substring(0, 10) + '...' : pair.brand1}
+                              </span>
+                              <span className="text-gray-400">+</span>
+                              <span className={pair.brand2 === runStatus?.brand ? 'font-semibold text-[#4A7C59]' : 'text-gray-700'}>
+                                {pair.brand2.length > 12 ? pair.brand2.substring(0, 10) + '...' : pair.brand2}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all"
+                              style={{ width: `${widthPercent}%`, backgroundColor: barColor }}
+                            />
+                          </div>
+                          <div className="w-24 text-right">
+                            <span className="text-sm font-medium text-gray-900">{pair.count}x</span>
+                            <span className="text-xs text-gray-500 ml-1">({pair.percentage.toFixed(1)}%)</span>
                           </div>
                         </div>
-                        <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${isYourBrand ? 'bg-[#4A7C59]' : 'bg-blue-400'}`}
-                            style={{ width: `${widthPercent}%` }}
-                          />
-                        </div>
-                        <div className="w-24 text-right">
-                          <span className="text-sm font-medium text-gray-900">{pair.count}x</span>
-                          <span className="text-xs text-gray-500 ml-1">({pair.percentage.toFixed(1)}%)</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#4A7C59]"></div>
-                    <span>Includes {runStatus?.brand || 'your brand'}</span>
+                      );
+                    })}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-                    <span>Competitors only</span>
+                  <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
+                    <span>Bar shade indicates co-occurrence frequency:</span>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#bbf7d0' }}></div>
+                      <span>Lower</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }}></div>
+                      <span>Higher</span>
+                    </div>
                   </div>
-                </div>
-                </>
-                )}
+                  </>
+                  );
+                })()}
 
                 {/* Venn Diagram Visualization */}
                 {cooccurrenceView === 'venn' && (() => {
@@ -11869,11 +11884,29 @@ export default function ResultsPage() {
                   }));
 
                   const maxCount = Math.max(...cooccurringBrands.map(b => b.count));
+                  const minCount = Math.min(...cooccurringBrands.map(b => b.count));
 
-                  // Colors for competitor circles - light green variants
-                  const colors = ['#86efac', '#a7f3d0', '#6ee7b7', '#bbf7d0'];
-                  // Darker colors for text labels - easier to read
-                  const labelColors = ['#15803d', '#166534', '#14532d', '#166534'];
+                  // Function to get color based on count - lighter for smaller, darker for larger
+                  const getColorForCount = (count: number) => {
+                    const range = maxCount - minCount || 1;
+                    const normalized = (count - minCount) / range; // 0 to 1
+                    // Light green (#bbf7d0) to darker green (#22c55e)
+                    // Interpolate between these colors
+                    if (normalized < 0.25) return '#bbf7d0'; // Very light green
+                    if (normalized < 0.5) return '#86efac';  // Light green
+                    if (normalized < 0.75) return '#4ade80'; // Medium green
+                    return '#22c55e'; // Darker green
+                  };
+
+                  // Function to get label color based on count
+                  const getLabelColorForCount = (count: number) => {
+                    const range = maxCount - minCount || 1;
+                    const normalized = (count - minCount) / range;
+                    if (normalized < 0.25) return '#166534'; // Dark green for light bg
+                    if (normalized < 0.5) return '#15803d';
+                    if (normalized < 0.75) return '#14532d';
+                    return '#14532d'; // Darkest for contrast
+                  };
 
                   return (
                     <div>
@@ -11902,15 +11935,18 @@ export default function ResultsPage() {
                             const maxRadius = 80;
                             const radius = minRadius + ((item.count / maxCount) * (maxRadius - minRadius));
 
+                            const circleColor = getColorForCount(item.count);
+                            const labelColor = getLabelColorForCount(item.count);
+
                             return (
                               <g key={idx}>
                                 <circle
                                   cx={cx}
                                   cy={cy}
                                   r={radius}
-                                  fill={colors[idx % colors.length]}
-                                  fillOpacity="0.2"
-                                  stroke={colors[idx % colors.length]}
+                                  fill={circleColor}
+                                  fillOpacity="0.25"
+                                  stroke={circleColor}
                                   strokeWidth="2"
                                 />
                                 {/* Brand name - positioned outside the circle */}
@@ -11919,7 +11955,7 @@ export default function ResultsPage() {
                                   y={cy + Math.sin(angle) * (radius + 18)}
                                   textAnchor="middle"
                                   dominantBaseline="middle"
-                                  fill={labelColors[idx % labelColors.length]}
+                                  fill={labelColor}
                                   fontSize="13"
                                   fontWeight="600"
                                 >
