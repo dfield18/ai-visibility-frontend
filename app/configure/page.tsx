@@ -96,6 +96,8 @@ export default function ConfigurePage() {
   const [editingPromptValue, setEditingPromptValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [addingPrompt, setAddingPrompt] = useState(false);
+  const [addingCompetitor, setAddingCompetitor] = useState(false);
 
   const { data: suggestions, isLoading: suggestionsLoading, error: suggestionsError } = useSuggestions(brand, searchType);
   const startRunMutation = useStartRun();
@@ -205,12 +207,12 @@ export default function ConfigurePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FAFAF8] pb-32">
+    <main className="min-h-screen bg-[#FAFAF8] pb-28">
       {/* Header */}
-      <header className="pt-6 pb-4">
+      <header className="pt-4 pb-2">
         <div className="max-w-3xl mx-auto px-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push('/')}
                 className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
@@ -218,16 +220,13 @@ export default function ConfigurePage() {
               >
                 <ArrowLeft className="w-5 h-5 text-gray-500" />
               </button>
-              <div>
-                <h1 className="text-lg font-semibold text-gray-900">
-                  Configuring analysis for{' '}
-                  <span className="text-[#4A7C59]">{brand}</span>
-                  {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Customize prompts, {isCategory ? 'brands' : 'competitors'}, and AI models
-                </p>
-              </div>
+              <h1 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                Configure
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-[#E8F0E8] text-[#4A7C59]">
+                  {brand}
+                  {isCategory && <span className="text-[#4A7C59]/60 ml-1 text-xs">(category)</span>}
+                </span>
+              </h1>
             </div>
             <UserButton
               appearance={{
@@ -240,7 +239,7 @@ export default function ConfigurePage() {
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-6 space-y-6">
+      <div className="max-w-3xl mx-auto px-6 space-y-4">
         {/* Error Alert */}
         {(error || suggestionsError) && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
@@ -255,14 +254,9 @@ export default function ConfigurePage() {
         )}
 
         {/* Prompts Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">Search Prompts</h2>
-              <p className="text-sm text-gray-500">
-                These queries will be sent to AI models
-              </p>
-            </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
             <span className="text-sm text-gray-500">
               {selectedPromptsArray.length}/{prompts.length} selected
             </span>
@@ -311,11 +305,11 @@ export default function ConfigurePage() {
               )}
 
               {/* Prompts List */}
-              <div className="space-y-2">
+              <div className="divide-y divide-gray-100">
               {prompts.map((prompt, index) => (
                 <div
                   key={prompt}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 group cursor-pointer"
+                  className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-gray-50 group cursor-pointer"
                   onClick={() => {
                     if (editingPromptIndex !== index) {
                       togglePrompt(prompt);
@@ -383,38 +377,52 @@ export default function ConfigurePage() {
           )}
 
           {prompts.length < 10 && (
-            <div className="mt-4 flex gap-2">
-              <input
-                type="text"
-                value={newPrompt}
-                onChange={(e) => setNewPrompt(e.target.value)}
-                placeholder="Add custom prompt..."
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent placeholder-gray-400"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddPrompt();
-                }}
-              />
-              <button
-                onClick={handleAddPrompt}
-                disabled={!newPrompt.trim()}
-                className="px-4 py-2.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-              >
-                <Plus className="w-4 h-4" />
-                Add
-              </button>
+            <div className="mt-3">
+              {addingPrompt ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newPrompt}
+                    onChange={(e) => setNewPrompt(e.target.value)}
+                    placeholder="Type a question..."
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent placeholder-gray-400"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { handleAddPrompt(); }
+                      if (e.key === 'Escape') { setAddingPrompt(false); setNewPrompt(''); }
+                    }}
+                  />
+                  <button
+                    onClick={handleAddPrompt}
+                    disabled={!newPrompt.trim()}
+                    className="px-3 py-2 text-sm text-[#4A7C59] hover:bg-[#E8F0E8] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    Add
+                  </button>
+                  <button
+                    onClick={() => { setAddingPrompt(false); setNewPrompt(''); }}
+                    className="px-2 py-2 text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setAddingPrompt(true)}
+                  className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add custom question
+                </button>
+              )}
             </div>
           )}
         </div>
 
         {/* Competitors/Brands Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
-              <p className="text-sm text-gray-500">
-                {brandsDescription}
-              </p>
-            </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
             <span className="text-sm text-gray-500">
               {selectedCompetitorsArray.length}/{competitors.length} selected
             </span>
@@ -430,7 +438,7 @@ export default function ConfigurePage() {
               {competitors.map((competitor) => (
                 <div
                   key={competitor}
-                  className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-colors cursor-pointer ${
                     selectedCompetitors.has(competitor)
                       ? 'bg-[#E8F0E8] border-[#5B7B5D]/30 text-[#4A7C59]'
                       : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
@@ -438,14 +446,14 @@ export default function ConfigurePage() {
                   onClick={() => toggleCompetitor(competitor)}
                 >
                   <div
-                    className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 ${
+                    className={`w-3.5 h-3.5 rounded flex items-center justify-center flex-shrink-0 ${
                       selectedCompetitors.has(competitor)
                         ? 'bg-[#5B7B5D]'
                         : 'bg-[#E8E8E0]'
                     }`}
                   >
                     {selectedCompetitors.has(competitor) && (
-                      <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                      <Check className="w-2 h-2 text-white" strokeWidth={3} />
                     )}
                   </div>
                   <span className="text-sm font-medium">{competitor}</span>
@@ -465,66 +473,74 @@ export default function ConfigurePage() {
           )}
 
           {competitors.length < 10 && (
-            <div className="mt-4 flex gap-2">
-              <input
-                type="text"
-                value={newCompetitor}
-                onChange={(e) => setNewCompetitor(e.target.value)}
-                placeholder={addBrandPlaceholder}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent placeholder-gray-400"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddCompetitor();
-                }}
-              />
-              <button
-                onClick={handleAddCompetitor}
-                disabled={!newCompetitor.trim()}
-                className="px-4 py-2.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
-              >
-                <Plus className="w-4 h-4" />
-                Add
-              </button>
+            <div className="mt-3">
+              {addingCompetitor ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newCompetitor}
+                    onChange={(e) => setNewCompetitor(e.target.value)}
+                    placeholder={addBrandPlaceholder}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent placeholder-gray-400"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { handleAddCompetitor(); }
+                      if (e.key === 'Escape') { setAddingCompetitor(false); setNewCompetitor(''); }
+                    }}
+                  />
+                  <button
+                    onClick={handleAddCompetitor}
+                    disabled={!newCompetitor.trim()}
+                    className="px-3 py-2 text-sm text-[#4A7C59] hover:bg-[#E8F0E8] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  >
+                    Add
+                  </button>
+                  <button
+                    onClick={() => { setAddingCompetitor(false); setNewCompetitor(''); }}
+                    className="px-2 py-2 text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setAddingCompetitor(true)}
+                  className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-1 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add {isCategory ? 'brand' : 'competitor'}
+                </button>
+              )}
             </div>
           )}
         </div>
 
         {/* Providers Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold text-gray-900">AI Models</h2>
-            <p className="text-sm text-gray-500">
-              Select which AI models to query
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <h2 className="text-base font-semibold text-gray-900 mb-3">AI Platforms</h2>
+          <div className="flex flex-wrap gap-2">
             {Object.entries(PROVIDER_INFO).map(([key, info]) => (
               <button
                 key={key}
                 onClick={() => toggleProvider(key)}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-sm font-medium transition-colors ${
                   providers.includes(key)
-                    ? 'border-[#5B7B5D] bg-[#E8F0E8]'
-                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                    ? 'bg-[#E8F0E8] border-[#5B7B5D]/30 text-[#4A7C59]'
+                    : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
-                      providers.includes(key)
-                        ? 'bg-[#5B7B5D]'
-                        : 'bg-[#E8E8E0]'
-                    }`}
-                  >
-                    {providers.includes(key) && (
-                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 text-sm">{info.name}</p>
-                    <p className="text-xs text-gray-500">{info.cost}</p>
-                  </div>
+                <div
+                  className={`w-3.5 h-3.5 rounded flex items-center justify-center flex-shrink-0 ${
+                    providers.includes(key)
+                      ? 'bg-[#5B7B5D]'
+                      : 'bg-[#E8E8E0]'
+                  }`}
+                >
+                  {providers.includes(key) && (
+                    <Check className="w-2 h-2 text-white" strokeWidth={3} />
+                  )}
                 </div>
+                {info.name}
               </button>
             ))}
           </div>
@@ -554,43 +570,46 @@ export default function ConfigurePage() {
               {/* Temperatures */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Temperatures
+                  Response Variation
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Higher temperatures produce more creative responses. Lower temperatures are more deterministic.
+                  Controls how creative or consistent the AI responses are
                 </p>
                 <div className="flex gap-2">
-                  {[0.3, 0.7, 1.0].map((temp) => (
-                    <button
-                      key={temp}
-                      onClick={() => {
-                        if (temperatures.includes(temp)) {
-                          if (temperatures.length > 1) {
-                            setTemperatures(temperatures.filter((t) => t !== temp));
+                  {([0.3, 0.7, 1.0] as const).map((temp) => {
+                    const label = temp === 0.3 ? 'Consistent' : temp === 0.7 ? 'Balanced' : 'Creative';
+                    return (
+                      <button
+                        key={temp}
+                        onClick={() => {
+                          if (temperatures.includes(temp)) {
+                            if (temperatures.length > 1) {
+                              setTemperatures(temperatures.filter((t) => t !== temp));
+                            }
+                          } else {
+                            setTemperatures([...temperatures, temp].sort());
                           }
-                        } else {
-                          setTemperatures([...temperatures, temp].sort());
-                        }
-                      }}
-                      className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                        temperatures.includes(temp)
-                          ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                      }`}
-                    >
-                      {temp}
-                    </button>
-                  ))}
+                        }}
+                        className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                          temperatures.includes(temp)
+                            ? 'bg-[#E8F0E8] border-[#5B7B5D] text-[#4A7C59]'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               {/* Repeats */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Repeats per configuration: {repeats}
+                  Run each question {repeats === 1 ? 'once' : `${repeats} times`}
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Run each prompt/provider/temperature combination multiple times for statistical significance.
+                  More repeats give more reliable results but cost more
                 </p>
                 <input
                   type="range"
@@ -613,7 +632,7 @@ export default function ConfigurePage() {
                   OpenAI Model
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  GPT-4o-mini is faster and cheaper. GPT-4o is more capable but costs ~10x more.
+                  Mini is faster and cheaper. Full is more capable but costs ~10x more.
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -647,7 +666,7 @@ export default function ConfigurePage() {
                   Claude Model
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Haiku 4.5 is faster and cheaper. Sonnet is more capable but costs more. Both include web search for sources.
+                  Haiku is faster and cheaper. Sonnet is more capable. Both include web search.
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -681,7 +700,7 @@ export default function ConfigurePage() {
                   Country/Region
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Filter search results by country. Affects Google AI Overviews and web search results.
+                  Affects search results and AI Overviews by region
                 </p>
                 <select
                   value={country}
@@ -712,22 +731,18 @@ export default function ConfigurePage() {
 
       {/* Sticky Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div className="max-w-3xl mx-auto px-6 py-4">
+        <div className="max-w-3xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm text-gray-600">
               <p>
-                <span className="font-medium">{selectedPromptsArray.length}</span> prompts{' '}
-                <span className="text-gray-400">×</span>{' '}
-                <span className="font-medium">{providers.length}</span> providers{' '}
-                <span className="text-gray-400">×</span>{' '}
-                <span className="font-medium">{temperatures.length}</span> temps{' '}
-                <span className="text-gray-400">×</span>{' '}
-                <span className="font-medium">{repeats}</span> repeats{' '}
+                <span className="font-medium">{selectedPromptsArray.length}</span> question{selectedPromptsArray.length !== 1 ? 's' : ''}{' '}
+                <span className="text-gray-400">across</span>{' '}
+                <span className="font-medium">{providers.length}</span> platform{providers.length !== 1 ? 's' : ''}{' '}
                 <span className="text-gray-400">=</span>{' '}
                 <span className="font-semibold text-gray-900">{totalCalls} calls</span>
               </p>
               <p className="text-gray-500">
-                Estimated: {formatCurrency(estimatedCost)} · {formatDuration(estimatedTime)}
+                Est. {formatCurrency(estimatedCost)} · {formatDuration(estimatedTime)}
               </p>
             </div>
             <button
