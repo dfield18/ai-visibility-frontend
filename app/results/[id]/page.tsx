@@ -4548,9 +4548,18 @@ export default function ResultsPage() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
+            <colgroup>
+              <col className="w-[22%]" />
+              <col className="w-[12%]" />
+              <col className="w-[10%]" />
+              {!isCategory && <col className="w-[10%]" />}
+              <col className="w-[16%]" />
+              <col className="w-[18%]" />
+              <col className="w-[12%]" />
+            </colgroup>
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50/50">
+              <tr className="border-b border-gray-200 bg-gray-50">
                 <th
                   className="text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('prompt')}
@@ -4631,7 +4640,20 @@ export default function ResultsPage() {
                 </th>
               </tr>
             </thead>
-            <tbody>
+          </table>
+          {/* Scrollable tbody wrapper */}
+          <div className="max-h-[600px] overflow-y-auto">
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col className="w-[22%]" />
+                <col className="w-[12%]" />
+                <col className="w-[10%]" />
+                {!isCategory && <col className="w-[10%]" />}
+                <col className="w-[16%]" />
+                <col className="w-[18%]" />
+                <col className="w-[12%]" />
+              </colgroup>
+              <tbody>
               {sortedResults.map((result: Result) => {
                 // Calculate position for this result
                 let position: number | null = null;
@@ -4804,8 +4826,9 @@ export default function ResultsPage() {
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Footer */}
