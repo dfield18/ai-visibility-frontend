@@ -5140,6 +5140,7 @@ export default function ResultsPage() {
                       />
                       <Tooltip
                         cursor={false}
+                        isAnimationActive={false}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const data = payload[0].payload;
@@ -5399,6 +5400,7 @@ export default function ResultsPage() {
                                                   />
                         <Tooltip
                           cursor={false}
+                          isAnimationActive={false}
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
@@ -6093,6 +6095,7 @@ export default function ResultsPage() {
                   />
                   <ReferenceLine x={50} stroke="#d1d5db" strokeDasharray="3 3" />
                   <Tooltip
+                    isAnimationActive={false}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length > 0) {
                         const data = payload[0].payload;
@@ -6501,6 +6504,7 @@ export default function ResultsPage() {
                   />
                   <ReferenceLine x={0} stroke="#374151" strokeWidth={1} />
                   <Tooltip
+                    isAnimationActive={false}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length > 0) {
                         const data = payload[0].payload;
@@ -8200,6 +8204,7 @@ export default function ResultsPage() {
                               ))}
                             </Pie>
                             <Tooltip
+                              isAnimationActive={false}
                               formatter={(value, name) => {
                                 const numValue = typeof value === 'number' ? value : 0;
                                 const data = sourceCategoryData;
