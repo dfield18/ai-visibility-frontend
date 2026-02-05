@@ -4808,6 +4808,13 @@ export default function ResultsPage() {
                       <tr className="bg-gray-50/60">
                         <td colSpan={isCategory ? 7 : 8} className="px-6 py-4">
                           <div className="pl-8 space-y-4">
+                            {/* Full Prompt */}
+                            <div>
+                              <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Prompt</h4>
+                              <div className="text-sm text-gray-700 bg-white rounded-lg border border-gray-200 p-3">
+                                {result.prompt}
+                              </div>
+                            </div>
                             {/* Full Response */}
                             <div>
                               <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Full Response</h4>
@@ -10230,6 +10237,13 @@ export default function ResultsPage() {
                               <tr className="bg-gray-50/60">
                                 <td colSpan={7} className="px-6 py-4">
                                   <div className="pl-8 space-y-4">
+                                    {/* Full Prompt */}
+                                    <div>
+                                      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Prompt</h4>
+                                      <div className="text-sm text-gray-700 bg-white rounded-lg border border-gray-200 p-3">
+                                        {result.prompt}
+                                      </div>
+                                    </div>
                                     {/* Full Response */}
                                     <div>
                                       <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Full Response</h4>
