@@ -41,9 +41,8 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   const [editingReport, setEditingReport] = useState<ScheduledReport | null>(null);
   const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [runNowPrompt, setRunNowPrompt] = useState<{ reportId: string; reportName: string } | null>(null);
 
-  // Debug logging
-  console.log('[ReportsTab] Render - loading:', loading, 'error:', error, 'reports:', reports.length, 'isCreating:', isCreating);
 
   // Extract unique values from results - memoize to prevent re-render loops
   const uniquePrompts = useMemo(() =>
@@ -78,53 +77,28 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   });
 
   const fetchReports = useCallback(async () => {
-    console.log('[ReportsTab] fetchReports called');
     try {
       setLoading(true);
       setError(null);
-      console.log('[ReportsTab] Getting token...');
       const token = await getToken();
-      console.log('[ReportsTab] Token received:', token ? 'yes (length: ' + token.length + ')' : 'NO TOKEN');
       if (!token) {
-        console.log('[ReportsTab] No token - setting error');
         setError('Please sign in to view reports');
         setLoading(false);
         return;
       }
-      console.log('[ReportsTab] Calling API...');
       const response = await api.listScheduledReports(token);
-      console.log('[ReportsTab] API response:', response);
       setReports(response.reports);
-      console.log('[ReportsTab] Reports set, count:', response.reports.length);
     } catch (err) {
-      console.error('[ReportsTab] Error in fetchReports:', err);
       setError(err instanceof Error ? err.message : 'Failed to load reports');
     } finally {
-      console.log('[ReportsTab] Setting loading to false');
       setLoading(false);
     }
   }, [getToken]);
 
   // Fetch reports on mount
   useEffect(() => {
-    console.log('[ReportsTab] useEffect - calling fetchReports');
     fetchReports();
   }, [fetchReports]);
-
-  // Debug: Monitor isCreating state changes
-  useEffect(() => {
-    console.log('[ReportsTab] isCreating changed to:', isCreating);
-  }, [isCreating]);
-
-  // Debug: Add global click listener to detect if clicks are being captured
-  useEffect(() => {
-    const handleGlobalClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      console.log('[ReportsTab] Global click detected on:', target.tagName, target.className?.slice(0, 50));
-    };
-    document.addEventListener('click', handleGlobalClick, true);
-    return () => document.removeEventListener('click', handleGlobalClick, true);
-  }, []);
 
   // Sync form data when runStatus changes (e.g., when data loads after mount)
   useEffect(() => {
@@ -198,10 +172,12 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
         timezone: formData.timezone || 'UTC',
       };
 
-      await api.createScheduledReport(data, token);
+      const newReport = await api.createScheduledReport(data, token);
       await fetchReports();
       setIsCreating(false);
       resetForm();
+      // Prompt user to run the report now
+      setRunNowPrompt({ reportId: newReport.id, reportName: data.name });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create report');
     } finally {
@@ -343,8 +319,6 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     });
   };
 
-  console.log('[ReportsTab] About to render main UI - loading:', loading, 'error:', error, 'isCreating:', isCreating);
-
   return (
     <div className="space-y-6">
       {/* Header - Always show so user can create reports */}
@@ -362,23 +336,9 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
         </div>
         <button
           type="button"
-          onMouseEnter={() => console.log('[ReportsTab] Mouse entered New Report button')}
-          onMouseDown={() => console.log('[ReportsTab] Mouse DOWN on New Report button')}
-          onMouseUp={() => console.log('[ReportsTab] Mouse UP on New Report button')}
-          onClick={(e) => {
-            console.log('[ReportsTab] *** CLICK EVENT FIRED ***');
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('[ReportsTab] New Report button clicked! Current state:', {
-              loading,
-              reportsCount: reports.length,
-              maxReports: MAX_REPORTS,
-              isDisabled: !loading && reports.length >= MAX_REPORTS,
-              isCreating
-            });
+          onClick={() => {
             resetForm();
             setIsCreating(true);
-            console.log('[ReportsTab] setIsCreating(true) called');
           }}
           disabled={!loading && reports.length >= MAX_REPORTS}
           className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -387,7 +347,6 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
               : 'bg-[#4A7C59] text-white hover:bg-[#3d6649]'
           }`}
           title={!loading && reports.length >= MAX_REPORTS ? `Maximum of ${MAX_REPORTS} reports allowed` : undefined}
-          style={{ position: 'relative', zIndex: 100, pointerEvents: 'auto' }}
         >
           <Plus className="w-4 h-4" />
           New Report
@@ -428,19 +387,11 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
           </p>
           <button
             type="button"
-            onMouseEnter={() => console.log('[ReportsTab] Mouse entered Create Report button')}
-            onMouseDown={() => console.log('[ReportsTab] Mouse DOWN on Create Report button')}
-            onClick={(e) => {
-              console.log('[ReportsTab] *** CREATE CLICK EVENT FIRED ***');
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('[ReportsTab] Create Report button clicked!');
+            onClick={() => {
               resetForm();
               setIsCreating(true);
-              console.log('[ReportsTab] setIsCreating(true) called');
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-lg hover:bg-[#3d6649] transition-colors"
-            style={{ position: 'relative', zIndex: 100, pointerEvents: 'auto' }}
           >
             <Plus className="w-4 h-4" />
             Create Report
@@ -701,6 +652,46 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
               >
                 {actionLoading.has(deleteConfirmId) && <Spinner className="w-4 h-4" />}
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Run Now Prompt Modal */}
+      {runNowPrompt && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                <PlayCircle className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Report Created!</h3>
+                <p className="text-sm text-gray-500">{runNowPrompt.reportName}</p>
+              </div>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Would you like to run this report now and receive a test email? You can also run it later using the play button.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setRunNowPrompt(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Later
+              </button>
+              <button
+                onClick={async () => {
+                  const reportId = runNowPrompt.reportId;
+                  setRunNowPrompt(null);
+                  await handleRunNow(reportId);
+                }}
+                disabled={actionLoading.has(runNowPrompt.reportId)}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#4A7C59] rounded-lg hover:bg-[#3d6649] transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {actionLoading.has(runNowPrompt.reportId) && <Spinner className="w-4 h-4" />}
+                Run Now
               </button>
             </div>
           </div>
