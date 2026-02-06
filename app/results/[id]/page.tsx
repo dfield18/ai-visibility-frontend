@@ -11574,7 +11574,7 @@ export default function ResultsPage() {
                         style={{ transform: `translateX(-${brandCarouselIndex * (100 / 3 + 1.33)}%)` }}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
-                          const providers = brandData.providerScores.slice(0, 4);
+                          const providers = brandData.providerScores.slice(0, 5);
 
                           // Get provider pill color based on score
                           const getProviderPillStyle = (score: number) => {
@@ -12230,18 +12230,12 @@ export default function ResultsPage() {
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
-                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[160px] max-w-[200px] relative group"
+                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[160px] max-w-[200px]"
+                            title={prompt}
                           >
-                            <span className={`text-sm block truncate ${prompt.length > 40 ? 'cursor-default' : ''}`}>
+                            <span className="text-sm block truncate">
                               {prompt.length > 40 ? prompt.substring(0, 38) + '...' : prompt}
                             </span>
-                            {prompt.length > 40 && (
-                              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 z-50 hidden group-hover:block">
-                                <div className="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 max-w-[300px] whitespace-normal text-left shadow-lg">
-                                  {prompt}
-                                </div>
-                              </div>
-                            )}
                           </th>
                         ))}
                         <th className="text-center py-3 px-2 text-sm font-medium text-gray-600 min-w-[80px]">Avg</th>
