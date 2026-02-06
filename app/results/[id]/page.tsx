@@ -8015,7 +8015,7 @@ export default function ResultsPage() {
                     return (
                       <div key={source.domain} className="bg-[#FAFAF8] rounded-lg">
                         <div
-                          className="flex items-center gap-2 p-2.5 cursor-pointer hover:bg-gray-100 transition-colors duration-100 rounded-t-lg"
+                          className={`flex items-center gap-2 p-2.5 cursor-pointer hover:bg-gray-100 transition-colors duration-100 ${isExpanded ? 'rounded-t-lg' : 'rounded-lg'}`}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
