@@ -116,6 +116,16 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     console.log('[ReportsTab] isCreating changed to:', isCreating);
   }, [isCreating]);
 
+  // Debug: Add global click listener to detect if clicks are being captured
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      console.log('[ReportsTab] Global click detected on:', target.tagName, target.className?.slice(0, 50));
+    };
+    document.addEventListener('click', handleGlobalClick, true);
+    return () => document.removeEventListener('click', handleGlobalClick, true);
+  }, []);
+
   // Sync form data when runStatus changes (e.g., when data loads after mount)
   useEffect(() => {
     if (runStatus && !isCreating && !editingReport) {
@@ -352,7 +362,11 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
         </div>
         <button
           type="button"
+          onMouseEnter={() => console.log('[ReportsTab] Mouse entered New Report button')}
+          onMouseDown={() => console.log('[ReportsTab] Mouse DOWN on New Report button')}
+          onMouseUp={() => console.log('[ReportsTab] Mouse UP on New Report button')}
           onClick={(e) => {
+            console.log('[ReportsTab] *** CLICK EVENT FIRED ***');
             e.preventDefault();
             e.stopPropagation();
             console.log('[ReportsTab] New Report button clicked! Current state:', {
@@ -373,7 +387,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
               : 'bg-[#4A7C59] text-white hover:bg-[#3d6649]'
           }`}
           title={!loading && reports.length >= MAX_REPORTS ? `Maximum of ${MAX_REPORTS} reports allowed` : undefined}
-          style={{ position: 'relative', zIndex: 10 }}
+          style={{ position: 'relative', zIndex: 100, pointerEvents: 'auto' }}
         >
           <Plus className="w-4 h-4" />
           New Report
@@ -414,7 +428,10 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
           </p>
           <button
             type="button"
+            onMouseEnter={() => console.log('[ReportsTab] Mouse entered Create Report button')}
+            onMouseDown={() => console.log('[ReportsTab] Mouse DOWN on Create Report button')}
             onClick={(e) => {
+              console.log('[ReportsTab] *** CREATE CLICK EVENT FIRED ***');
               e.preventDefault();
               e.stopPropagation();
               console.log('[ReportsTab] Create Report button clicked!');
@@ -423,7 +440,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
               console.log('[ReportsTab] setIsCreating(true) called');
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-lg hover:bg-[#3d6649] transition-colors"
-            style={{ position: 'relative', zIndex: 10 }}
+            style={{ position: 'relative', zIndex: 100, pointerEvents: 'auto' }}
           >
             <Plus className="w-4 h-4" />
             Create Report
