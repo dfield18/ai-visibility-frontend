@@ -32,14 +32,14 @@ function HouseConstruction({ progress }: { progress: number }) {
   }, []);
 
   // Progress thresholds for each element
-  const showFoundation = progress >= 0;
-  const showLeftWall = progress >= 12;
-  const showRightWall = progress >= 24;
-  const showRoofLeft = progress >= 36;
-  const showRoofRight = progress >= 48;
-  const showDoor = progress >= 60;
-  const showWindow = progress >= 72;
-  const showChimney = progress >= 85;
+  const showFoundation = progress >= 10;
+  const showLeftWall = progress >= 20;
+  const showRightWall = progress >= 30;
+  const showRoofLeft = progress >= 45;
+  const showRoofRight = progress >= 55;
+  const showDoor = progress >= 65;
+  const showWindow = progress >= 75;
+  const showChimney = progress >= 88;
 
   // Calculate stroke dashoffset for progressive reveal
   const getStrokeDashoffset = (pathLength: number, visible: boolean) => {
@@ -47,13 +47,23 @@ function HouseConstruction({ progress }: { progress: number }) {
     return 0;
   };
 
-  // Worker X positions based on progress
-  const workerX = useMemo(() => {
-    if (progress < 25) return 30 + workerPosition * 6;
-    if (progress < 50) return 70 + workerPosition * 6;
-    if (progress < 75) return 110 + workerPosition * 6;
-    return 150 + workerPosition * 6;
-  }, [progress, workerPosition]);
+  // Worker position based on what's currently being built
+  const getWorkerPosition = () => {
+    if (progress < 10) return { x: 100, y: 132 }; // At scaffolding center
+    if (progress < 20) return { x: 100, y: 132 }; // Building foundation
+    if (progress < 30) return { x: 50, y: 110 }; // Building left wall
+    if (progress < 45) return { x: 150, y: 110 }; // Building right wall
+    if (progress < 55) return { x: 70, y: 70 }; // Building left roof
+    if (progress < 65) return { x: 130, y: 70 }; // Building right roof
+    if (progress < 75) return { x: 100, y: 120 }; // Building door
+    if (progress < 88) return { x: 132, y: 107 }; // Building window
+    return { x: 126, y: 50 }; // Building chimney
+  };
+
+  const workerPos = getWorkerPosition();
+  // Add slight movement based on animation frame
+  const workerX = workerPos.x + (workerPosition - 1) * 3;
+  const workerY = workerPos.y;
 
   return (
     <svg viewBox="0 0 220 170" className="w-full max-w-xs mx-auto">
@@ -68,8 +78,34 @@ function HouseConstruction({ progress }: { progress: number }) {
         strokeLinecap="round"
       />
 
+      {/* Scaffolding - always visible from the start */}
+      <g stroke="#000" strokeWidth="0.75" fill="none" opacity="0.6">
+        {/* Vertical poles */}
+        <line x1="35" y1="145" x2="35" y2="30" />
+        <line x1="165" y1="145" x2="165" y2="30" />
+
+        {/* Horizontal supports */}
+        <line x1="32" y1="145" x2="168" y2="145" />
+        <line x1="32" y1="110" x2="168" y2="110" />
+        <line x1="32" y1="75" x2="168" y2="75" />
+        <line x1="32" y1="45" x2="168" y2="45" />
+
+        {/* Cross braces */}
+        <line x1="35" y1="145" x2="50" y2="110" strokeDasharray="2,2" />
+        <line x1="165" y1="145" x2="150" y2="110" strokeDasharray="2,2" />
+        <line x1="35" y1="75" x2="50" y2="45" strokeDasharray="2,2" />
+        <line x1="165" y1="75" x2="150" y2="45" strokeDasharray="2,2" />
+
+        {/* Platform boards at work levels */}
+        <line x1="35" y1="110" x2="55" y2="110" strokeWidth="1.5" />
+        <line x1="145" y1="110" x2="165" y2="110" strokeWidth="1.5" />
+        <line x1="60" y1="75" x2="85" y2="75" strokeWidth="1.5" />
+        <line x1="115" y1="75" x2="140" y2="75" strokeWidth="1.5" />
+        <line x1="115" y1="45" x2="140" y2="45" strokeWidth="1.5" />
+      </g>
+
       {/* Ghost outline of complete house (very light) */}
-      <g opacity="0.12" stroke="#000" strokeWidth="1" fill="none">
+      <g opacity="0.1" stroke="#000" strokeWidth="1" fill="none">
         {/* Foundation */}
         <line x1="40" y1="140" x2="160" y2="140" />
         {/* Left wall */}
@@ -214,7 +250,13 @@ function HouseConstruction({ progress }: { progress: number }) {
       </g>
 
       {/* Animated stick figure construction worker - black & white */}
-      <g transform={`translate(${workerX}, 132)`} stroke="#000" strokeWidth="1.5" strokeLinecap="round">
+      <g
+        transform={`translate(${workerX}, ${workerY})`}
+        stroke="#000"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        className="transition-all duration-300 ease-in-out"
+      >
         {/* Head - simple circle */}
         <circle cx="0" cy="-28" r="4" fill="none" />
 
