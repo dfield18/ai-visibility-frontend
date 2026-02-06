@@ -8587,12 +8587,12 @@ export default function ResultsPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto min-h-0">
+              <table className="w-full table-fixed">
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
                     <th
-                      className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className="w-[18%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('domain')}
                     >
                       <span className="flex items-center gap-1">
@@ -8603,7 +8603,7 @@ export default function ResultsPage() {
                       </span>
                     </th>
                     <th
-                      className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className="w-[13%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('usedPercent')}
                     >
                       <span className="flex items-center justify-center gap-1">
@@ -8614,7 +8614,7 @@ export default function ResultsPage() {
                       </span>
                     </th>
                     <th
-                      className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className="w-[12%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('avgCitation')}
                     >
                       <span className="flex items-center justify-center gap-1">
@@ -8625,7 +8625,7 @@ export default function ResultsPage() {
                       </span>
                     </th>
                     <th
-                      className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className="w-[12%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('category')}
                     >
                       <span className="flex items-center justify-center gap-1">
@@ -8636,7 +8636,7 @@ export default function ResultsPage() {
                       </span>
                     </th>
                     <th
-                      className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className="w-[15%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('avgSentiment')}
                     >
                       <span className="flex items-center justify-center gap-1">
@@ -8646,14 +8646,23 @@ export default function ResultsPage() {
                         )}
                       </span>
                     </th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Models</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brands</th>
+                    <th className="w-[15%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Models</th>
+                    <th className="w-[15%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brands</th>
                   </tr>
                 </thead>
               </table>
               {/* Scrollable tbody wrapper */}
-              <div className="max-h-[540px] overflow-y-auto">
-                <table className="w-full">
+              <div className="max-h-[540px] overflow-y-auto overscroll-contain">
+                <table className="w-full table-fixed">
+                  <colgroup>
+                    <col className="w-[18%]" />
+                    <col className="w-[13%]" />
+                    <col className="w-[12%]" />
+                    <col className="w-[12%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[15%]" />
+                  </colgroup>
                   <tbody>
                   {sortedDomainTableData.map((row) => {
                     // Sentiment badge styling
@@ -10033,20 +10042,32 @@ export default function ResultsPage() {
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full">
+                <div className="overflow-x-auto min-h-0">
+                  <table className="w-full table-fixed">
                     <thead>
                       <tr className="border-b border-gray-200 bg-gray-50/50">
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
-                        <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                        <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Competitors</th>
-                        <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="w-[30%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
+                        <th className="w-[12%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
+                        <th className="w-[10%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
+                        <th className="w-[18%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                        <th className="w-[20%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Competitors</th>
+                        <th className="w-[10%] text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {filteredSentimentResults.map((result: Result) => {
+                  </table>
+                  {/* Scrollable tbody wrapper */}
+                  <div className="max-h-[540px] overflow-y-auto overscroll-contain">
+                    <table className="w-full table-fixed">
+                      <colgroup>
+                        <col className="w-[30%]" />
+                        <col className="w-[12%]" />
+                        <col className="w-[10%]" />
+                        <col className="w-[18%]" />
+                        <col className="w-[20%]" />
+                        <col className="w-[10%]" />
+                      </colgroup>
+                      <tbody>
+                        {filteredSentimentResults.map((result: Result) => {
                         // Calculate rank
                         let rank = 0;
                         const brandLower = (runStatus?.brand || '').toLowerCase();
@@ -10173,8 +10194,9 @@ export default function ResultsPage() {
                           </tr>
                         );
                       })}
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </>
             );
