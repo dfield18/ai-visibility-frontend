@@ -10994,67 +10994,6 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               </table>
             </div>
           )}
-
-          {quickWins.length > 0 ? (
-            <div className="space-y-3">
-              {quickWins.map((win, idx) => {
-                const severityColors = {
-                  critical: 'bg-red-100 text-red-700 border-red-200',
-                  high: 'bg-orange-100 text-orange-700 border-orange-200',
-                  medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-                };
-                const typeLabels = {
-                  prompt_gap: 'Prompt Gap',
-                  provider_gap: 'Provider Gap',
-                  source_gap: 'Source Gap',
-                };
-                const typeColors = {
-                  prompt_gap: 'bg-blue-50 text-blue-600',
-                  provider_gap: 'bg-purple-50 text-purple-600',
-                  source_gap: 'bg-teal-50 text-teal-600',
-                };
-
-                return (
-                  <div key={idx} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="flex-shrink-0 w-8 h-8 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-sm font-semibold">
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center flex-wrap gap-2 mb-1">
-                        <h3 className="font-medium text-gray-900">{win.title}</h3>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${severityColors[win.severity]}`}>
-                          {win.severity === 'critical' ? 'Critical' : win.severity === 'high' ? 'High Priority' : 'Medium Priority'}
-                        </span>
-                        <span className={`text-xs px-2 py-0.5 rounded ${typeColors[win.type]}`}>
-                          {typeLabels[win.type]}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{win.description}</p>
-                      <div className="flex items-center flex-wrap gap-4 text-xs text-gray-500">
-                        <span>Based on {win.metrics.responseCount} responses</span>
-                        {win.competitors && win.competitors.length > 0 && (
-                          <div className="flex items-center gap-1.5">
-                            <span>Competitors:</span>
-                            <div className="flex flex-wrap gap-1">
-                              {win.competitors.map(comp => (
-                                <span key={comp} className="px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded">
-                                  {comp}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 text-center py-8">
-              Great job! No significant visibility gaps identified based on current data.
-            </p>
-          )}
         </div>
 
         {/* Sentiment Improvement */}
