@@ -72,6 +72,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
       const token = await getToken();
       if (!token) {
         setError('Please sign in to view reports');
+        setLoading(false);
         return;
       }
       const response = await api.listScheduledReports(token);
@@ -119,7 +120,11 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     try {
       setActionLoadingState('create', true);
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        setError('Please sign in to create reports');
+        setActionLoadingState('create', false);
+        return;
+      }
 
       const prompts = (formData.prompts || []).filter(p => p.trim());
       const competitors = (formData.competitors || []).filter(c => c.trim());
@@ -172,7 +177,11 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     try {
       setActionLoadingState('update', true);
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        setError('Please sign in to update reports');
+        setActionLoadingState('update', false);
+        return;
+      }
 
       await api.updateScheduledReport(editingReport.id, formData, token);
       await fetchReports();
@@ -189,7 +198,11 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     try {
       setActionLoadingState(reportId, true);
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        setError('Please sign in to delete reports');
+        setActionLoadingState(reportId, false);
+        return;
+      }
 
       await api.deleteScheduledReport(reportId, token);
       await fetchReports();
@@ -206,7 +219,11 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     try {
       setActionLoadingState(reportId, true);
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        setError('Please sign in to toggle reports');
+        setActionLoadingState(reportId, false);
+        return;
+      }
 
       await api.toggleScheduledReport(reportId, token);
       await fetchReports();
@@ -224,7 +241,11 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     try {
       setActionLoadingState(reportId, true);
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        setError('Please sign in to run reports');
+        setActionLoadingState(reportId, false);
+        return;
+      }
 
       const response = await api.runScheduledReportNow(reportId, token);
       setSuccessMessage(`Report started! Run ID: ${response.run_id.slice(0, 8)}...`);
