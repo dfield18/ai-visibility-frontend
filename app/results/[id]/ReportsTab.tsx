@@ -306,40 +306,35 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-        <Spinner className="w-8 h-8 mx-auto mb-4 text-[#4A7C59]" />
-        <p className="text-gray-500">Loading reports...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header - Always show so user can create reports */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-gray-900">Automated Reports</h2>
           <p className="text-sm text-gray-500 mt-1">
             Schedule recurring visibility analyses and receive results via email
           </p>
-          <p className="text-xs text-gray-400 mt-1">
-            {reports.length} of {MAX_REPORTS} reports used
-          </p>
+          {!loading && (
+            <p className="text-xs text-gray-400 mt-1">
+              {reports.length} of {MAX_REPORTS} reports used
+            </p>
+          )}
         </div>
         <button
+          type="button"
           onClick={() => {
+            console.log('New Report button clicked');
             resetForm();
             setIsCreating(true);
           }}
-          disabled={reports.length >= MAX_REPORTS}
+          disabled={!loading && reports.length >= MAX_REPORTS}
           className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            reports.length >= MAX_REPORTS
+            !loading && reports.length >= MAX_REPORTS
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-[#4A7C59] text-white hover:bg-[#3d6649]'
           }`}
-          title={reports.length >= MAX_REPORTS ? `Maximum of ${MAX_REPORTS} reports allowed` : undefined}
+          title={!loading && reports.length >= MAX_REPORTS ? `Maximum of ${MAX_REPORTS} reports allowed` : undefined}
         >
           <Plus className="w-4 h-4" />
           New Report
@@ -361,7 +356,12 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
       )}
 
       {/* Reports List */}
-      {reports.length === 0 ? (
+      {loading ? (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+          <Spinner className="w-8 h-8 mx-auto mb-4 text-[#4A7C59]" />
+          <p className="text-gray-500">Loading reports...</p>
+        </div>
+      ) : reports.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
           <div className="w-16 h-16 bg-[#E8F0E8] rounded-full flex items-center justify-center mx-auto mb-4">
             <FileBarChart className="w-8 h-8 text-[#4A7C59]" />
@@ -374,7 +374,9 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
             You can create up to {MAX_REPORTS} automated reports.
           </p>
           <button
+            type="button"
             onClick={() => {
+              console.log('Create Report button clicked');
               resetForm();
               setIsCreating(true);
             }}
