@@ -8051,7 +8051,12 @@ export default function ResultsPage() {
                                 </span>
                               ))}
                               {source.providers.length > 3 && (
-                                <span className="text-[10px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded">+{source.providers.length - 3}</span>
+                                <span
+                                  className="text-[10px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded cursor-help"
+                                  title={source.providers.map((p: string) => getProviderLabel(p)).join(', ')}
+                                >
+                                  +{source.providers.length - 3}
+                                </span>
                               )}
                             </div>
                             <span className="text-xs text-gray-500 w-16 text-right">{source.count} cit.</span>
@@ -8088,7 +8093,12 @@ export default function ResultsPage() {
                                           </span>
                                         ))}
                                         {urlDetail.providers.length > 3 && (
-                                          <span className="text-[9px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded">+{urlDetail.providers.length - 3}</span>
+                                          <span
+                                            className="text-[9px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded cursor-help"
+                                            title={urlDetail.providers.map((p: string) => getProviderLabel(p)).join(', ')}
+                                          >
+                                            +{urlDetail.providers.length - 3}
+                                          </span>
                                         )}
                                       </div>
                                       <span className="text-[10px] text-gray-400">({urlDetail.count})</span>
@@ -8722,7 +8732,12 @@ export default function ResultsPage() {
                             <span className="text-sm text-gray-700">
                               {row.providers.slice(0, 2).map(p => getProviderLabel(p)).join(', ')}
                               {row.providers.length > 2 && (
-                                <span className="text-gray-400 ml-1">+{row.providers.length - 2}</span>
+                                <span
+                                  className="text-gray-400 ml-1 cursor-help"
+                                  title={row.providers.map(p => getProviderLabel(p)).join(', ')}
+                                >
+                                  +{row.providers.length - 2}
+                                </span>
                               )}
                             </span>
                           ) : (
@@ -8734,7 +8749,12 @@ export default function ResultsPage() {
                             <span className="text-sm text-gray-700">
                               {row.brands.slice(0, 2).join(', ')}
                               {row.brands.length > 2 && (
-                                <span className="text-gray-400 ml-1">+{row.brands.length - 2}</span>
+                                <span
+                                  className="text-gray-400 ml-1 cursor-help"
+                                  title={row.brands.join(', ')}
+                                >
+                                  +{row.brands.length - 2}
+                                </span>
                               )}
                             </span>
                           ) : (
