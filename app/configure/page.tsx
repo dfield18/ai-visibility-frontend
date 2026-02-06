@@ -232,7 +232,7 @@ export default function ConfigurePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FAFAF8] pb-32">
+    <main className="min-h-screen bg-[#FAFAF8]">
       {/* Header - minimal, transparent */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-3">
@@ -857,35 +857,33 @@ export default function ConfigurePage() {
         </div>
       </div>
 
-      {/* Sticky Bottom Bar - simplified */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                <span className="font-medium">{selectedPromptsArray.length}</span> question{selectedPromptsArray.length !== 1 ? 's' : ''}{' '}
-                <span className="text-gray-400">×</span>{' '}
-                <span className="font-medium">{providers.length}</span> platform{providers.length !== 1 ? 's' : ''}{' '}
-                <span className="text-gray-400">=</span>{' '}
-                <span className="font-semibold text-[#4A7C59]">{totalCalls} API calls</span>
-              </p>
-              <p className="text-sm text-gray-500">
-                Estimated cost: {formatCurrency(estimatedCost)} · Time: {formatDuration(estimatedTime)}
-              </p>
-            </div>
-            <button
-              onClick={handleRunAnalysis}
-              disabled={!canRun}
-              className="px-6 py-3 bg-[#4A7C59] text-white font-semibold rounded-xl hover:bg-[#3d6649] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {startRunMutation.isPending ? (
-                <Spinner size="sm" />
-              ) : (
-                <Sparkles className="w-5 h-5" />
-              )}
-              Run Analysis
-            </button>
+      {/* Bottom Action Section - blends with page background */}
+      <div className="max-w-7xl mx-auto px-6 pb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">{selectedPromptsArray.length}</span> question{selectedPromptsArray.length !== 1 ? 's' : ''}{' '}
+              <span className="text-gray-400">×</span>{' '}
+              <span className="font-medium">{providers.length}</span> platform{providers.length !== 1 ? 's' : ''}{' '}
+              <span className="text-gray-400">=</span>{' '}
+              <span className="font-semibold text-[#4A7C59]">{totalCalls} API calls</span>
+            </p>
+            <p className="text-sm text-gray-500">
+              Estimated cost: {formatCurrency(estimatedCost)} · Time: {formatDuration(estimatedTime)}
+            </p>
           </div>
+          <button
+            onClick={handleRunAnalysis}
+            disabled={!canRun}
+            className="px-6 py-3 bg-[#4A7C59] text-white font-semibold rounded-xl hover:bg-[#3d6649] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {startRunMutation.isPending ? (
+              <Spinner size="sm" />
+            ) : (
+              <Sparkles className="w-5 h-5" />
+            )}
+            Run Analysis
+          </button>
         </div>
       </div>
     </main>
