@@ -167,6 +167,17 @@ class ApiClient {
       },
     });
   }
+
+  // User Profile API
+
+  async syncProfile(token: string): Promise<{ success: boolean; email: string; name: string }> {
+    return this.request<{ success: boolean; email: string; name: string }>('/api/v1/users/sync-profile', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE);

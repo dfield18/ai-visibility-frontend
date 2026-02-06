@@ -100,6 +100,22 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     fetchReports();
   }, [fetchReports]);
 
+  // Sync user profile from Clerk on mount (ensures email is correct for notifications)
+  useEffect(() => {
+    const syncProfile = async () => {
+      try {
+        const token = await getToken();
+        if (token) {
+          await api.syncProfile(token);
+        }
+      } catch (err) {
+        // Silently fail - this is just a background sync
+        console.log('[ReportsTab] Profile sync:', err instanceof Error ? err.message : 'failed');
+      }
+    };
+    syncProfile();
+  }, [getToken]);
+
   // Sync form data when runStatus changes (e.g., when data loads after mount)
   useEffect(() => {
     if (runStatus && !isCreating && !editingReport) {
