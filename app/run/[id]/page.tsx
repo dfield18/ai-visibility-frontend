@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import {
@@ -18,6 +18,251 @@ import { Spinner } from '@/components/ui/Spinner';
 import { useRunStatus, useCancelRun } from '@/hooks/useApi';
 import { formatDuration, truncate } from '@/lib/utils';
 import { Result } from '@/lib/types';
+
+// House Construction Animation Component
+function HouseConstruction({ progress }: { progress: number }) {
+  const [workerPosition, setWorkerPosition] = useState(0);
+
+  // Cycle worker position every 400ms
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWorkerPosition((prev) => (prev + 1) % 3);
+    }, 400);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Progress thresholds for each element
+  const showFoundation = progress >= 0;
+  const showLeftWall = progress >= 12;
+  const showRightWall = progress >= 24;
+  const showRoofLeft = progress >= 36;
+  const showRoofRight = progress >= 48;
+  const showDoor = progress >= 60;
+  const showWindow = progress >= 72;
+  const showChimney = progress >= 85;
+
+  // Calculate stroke dashoffset for progressive reveal
+  const getStrokeDashoffset = (pathLength: number, visible: boolean, elementProgress?: number) => {
+    if (!visible) return pathLength;
+    if (elementProgress !== undefined) {
+      return pathLength * (1 - elementProgress / 100);
+    }
+    return 0;
+  };
+
+  // Worker X positions based on progress
+  const workerX = useMemo(() => {
+    if (progress < 25) return 30 + workerPosition * 8;
+    if (progress < 50) return 70 + workerPosition * 8;
+    if (progress < 75) return 110 + workerPosition * 8;
+    return 150 + workerPosition * 8;
+  }, [progress, workerPosition]);
+
+  return (
+    <svg viewBox="0 0 220 170" className="w-full max-w-xs mx-auto">
+      {/* Ground line */}
+      <line
+        x1="10"
+        y1="145"
+        x2="210"
+        y2="145"
+        stroke="#333"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+
+      {/* Ghost outline of complete house (light gray) */}
+      <g opacity="0.15" stroke="#666" strokeWidth="1.5" fill="none">
+        {/* Foundation */}
+        <rect x="40" y="135" width="120" height="10" />
+        {/* Left wall */}
+        <line x1="50" y1="135" x2="50" y2="75" />
+        {/* Right wall */}
+        <line x1="150" y1="135" x2="150" y2="75" />
+        {/* Roof left */}
+        <line x1="40" y1="75" x2="100" y2="35" />
+        {/* Roof right */}
+        <line x1="160" y1="75" x2="100" y2="35" />
+        {/* Door */}
+        <rect x="85" y="100" width="30" height="35" />
+        {/* Window */}
+        <rect x="125" y="95" width="18" height="18" />
+        {/* Chimney */}
+        <rect x="125" y="30" width="15" height="30" />
+      </g>
+
+      {/* Animated construction elements */}
+      <g stroke="#333" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+        {/* Foundation */}
+        <rect
+          x="40"
+          y="135"
+          width="120"
+          height="10"
+          strokeDasharray="260"
+          strokeDashoffset={getStrokeDashoffset(260, showFoundation)}
+          className="transition-all duration-700 ease-out"
+          fill={showFoundation ? "#f5f5f5" : "none"}
+        />
+
+        {/* Left wall */}
+        <line
+          x1="50"
+          y1="135"
+          x2="50"
+          y2="75"
+          strokeDasharray="60"
+          strokeDashoffset={getStrokeDashoffset(60, showLeftWall)}
+          className="transition-all duration-500 ease-out"
+        />
+
+        {/* Right wall */}
+        <line
+          x1="150"
+          y1="135"
+          x2="150"
+          y2="75"
+          strokeDasharray="60"
+          strokeDashoffset={getStrokeDashoffset(60, showRightWall)}
+          className="transition-all duration-500 ease-out"
+        />
+
+        {/* Top wall connecting line */}
+        {showRightWall && (
+          <line
+            x1="50"
+            y1="75"
+            x2="150"
+            y2="75"
+            strokeDasharray="100"
+            strokeDashoffset={0}
+            className="transition-all duration-500 ease-out"
+          />
+        )}
+
+        {/* Roof left side */}
+        <line
+          x1="40"
+          y1="75"
+          x2="100"
+          y2="35"
+          strokeDasharray="75"
+          strokeDashoffset={getStrokeDashoffset(75, showRoofLeft)}
+          className="transition-all duration-500 ease-out"
+        />
+
+        {/* Roof right side */}
+        <line
+          x1="160"
+          y1="75"
+          x2="100"
+          y2="35"
+          strokeDasharray="75"
+          strokeDashoffset={getStrokeDashoffset(75, showRoofRight)}
+          className="transition-all duration-500 ease-out"
+        />
+
+        {/* Door */}
+        <rect
+          x="85"
+          y="100"
+          width="30"
+          height="35"
+          strokeDasharray="130"
+          strokeDashoffset={getStrokeDashoffset(130, showDoor)}
+          className="transition-all duration-500 ease-out"
+        />
+        {/* Door knob */}
+        {showDoor && (
+          <circle cx="108" cy="118" r="2" fill="#333" />
+        )}
+
+        {/* Window */}
+        <rect
+          x="125"
+          y="95"
+          width="18"
+          height="18"
+          strokeDasharray="72"
+          strokeDashoffset={getStrokeDashoffset(72, showWindow)}
+          className="transition-all duration-500 ease-out"
+        />
+        {/* Window cross */}
+        {showWindow && (
+          <>
+            <line x1="134" y1="95" x2="134" y2="113" strokeWidth="1.5" />
+            <line x1="125" y1="104" x2="143" y2="104" strokeWidth="1.5" />
+          </>
+        )}
+
+        {/* Chimney */}
+        <rect
+          x="125"
+          y="30"
+          width="15"
+          height="30"
+          strokeDasharray="90"
+          strokeDashoffset={getStrokeDashoffset(90, showChimney)}
+          className="transition-all duration-500 ease-out"
+          fill={showChimney ? "#f5f5f5" : "none"}
+        />
+        {/* Smoke */}
+        {showChimney && progress >= 95 && (
+          <g className="animate-pulse" opacity="0.6">
+            <path
+              d="M132 28 Q135 20 130 15 Q128 10 132 5"
+              strokeWidth="1.5"
+              fill="none"
+            />
+          </g>
+        )}
+      </g>
+
+      {/* Animated construction worker */}
+      <g transform={`translate(${workerX}, 130)`}>
+        {/* Hard hat */}
+        <ellipse cx="0" cy="-20" rx="6" ry="3" fill="#FFD700" stroke="#333" strokeWidth="1" />
+        <rect x="-5" y="-23" width="10" height="4" fill="#FFD700" stroke="#333" strokeWidth="1" />
+
+        {/* Head */}
+        <circle cx="0" cy="-15" r="5" fill="#FFE4C4" stroke="#333" strokeWidth="1" />
+
+        {/* Body */}
+        <rect x="-4" y="-10" width="8" height="12" fill="#4A7C59" stroke="#333" strokeWidth="1" rx="1" />
+
+        {/* Arms - animated based on position */}
+        {workerPosition === 0 && (
+          <>
+            <line x1="-4" y1="-6" x2="-10" y2="-2" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+            <line x1="4" y1="-6" x2="10" y2="-10" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+          </>
+        )}
+        {workerPosition === 1 && (
+          <>
+            <line x1="-4" y1="-6" x2="-10" y2="-8" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+            <line x1="4" y1="-6" x2="10" y2="-4" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+          </>
+        )}
+        {workerPosition === 2 && (
+          <>
+            <line x1="-4" y1="-6" x2="-8" y2="-12" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+            <line x1="4" y1="-6" x2="8" y2="-2" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+          </>
+        )}
+
+        {/* Legs */}
+        <line x1="-2" y1="2" x2="-3" y2="12" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+        <line x1="2" y1="2" x2="3" y2="12" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+
+        {/* Tool (hammer) */}
+        <g transform={`rotate(${workerPosition * 15 - 15}, 10, -8)`}>
+          <line x1="10" y1="-10" x2="10" y2="-2" stroke="#8B4513" strokeWidth="2" strokeLinecap="round" />
+          <rect x="7" y="-12" width="6" height="4" fill="#666" stroke="#333" strokeWidth="0.5" rx="1" />
+        </g>
+      </g>
+    </svg>
+  );
+}
 
 export default function RunPage() {
   const router = useRouter();
@@ -46,28 +291,6 @@ export default function RunPage() {
     } catch (err) {
       console.error('Failed to cancel:', err);
     }
-  };
-
-  const getStatusBadge = () => {
-    if (!runStatus) return null;
-
-    const statusConfig = {
-      queued: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Queued', icon: Clock },
-      running: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Running', icon: Loader2 },
-      complete: { bg: 'bg-[#E8F0E8]', text: 'text-[#4A7C59]', label: 'Complete', icon: CheckCircle2 },
-      failed: { bg: 'bg-red-100', text: 'text-red-700', label: 'Failed', icon: XCircle },
-      cancelled: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Cancelled', icon: StopCircle },
-    };
-
-    const config = statusConfig[runStatus.status];
-    const Icon = config.icon;
-
-    return (
-      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
-        <Icon className={`w-4 h-4 ${runStatus.status === 'running' ? 'animate-spin' : ''}`} />
-        {config.label}
-      </span>
-    );
   };
 
   if (isLoading) {
@@ -125,12 +348,8 @@ export default function RunPage() {
               </button>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">
-                  Analyzing{' '}
-                  <span className="text-[#4A7C59]">{runStatus.brand}</span>
+                  AI Brand Visibility Tracker
                 </h1>
-                <p className="text-sm text-gray-500">
-                  Running visibility analysis across AI models
-                </p>
               </div>
             </div>
             <UserButton
@@ -145,67 +364,44 @@ export default function RunPage() {
       </header>
 
       <div className="max-w-2xl mx-auto px-6 space-y-6">
-        {/* Status Badge */}
-        <div className="flex justify-center">
-          {getStatusBadge()}
-        </div>
+        {/* House Construction Animation */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+          <HouseConstruction progress={runStatus.progress_percent} />
 
-        {/* Progress Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="text-center mb-6">
-            {/* Circular Progress Indicator */}
-            <div className="relative inline-flex items-center justify-center w-32 h-32 mb-4">
-              <svg className="w-32 h-32 transform -rotate-90">
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="none"
-                  className="text-gray-200"
+          {/* Progress Info */}
+          <div className="mt-8 text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Analyzing <span className="text-[#4A7C59]">{runStatus.brand}</span>
+            </h2>
+
+            {/* Progress Bar */}
+            <div className="mt-4 mb-3">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500 bg-[#4A7C59]"
+                  style={{ width: `${runStatus.progress_percent}%` }}
                 />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="none"
-                  strokeDasharray={2 * Math.PI * 56}
-                  strokeDashoffset={2 * Math.PI * 56 * (1 - runStatus.progress_percent / 100)}
-                  className="text-[#5B7B5D] transition-all duration-500"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl font-bold text-gray-900">
-                  {Math.round(runStatus.progress_percent)}%
-                </span>
               </div>
             </div>
 
-            <p className="text-lg text-gray-700 mb-2">
-              <span className="font-semibold">{completedCalls}</span> of{' '}
-              <span className="font-semibold">{runStatus.total_calls}</span> calls complete
-            </p>
-
-            {runStatus.estimated_seconds_remaining !== null && runStatus.status === 'running' && (
-              <p className="text-sm text-gray-500 flex items-center justify-center gap-1">
-                <Clock className="w-4 h-4" />
-                ~{formatDuration(runStatus.estimated_seconds_remaining)} remaining
-              </p>
-            )}
-          </div>
-
-          {/* Linear Progress Bar */}
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                runStatus.status === 'complete' ? 'bg-[#4A7C59]' : 'bg-[#5B7B5D]'
-              }`}
-              style={{ width: `${runStatus.progress_percent}%` }}
-            />
+            <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
+              <span className="font-medium text-lg text-gray-900">
+                {Math.round(runStatus.progress_percent)}%
+              </span>
+              <span className="text-gray-400">|</span>
+              <span>
+                {completedCalls} of {runStatus.total_calls} calls
+              </span>
+              {runStatus.estimated_seconds_remaining !== null && runStatus.status === 'running' && (
+                <>
+                  <span className="text-gray-400">|</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    ~{formatDuration(runStatus.estimated_seconds_remaining)} remaining
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Status Messages */}
@@ -245,7 +441,7 @@ export default function RunPage() {
           )}
         </div>
 
-        {/* Live Results Preview */}
+        {/* Recent Results */}
         {recentResults.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-base font-semibold text-gray-900 mb-4">
