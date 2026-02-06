@@ -10544,42 +10544,44 @@ export default function ResultsPage() {
         description: string;
         impact: 'high' | 'medium' | 'low';
         effort: 'high' | 'medium' | 'low';
+        impactReason: string;
+        effortReason: string;
       }> = [];
 
-      // Helper to estimate effort based on keywords
-      const estimateEffort = (text: string): 'high' | 'medium' | 'low' => {
+      // Helper to estimate effort based on keywords - returns level and reason
+      const estimateEffort = (text: string): { level: 'high' | 'medium' | 'low'; reason: string } => {
         const lowText = text.toLowerCase();
         // High effort indicators
         if (lowText.includes('partnership') || lowText.includes('outreach') || lowText.includes('pr campaign') ||
             lowText.includes('media coverage') || lowText.includes('influencer') || lowText.includes('backlink') ||
             lowText.includes('get featured') || lowText.includes('earn coverage') || lowText.includes('build relationship')) {
-          return 'high';
+          return { level: 'high', reason: 'Requires partnerships, outreach, or external relationships' };
         }
         // Low effort indicators
         if (lowText.includes('update') || lowText.includes('add') || lowText.includes('include') ||
             lowText.includes('optimize') || lowText.includes('improve') || lowText.includes('tweak') ||
             lowText.includes('ensure') || lowText.includes('check') || lowText.includes('review')) {
-          return 'low';
+          return { level: 'low', reason: 'Simple content updates or optimizations' };
         }
-        return 'medium';
+        return { level: 'medium', reason: 'Moderate implementation effort required' };
       };
 
-      // Helper to estimate impact based on keywords
-      const estimateImpact = (text: string): 'high' | 'medium' | 'low' => {
+      // Helper to estimate impact based on keywords - returns level and reason
+      const estimateImpact = (text: string): { level: 'high' | 'medium' | 'low'; reason: string } => {
         const lowText = text.toLowerCase();
         // High impact indicators
         if (lowText.includes('significantly') || lowText.includes('major') || lowText.includes('critical') ||
             lowText.includes('key') || lowText.includes('primary') || lowText.includes('essential') ||
             lowText.includes('visibility') || lowText.includes('ranking') || lowText.includes('authority') ||
             lowText.includes('competitor') || lowText.includes('differentiate')) {
-          return 'high';
+          return { level: 'high', reason: 'Directly affects visibility, rankings, or competitive positioning' };
         }
         // Low impact indicators
         if (lowText.includes('minor') || lowText.includes('small') || lowText.includes('slight') ||
             lowText.includes('optional') || lowText.includes('consider')) {
-          return 'low';
+          return { level: 'low', reason: 'Minor or optional improvement' };
         }
-        return 'medium';
+        return { level: 'medium', reason: 'Moderate impact on AI visibility' };
       };
 
       const recsContent = aiSummary.recommendations;
@@ -10623,11 +10625,15 @@ export default function ResultsPage() {
           if (description.length === 150) description += '...';
 
           if (title && title.length > 5) {
+            const impactResult = estimateImpact(para);
+            const effortResult = estimateEffort(para);
             recs.push({
               title,
               description,
-              impact: estimateImpact(para),
-              effort: estimateEffort(para),
+              impact: impactResult.level,
+              effort: effortResult.level,
+              impactReason: impactResult.reason,
+              effortReason: effortResult.reason,
             });
           }
         });
@@ -10635,11 +10641,15 @@ export default function ResultsPage() {
         // Handle array format
         (recsContent as Array<{title: string; description: string; tactics?: string[]}>).forEach(rec => {
           const fullText = `${rec.title} ${rec.description} ${rec.tactics?.join(' ') || ''}`;
+          const impactResult = estimateImpact(fullText);
+          const effortResult = estimateEffort(fullText);
           recs.push({
             title: rec.title,
             description: rec.description,
-            impact: estimateImpact(fullText),
-            effort: estimateEffort(fullText),
+            impact: impactResult.level,
+            effort: effortResult.level,
+            impactReason: impactResult.reason,
+            effortReason: effortResult.reason,
           });
         });
       }
@@ -10720,65 +10730,111 @@ export default function ResultsPage() {
           </div>
 
           {/* Effort vs Impact Matrix Chart */}
-          {parsedAiRecommendations.length > 0 && (
+          {parsedAiRecommendations.length > 0 && (() => {
+            // Calculate positions and handle overlapping circles
+            const effortMap = { low: 16.67, medium: 50, high: 83.33 };
+            const impactMap = { low: 83.33, medium: 50, high: 16.67 };
+
+            // Group items by position to detect overlaps
+            const positionGroups: Record<string, number[]> = {};
+            parsedAiRecommendations.forEach((rec, idx) => {
+              const key = `${rec.effort}-${rec.impact}`;
+              if (!positionGroups[key]) positionGroups[key] = [];
+              positionGroups[key].push(idx);
+            });
+
+            // Calculate offset for each item
+            const getOffset = (idx: number, rec: typeof parsedAiRecommendations[0]) => {
+              const key = `${rec.effort}-${rec.impact}`;
+              const group = positionGroups[key];
+              const posInGroup = group.indexOf(idx);
+              const total = group.length;
+              if (total === 1) return { x: 0, y: 0 };
+              // Spread items in a small circle around the center point
+              const angle = (posInGroup / total) * 2 * Math.PI - Math.PI / 2;
+              const radius = 12; // pixels
+              return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+            };
+
+            return (
             <div className="mb-6">
-              <div className="relative bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="relative bg-white rounded-lg p-4">
                 {/* Y-axis label */}
-                <div className="absolute -left-1 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-gray-500 whitespace-nowrap">
+                <div className="absolute -left-1 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-gray-400 whitespace-nowrap">
                   Impact
                 </div>
 
                 {/* Chart container */}
-                <div className="ml-6">
+                <div className="ml-8">
                   {/* Y-axis labels */}
                   <div className="flex">
-                    <div className="w-12 flex flex-col justify-between text-right pr-2 text-xs text-gray-500" style={{ height: '180px' }}>
+                    <div className="w-10 flex flex-col justify-between text-right pr-2 text-xs text-gray-400" style={{ height: '160px' }}>
                       <span>High</span>
                       <span>Med</span>
                       <span>Low</span>
                     </div>
 
                     {/* Grid */}
-                    <div className="flex-1 relative" style={{ height: '180px' }}>
-                      {/* Background grid */}
+                    <div className="flex-1 relative" style={{ height: '160px' }}>
+                      {/* Background grid - simplified */}
                       <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
                         {/* Quick Wins quadrant (top-left) */}
-                        <div className="bg-green-50 border border-gray-200 flex items-center justify-center">
-                          <span className="text-[10px] text-green-600 font-medium opacity-50">Quick Wins</span>
+                        <div className="bg-[#E8F5E9] border border-gray-100 flex items-center justify-center">
+                          <span className="text-[9px] text-[#4A7C59] font-medium opacity-60">Quick Wins</span>
                         </div>
-                        <div className="bg-green-50/50 border border-gray-200" />
+                        <div className="bg-[#E8F5E9]/50 border border-gray-100" />
                         {/* Major Projects quadrant (top-right) */}
-                        <div className="bg-amber-50 border border-gray-200 flex items-center justify-center">
-                          <span className="text-[10px] text-amber-600 font-medium opacity-50">Major Projects</span>
+                        <div className="bg-amber-50/70 border border-gray-100 flex items-center justify-center">
+                          <span className="text-[9px] text-amber-600 font-medium opacity-60">Major Projects</span>
                         </div>
-                        <div className="bg-gray-100/50 border border-gray-200" />
-                        <div className="bg-gray-100/50 border border-gray-200" />
-                        <div className="bg-gray-100/50 border border-gray-200" />
+                        <div className="bg-gray-50 border border-gray-100" />
+                        <div className="bg-gray-50 border border-gray-100" />
+                        <div className="bg-gray-50 border border-gray-100" />
                         {/* Fill-ins quadrant (bottom-left) */}
-                        <div className="bg-blue-50 border border-gray-200 flex items-center justify-center">
-                          <span className="text-[10px] text-blue-600 font-medium opacity-50">Fill-ins</span>
+                        <div className="bg-blue-50/50 border border-gray-100 flex items-center justify-center">
+                          <span className="text-[9px] text-blue-500 font-medium opacity-60">Fill-ins</span>
                         </div>
-                        <div className="bg-gray-100/30 border border-gray-200" />
+                        <div className="bg-gray-50/50 border border-gray-100" />
                         {/* Avoid quadrant (bottom-right) */}
-                        <div className="bg-red-50 border border-gray-200 flex items-center justify-center">
-                          <span className="text-[10px] text-red-600 font-medium opacity-50">Avoid</span>
+                        <div className="bg-red-50/50 border border-gray-100 flex items-center justify-center">
+                          <span className="text-[9px] text-red-400 font-medium opacity-60">Avoid</span>
                         </div>
                       </div>
 
-                      {/* Plot points */}
+                      {/* Plot points with overlap handling */}
                       {parsedAiRecommendations.map((rec, idx) => {
-                        // Convert effort/impact to x/y percentages
-                        const effortMap = { low: 16.67, medium: 50, high: 83.33 };
-                        const impactMap = { low: 83.33, medium: 50, high: 16.67 };
                         const x = effortMap[rec.effort];
                         const y = impactMap[rec.impact];
+                        const offset = getOffset(idx, rec);
+
+                        // Build detailed tooltip
+                        const quadrantName =
+                          rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
+                          rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
+                          rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
+                          rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
+
+                        const tooltip = `${rec.title}
+
+${quadrantName.toUpperCase()}
+
+Impact: ${rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)}
+↳ ${rec.impactReason}
+
+Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
+↳ ${rec.effortReason}`;
 
                         return (
                           <div
                             key={idx}
-                            className="absolute w-7 h-7 -ml-3.5 -mt-3.5 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-xs font-semibold shadow-md cursor-help hover:scale-110 transition-transform z-10"
-                            style={{ left: `${x}%`, top: `${y}%` }}
-                            title={`${rec.title}\n\nImpact: ${rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)}\nEffort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}\n\n${rec.description}`}
+                            className="absolute w-6 h-6 -ml-3 -mt-3 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-[10px] font-semibold shadow-sm cursor-help hover:scale-125 hover:z-20 transition-all duration-150"
+                            style={{
+                              left: `${x}%`,
+                              top: `${y}%`,
+                              transform: `translate(${offset.x}px, ${offset.y}px)`,
+                              zIndex: 10 + idx
+                            }}
+                            title={tooltip}
                           >
                             {idx + 1}
                           </div>
@@ -10789,8 +10845,8 @@ export default function ResultsPage() {
 
                   {/* X-axis labels */}
                   <div className="flex mt-2">
-                    <div className="w-12" />
-                    <div className="flex-1 grid grid-cols-3 text-center text-xs text-gray-500">
+                    <div className="w-10" />
+                    <div className="flex-1 grid grid-cols-3 text-center text-xs text-gray-400">
                       <span>Low</span>
                       <span>Medium</span>
                       <span>High</span>
@@ -10798,27 +10854,28 @@ export default function ResultsPage() {
                   </div>
 
                   {/* X-axis label */}
-                  <div className="text-center text-xs font-medium text-gray-500 mt-1">
+                  <div className="text-center text-xs font-medium text-gray-400 mt-1">
                     Effort
                   </div>
                 </div>
 
-                {/* Legend */}
-                <div className="mt-4 pt-3 border-t border-gray-200">
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                {/* Legend - cleaner layout */}
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                     {parsedAiRecommendations.map((rec, idx) => (
-                      <div key={idx} className="flex items-center gap-1.5">
-                        <span className="w-5 h-5 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-[10px] font-semibold">
+                      <div key={idx} className="flex items-center gap-2 py-1">
+                        <span className="w-5 h-5 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
                           {idx + 1}
                         </span>
-                        <span className="truncate max-w-[200px]" title={rec.title}>{rec.title}</span>
+                        <span className="truncate" title={rec.title}>{rec.title}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {quickWins.length > 0 ? (
             <div className="space-y-3">
