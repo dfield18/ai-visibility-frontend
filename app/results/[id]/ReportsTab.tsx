@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import {
   Plus,
@@ -45,12 +45,21 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   // Debug logging
   console.log('[ReportsTab] Render - loading:', loading, 'error:', error, 'reports:', reports.length, 'isCreating:', isCreating);
 
-  // Extract unique values from results
-  const uniquePrompts = runStatus?.results ? [...new Set(runStatus.results.map(r => r.prompt))] : [];
-  const uniqueProviders = runStatus?.results ? [...new Set(runStatus.results.map(r => r.provider))] : [];
-  const allCompetitorsMentioned = runStatus?.results
-    ? [...new Set(runStatus.results.flatMap(r => r.competitors_mentioned || []))]
-    : [];
+  // Extract unique values from results - memoize to prevent re-render loops
+  const uniquePrompts = useMemo(() =>
+    runStatus?.results ? [...new Set(runStatus.results.map(r => r.prompt))] : [],
+    [runStatus?.results]
+  );
+  const uniqueProviders = useMemo(() =>
+    runStatus?.results ? [...new Set(runStatus.results.map(r => r.provider))] : [],
+    [runStatus?.results]
+  );
+  const allCompetitorsMentioned = useMemo(() =>
+    runStatus?.results
+      ? [...new Set(runStatus.results.flatMap(r => r.competitors_mentioned || []))]
+      : [],
+    [runStatus?.results]
+  );
 
   // Form state
   const [formData, setFormData] = useState<Partial<ScheduledReportCreate>>({
@@ -101,6 +110,11 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     console.log('[ReportsTab] useEffect - calling fetchReports');
     fetchReports();
   }, [fetchReports]);
+
+  // Debug: Monitor isCreating state changes
+  useEffect(() => {
+    console.log('[ReportsTab] isCreating changed to:', isCreating);
+  }, [isCreating]);
 
   // Sync form data when runStatus changes (e.g., when data loads after mount)
   useEffect(() => {
@@ -338,10 +352,19 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
         </div>
         <button
           type="button"
-          onClick={() => {
-            console.log('New Report button clicked');
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[ReportsTab] New Report button clicked! Current state:', {
+              loading,
+              reportsCount: reports.length,
+              maxReports: MAX_REPORTS,
+              isDisabled: !loading && reports.length >= MAX_REPORTS,
+              isCreating
+            });
             resetForm();
             setIsCreating(true);
+            console.log('[ReportsTab] setIsCreating(true) called');
           }}
           disabled={!loading && reports.length >= MAX_REPORTS}
           className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -350,6 +373,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
               : 'bg-[#4A7C59] text-white hover:bg-[#3d6649]'
           }`}
           title={!loading && reports.length >= MAX_REPORTS ? `Maximum of ${MAX_REPORTS} reports allowed` : undefined}
+          style={{ position: 'relative', zIndex: 10 }}
         >
           <Plus className="w-4 h-4" />
           New Report
@@ -390,12 +414,16 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
           </p>
           <button
             type="button"
-            onClick={() => {
-              console.log('Create Report button clicked');
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('[ReportsTab] Create Report button clicked!');
               resetForm();
               setIsCreating(true);
+              console.log('[ReportsTab] setIsCreating(true) called');
             }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-lg hover:bg-[#3d6649] transition-colors"
+            style={{ position: 'relative', zIndex: 10 }}
           >
             <Plus className="w-4 h-4" />
             Create Report
