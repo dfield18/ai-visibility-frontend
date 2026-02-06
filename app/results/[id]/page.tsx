@@ -12519,7 +12519,7 @@ export default function ResultsPage() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
                     <p className="text-sm text-gray-500">
                       {heatmapShowSentiment ? 'Overall sentiment of each source toward brand' : 'Sources cited when each brand is mentioned'}
-                      <span className="ml-2 text-gray-400">Click any cell to view full prompts</span>
+                      <span className="ml-2 text-gray-400">Click any cell to view responses</span>
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
@@ -12684,10 +12684,10 @@ export default function ResultsPage() {
                               return (
                                 <td
                                   key={brand}
-                                  className={`text-center py-2 px-2 ${count > 0 ? 'cursor-pointer' : ''}`}
+                                  className={`text-center py-2 px-2 ${count > 0 ? 'cursor-pointer hover:bg-gray-100' : ''}`}
                                   style={{ minWidth: '100px' }}
-                                  onDoubleClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
-                                  title={count > 0 ? (heatmapShowSentiment ? `${getSentimentLabelFromScore(avgSentiment)} - Double-click to view` : `${count} citations - Double-click to view`) : undefined}
+                                  onClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
+                                  title={count > 0 ? (heatmapShowSentiment ? `${getSentimentLabelFromScore(avgSentiment)} - Click to view` : `${count} citations - Click to view`) : undefined}
                                 >
                                   {count === 0 ? (
                                     <span className="text-gray-300">–</span>
