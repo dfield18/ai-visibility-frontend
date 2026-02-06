@@ -10635,6 +10635,7 @@ export default function ResultsPage() {
               effort: effortResult.level,
               impactReason: impactResult.reason,
               effortReason: effortResult.reason,
+              tactics: [],
             });
           }
         });
@@ -10651,6 +10652,7 @@ export default function ResultsPage() {
             effort: effortResult.level,
             impactReason: impactResult.reason,
             effortReason: effortResult.reason,
+            tactics: rec.tactics || [],
           });
         });
       }
@@ -10886,8 +10888,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-8">#</th>
                     <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Recommendation</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Tactics</th>
                     <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-24">Impact</th>
                     <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-24">Effort</th>
                     <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-28">Category</th>
@@ -10924,16 +10926,25 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     return (
                       <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
                         <td className="py-3 px-3">
-                          <span className="w-6 h-6 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-xs font-semibold">
-                            {idx + 1}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3">
                           <div className="font-medium text-gray-900">{rec.title}</div>
                           <div className="text-xs text-gray-500 mt-1">
                             <span className="block"><strong>Impact:</strong> {rec.impactReason}</span>
                             <span className="block mt-0.5"><strong>Effort:</strong> {rec.effortReason}</span>
                           </div>
+                        </td>
+                        <td className="py-3 px-3">
+                          {rec.tactics && rec.tactics.length > 0 ? (
+                            <ul className="text-xs text-gray-600 space-y-1">
+                              {rec.tactics.map((tactic, tidx) => (
+                                <li key={tidx} className="flex items-start gap-1">
+                                  <span className="text-[#4A7C59] mt-0.5">•</span>
+                                  <span>{tactic}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">No specific tactics</span>
+                          )}
                         </td>
                         <td className="text-center py-3 px-3">
                           <span className={`font-medium capitalize ${impactColors[rec.impact]}`}>
