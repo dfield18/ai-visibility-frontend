@@ -3409,6 +3409,53 @@ export default function ResultsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportRecommendationsCSV = (recommendations: Array<{
+    title: string;
+    description: string;
+    impact: string;
+    effort: string;
+    tactics: string[];
+  }>) => {
+    if (!runStatus || recommendations.length === 0) return;
+
+    const headers = [
+      'Recommendation',
+      'Description',
+      'Impact',
+      'Effort',
+      'Category',
+      'Tactics',
+    ];
+
+    const rows = recommendations.map(rec => {
+      const quadrantName =
+        rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
+        rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
+        rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
+        rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
+
+      return [
+        `"${rec.title.replace(/"/g, '""')}"`,
+        `"${rec.description.replace(/"/g, '""')}"`,
+        rec.impact,
+        rec.effort,
+        quadrantName,
+        `"${rec.tactics.join('; ').replace(/"/g, '""')}"`,
+      ];
+    });
+
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `recommendations-${runStatus.brand}-${runId.slice(0, 8)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
@@ -11072,28 +11119,23 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
           </div>
         )}
 
-        {/* Export & Reporting */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-              <FileBarChart className="w-5 h-5 text-gray-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Export & Reporting</h2>
-              <p className="text-sm text-gray-500">Download and share your recommendations</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 max-w-md">
-            <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <Download className="w-6 h-6 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">CSV Export</span>
-              <span className="text-xs text-gray-500">Raw data</span>
+        {/* Export & Share Footer */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-end gap-3 p-4 bg-gray-50/50 border-t border-gray-100">
+            <button
+              onClick={() => handleExportRecommendationsCSV(parsedAiRecommendations)}
+              disabled={parsedAiRecommendations.length === 0}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
             </button>
-            <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <Share2 className="w-6 h-6 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Share</span>
-              <span className="text-xs text-gray-500">With team</span>
+            <button
+              onClick={handleCopyLink}
+              className="px-3 py-1.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+            >
+              <Link2 className="w-4 h-4" />
+              {copied ? 'Copied!' : 'Share'}
             </button>
           </div>
         </div>
