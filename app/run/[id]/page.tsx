@@ -184,11 +184,6 @@ export default function RunPage() {
     );
   }
 
-  const recentResults = runStatus.results
-    .filter((r: Result) => r.response_text)
-    .slice(-5)
-    .reverse();
-
   return (
     <main className="min-h-screen bg-[#FAFAF8] pb-8">
       {/* Header */}
@@ -293,59 +288,6 @@ export default function RunPage() {
             </div>
           )}
         </div>
-
-        {/* Recent Results */}
-        {recentResults.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">
-              Recent Results
-            </h2>
-            <div className="space-y-3">
-              {recentResults.map((result: Result) => (
-                <div
-                  key={result.id}
-                  className="p-3 bg-[#FAFAF8] rounded-xl"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-700 truncate">
-                        {truncate(result.prompt, 50)}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-gray-500">
-                          {result.provider === 'openai' ? '🤖' : result.provider === 'anthropic' ? '🧠' : result.provider === 'perplexity' ? '🔍' : result.provider === 'ai_overviews' ? '🌐' : '✨'}{' '}
-                          {result.provider === 'openai' ? 'GPT-4o' : result.provider === 'anthropic' ? 'Claude' : result.provider === 'perplexity' ? 'Perplexity' : result.provider === 'ai_overviews' ? 'Google AI Overviews' : 'Gemini'}
-                        </span>
-                        <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">
-                          Temp: {result.temperature}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      {result.brand_mentioned ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
-                          <Check className="w-3 h-3" />
-                          Mentioned
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">
-                          <X className="w-3 h-3" />
-                          Not mentioned
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {result.competitors_mentioned.length > 0 && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      Competitors: {result.competitors_mentioned.join(', ')}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Cancel Button */}
         {['queued', 'running'].includes(runStatus.status) && (
