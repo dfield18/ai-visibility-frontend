@@ -88,6 +88,20 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     fetchReports();
   }, [fetchReports]);
 
+  // Sync form data when runStatus changes (e.g., when data loads after mount)
+  useEffect(() => {
+    if (runStatus && !isCreating && !editingReport) {
+      setFormData(prev => ({
+        ...prev,
+        brand: runStatus.brand || prev.brand,
+        search_type: runStatus.search_type || prev.search_type,
+        prompts: uniquePrompts.length > 0 ? uniquePrompts : prev.prompts,
+        competitors: allCompetitorsMentioned.length > 0 ? allCompetitorsMentioned : prev.competitors,
+        providers: uniqueProviders.length > 0 ? uniqueProviders : prev.providers,
+      }));
+    }
+  }, [runStatus, uniquePrompts, uniqueProviders, allCompetitorsMentioned, isCreating, editingReport]);
+
   // Helper to manage action loading state
   const setActionLoadingState = (id: string, isLoading: boolean) => {
     setActionLoading(prev => {
