@@ -10875,23 +10875,88 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   </div>
                 </div>
 
-                {/* Legend - cleaner layout */}
-                <div className="mt-4 pt-3 border-t border-gray-100">
-                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                    {parsedAiRecommendations.map((rec, idx) => (
-                      <div key={idx} className="flex items-center gap-2 py-1">
-                        <span className="w-5 h-5 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0">
-                          {idx + 1}
-                        </span>
-                        <span className="truncate" title={rec.title}>{rec.title}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
             );
           })()}
+
+          {/* Recommendations Table */}
+          {parsedAiRecommendations.length > 0 && (
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600 w-8">#</th>
+                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Recommendation</th>
+                    <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-24">Impact</th>
+                    <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-24">Effort</th>
+                    <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-28">Category</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parsedAiRecommendations.map((rec, idx) => {
+                    const quadrantName =
+                      rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
+                      rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
+                      rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
+                      rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
+
+                    const quadrantColors: Record<string, string> = {
+                      'Quick Win': 'bg-green-100 text-green-700',
+                      'Major Project': 'bg-amber-100 text-amber-700',
+                      'Fill-in': 'bg-blue-100 text-blue-700',
+                      'Avoid': 'bg-red-100 text-red-700',
+                      'Consider': 'bg-gray-100 text-gray-700',
+                    };
+
+                    const impactColors: Record<string, string> = {
+                      high: 'text-green-600',
+                      medium: 'text-yellow-600',
+                      low: 'text-gray-500',
+                    };
+
+                    const effortColors: Record<string, string> = {
+                      low: 'text-green-600',
+                      medium: 'text-yellow-600',
+                      high: 'text-red-500',
+                    };
+
+                    return (
+                      <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                        <td className="py-3 px-3">
+                          <span className="w-6 h-6 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-xs font-semibold">
+                            {idx + 1}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="font-medium text-gray-900">{rec.title}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            <span className="block"><strong>Impact:</strong> {rec.impactReason}</span>
+                            <span className="block mt-0.5"><strong>Effort:</strong> {rec.effortReason}</span>
+                          </div>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <span className={`font-medium capitalize ${impactColors[rec.impact]}`}>
+                            {rec.impact}
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <span className={`font-medium capitalize ${effortColors[rec.effort]}`}>
+                            {rec.effort}
+                          </span>
+                        </td>
+                        <td className="text-center py-3 px-3">
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${quadrantColors[quadrantName]}`}>
+                            {quadrantName}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {quickWins.length > 0 ? (
             <div className="space-y-3">
