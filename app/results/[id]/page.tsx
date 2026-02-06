@@ -10803,7 +10803,7 @@ export default function ResultsPage() {
                         </div>
                       </div>
 
-                      {/* Plot points with overlap handling */}
+                      {/* Plot points with labels */}
                       {parsedAiRecommendations.map((rec, idx) => {
                         const x = effortMap[rec.effort];
                         const y = impactMap[rec.impact];
@@ -10826,19 +10826,30 @@ Impact: ${rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)}
 Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 ↳ ${rec.effortReason}`;
 
+                        // Truncate title for label
+                        const shortTitle = rec.title.length > 18
+                          ? rec.title.substring(0, 16) + '...'
+                          : rec.title;
+
                         return (
                           <div
                             key={idx}
-                            className="absolute w-6 h-6 -ml-3 -mt-3 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-[10px] font-semibold shadow-sm cursor-default hover:scale-125 hover:z-20 transition-all duration-150"
+                            className="absolute cursor-default group"
                             style={{
                               left: `${x}%`,
                               top: `${y}%`,
-                              transform: `translate(${offset.x}px, ${offset.y}px)`,
+                              transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px))`,
                               zIndex: 10 + idx
                             }}
                             title={tooltip}
                           >
-                            {idx + 1}
+                            {/* Dot with label */}
+                            <div className="flex items-center gap-1">
+                              <div className="w-2.5 h-2.5 bg-[#4A7C59] rounded-full shadow-sm border border-white flex-shrink-0 group-hover:scale-150 transition-transform duration-150" />
+                              <span className="text-[9px] font-medium text-gray-700 bg-white/80 px-1 py-0.5 rounded shadow-sm whitespace-nowrap group-hover:bg-[#4A7C59] group-hover:text-white transition-colors duration-150">
+                                {shortTitle}
+                              </span>
+                            </div>
                           </div>
                         );
                       })}
