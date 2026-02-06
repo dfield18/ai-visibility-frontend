@@ -10912,7 +10912,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
           {/* Recommendations Table */}
           {parsedAiRecommendations.length > 0 && (
-            <div className="mt-6 overflow-x-auto">
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <h3 className="text-base font-semibold text-gray-800 mb-4">Detailed Recommendations</h3>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200">
@@ -10994,6 +10996,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           )}
         </div>
