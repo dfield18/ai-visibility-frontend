@@ -10813,8 +10813,8 @@ export default function ResultsPage() {
               const posInGroup = group.indexOf(idx);
               const total = group.length;
               if (total === 1) return { x: 0, y: 0 };
-              // Stack items vertically with 20px spacing between each
-              const verticalSpacing = 20;
+              // Stack items vertically with 28px spacing to prevent label overlap
+              const verticalSpacing = 28;
               const totalHeight = (total - 1) * verticalSpacing;
               const startY = -totalHeight / 2;
               return { x: 0, y: startY + posInGroup * verticalSpacing };
