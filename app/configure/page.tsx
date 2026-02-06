@@ -335,13 +335,18 @@ export default function ConfigurePage() {
                   </div>
                 )}
 
+                {/* Divider line */}
+                {prompts.length > 0 && (
+                  <div className="border-t border-gray-200 my-2" />
+                )}
+
                 {/* Questions List */}
                 {prompts.map((prompt, index) => (
                   <div
                     key={prompt}
                     className={`flex items-start gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all group ${
                       selectedPrompts.has(prompt)
-                        ? 'bg-[#E8F5E9]'
+                        ? 'bg-white'
                         : 'hover:bg-gray-50'
                     }`}
                     onClick={() => {
@@ -389,7 +394,7 @@ export default function ConfigurePage() {
                       </div>
                     ) : (
                       <>
-                        <span className="flex-1 text-sm text-gray-700 leading-relaxed">
+                        <span className="flex-1 text-sm text-gray-600 leading-relaxed">
                           {prompt}
                         </span>
                         <button
@@ -397,7 +402,7 @@ export default function ConfigurePage() {
                             e.stopPropagation();
                             handleEditPrompt(index);
                           }}
-                          className="p-1 text-gray-400 hover:text-[#4A7C59] opacity-0 group-hover:opacity-100 transition-all rounded hover:bg-white"
+                          className="p-1 text-gray-400 hover:text-[#4A7C59] opacity-0 group-hover:opacity-100 transition-all rounded hover:bg-gray-100"
                           aria-label="Edit question"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -547,7 +552,7 @@ export default function ConfigurePage() {
             </div>
           </div>
 
-          {/* AI Platforms Section - single column list */}
+          {/* AI Platforms Section - 2-column grid */}
           <div className="bg-white/60 rounded-2xl p-6">
             {/* Header with inline icon */}
             <div className="flex items-start gap-2 mb-2">
@@ -565,14 +570,14 @@ export default function ConfigurePage() {
               </div>
             </div>
 
-            {/* Single column stacked cards */}
-            <div className="mt-5 space-y-2">
+            {/* 2-column grid */}
+            <div className="mt-5 grid grid-cols-2 gap-3">
               {Object.entries(PROVIDER_INFO).map(([key, info]) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => toggleProvider(key)}
-                  className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
+                  className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
                     providers.includes(key)
                       ? 'bg-[#E8F5E9]'
                       : 'bg-gray-50 hover:bg-gray-100'
