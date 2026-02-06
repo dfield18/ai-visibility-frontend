@@ -19,7 +19,7 @@ import { useRunStatus, useCancelRun } from '@/hooks/useApi';
 import { formatDuration, truncate } from '@/lib/utils';
 import { Result } from '@/lib/types';
 
-// House Construction Animation Component
+// House Construction Animation Component - Thin black & white stick figure style
 function HouseConstruction({ progress }: { progress: number }) {
   const [workerPosition, setWorkerPosition] = useState(0);
 
@@ -42,20 +42,17 @@ function HouseConstruction({ progress }: { progress: number }) {
   const showChimney = progress >= 85;
 
   // Calculate stroke dashoffset for progressive reveal
-  const getStrokeDashoffset = (pathLength: number, visible: boolean, elementProgress?: number) => {
+  const getStrokeDashoffset = (pathLength: number, visible: boolean) => {
     if (!visible) return pathLength;
-    if (elementProgress !== undefined) {
-      return pathLength * (1 - elementProgress / 100);
-    }
     return 0;
   };
 
   // Worker X positions based on progress
   const workerX = useMemo(() => {
-    if (progress < 25) return 30 + workerPosition * 8;
-    if (progress < 50) return 70 + workerPosition * 8;
-    if (progress < 75) return 110 + workerPosition * 8;
-    return 150 + workerPosition * 8;
+    if (progress < 25) return 30 + workerPosition * 6;
+    if (progress < 50) return 70 + workerPosition * 6;
+    if (progress < 75) return 110 + workerPosition * 6;
+    return 150 + workerPosition * 6;
   }, [progress, workerPosition]);
 
   return (
@@ -66,51 +63,50 @@ function HouseConstruction({ progress }: { progress: number }) {
         y1="145"
         x2="210"
         y2="145"
-        stroke="#333"
-        strokeWidth="2"
+        stroke="#000"
+        strokeWidth="1"
         strokeLinecap="round"
       />
 
-      {/* Ghost outline of complete house (light gray) */}
-      <g opacity="0.15" stroke="#666" strokeWidth="1.5" fill="none">
+      {/* Ghost outline of complete house (very light) */}
+      <g opacity="0.12" stroke="#000" strokeWidth="1" fill="none">
         {/* Foundation */}
-        <rect x="40" y="135" width="120" height="10" />
+        <line x1="40" y1="140" x2="160" y2="140" />
         {/* Left wall */}
-        <line x1="50" y1="135" x2="50" y2="75" />
+        <line x1="50" y1="140" x2="50" y2="80" />
         {/* Right wall */}
-        <line x1="150" y1="135" x2="150" y2="75" />
+        <line x1="150" y1="140" x2="150" y2="80" />
         {/* Roof left */}
-        <line x1="40" y1="75" x2="100" y2="35" />
+        <line x1="45" y1="80" x2="100" y2="40" />
         {/* Roof right */}
-        <line x1="160" y1="75" x2="100" y2="35" />
+        <line x1="155" y1="80" x2="100" y2="40" />
         {/* Door */}
-        <rect x="85" y="100" width="30" height="35" />
+        <rect x="90" y="105" width="20" height="35" />
         {/* Window */}
-        <rect x="125" y="95" width="18" height="18" />
+        <rect x="125" y="100" width="15" height="15" />
         {/* Chimney */}
-        <rect x="125" y="30" width="15" height="30" />
+        <rect x="120" y="35" width="12" height="25" />
       </g>
 
-      {/* Animated construction elements */}
-      <g stroke="#333" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      {/* Animated construction elements - thin black lines */}
+      <g stroke="#000" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
         {/* Foundation */}
-        <rect
-          x="40"
-          y="135"
-          width="120"
-          height="10"
-          strokeDasharray="260"
-          strokeDashoffset={getStrokeDashoffset(260, showFoundation)}
+        <line
+          x1="40"
+          y1="140"
+          x2="160"
+          y2="140"
+          strokeDasharray="120"
+          strokeDashoffset={getStrokeDashoffset(120, showFoundation)}
           className="transition-all duration-700 ease-out"
-          fill={showFoundation ? "#f5f5f5" : "none"}
         />
 
         {/* Left wall */}
         <line
           x1="50"
-          y1="135"
+          y1="140"
           x2="50"
-          y2="75"
+          y2="80"
           strokeDasharray="60"
           strokeDashoffset={getStrokeDashoffset(60, showLeftWall)}
           className="transition-all duration-500 ease-out"
@@ -119,9 +115,9 @@ function HouseConstruction({ progress }: { progress: number }) {
         {/* Right wall */}
         <line
           x1="150"
-          y1="135"
+          y1="140"
           x2="150"
-          y2="75"
+          y2="80"
           strokeDasharray="60"
           strokeDashoffset={getStrokeDashoffset(60, showRightWall)}
           className="transition-all duration-500 ease-out"
@@ -131,9 +127,9 @@ function HouseConstruction({ progress }: { progress: number }) {
         {showRightWall && (
           <line
             x1="50"
-            y1="75"
+            y1="80"
             x2="150"
-            y2="75"
+            y2="80"
             strokeDasharray="100"
             strokeDashoffset={0}
             className="transition-all duration-500 ease-out"
@@ -142,123 +138,121 @@ function HouseConstruction({ progress }: { progress: number }) {
 
         {/* Roof left side */}
         <line
-          x1="40"
-          y1="75"
+          x1="45"
+          y1="80"
           x2="100"
-          y2="35"
-          strokeDasharray="75"
-          strokeDashoffset={getStrokeDashoffset(75, showRoofLeft)}
+          y2="40"
+          strokeDasharray="70"
+          strokeDashoffset={getStrokeDashoffset(70, showRoofLeft)}
           className="transition-all duration-500 ease-out"
         />
 
         {/* Roof right side */}
         <line
-          x1="160"
-          y1="75"
+          x1="155"
+          y1="80"
           x2="100"
-          y2="35"
-          strokeDasharray="75"
-          strokeDashoffset={getStrokeDashoffset(75, showRoofRight)}
+          y2="40"
+          strokeDasharray="70"
+          strokeDashoffset={getStrokeDashoffset(70, showRoofRight)}
           className="transition-all duration-500 ease-out"
         />
 
         {/* Door */}
         <rect
-          x="85"
-          y="100"
-          width="30"
+          x="90"
+          y="105"
+          width="20"
           height="35"
-          strokeDasharray="130"
-          strokeDashoffset={getStrokeDashoffset(130, showDoor)}
+          strokeDasharray="110"
+          strokeDashoffset={getStrokeDashoffset(110, showDoor)}
           className="transition-all duration-500 ease-out"
         />
         {/* Door knob */}
         {showDoor && (
-          <circle cx="108" cy="118" r="2" fill="#333" />
+          <circle cx="105" cy="122" r="1.5" fill="#000" />
         )}
 
         {/* Window */}
         <rect
           x="125"
-          y="95"
-          width="18"
-          height="18"
-          strokeDasharray="72"
-          strokeDashoffset={getStrokeDashoffset(72, showWindow)}
+          y="100"
+          width="15"
+          height="15"
+          strokeDasharray="60"
+          strokeDashoffset={getStrokeDashoffset(60, showWindow)}
           className="transition-all duration-500 ease-out"
         />
         {/* Window cross */}
         {showWindow && (
           <>
-            <line x1="134" y1="95" x2="134" y2="113" strokeWidth="1.5" />
-            <line x1="125" y1="104" x2="143" y2="104" strokeWidth="1.5" />
+            <line x1="132.5" y1="100" x2="132.5" y2="115" strokeWidth="1" />
+            <line x1="125" y1="107.5" x2="140" y2="107.5" strokeWidth="1" />
           </>
         )}
 
         {/* Chimney */}
         <rect
-          x="125"
-          y="30"
-          width="15"
-          height="30"
-          strokeDasharray="90"
-          strokeDashoffset={getStrokeDashoffset(90, showChimney)}
+          x="120"
+          y="35"
+          width="12"
+          height="25"
+          strokeDasharray="74"
+          strokeDashoffset={getStrokeDashoffset(74, showChimney)}
           className="transition-all duration-500 ease-out"
-          fill={showChimney ? "#f5f5f5" : "none"}
         />
         {/* Smoke */}
         {showChimney && progress >= 95 && (
-          <g className="animate-pulse" opacity="0.6">
+          <g className="animate-pulse" opacity="0.5">
             <path
-              d="M132 28 Q135 20 130 15 Q128 10 132 5"
-              strokeWidth="1.5"
+              d="M126 33 Q129 25 124 18 Q122 12 126 5"
+              strokeWidth="1"
               fill="none"
             />
           </g>
         )}
       </g>
 
-      {/* Animated construction worker */}
-      <g transform={`translate(${workerX}, 130)`}>
-        {/* Hard hat */}
-        <ellipse cx="0" cy="-20" rx="6" ry="3" fill="#FFD700" stroke="#333" strokeWidth="1" />
-        <rect x="-5" y="-23" width="10" height="4" fill="#FFD700" stroke="#333" strokeWidth="1" />
+      {/* Animated stick figure construction worker - black & white */}
+      <g transform={`translate(${workerX}, 132)`} stroke="#000" strokeWidth="1.5" strokeLinecap="round">
+        {/* Head - simple circle */}
+        <circle cx="0" cy="-28" r="4" fill="none" />
 
-        {/* Head */}
-        <circle cx="0" cy="-15" r="5" fill="#FFE4C4" stroke="#333" strokeWidth="1" />
+        {/* Body - single line */}
+        <line x1="0" y1="-24" x2="0" y2="-10" />
 
-        {/* Body */}
-        <rect x="-4" y="-10" width="8" height="12" fill="#4A7C59" stroke="#333" strokeWidth="1" rx="1" />
+        {/* Legs - two lines */}
+        <line x1="0" y1="-10" x2="-5" y2="0" />
+        <line x1="0" y1="-10" x2="5" y2="0" />
 
         {/* Arms - animated based on position */}
         {workerPosition === 0 && (
           <>
-            <line x1="-4" y1="-6" x2="-10" y2="-2" stroke="#333" strokeWidth="2" strokeLinecap="round" />
-            <line x1="4" y1="-6" x2="10" y2="-10" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+            <line x1="0" y1="-20" x2="-8" y2="-15" />
+            <line x1="0" y1="-20" x2="8" y2="-25" />
+            {/* Hammer */}
+            <line x1="8" y1="-25" x2="12" y2="-30" strokeWidth="1" />
+            <line x1="10" y1="-32" x2="14" y2="-28" strokeWidth="2" />
           </>
         )}
         {workerPosition === 1 && (
           <>
-            <line x1="-4" y1="-6" x2="-10" y2="-8" stroke="#333" strokeWidth="2" strokeLinecap="round" />
-            <line x1="4" y1="-6" x2="10" y2="-4" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+            <line x1="0" y1="-20" x2="-8" y2="-18" />
+            <line x1="0" y1="-20" x2="8" y2="-18" />
+            {/* Hammer */}
+            <line x1="8" y1="-18" x2="14" y2="-18" strokeWidth="1" />
+            <line x1="14" y1="-20" x2="14" y2="-16" strokeWidth="2" />
           </>
         )}
         {workerPosition === 2 && (
           <>
-            <line x1="-4" y1="-6" x2="-8" y2="-12" stroke="#333" strokeWidth="2" strokeLinecap="round" />
-            <line x1="4" y1="-6" x2="8" y2="-2" stroke="#333" strokeWidth="2" strokeLinecap="round" />
+            <line x1="0" y1="-20" x2="-8" y2="-25" />
+            <line x1="0" y1="-20" x2="8" y2="-12" />
+            {/* Hammer */}
+            <line x1="8" y1="-12" x2="12" y2="-8" strokeWidth="1" />
+            <line x1="10" y1="-6" x2="14" y2="-10" strokeWidth="2" />
           </>
         )}
-
-        {/* Legs */}
-        <line x1="-2" y1="2" x2="-3" y2="12" stroke="#333" strokeWidth="2" strokeLinecap="round" />
-        <line x1="2" y1="2" x2="3" y2="12" stroke="#333" strokeWidth="2" strokeLinecap="round" />
-
-        {/* Tool (hammer) */}
-        <g transform={`rotate(${workerPosition * 15 - 15}, 10, -8)`}>
-          <line x1="10" y1="-10" x2="10" y2="-2" stroke="#8B4513" strokeWidth="2" strokeLinecap="round" />
-          <rect x="7" y="-12" width="6" height="4" fill="#666" stroke="#333" strokeWidth="0.5" rx="1" />
-        </g>
       </g>
     </svg>
   );
