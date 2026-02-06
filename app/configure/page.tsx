@@ -235,7 +235,7 @@ export default function ConfigurePage() {
     <main className="min-h-screen bg-gradient-to-b from-[#FAFAF8] to-[#F5F5F0] pb-32">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -268,7 +268,7 @@ export default function ConfigurePage() {
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* Error Alert */}
         {(error || suggestionsError) && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
@@ -281,6 +281,9 @@ export default function ConfigurePage() {
             </div>
           </div>
         )}
+
+        {/* Main three-column layout for desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Questions Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -624,7 +627,10 @@ export default function ConfigurePage() {
           </div>
         </div>
 
-        {/* Advanced Settings */}
+        </div>{/* End of three-column grid */}
+
+        {/* Advanced Settings - Bottom left */}
+        <div className="lg:w-1/2">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <button
             type="button"
@@ -876,11 +882,12 @@ export default function ConfigurePage() {
             </div>
           )}
         </div>
+        </div>{/* End of lg:w-1/2 wrapper */}
       </div>
 
       {/* Sticky Bottom Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-lg">
-        <div className="max-w-3xl mx-auto px-6 py-4">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm">
               <p className="text-gray-900">

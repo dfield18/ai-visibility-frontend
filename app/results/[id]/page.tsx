@@ -10535,8 +10535,10 @@ export default function ResultsPage() {
         .slice(0, 3);
     }, [promptBreakdownStats]);
 
-    // Content recommendations based on analysis
-    const contentRecommendations = useMemo(() => {
+    // Parse AI recommendations and assign effort/impact based on keywords
+    const parsedAiRecommendations = useMemo(() => {
+      if (!aiSummary?.recommendations) return [];
+
       const recs: Array<{
         title: string;
         description: string;
@@ -10544,54 +10546,106 @@ export default function ResultsPage() {
         effort: 'high' | 'medium' | 'low';
       }> = [];
 
-      const searchedBrandStats = brandBreakdownStats.find(b => b.isSearchedBrand);
-      const topCompetitor = brandBreakdownStats.filter(b => !b.isSearchedBrand)[0];
+      // Helper to estimate effort based on keywords
+      const estimateEffort = (text: string): 'high' | 'medium' | 'low' => {
+        const lowText = text.toLowerCase();
+        // High effort indicators
+        if (lowText.includes('partnership') || lowText.includes('outreach') || lowText.includes('pr campaign') ||
+            lowText.includes('media coverage') || lowText.includes('influencer') || lowText.includes('backlink') ||
+            lowText.includes('get featured') || lowText.includes('earn coverage') || lowText.includes('build relationship')) {
+          return 'high';
+        }
+        // Low effort indicators
+        if (lowText.includes('update') || lowText.includes('add') || lowText.includes('include') ||
+            lowText.includes('optimize') || lowText.includes('improve') || lowText.includes('tweak') ||
+            lowText.includes('ensure') || lowText.includes('check') || lowText.includes('review')) {
+          return 'low';
+        }
+        return 'medium';
+      };
 
-      if (searchedBrandStats && topCompetitor && topCompetitor.visibilityScore > searchedBrandStats.visibilityScore) {
-        recs.push({
-          title: `Create comparison content vs ${topCompetitor.brand}`,
-          description: `${topCompetitor.brand} has ${(topCompetitor.visibilityScore - searchedBrandStats.visibilityScore).toFixed(0)}% higher visibility`,
-          impact: 'high',
-          effort: 'medium',
+      // Helper to estimate impact based on keywords
+      const estimateImpact = (text: string): 'high' | 'medium' | 'low' => {
+        const lowText = text.toLowerCase();
+        // High impact indicators
+        if (lowText.includes('significantly') || lowText.includes('major') || lowText.includes('critical') ||
+            lowText.includes('key') || lowText.includes('primary') || lowText.includes('essential') ||
+            lowText.includes('visibility') || lowText.includes('ranking') || lowText.includes('authority') ||
+            lowText.includes('competitor') || lowText.includes('differentiate')) {
+          return 'high';
+        }
+        // Low impact indicators
+        if (lowText.includes('minor') || lowText.includes('small') || lowText.includes('slight') ||
+            lowText.includes('optional') || lowText.includes('consider')) {
+          return 'low';
+        }
+        return 'medium';
+      };
+
+      const recsContent = aiSummary.recommendations;
+
+      if (typeof recsContent === 'string') {
+        // Parse markdown text - split by numbered items, bullet points, or double newlines
+        const paragraphs = recsContent
+          .split(/(?:\n\n|\n(?=\d+\.|\*|\-))/)
+          .map(p => p.trim())
+          .filter(p => p.length > 20); // Filter out very short fragments
+
+        paragraphs.forEach(para => {
+          // Extract title (first sentence or bolded text)
+          const boldMatch = para.match(/\*\*([^*]+)\*\*/);
+          const numberMatch = para.match(/^\d+\.\s*\*?\*?([^*\n.!?]+)/);
+
+          let title = '';
+          let description = para;
+
+          if (boldMatch) {
+            title = boldMatch[1].replace(/[.:]/g, '').trim();
+            description = para.replace(/\*\*[^*]+\*\*:?\s*/, '').trim();
+          } else if (numberMatch) {
+            title = numberMatch[1].trim();
+            description = para.replace(/^\d+\.\s*/, '').trim();
+          } else {
+            // Use first sentence as title
+            const firstSentence = para.match(/^[^.!?]+[.!?]/);
+            if (firstSentence) {
+              title = firstSentence[0].replace(/[.!?]$/, '').trim();
+              description = para.substring(firstSentence[0].length).trim();
+            } else {
+              title = para.substring(0, 50) + (para.length > 50 ? '...' : '');
+              description = para;
+            }
+          }
+
+          // Clean up markdown formatting
+          title = title.replace(/[*_#]/g, '').trim();
+          description = description.replace(/[*_#]/g, '').substring(0, 150);
+          if (description.length === 150) description += '...';
+
+          if (title && title.length > 5) {
+            recs.push({
+              title,
+              description,
+              impact: estimateImpact(para),
+              effort: estimateEffort(para),
+            });
+          }
+        });
+      } else if (Array.isArray(recsContent)) {
+        // Handle array format
+        (recsContent as Array<{title: string; description: string; tactics?: string[]}>).forEach(rec => {
+          const fullText = `${rec.title} ${rec.description} ${rec.tactics?.join(' ') || ''}`;
+          recs.push({
+            title: rec.title,
+            description: rec.description,
+            impact: estimateImpact(fullText),
+            effort: estimateEffort(fullText),
+          });
         });
       }
 
-      if (sourceOpportunities.length > 0) {
-        recs.push({
-          title: `Get featured on ${sourceOpportunities[0]?.domain}`,
-          description: 'This authoritative source cites your competitors but not you',
-          impact: 'high',
-          effort: 'high',
-        });
-      }
-
-      if (searchedBrandStats && searchedBrandStats.firstPositionRate < 30) {
-        recs.push({
-          title: 'Optimize content for AI featured snippets',
-          description: `Your brand ranks #1 in only ${searchedBrandStats.firstPositionRate.toFixed(0)}% of mentions`,
-          impact: 'medium',
-          effort: 'low',
-        });
-      }
-
-      if (sentimentIssues.length > 0) {
-        recs.push({
-          title: 'Address sentiment concerns in content',
-          description: `${sentimentIssues.length} prompts show negative or conditional sentiment`,
-          impact: 'medium',
-          effort: 'medium',
-        });
-      }
-
-      recs.push({
-        title: 'Publish expert thought leadership content',
-        description: 'AI models favor authoritative, well-cited content',
-        impact: 'medium',
-        effort: 'medium',
-      });
-
-      return recs.slice(0, 5);
-    }, [brandBreakdownStats, sourceOpportunities, sentimentIssues]);
+      return recs.slice(0, 6); // Limit to 6 items for the chart
+    }, [aiSummary?.recommendations]);
 
     const getImpactBadge = (impact: 'high' | 'medium' | 'low') => {
       const colors = {
@@ -10666,7 +10720,7 @@ export default function ResultsPage() {
           </div>
 
           {/* Effort vs Impact Matrix Chart */}
-          {contentRecommendations.length > 0 && (
+          {parsedAiRecommendations.length > 0 && (
             <div className="mb-6">
               <div className="relative bg-gray-50 rounded-lg p-4 border border-gray-200">
                 {/* Y-axis label */}
@@ -10712,7 +10766,7 @@ export default function ResultsPage() {
                       </div>
 
                       {/* Plot points */}
-                      {contentRecommendations.map((rec, idx) => {
+                      {parsedAiRecommendations.map((rec, idx) => {
                         // Convert effort/impact to x/y percentages
                         const effortMap = { low: 16.67, medium: 50, high: 83.33 };
                         const impactMap = { low: 83.33, medium: 50, high: 16.67 };
@@ -10752,7 +10806,7 @@ export default function ResultsPage() {
                 {/* Legend */}
                 <div className="mt-4 pt-3 border-t border-gray-200">
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
-                    {contentRecommendations.map((rec, idx) => (
+                    {parsedAiRecommendations.map((rec, idx) => (
                       <div key={idx} className="flex items-center gap-1.5">
                         <span className="w-5 h-5 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-[10px] font-semibold">
                           {idx + 1}
@@ -10824,99 +10878,6 @@ export default function ResultsPage() {
           ) : (
             <p className="text-sm text-gray-500 text-center py-8">
               Great job! No significant visibility gaps identified based on current data.
-            </p>
-          )}
-        </div>
-
-        {/* Content & SEO Recommendations */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-              <PenLine className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Content & SEO Recommendations</h2>
-              <p className="text-sm text-gray-500">Actionable strategies to improve AI visibility</p>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Recommendation</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Impact</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">Effort</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contentRecommendations.map((rec, idx) => (
-                  <tr key={idx} className="border-b border-gray-100">
-                    <td className="py-3 px-4">
-                      <p className="font-medium text-gray-900 text-sm">{rec.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{rec.description}</p>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`text-xs px-2.5 py-1 rounded-full border ${getImpactBadge(rec.impact)}`}>
-                        {rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`text-xs px-2.5 py-1 rounded-full border ${getEffortBadge(rec.effort)}`}>
-                        {rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Source Strategy */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                <Newspaper className="w-5 h-5 text-purple-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Source Opportunities</h2>
-                <p className="text-sm text-gray-500">High-impact sources to target for coverage</p>
-              </div>
-            </div>
-            {sourceOpportunities.length > 0 && (
-              <button className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-1">
-                <FileDown className="w-4 h-4" />
-                Export PR List
-              </button>
-            )}
-          </div>
-
-          {sourceOpportunities.length > 0 ? (
-            <div className="space-y-2">
-              {sourceOpportunities.map((source, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Globe className="w-4 h-4 text-gray-400" />
-                    <span className="font-medium text-gray-900">{source.domain}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">Cites {source.competitorCount} competitors:</span>
-                    <div className="flex gap-1">
-                      {source.competitors.map(comp => (
-                        <span key={comp} className="text-xs px-2 py-0.5 bg-gray-200 text-gray-700 rounded">
-                          {truncate(comp, 12)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 text-center py-6">
-              No major source gaps identified. Your brand has good source coverage.
             </p>
           )}
         </div>
