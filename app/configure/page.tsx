@@ -326,7 +326,7 @@ export default function ConfigurePage() {
                       )}
                     </div>
                     <span className="text-base font-semibold text-gray-700">
-                      {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
+                      Select all
                     </span>
                   </div>
                 )}
