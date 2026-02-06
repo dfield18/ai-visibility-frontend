@@ -3485,14 +3485,29 @@ export default function ResultsPage() {
       </html>
     `;
 
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      printWindow.onload = () => {
-        printWindow.print();
+    // Create a temporary container for the HTML content
+    const container = document.createElement('div');
+    container.innerHTML = htmlContent;
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    document.body.appendChild(container);
+
+    // Use dynamic import for html2pdf (client-side only)
+    import('html2pdf.js').then((html2pdfModule) => {
+      const html2pdf = html2pdfModule.default;
+      const opt = {
+        margin: 10,
+        filename: `recommendations-${runStatus.brand}-${new Date().toISOString().split('T')[0]}.pdf`,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
       };
-    }
+
+      html2pdf().set(opt).from(container).save().then(() => {
+        document.body.removeChild(container);
+      });
+    });
   };
 
   const handleExportRecommendationsCSV = (recommendations: Array<{
