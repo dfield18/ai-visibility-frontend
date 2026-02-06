@@ -10745,7 +10745,8 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {/* Recommended High-Impact Actions */}
+        {/* Recommended High-Impact Actions - only show after AI recommendations have loaded */}
+        {aiSummary?.recommendations && parsedAiRecommendations.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-[#E8F5E9] rounded-lg flex items-center justify-center">
@@ -10995,6 +10996,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
             </div>
           )}
         </div>
+        )}
 
         {/* Sentiment Improvement */}
         {sentimentIssues.length > 0 && (
