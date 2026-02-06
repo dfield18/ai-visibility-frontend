@@ -11078,21 +11078,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <FileDown className="w-6 h-6 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">PDF Report</span>
-              <span className="text-xs text-gray-500">Executive summary</span>
-            </button>
+          <div className="grid grid-cols-2 gap-3 max-w-md">
             <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
               <Download className="w-6 h-6 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">CSV Export</span>
               <span className="text-xs text-gray-500">Raw data</span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-              <Calendar className="w-6 h-6 text-gray-600" />
-              <span className="text-sm font-medium text-gray-700">Schedule</span>
-              <span className="text-xs text-gray-500">Weekly reports</span>
             </button>
             <button className="flex flex-col items-center gap-2 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
               <Share2 className="w-6 h-6 text-gray-600" />
