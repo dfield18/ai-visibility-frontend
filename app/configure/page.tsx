@@ -466,14 +466,14 @@ export default function ConfigurePage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-[#4A7C59]/10 rounded-lg">
-                <Users className="w-5 h-5 text-[#4A7C59]" />
+              <div className="p-2 bg-purple-50 rounded-lg">
+                <Users className="w-5 h-5 text-purple-600" />
               </div>
               <div className="flex-1">
                 <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
                 <p className="text-sm text-gray-500 mt-0.5">{brandsDescription}</p>
               </div>
-              <span className="text-sm font-medium text-[#4A7C59] bg-[#4A7C59]/10 px-2.5 py-1 rounded-full">
+              <span className="text-sm font-medium text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
                 {selectedCompetitorsArray.length} selected
               </span>
             </div>
@@ -493,7 +493,7 @@ export default function ConfigurePage() {
                     type="button"
                     className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
                       selectedCompetitors.has(competitor)
-                        ? 'bg-[#4A7C59]/10 border-[#4A7C59]/30 text-[#4A7C59]'
+                        ? 'bg-purple-50 border-purple-200 text-purple-700'
                         : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-100'
                     }`}
                     onClick={() => toggleCompetitor(competitor)}
@@ -501,7 +501,7 @@ export default function ConfigurePage() {
                     <div
                       className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
                         selectedCompetitors.has(competitor)
-                          ? 'bg-[#4A7C59]'
+                          ? 'bg-purple-600'
                           : 'border-2 border-gray-300'
                       }`}
                     >
@@ -534,7 +534,7 @@ export default function ConfigurePage() {
                       value={newCompetitor}
                       onChange={(e) => setNewCompetitor(e.target.value)}
                       placeholder={addBrandPlaceholder}
-                      className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] placeholder-gray-400"
+                      className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-400 placeholder-gray-400"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') { handleAddCompetitor(); }
@@ -544,7 +544,7 @@ export default function ConfigurePage() {
                     <button
                       onClick={handleAddCompetitor}
                       disabled={!newCompetitor.trim()}
-                      className="px-4 py-2.5 text-sm bg-[#4A7C59] text-white rounded-xl hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      className="px-4 py-2.5 text-sm bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
                       Add
                     </button>
@@ -558,7 +558,7 @@ export default function ConfigurePage() {
                 ) : (
                   <button
                     onClick={() => setAddingCompetitor(true)}
-                    className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-[#4A7C59]/5 transition-colors"
+                    className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-purple-50 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     Add {isCategory ? 'another brand' : 'another competitor'}
@@ -573,8 +573,8 @@ export default function ConfigurePage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-[#4A7C59]/10 rounded-lg">
-                <Bot className="w-5 h-5 text-[#4A7C59]" />
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <Bot className="w-5 h-5 text-blue-600" />
               </div>
               <div className="flex-1">
                 <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
@@ -582,7 +582,7 @@ export default function ConfigurePage() {
                   Choose which AI assistants to include in your analysis
                 </p>
               </div>
-              <span className="text-sm font-medium text-[#4A7C59] bg-[#4A7C59]/10 px-2.5 py-1 rounded-full">
+              <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
                 {providers.length} selected
               </span>
             </div>
@@ -597,14 +597,14 @@ export default function ConfigurePage() {
                   onClick={() => toggleProvider(key)}
                   className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
                     providers.includes(key)
-                      ? 'bg-[#4A7C59]/5 border-[#4A7C59]/30'
+                      ? 'bg-blue-50 border-blue-200'
                       : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
                   }`}
                 >
                   <div
                     className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
                       providers.includes(key)
-                        ? 'bg-[#4A7C59]'
+                        ? 'bg-blue-600'
                         : 'border-2 border-gray-300'
                     }`}
                   >
@@ -613,7 +613,7 @@ export default function ConfigurePage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${providers.includes(key) ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                    <p className={`text-sm font-medium ${providers.includes(key) ? 'text-blue-700' : 'text-gray-700'}`}>
                       {info.name}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
@@ -632,8 +632,8 @@ export default function ConfigurePage() {
             className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <Settings2 className="w-5 h-5 text-gray-500" />
+              <div className="p-2 bg-amber-50 rounded-lg">
+                <Settings2 className="w-5 h-5 text-amber-600" />
               </div>
               <div className="text-left">
                 <h2 className="text-base font-semibold text-gray-900">Advanced Settings</h2>
@@ -686,7 +686,7 @@ export default function ConfigurePage() {
                         }}
                         className={`p-4 rounded-xl border text-left transition-all ${
                           temperatures.includes(temp)
-                            ? 'bg-[#4A7C59]/5 border-[#4A7C59]/30'
+                            ? 'bg-amber-50 border-amber-200'
                             : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                       >
@@ -694,7 +694,7 @@ export default function ConfigurePage() {
                           <div
                             className={`w-4 h-4 rounded flex items-center justify-center ${
                               temperatures.includes(temp)
-                                ? 'bg-[#4A7C59]'
+                                ? 'bg-amber-500'
                                 : 'border-2 border-gray-300'
                             }`}
                           >
@@ -702,7 +702,7 @@ export default function ConfigurePage() {
                               <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                             )}
                           </div>
-                          <span className={`text-sm font-medium ${temperatures.includes(temp) ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                          <span className={`text-sm font-medium ${temperatures.includes(temp) ? 'text-amber-700' : 'text-gray-700'}`}>
                             {config.label}
                           </span>
                         </div>
@@ -734,11 +734,11 @@ export default function ConfigurePage() {
                       onClick={() => setRepeats(num)}
                       className={`p-4 rounded-xl border text-center transition-all ${
                         repeats === num
-                          ? 'bg-[#4A7C59]/5 border-[#4A7C59]/30'
+                          ? 'bg-amber-50 border-amber-200'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                     >
-                      <span className={`text-lg font-semibold ${repeats === num ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                      <span className={`text-lg font-semibold ${repeats === num ? 'text-amber-700' : 'text-gray-700'}`}>
                         {num}x
                       </span>
                       <p className="text-xs text-gray-500 mt-1">
@@ -762,12 +762,12 @@ export default function ConfigurePage() {
                       onClick={() => setOpenaiModel('gpt-4o-mini')}
                       className={`w-full p-3 rounded-xl border text-left transition-all ${
                         openaiModel === 'gpt-4o-mini'
-                          ? 'bg-[#4A7C59]/5 border-[#4A7C59]/30'
+                          ? 'bg-amber-50 border-amber-200'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o-mini' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o-mini' ? 'text-amber-700' : 'text-gray-700'}`}>
                           GPT-4o Mini
                         </span>
                         <span className="text-xs text-gray-500">$0.0003/call</span>
@@ -779,12 +779,12 @@ export default function ConfigurePage() {
                       onClick={() => setOpenaiModel('gpt-4o')}
                       className={`w-full p-3 rounded-xl border text-left transition-all ${
                         openaiModel === 'gpt-4o'
-                          ? 'bg-[#4A7C59]/5 border-[#4A7C59]/30'
+                          ? 'bg-amber-50 border-amber-200'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o' ? 'text-amber-700' : 'text-gray-700'}`}>
                           GPT-4o
                         </span>
                         <span className="text-xs text-gray-500">$0.003/call</span>
@@ -805,12 +805,12 @@ export default function ConfigurePage() {
                       onClick={() => setAnthropicModel('claude-haiku-4-5-20251001')}
                       className={`w-full p-3 rounded-xl border text-left transition-all ${
                         anthropicModel === 'claude-haiku-4-5-20251001'
-                          ? 'bg-[#4A7C59]/5 border-[#4A7C59]/30'
+                          ? 'bg-amber-50 border-amber-200'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${anthropicModel === 'claude-haiku-4-5-20251001' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${anthropicModel === 'claude-haiku-4-5-20251001' ? 'text-amber-700' : 'text-gray-700'}`}>
                           Claude Haiku
                         </span>
                         <span className="text-xs text-gray-500">~$0.025/call</span>
@@ -822,12 +822,12 @@ export default function ConfigurePage() {
                       onClick={() => setAnthropicModel('claude-sonnet-4-20250514')}
                       className={`w-full p-3 rounded-xl border text-left transition-all ${
                         anthropicModel === 'claude-sonnet-4-20250514'
-                          ? 'bg-[#4A7C59]/5 border-[#4A7C59]/30'
+                          ? 'bg-amber-50 border-amber-200'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${anthropicModel === 'claude-sonnet-4-20250514' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${anthropicModel === 'claude-sonnet-4-20250514' ? 'text-amber-700' : 'text-gray-700'}`}>
                           Claude Sonnet
                         </span>
                         <span className="text-xs text-gray-500">~$0.035/call</span>
@@ -854,7 +854,7 @@ export default function ConfigurePage() {
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] bg-white"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-100 focus:border-amber-400 bg-white"
                 >
                   <option value="us">United States</option>
                   <option value="gb">United Kingdom</option>

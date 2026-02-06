@@ -4111,8 +4111,8 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Prompt Breakdown</h2>
-              <p className="text-sm text-gray-500 mt-1">Performance metrics for {runStatus?.brand} across all prompts</p>
+              <h2 className="text-lg font-semibold text-gray-900">Results by Question</h2>
+              <p className="text-sm text-gray-500 mt-1">How {runStatus?.brand} performs across each question asked to AI</p>
             </div>
             <select
               value={promptBreakdownLlmFilter}
@@ -4356,11 +4356,11 @@ export default function ResultsPage() {
         </div>
       )}
 
-      {/* LLM Model Breakdown */}
+      {/* Results by AI Platform */}
       {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">LLM Model Breakdown</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Results by AI Platform</h2>
             <select
               value={llmBreakdownBrandFilter || llmBreakdownBrands[0] || ''}
               onChange={(e) => setLlmBreakdownBrandFilter(e.target.value)}
@@ -5998,9 +5998,9 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Source Gap Analysis</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Competitor Source Advantage</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Sources where competitors are cited more often than {runStatus?.brand || 'your brand'}
+                Websites that cite your competitors more than {runStatus?.brand || 'your brand'}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -6390,9 +6390,9 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Relative Sentiment Advantage</h2>
+              <h2 className="text-lg font-semibold text-gray-900">How Sources Talk About You vs. Competitors</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Comparing how sources portray {sentimentComparisonBrand || runStatus?.brand || 'your brand'} vs. other brands
+                Which websites describe {sentimentComparisonBrand || runStatus?.brand || 'your brand'} more positively
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -7884,7 +7884,7 @@ export default function ResultsPage() {
               <h2 className="text-lg font-semibold text-gray-900">Key Influencers</h2>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              Sources cited by multiple Models — these likely have outsized influence on AI recommendations.
+              Sources cited by multiple AI platforms — these have a big impact on what AI recommends.
             </p>
             <div className="flex flex-wrap gap-2">
               {keyInfluencers.map((source) => {
@@ -8272,9 +8272,9 @@ export default function ResultsPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Source Influence Map</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Sources That Help Your Brand</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Which sources correlate with better brand positioning across AI models
+                    Websites linked to higher visibility and better sentiment in AI responses
                   </p>
                 </div>
                 <select
@@ -8589,9 +8589,9 @@ export default function ResultsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Domain Breakdown</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Publisher Breakdown</h3>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  Showing {sortedDomainTableData.length} domains cited across LLM responses
+                  Showing {sortedDomainTableData.length} publishers cited across AI responses
                 </p>
               </div>
             </div>
@@ -9481,9 +9481,9 @@ export default function ResultsPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Sentiment by Prompt</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Sentiment by Question</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Which prompts trigger positive vs negative framing
+                      Which questions lead to positive vs negative descriptions
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -9551,9 +9551,9 @@ export default function ResultsPage() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Sentiment by Prompt</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Sentiment by Question</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Which prompts trigger positive vs negative framing of {effectiveBrand}
+                    Which questions lead to positive vs negative descriptions of {effectiveBrand}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -9741,7 +9741,10 @@ export default function ResultsPage() {
         {/* Sentiment by Provider */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Provider</h3>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Platform</h3>
+              <p className="text-sm text-gray-500 mt-0.5">How each AI platform describes your brand</p>
+            </div>
             <div className="flex items-center gap-2">
               <select
                 value={sentimentProviderCitationFilter}
@@ -10018,8 +10021,8 @@ export default function ResultsPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Response-Level Sentiment</h3>
-              <p className="text-sm text-gray-500 mt-0.5">Detailed sentiment for each AI response</p>
+              <h3 className="text-lg font-semibold text-gray-900">Sentiment Details</h3>
+              <p className="text-sm text-gray-500 mt-0.5">How each AI response describes your brand</p>
             </div>
             <div className="flex items-center gap-3">
               <select
@@ -10610,30 +10613,6 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
-        {/* Actionable Takeaway Section */}
-        {(isSummaryLoading || (aiSummary?.summary && extractActionableTakeaway(aiSummary.summary))) && (
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-200 p-5">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Lightbulb className="w-4 h-4 text-amber-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-gray-900 mb-1">Actionable Takeaway</h3>
-                {isSummaryLoading ? (
-                  <div className="flex items-center gap-2">
-                    <Spinner size="sm" />
-                    <span className="text-sm text-gray-500">Analyzing results...</span>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    {extractActionableTakeaway(aiSummary?.summary || '').replace(/\bai_overviews\b/gi, 'Google AI Overviews')}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* AI-Generated Recommendations */}
         {aiSummary?.recommendations && (() => {
           const recs = aiSummary.recommendations as unknown;
@@ -10685,6 +10664,107 @@ export default function ResultsPage() {
               <p className="text-sm text-gray-500">Prioritized opportunities to improve your AI visibility</p>
             </div>
           </div>
+
+          {/* Effort vs Impact Matrix Chart */}
+          {contentRecommendations.length > 0 && (
+            <div className="mb-6">
+              <div className="relative bg-gray-50 rounded-lg p-4 border border-gray-200">
+                {/* Y-axis label */}
+                <div className="absolute -left-1 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-gray-500 whitespace-nowrap">
+                  Impact
+                </div>
+
+                {/* Chart container */}
+                <div className="ml-6">
+                  {/* Y-axis labels */}
+                  <div className="flex">
+                    <div className="w-12 flex flex-col justify-between text-right pr-2 text-xs text-gray-500" style={{ height: '180px' }}>
+                      <span>High</span>
+                      <span>Med</span>
+                      <span>Low</span>
+                    </div>
+
+                    {/* Grid */}
+                    <div className="flex-1 relative" style={{ height: '180px' }}>
+                      {/* Background grid */}
+                      <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+                        {/* Quick Wins quadrant (top-left) */}
+                        <div className="bg-green-50 border border-gray-200 flex items-center justify-center">
+                          <span className="text-[10px] text-green-600 font-medium opacity-50">Quick Wins</span>
+                        </div>
+                        <div className="bg-green-50/50 border border-gray-200" />
+                        {/* Major Projects quadrant (top-right) */}
+                        <div className="bg-amber-50 border border-gray-200 flex items-center justify-center">
+                          <span className="text-[10px] text-amber-600 font-medium opacity-50">Major Projects</span>
+                        </div>
+                        <div className="bg-gray-100/50 border border-gray-200" />
+                        <div className="bg-gray-100/50 border border-gray-200" />
+                        <div className="bg-gray-100/50 border border-gray-200" />
+                        {/* Fill-ins quadrant (bottom-left) */}
+                        <div className="bg-blue-50 border border-gray-200 flex items-center justify-center">
+                          <span className="text-[10px] text-blue-600 font-medium opacity-50">Fill-ins</span>
+                        </div>
+                        <div className="bg-gray-100/30 border border-gray-200" />
+                        {/* Avoid quadrant (bottom-right) */}
+                        <div className="bg-red-50 border border-gray-200 flex items-center justify-center">
+                          <span className="text-[10px] text-red-600 font-medium opacity-50">Avoid</span>
+                        </div>
+                      </div>
+
+                      {/* Plot points */}
+                      {contentRecommendations.map((rec, idx) => {
+                        // Convert effort/impact to x/y percentages
+                        const effortMap = { low: 16.67, medium: 50, high: 83.33 };
+                        const impactMap = { low: 83.33, medium: 50, high: 16.67 };
+                        const x = effortMap[rec.effort];
+                        const y = impactMap[rec.impact];
+
+                        return (
+                          <div
+                            key={idx}
+                            className="absolute w-7 h-7 -ml-3.5 -mt-3.5 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-xs font-semibold shadow-md cursor-help hover:scale-110 transition-transform z-10"
+                            style={{ left: `${x}%`, top: `${y}%` }}
+                            title={`${rec.title}\n\nImpact: ${rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)}\nEffort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}\n\n${rec.description}`}
+                          >
+                            {idx + 1}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* X-axis labels */}
+                  <div className="flex mt-2">
+                    <div className="w-12" />
+                    <div className="flex-1 grid grid-cols-3 text-center text-xs text-gray-500">
+                      <span>Low</span>
+                      <span>Medium</span>
+                      <span>High</span>
+                    </div>
+                  </div>
+
+                  {/* X-axis label */}
+                  <div className="text-center text-xs font-medium text-gray-500 mt-1">
+                    Effort
+                  </div>
+                </div>
+
+                {/* Legend */}
+                <div className="mt-4 pt-3 border-t border-gray-200">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                    {contentRecommendations.map((rec, idx) => (
+                      <div key={idx} className="flex items-center gap-1.5">
+                        <span className="w-5 h-5 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-[10px] font-semibold">
+                          {idx + 1}
+                        </span>
+                        <span className="truncate max-w-[200px]" title={rec.title}>{rec.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {quickWins.length > 0 ? (
             <div className="space-y-3">
@@ -12028,7 +12108,7 @@ export default function ResultsPage() {
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Brand Positioning</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      How brands compare by mention frequency and sentiment
+                      How often AI mentions each brand vs. how favorably it describes them. Top-right = best position.
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -12228,7 +12308,7 @@ export default function ResultsPage() {
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Prompt Performance Matrix</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Visibility rates for each brand across different prompts
+                      How often each brand appears in answers to each question
                     </p>
                   </div>
                   <select
@@ -12250,10 +12330,10 @@ export default function ResultsPage() {
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
-                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[160px] max-w-[200px]"
+                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[160px] max-w-[200px] cursor-help"
                             title={prompt}
                           >
-                            <span className="text-sm block truncate">
+                            <span className="text-sm block truncate" title={prompt}>
                               {prompt.length > 40 ? prompt.substring(0, 38) + '...' : prompt}
                             </span>
                           </th>
@@ -12317,9 +12397,9 @@ export default function ResultsPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Brand Co-occurrence Analysis</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Brands Mentioned Together</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Brands frequently mentioned together in AI responses. Numbers show co-occurrence count.
+                      Which brands AI tends to recommend alongside each other
                     </p>
                   </div>
                   <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -12548,9 +12628,9 @@ export default function ResultsPage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand-Source Heatmap</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Which Publishers Mention Which Brands</h3>
                     <p className="text-sm text-gray-500">
-                      {heatmapShowSentiment ? 'Overall sentiment of each source toward brand' : 'Sources cited when each brand is mentioned'}
+                      {heatmapShowSentiment ? 'How positively each publisher describes each brand' : 'See citation patterns across publishers and brands'}
                       <span className="ml-2 text-gray-400">Click any cell to view responses</span>
                     </p>
                   </div>
