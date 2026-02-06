@@ -10586,6 +10586,38 @@ export default function ResultsPage() {
         return { level: 'medium', reason: 'Moderate impact on AI visibility' };
       };
 
+      // Helper to extract tactics from recommendation text
+      const extractTactics = (text: string, title: string): string[] => {
+        const tactics: string[] = [];
+
+        // Remove the title from the text to avoid duplication
+        let content = text.replace(title, '').trim();
+
+        // Look for bullet points (-, *, •) or numbered sub-items
+        const bulletMatches = content.match(/(?:^|\n)\s*[-*•]\s*([^\n]+)/g);
+        if (bulletMatches && bulletMatches.length > 0) {
+          bulletMatches.forEach(match => {
+            const tactic = match.replace(/^\s*[-*•]\s*/, '').trim();
+            if (tactic.length > 10 && tactic.length < 150) {
+              tactics.push(tactic.replace(/[*_]/g, ''));
+            }
+          });
+        }
+
+        // If no bullets found, try to extract actionable sentences
+        if (tactics.length === 0) {
+          const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 15);
+          sentences.slice(0, 3).forEach(sentence => {
+            const cleaned = sentence.trim().replace(/[*_]/g, '');
+            if (cleaned.length > 10 && cleaned.length < 150) {
+              tactics.push(cleaned);
+            }
+          });
+        }
+
+        return tactics.slice(0, 4); // Limit to 4 tactics per recommendation
+      };
+
       const recsContent = aiSummary.recommendations;
 
       if (typeof recsContent === 'string') {
@@ -10629,6 +10661,7 @@ export default function ResultsPage() {
           if (title && title.length > 5) {
             const impactResult = estimateImpact(para);
             const effortResult = estimateEffort(para);
+            const tactics = extractTactics(para, title);
             recs.push({
               title,
               description,
@@ -10636,7 +10669,7 @@ export default function ResultsPage() {
               effort: effortResult.level,
               impactReason: impactResult.reason,
               effortReason: effortResult.reason,
-              tactics: [],
+              tactics,
             });
           }
         });
