@@ -184,7 +184,6 @@ export default function RunPage() {
     );
   }
 
-  const completedCalls = runStatus.completed_calls + runStatus.failed_calls;
   const recentResults = runStatus.results
     .filter((r: Result) => r.response_text)
     .slice(-5)
@@ -245,10 +244,6 @@ export default function RunPage() {
             <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
               <span className="font-medium text-lg text-gray-900">
                 {Math.round(runStatus.progress_percent)}%
-              </span>
-              <span className="text-gray-400">|</span>
-              <span>
-                {completedCalls} of {runStatus.total_calls} calls
               </span>
               {runStatus.estimated_seconds_remaining !== null && runStatus.status === 'running' && (
                 <>
