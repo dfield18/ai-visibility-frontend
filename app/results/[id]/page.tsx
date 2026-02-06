@@ -10829,7 +10829,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         return (
                           <div
                             key={idx}
-                            className="absolute w-6 h-6 -ml-3 -mt-3 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-[10px] font-semibold shadow-sm cursor-help hover:scale-125 hover:z-20 transition-all duration-150"
+                            className="absolute w-6 h-6 -ml-3 -mt-3 bg-[#4A7C59] text-white rounded-full flex items-center justify-center text-[10px] font-semibold shadow-sm cursor-default hover:scale-125 hover:z-20 transition-all duration-150"
                             style={{
                               left: `${x}%`,
                               top: `${y}%`,

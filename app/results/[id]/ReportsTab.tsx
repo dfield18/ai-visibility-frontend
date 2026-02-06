@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import {
   Plus,
@@ -39,7 +39,8 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [editingReport, setEditingReport] = useState<ScheduledReport | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Extract unique values from results
   const uniquePrompts = runStatus?.results ? [...new Set(runStatus.results.map(r => r.prompt))] : [];
@@ -64,12 +65,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
 
-  // Fetch reports on mount
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -85,11 +81,29 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     } finally {
       setLoading(false);
     }
+  }, [getToken]);
+
+  // Fetch reports on mount
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  // Helper to manage action loading state
+  const setActionLoadingState = (id: string, isLoading: boolean) => {
+    setActionLoading(prev => {
+      const next = new Set(prev);
+      if (isLoading) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
   };
 
   const handleCreate = async () => {
     try {
-      setActionLoading('create');
+      setActionLoadingState('create', true);
       const token = await getToken();
       if (!token) return;
 
@@ -99,17 +113,17 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
 
       if (prompts.length === 0) {
         setError('At least one prompt is required');
-        setActionLoading(null);
+        setActionLoadingState('create', false);
         return;
       }
       if (competitors.length === 0) {
         setError('At least one competitor is required');
-        setActionLoading(null);
+        setActionLoadingState('create', false);
         return;
       }
       if (providers.length === 0) {
         setError('At least one provider is required');
-        setActionLoading(null);
+        setActionLoadingState('create', false);
         return;
       }
 
@@ -135,14 +149,14 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create report');
     } finally {
-      setActionLoading(null);
+      setActionLoadingState('create', false);
     }
   };
 
   const handleUpdate = async () => {
     if (!editingReport) return;
     try {
-      setActionLoading('update');
+      setActionLoadingState('update', true);
       const token = await getToken();
       if (!token) return;
 
@@ -153,29 +167,30 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update report');
     } finally {
-      setActionLoading(null);
+      setActionLoadingState('update', false);
     }
   };
 
-  const handleDelete = async (reportId: string) => {
-    if (!confirm('Are you sure you want to delete this report?')) return;
+  const handleDeleteConfirm = async (reportId: string) => {
     try {
-      setActionLoading(reportId);
+      setActionLoadingState(reportId, true);
       const token = await getToken();
       if (!token) return;
 
       await api.deleteScheduledReport(reportId, token);
       await fetchReports();
+      setDeleteConfirmId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete report');
     } finally {
-      setActionLoading(null);
+      setActionLoadingState(reportId, false);
     }
   };
 
   const handleToggle = async (reportId: string) => {
+    if (actionLoading.has(reportId)) return; // Prevent double-click
     try {
-      setActionLoading(reportId);
+      setActionLoadingState(reportId, true);
       const token = await getToken();
       if (!token) return;
 
@@ -184,23 +199,27 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle report');
     } finally {
-      setActionLoading(null);
+      setActionLoadingState(reportId, false);
     }
   };
 
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const handleRunNow = async (reportId: string) => {
+    if (actionLoading.has(reportId)) return; // Prevent double-click
     try {
-      setActionLoading(reportId);
+      setActionLoadingState(reportId, true);
       const token = await getToken();
       if (!token) return;
 
       const response = await api.runScheduledReportNow(reportId, token);
-      alert(`Report started! Run ID: ${response.run_id}`);
+      setSuccessMessage(`Report started! Run ID: ${response.run_id.slice(0, 8)}...`);
+      setTimeout(() => setSuccessMessage(null), 5000);
       await fetchReports();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to run report');
     } finally {
-      setActionLoading(null);
+      setActionLoadingState(reportId, false);
     }
   };
 
@@ -239,8 +258,10 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     });
   };
 
-  const formatNextRun = (dateStr: string) => {
+  const formatNextRun = (dateStr: string | null | undefined) => {
+    if (!dateStr) return 'Not scheduled';
     const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Invalid date';
     return date.toLocaleString(undefined, {
       weekday: 'short',
       month: 'short',
@@ -352,7 +373,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
                     </span>
                   </div>
                   <p className="text-sm text-gray-500 mb-3">
-                    {report.brand} · {report.frequency === 'weekly' ? `Every ${DAYS_OF_WEEK[report.day_of_week || 0]}` : 'Daily'} at {report.hour}:00
+                    {report.brand} · {report.frequency === 'weekly' && report.day_of_week !== null ? `Every ${DAYS_OF_WEEK[report.day_of_week]}` : report.frequency === 'weekly' ? 'Weekly' : 'Daily'} at {report.hour}:00
                   </p>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {report.providers.map((p) => (
@@ -377,11 +398,11 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleRunNow(report.id)}
-                    disabled={actionLoading === report.id}
-                    className="p-2 text-gray-500 hover:text-[#4A7C59] hover:bg-gray-100 rounded-lg transition-colors"
+                    disabled={actionLoading.has(report.id)}
+                    className="p-2 text-gray-500 hover:text-[#4A7C59] hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                     title="Run Now"
                   >
-                    {actionLoading === report.id ? (
+                    {actionLoading.has(report.id) ? (
                       <Spinner className="w-5 h-5" />
                     ) : (
                       <PlayCircle className="w-5 h-5" />
@@ -389,8 +410,8 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
                   </button>
                   <button
                     onClick={() => handleToggle(report.id)}
-                    disabled={actionLoading === report.id}
-                    className="p-2 text-gray-500 hover:text-[#4A7C59] hover:bg-gray-100 rounded-lg transition-colors"
+                    disabled={actionLoading.has(report.id)}
+                    className="p-2 text-gray-500 hover:text-[#4A7C59] hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
                     title={report.is_active ? 'Pause' : 'Resume'}
                   >
                     {report.is_active ? (
@@ -407,9 +428,9 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
                     <Edit2 className="w-5 h-5" />
                   </button>
                   <button
-                    onClick={() => handleDelete(report.id)}
-                    disabled={actionLoading === report.id}
-                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => setDeleteConfirmId(report.id)}
+                    disabled={actionLoading.has(report.id)}
+                    className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                     title="Delete"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -548,16 +569,54 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
               </button>
               <button
                 onClick={editingReport ? handleUpdate : handleCreate}
-                disabled={actionLoading === 'create' || actionLoading === 'update'}
+                disabled={actionLoading.has('create') || actionLoading.has('update')}
                 className="px-4 py-2 text-sm font-medium text-white bg-[#4A7C59] rounded-lg hover:bg-[#3d6649] transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                {(actionLoading === 'create' || actionLoading === 'update') && (
+                {(actionLoading.has('create') || actionLoading.has('update')) && (
                   <Spinner className="w-4 h-4" />
                 )}
                 {editingReport ? 'Save Changes' : 'Create Report'}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Report</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this report? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteConfirm(deleteConfirmId)}
+                disabled={actionLoading.has(deleteConfirmId)}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {actionLoading.has(deleteConfirmId) && <Spinner className="w-4 h-4" />}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Message Toast */}
+      {successMessage && (
+        <div className="fixed bottom-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50">
+          <span>{successMessage}</span>
+          <button onClick={() => setSuccessMessage(null)} className="hover:opacity-80">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
     </div>
