@@ -9551,6 +9551,30 @@ export default function ResultsPage() {
                   </select>
                 </div>
               </div>
+              {/* Sentiment Legend */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
+                <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#15803d' }} />
+                  <span className="text-xs text-gray-500">Strong</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+                  <span className="text-xs text-gray-500">Positive</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#eab308' }} />
+                  <span className="text-xs text-gray-500">Neutral</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f97316' }} />
+                  <span className="text-xs text-gray-500">Conditional</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#dc2626' }} />
+                  <span className="text-xs text-gray-500">Negative</span>
+                </div>
+              </div>
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
@@ -9682,32 +9706,6 @@ export default function ResultsPage() {
                     />
                   </ScatterChart>
                 </ResponsiveContainer>
-              </div>
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-gray-500">
-                <span className="text-gray-400 italic">Hover over dots for details</span>
-                <span className="text-gray-300">|</span>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#dc2626]"></div>
-                    <span>Negative</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#f97316]"></div>
-                    <span>Conditional</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#eab308]"></div>
-                    <span>Neutral</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#22c55e]"></div>
-                    <span>Positive</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded-full bg-[#15803d]"></div>
-                    <span>Strong</span>
-                  </div>
-                </div>
               </div>
             </div>
           );
