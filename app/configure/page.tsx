@@ -325,7 +325,7 @@ export default function ConfigurePage() {
                         <Check className="w-3 h-3 text-white" strokeWidth={3} />
                       )}
                     </div>
-                    <span className="text-sm text-gray-700">
+                    <span className="text-base font-semibold text-gray-700">
                       {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
                     </span>
                   </div>
