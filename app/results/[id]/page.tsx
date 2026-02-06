@@ -6873,13 +6873,14 @@ export default function ResultsPage() {
     };
   }, [runStatus, globallyFilteredResults, heatmapProviderFilter]);
 
-  // Handler for heatmap cell double-click - find matching results
+  // Handler for heatmap cell click - find matching results
   const handleHeatmapCellClick = useCallback((domain: string, brand: string) => {
     if (!runStatus) return;
 
     // Find results that:
-    // 1. Have a source from the specified domain that mentions the brand in title/URL
+    // 1. Have a source from the specified domain
     // 2. Mention the specified brand in the response
+    // This matches the heatmap display logic (sources cited when brand is mentioned)
     const matchingResults = globallyFilteredResults.filter((result: Result) => {
       if (result.error || !result.sources || result.sources.length === 0) return false;
       if (heatmapProviderFilter !== 'all' && result.provider !== heatmapProviderFilter) return false;
@@ -6890,13 +6891,10 @@ export default function ResultsPage() {
         : result.competitors_mentioned?.includes(brand);
       if (!brandMentioned) return false;
 
-      // Check if source domain is cited AND the source mentions the brand
-      const brandLower = brand.toLowerCase();
+      // Check if source domain is cited in the same response
       const hasMatchingSource = result.sources.some((source: Source) => {
         if (!source.url) return false;
-        if (getDomain(source.url) !== domain) return false;
-        const sourceText = `${source.title || ''} ${source.url}`.toLowerCase();
-        return sourceText.includes(brandLower);
+        return getDomain(source.url) === domain;
       });
 
       return hasMatchingSource;
