@@ -286,22 +286,18 @@ export default function ConfigurePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Questions Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 bg-[#4A7C59]/10 rounded-lg">
-                <MessageSquare className="w-4 h-4 text-[#4A7C59]" />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <MessageSquare className="w-5 h-5 text-gray-600" />
               </div>
-              <div className="flex-1">
-                <h2 className="text-sm font-semibold text-gray-900">Questions to Ask AI</h2>
-              </div>
-              <span className="text-xs font-medium text-[#4A7C59] bg-[#4A7C59]/10 px-2 py-0.5 rounded-full">
+              <h2 className="text-base font-semibold text-gray-900 flex-1">Questions to Ask AI</h2>
+              <span className="text-sm font-medium text-[#4A7C59] border border-[#4A7C59] px-2.5 py-0.5 rounded-full">
                 {selectedPromptsArray.length} selected
               </span>
             </div>
-          </div>
 
-          <div className="p-3">
             {suggestionsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Spinner size="lg" />
@@ -309,11 +305,11 @@ export default function ConfigurePage() {
               </div>
             ) : (
               <>
-                {/* Select All */}
+                {/* Select All / Deselect All */}
                 {prompts.length > 0 && (
                   <button
                     type="button"
-                    className="w-full flex items-center gap-2.5 px-3 py-2 mb-1 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-3 py-2 hover:opacity-80 transition-opacity"
                     onClick={() => {
                       if (selectedPrompts.size === prompts.length) {
                         deselectAllPrompts();
@@ -323,7 +319,7 @@ export default function ConfigurePage() {
                     }}
                   >
                     <div
-                      className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+                      className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                         selectedPrompts.size === prompts.length
                           ? 'bg-[#4A7C59]'
                           : selectedPrompts.size > 0
@@ -332,27 +328,23 @@ export default function ConfigurePage() {
                       }`}
                     >
                       {selectedPrompts.size === prompts.length ? (
-                        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
                       ) : selectedPrompts.size > 0 ? (
-                        <div className="w-1.5 h-0.5 bg-white rounded" />
+                        <div className="w-2 h-0.5 bg-white rounded" />
                       ) : null}
                     </div>
-                    <span className="text-xs font-medium text-gray-600">
+                    <span className="text-sm text-gray-700">
                       {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
                     </span>
                   </button>
                 )}
 
                 {/* Questions List */}
-                <div className="space-y-0.5">
+                <div className="space-y-1 mt-2">
                   {prompts.map((prompt, index) => (
                     <div
                       key={prompt}
-                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg cursor-pointer transition-all group ${
-                        selectedPrompts.has(prompt)
-                          ? 'bg-[#4A7C59]/5 hover:bg-[#4A7C59]/10'
-                          : 'hover:bg-gray-50'
-                      }`}
+                      className="flex items-start gap-3 py-2 cursor-pointer group"
                       onClick={() => {
                         if (editingPromptIndex !== index) {
                           togglePrompt(prompt);
@@ -360,14 +352,14 @@ export default function ConfigurePage() {
                       }}
                     >
                       <div
-                        className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
                           selectedPrompts.has(prompt)
                             ? 'bg-[#4A7C59]'
                             : 'border-2 border-gray-300'
                         }`}
                       >
                         {selectedPrompts.has(prompt) && (
-                          <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
                         )}
                       </div>
                       {editingPromptIndex === index ? (
@@ -398,7 +390,7 @@ export default function ConfigurePage() {
                         </div>
                       ) : (
                         <>
-                          <span className={`flex-1 text-sm ${selectedPrompts.has(prompt) ? 'text-gray-900' : 'text-gray-600'}`}>
+                          <span className="flex-1 text-sm text-gray-700 leading-relaxed">
                             {prompt}
                           </span>
                           <button
@@ -406,7 +398,7 @@ export default function ConfigurePage() {
                               e.stopPropagation();
                               handleEditPrompt(index);
                             }}
-                            className="p-1 text-gray-400 hover:text-[#4A7C59] opacity-0 group-hover:opacity-100 transition-all rounded hover:bg-white"
+                            className="p-1 text-gray-400 hover:text-[#4A7C59] opacity-0 group-hover:opacity-100 transition-all rounded hover:bg-gray-100"
                             aria-label="Edit question"
                           >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -422,7 +414,7 @@ export default function ConfigurePage() {
             )}
 
             {prompts.length < 10 && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
+              <div className="mt-4 pt-4 border-t border-gray-100">
                 {addingPrompt ? (
                   <div className="flex gap-2">
                     <input
@@ -454,9 +446,9 @@ export default function ConfigurePage() {
                 ) : (
                   <button
                     onClick={() => setAddingPrompt(true)}
-                    className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-[#4A7C59]/5 transition-colors"
+                    className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-2"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                     Add your own question
                   </button>
                 )}
@@ -466,118 +458,117 @@ export default function ConfigurePage() {
         </div>
 
         {/* Competitors/Brands Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <Users className="w-5 h-5 text-purple-600" />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-5">
+            <div className="flex items-start gap-3 mb-1">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <Users className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
                 <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
                 <p className="text-sm text-gray-500 mt-0.5">{brandsDescription}</p>
               </div>
-              <span className="text-sm font-medium text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full">
+              <span className="text-sm font-medium text-[#4A7C59] border border-[#4A7C59] px-2.5 py-0.5 rounded-full">
                 {selectedCompetitorsArray.length} selected
               </span>
             </div>
-          </div>
 
-          <div className="p-4">
-            {suggestionsLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Spinner size="lg" />
-                <span className="ml-3 text-gray-500">{brandsLoadingText}</span>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {competitors.map((competitor) => (
-                  <button
-                    key={competitor}
-                    type="button"
-                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
-                      selectedCompetitors.has(competitor)
-                        ? 'bg-purple-50 border-purple-200 text-purple-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-100'
-                    }`}
-                    onClick={() => toggleCompetitor(competitor)}
-                  >
+            <div className="mt-4">
+              {suggestionsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Spinner size="lg" />
+                  <span className="ml-3 text-gray-500">{brandsLoadingText}</span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {competitors.map((competitor) => (
                     <div
-                      className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+                      key={competitor}
+                      className={`inline-flex items-center gap-2 px-3 py-2 rounded-full border text-sm transition-all cursor-pointer ${
                         selectedCompetitors.has(competitor)
-                          ? 'bg-purple-600'
-                          : 'border-2 border-gray-300'
+                          ? 'bg-white border-gray-300'
+                          : 'bg-gray-50 border-gray-200 hover:border-gray-300'
                       }`}
+                      onClick={() => toggleCompetitor(competitor)}
                     >
-                      {selectedCompetitors.has(competitor) && (
-                        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                      )}
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                          selectedCompetitors.has(competitor)
+                            ? 'bg-[#4A7C59]'
+                            : 'border-2 border-gray-300'
+                        }`}
+                      >
+                        {selectedCompetitors.has(competitor) && (
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                        )}
+                      </div>
+                      <span className="text-gray-700 font-medium">{competitor}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeCompetitor(competitor);
+                        }}
+                        className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+                        aria-label="Remove"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
-                    <span>{competitor}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeCompetitor(competitor);
-                      }}
-                      className="p-0.5 hover:text-red-500 transition-colors ml-1"
-                      aria-label="Remove"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </button>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
 
-            {competitors.length < 10 && (
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                {addingCompetitor ? (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newCompetitor}
-                      onChange={(e) => setNewCompetitor(e.target.value)}
-                      placeholder={addBrandPlaceholder}
-                      className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-100 focus:border-purple-400 placeholder-gray-400"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') { handleAddCompetitor(); }
-                        if (e.key === 'Escape') { setAddingCompetitor(false); setNewCompetitor(''); }
-                      }}
-                    />
+              {competitors.length < 10 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  {addingCompetitor ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newCompetitor}
+                        onChange={(e) => setNewCompetitor(e.target.value)}
+                        placeholder={addBrandPlaceholder}
+                        className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] placeholder-gray-400"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { handleAddCompetitor(); }
+                          if (e.key === 'Escape') { setAddingCompetitor(false); setNewCompetitor(''); }
+                        }}
+                      />
+                      <button
+                        onClick={handleAddCompetitor}
+                        disabled={!newCompetitor.trim()}
+                        className="px-4 py-2.5 text-sm bg-[#4A7C59] text-white rounded-xl hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      >
+                        Add
+                      </button>
+                      <button
+                        onClick={() => { setAddingCompetitor(false); setNewCompetitor(''); }}
+                        className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ) : (
                     <button
-                      onClick={handleAddCompetitor}
-                      disabled={!newCompetitor.trim()}
-                      className="px-4 py-2.5 text-sm bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      onClick={() => setAddingCompetitor(true)}
+                      className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-2"
                     >
-                      Add
+                      <Plus className="w-4 h-4" />
+                      Add {isCategory ? 'another brand' : 'another competitor'}
                     </button>
-                    <button
-                      onClick={() => { setAddingCompetitor(false); setNewCompetitor(''); }}
-                      className="p-2.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingCompetitor(true)}
-                    className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-purple-50 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add {isCategory ? 'another brand' : 'another competitor'}
-                  </button>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* AI Platforms Section */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Bot className="w-5 h-5 text-blue-600" />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-5">
+            <div className="flex items-start gap-3 mb-1">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <Bot className="w-5 h-5 text-gray-600" />
               </div>
               <div className="flex-1">
                 <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
@@ -585,29 +576,28 @@ export default function ConfigurePage() {
                   Choose which AI assistants to include in your analysis
                 </p>
               </div>
-              <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full">
+              <span className="text-sm font-medium text-[#4A7C59] border border-[#4A7C59] px-2.5 py-0.5 rounded-full">
                 {providers.length} selected
               </span>
             </div>
-          </div>
 
-          <div className="p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-3">
               {Object.entries(PROVIDER_INFO).map(([key, info]) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => toggleProvider(key)}
-                  className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
+                  className={`relative p-4 rounded-xl border text-left transition-all ${
                     providers.includes(key)
-                      ? 'bg-blue-50 border-blue-200'
+                      ? 'bg-white border-gray-300'
                       : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
                   }`}
                 >
+                  {/* Checkmark in top-right corner */}
                   <div
-                    className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                    className={`absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center transition-all ${
                       providers.includes(key)
-                        ? 'bg-blue-600'
+                        ? 'bg-[#4A7C59]'
                         : 'border-2 border-gray-300'
                     }`}
                   >
@@ -615,11 +605,11 @@ export default function ConfigurePage() {
                       <Check className="w-3 h-3 text-white" strokeWidth={3} />
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${providers.includes(key) ? 'text-blue-700' : 'text-gray-700'}`}>
+                  <div className="pr-6">
+                    <p className="text-sm font-semibold text-gray-900">
                       {info.name}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
+                    <p className="text-xs text-gray-500 mt-1">{info.description}</p>
                   </div>
                 </button>
               ))}
@@ -629,17 +619,16 @@ export default function ConfigurePage() {
 
         </div>{/* End of three-column grid */}
 
-        {/* Advanced Settings - Bottom left */}
-        <div className="lg:w-1/2">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Advanced Settings - Full width */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           <button
             type="button"
             onClick={() => setAdvancedOpen(!advancedOpen)}
-            className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full p-5 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-amber-50 rounded-lg">
-                <Settings2 className="w-5 h-5 text-amber-600" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <Settings2 className="w-5 h-5 text-gray-600" />
               </div>
               <div className="text-left">
                 <h2 className="text-base font-semibold text-gray-900">Advanced Settings</h2>
@@ -692,7 +681,7 @@ export default function ConfigurePage() {
                         }}
                         className={`p-4 rounded-xl border text-left transition-all ${
                           temperatures.includes(temp)
-                            ? 'bg-amber-50 border-amber-200'
+                            ? 'bg-[#4A7C59]/10 border-[#4A7C59]/30'
                             : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                         }`}
                       >
@@ -700,7 +689,7 @@ export default function ConfigurePage() {
                           <div
                             className={`w-4 h-4 rounded flex items-center justify-center ${
                               temperatures.includes(temp)
-                                ? 'bg-amber-500'
+                                ? 'bg-[#4A7C59]'
                                 : 'border-2 border-gray-300'
                             }`}
                           >
@@ -708,7 +697,7 @@ export default function ConfigurePage() {
                               <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                             )}
                           </div>
-                          <span className={`text-sm font-medium ${temperatures.includes(temp) ? 'text-amber-700' : 'text-gray-700'}`}>
+                          <span className={`text-sm font-medium ${temperatures.includes(temp) ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
                             {config.label}
                           </span>
                         </div>
@@ -740,11 +729,11 @@ export default function ConfigurePage() {
                       onClick={() => setRepeats(num)}
                       className={`p-4 rounded-xl border text-center transition-all ${
                         repeats === num
-                          ? 'bg-amber-50 border-amber-200'
+                          ? 'bg-[#4A7C59]/10 border-[#4A7C59]/30'
                           : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                     >
-                      <span className={`text-lg font-semibold ${repeats === num ? 'text-amber-700' : 'text-gray-700'}`}>
+                      <span className={`text-lg font-semibold ${repeats === num ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
                         {num}x
                       </span>
                       <p className="text-xs text-gray-500 mt-1">
@@ -768,12 +757,12 @@ export default function ConfigurePage() {
                       onClick={() => setOpenaiModel('gpt-4o-mini')}
                       className={`w-full p-3 rounded-xl border text-left transition-all ${
                         openaiModel === 'gpt-4o-mini'
-                          ? 'bg-amber-50 border-amber-200'
+                          ? 'bg-[#4A7C59]/10 border-[#4A7C59]/30'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o-mini' ? 'text-amber-700' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o-mini' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
                           GPT-4o Mini
                         </span>
                         <span className="text-xs text-gray-500">$0.0003/call</span>
@@ -785,12 +774,12 @@ export default function ConfigurePage() {
                       onClick={() => setOpenaiModel('gpt-4o')}
                       className={`w-full p-3 rounded-xl border text-left transition-all ${
                         openaiModel === 'gpt-4o'
-                          ? 'bg-amber-50 border-amber-200'
+                          ? 'bg-[#4A7C59]/10 border-[#4A7C59]/30'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o' ? 'text-amber-700' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
                           GPT-4o
                         </span>
                         <span className="text-xs text-gray-500">$0.003/call</span>
@@ -811,12 +800,12 @@ export default function ConfigurePage() {
                       onClick={() => setAnthropicModel('claude-haiku-4-5-20251001')}
                       className={`w-full p-3 rounded-xl border text-left transition-all ${
                         anthropicModel === 'claude-haiku-4-5-20251001'
-                          ? 'bg-amber-50 border-amber-200'
+                          ? 'bg-[#4A7C59]/10 border-[#4A7C59]/30'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${anthropicModel === 'claude-haiku-4-5-20251001' ? 'text-amber-700' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${anthropicModel === 'claude-haiku-4-5-20251001' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
                           Claude Haiku
                         </span>
                         <span className="text-xs text-gray-500">~$0.025/call</span>
@@ -828,12 +817,12 @@ export default function ConfigurePage() {
                       onClick={() => setAnthropicModel('claude-sonnet-4-20250514')}
                       className={`w-full p-3 rounded-xl border text-left transition-all ${
                         anthropicModel === 'claude-sonnet-4-20250514'
-                          ? 'bg-amber-50 border-amber-200'
+                          ? 'bg-[#4A7C59]/10 border-[#4A7C59]/30'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${anthropicModel === 'claude-sonnet-4-20250514' ? 'text-amber-700' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${anthropicModel === 'claude-sonnet-4-20250514' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
                           Claude Sonnet
                         </span>
                         <span className="text-xs text-gray-500">~$0.035/call</span>
@@ -860,7 +849,7 @@ export default function ConfigurePage() {
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-100 focus:border-amber-400 bg-white"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] bg-white"
                 >
                   <option value="us">United States</option>
                   <option value="gb">United Kingdom</option>
@@ -882,7 +871,6 @@ export default function ConfigurePage() {
             </div>
           )}
         </div>
-        </div>{/* End of lg:w-1/2 wrapper */}
       </div>
 
       {/* Sticky Bottom Bar */}
