@@ -10765,19 +10765,19 @@ export default function ResultsPage() {
                   {/* Y-axis labels */}
                   <div className="flex">
                     {/* Y-axis label (rotated) - positioned to align with grid center */}
-                    <div className="relative w-6 flex items-center justify-center" style={{ height: '160px' }}>
+                    <div className="relative w-6 flex items-center justify-center" style={{ height: '200px' }}>
                       <span className="-rotate-90 text-xs font-medium text-gray-400 whitespace-nowrap">
                         Impact
                       </span>
                     </div>
-                    <div className="w-10 flex flex-col justify-between text-right pr-2 text-xs text-gray-400" style={{ height: '160px' }}>
+                    <div className="w-10 flex flex-col justify-between text-right pr-2 text-xs text-gray-400" style={{ height: '200px' }}>
                       <span>High</span>
                       <span>Med</span>
                       <span>Low</span>
                     </div>
 
                     {/* Grid */}
-                    <div className="flex-1 relative" style={{ height: '160px' }}>
+                    <div className="flex-1 relative" style={{ height: '200px' }}>
                       {/* Background grid - simplified */}
                       <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
                         {/* Quick Wins quadrant (top-left) - label in top-left corner */}
