@@ -7316,10 +7316,10 @@ export default function ResultsPage() {
           return b.count - a.count;
         });
 
-      // Filter by brand filter
+      // Filter by brand filter (case-insensitive)
       const filteredCitations = brandCitationsBrandFilter === 'all'
         ? citationsArray
-        : citationsArray.filter(c => c.brand === brandCitationsBrandFilter);
+        : citationsArray.filter(c => c.brand.toLowerCase() === brandCitationsBrandFilter.toLowerCase());
 
       return {
         citations: filteredCitations,
@@ -8611,8 +8611,8 @@ export default function ResultsPage() {
                 {runStatus?.brand && (
                   <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
                 )}
-                {Array.from(trackedBrands).filter(b => b !== runStatus?.brand).map((brand) => (
-                  <option key={brand} value={brand}>{brand}</option>
+                {Array.from(trackedBrands).filter(b => b.toLowerCase() !== runStatus?.brand?.toLowerCase()).map((brand) => (
+                  <option key={brand} value={brand}>{capitalizeFirst(brand)}</option>
                 ))}
               </select>
               <select
