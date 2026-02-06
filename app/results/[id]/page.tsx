@@ -10890,9 +10890,10 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 ↳ ${rec.effortReason}`;
 
                         // Truncate title for label
-                        const shortTitle = rec.title.length > 18
-                          ? rec.title.substring(0, 16) + '...'
+                        const shortTitle = rec.title.length > 20
+                          ? rec.title.substring(0, 18) + '...'
                           : rec.title;
+                        const isTruncated = rec.title.length > 20;
 
                         return (
                           <div
@@ -10907,10 +10908,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                             title={tooltip}
                           >
                             {/* Dot with label */}
-                            <div className="flex items-center gap-1">
-                              <div className="w-2.5 h-2.5 bg-[#4A7C59] rounded-full shadow-sm border border-white flex-shrink-0 group-hover:scale-150 transition-transform duration-150" />
-                              <span className="text-[9px] font-medium text-gray-700 bg-white/80 px-1 py-0.5 rounded shadow-sm whitespace-nowrap group-hover:bg-[#4A7C59] group-hover:text-white transition-colors duration-150">
-                                {shortTitle}
+                            <div className="flex items-center gap-1.5 relative">
+                              <div className="w-3 h-3 bg-[#4A7C59] rounded-full shadow-sm border border-white flex-shrink-0 group-hover:scale-125 transition-transform duration-150" />
+                              <span className="text-[11px] font-medium text-gray-700 bg-white/90 px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap group-hover:bg-[#4A7C59] group-hover:text-white transition-colors duration-150">
+                                <span className="group-hover:hidden">{shortTitle}</span>
+                                <span className="hidden group-hover:inline">{isTruncated ? rec.title : shortTitle}</span>
                               </span>
                             </div>
                           </div>
