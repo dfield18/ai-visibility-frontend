@@ -42,6 +42,9 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   const [actionLoading, setActionLoading] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  // Debug logging
+  console.log('[ReportsTab] Render - loading:', loading, 'error:', error, 'reports:', reports.length, 'isCreating:', isCreating);
+
   // Extract unique values from results
   const uniquePrompts = runStatus?.results ? [...new Set(runStatus.results.map(r => r.prompt))] : [];
   const uniqueProviders = runStatus?.results ? [...new Set(runStatus.results.map(r => r.provider))] : [];
@@ -66,26 +69,36 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   });
 
   const fetchReports = useCallback(async () => {
+    console.log('[ReportsTab] fetchReports called');
     try {
       setLoading(true);
       setError(null);
+      console.log('[ReportsTab] Getting token...');
       const token = await getToken();
+      console.log('[ReportsTab] Token received:', token ? 'yes (length: ' + token.length + ')' : 'NO TOKEN');
       if (!token) {
+        console.log('[ReportsTab] No token - setting error');
         setError('Please sign in to view reports');
         setLoading(false);
         return;
       }
+      console.log('[ReportsTab] Calling API...');
       const response = await api.listScheduledReports(token);
+      console.log('[ReportsTab] API response:', response);
       setReports(response.reports);
+      console.log('[ReportsTab] Reports set, count:', response.reports.length);
     } catch (err) {
+      console.error('[ReportsTab] Error in fetchReports:', err);
       setError(err instanceof Error ? err.message : 'Failed to load reports');
     } finally {
+      console.log('[ReportsTab] Setting loading to false');
       setLoading(false);
     }
   }, [getToken]);
 
   // Fetch reports on mount
   useEffect(() => {
+    console.log('[ReportsTab] useEffect - calling fetchReports');
     fetchReports();
   }, [fetchReports]);
 
@@ -305,6 +318,8 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
       minute: '2-digit',
     });
   };
+
+  console.log('[ReportsTab] About to render main UI - loading:', loading, 'error:', error, 'isCreating:', isCreating);
 
   return (
     <div className="space-y-6">
