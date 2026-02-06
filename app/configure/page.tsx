@@ -304,7 +304,7 @@ export default function ConfigurePage() {
                     className={`flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all ${
                       selectedPrompts.size === prompts.length
                         ? 'bg-gray-100 hover:bg-gray-200'
-                        : 'bg-[#E8F5E9]'
+                        : 'bg-gray-100 hover:bg-gray-200'
                     }`}
                     onClick={() => {
                       if (selectedPrompts.size === prompts.length) {
