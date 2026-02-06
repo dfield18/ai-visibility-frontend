@@ -48,7 +48,6 @@ import {
   CircleDollarSign,
   Search,
   ThumbsUp,
-  ThumbsDown,
   Package,
   Settings,
   ChevronLeft,
@@ -10669,21 +10668,6 @@ export default function ResultsPage() {
         .slice(0, 5);
     }, [runStatus, globallyFilteredResults]);
 
-    // Calculate sentiment issues
-    const sentimentIssues = useMemo(() => {
-      if (!runStatus) return [];
-
-      return promptBreakdownStats
-        .filter(p => p.avgSentimentScore !== null && p.avgSentimentScore < 3)
-        .map(p => ({
-          prompt: p.prompt,
-          sentiment: p.avgSentimentScore!,
-          label: p.avgSentimentScore! < 2 ? 'Not Recommended' : 'With Caveats',
-        }))
-        .sort((a, b) => a.sentiment - b.sentiment)
-        .slice(0, 3);
-    }, [promptBreakdownStats]);
-
     // Parse AI recommendations and assign effort/impact based on keywords
     const parsedAiRecommendations = useMemo(() => {
       if (!aiSummary?.recommendations) return [];
@@ -11183,41 +11167,6 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
             </div>
           )}
         </div>
-        )}
-
-        {/* Sentiment Improvement */}
-        {sentimentIssues.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-                <ThumbsDown className="w-5 h-5 text-amber-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Sentiment Gaps</h2>
-                <p className="text-sm text-gray-500">Prompts where brand perception needs improvement</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {sentimentIssues.map((issue, idx) => (
-                <div key={idx} className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="font-medium text-gray-900 text-sm">"{truncate(issue.prompt, 50)}"</p>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      issue.label === 'Not Recommended'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                      {issue.label}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-600">
-                    Consider addressing concerns in your content and marketing materials for this topic.
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
         )}
 
         {/* Export & Share Footer */}
