@@ -20,283 +20,105 @@ import { formatDuration, truncate } from '@/lib/utils';
 import { Result } from '@/lib/types';
 
 // House Construction Animation Component - Thin black & white stick figure style
-function HouseConstruction({ progress }: { progress: number }) {
-  const [workerPosition, setWorkerPosition] = useState(0);
+function TypingAnimation({ progress }: { progress: number }) {
+  const [cursorVisible, setCursorVisible] = useState(true);
+  const [currentLineIndex, setCurrentLineIndex] = useState(0);
+  const [displayedChars, setDisplayedChars] = useState(0);
 
-  // Cycle worker position every 400ms
+  const lines = [
+    "Querying AI platforms...",
+    "Analyzing brand mentions...",
+    "Evaluating sentiment...",
+    "Calculating visibility scores...",
+    "Compiling results..."
+  ];
+
+  // Blink cursor
   useEffect(() => {
     const interval = setInterval(() => {
-      setWorkerPosition((prev) => (prev + 1) % 3);
-    }, 400);
+      setCursorVisible((prev) => !prev);
+    }, 530);
     return () => clearInterval(interval);
   }, []);
 
-  // Progress thresholds for each element
-  const showFoundation = progress >= 10;
-  const showLeftWall = progress >= 20;
-  const showRightWall = progress >= 30;
-  const showRoofLeft = progress >= 45;
-  const showRoofRight = progress >= 55;
-  const showDoor = progress >= 65;
-  const showWindow = progress >= 75;
-  const showChimney = progress >= 88;
+  // Type characters
+  useEffect(() => {
+    const lineIndex = Math.min(Math.floor(progress / 20), lines.length - 1);
+    setCurrentLineIndex(lineIndex);
 
-  // Calculate stroke dashoffset for progressive reveal
-  const getStrokeDashoffset = (pathLength: number, visible: boolean) => {
-    if (!visible) return pathLength;
-    return 0;
-  };
+    // Calculate how many chars to show based on progress within current segment
+    const segmentProgress = progress % 20;
+    const currentLine = lines[lineIndex];
+    const charsToShow = Math.floor((segmentProgress / 20) * currentLine.length);
+    setDisplayedChars(charsToShow);
+  }, [progress]);
 
-  // Worker position based on what's currently being built
-  const getWorkerPosition = () => {
-    if (progress < 10) return { x: 100, y: 132 }; // At scaffolding center
-    if (progress < 20) return { x: 100, y: 132 }; // Building foundation
-    if (progress < 30) return { x: 50, y: 110 }; // Building left wall
-    if (progress < 45) return { x: 150, y: 110 }; // Building right wall
-    if (progress < 55) return { x: 70, y: 70 }; // Building left roof
-    if (progress < 65) return { x: 130, y: 70 }; // Building right roof
-    if (progress < 75) return { x: 100, y: 120 }; // Building door
-    if (progress < 88) return { x: 132, y: 107 }; // Building window
-    return { x: 126, y: 50 }; // Building chimney
-  };
-
-  const workerPos = getWorkerPosition();
-  // Add slight movement based on animation frame
-  const workerX = workerPos.x + (workerPosition - 1) * 3;
-  const workerY = workerPos.y;
+  // Get completed lines
+  const completedLines = lines.slice(0, currentLineIndex);
+  const currentLine = lines[currentLineIndex];
+  const displayedText = currentLine?.substring(0, displayedChars) || "";
 
   return (
-    <svg viewBox="0 0 220 170" className="w-full max-w-xs mx-auto">
-      {/* Ground line */}
-      <line
-        x1="10"
-        y1="145"
-        x2="210"
-        y2="145"
-        stroke="#000"
-        strokeWidth="1"
-        strokeLinecap="round"
-      />
+    <div className="w-full max-w-sm mx-auto font-mono text-sm">
+      {/* Terminal-like container */}
+      <div className="bg-gray-900 rounded-lg p-4 shadow-lg">
+        {/* Terminal header */}
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-700">
+          <div className="w-3 h-3 rounded-full bg-red-500" />
+          <div className="w-3 h-3 rounded-full bg-yellow-500" />
+          <div className="w-3 h-3 rounded-full bg-green-500" />
+          <span className="ml-2 text-gray-400 text-xs">AI Visibility Analysis</span>
+        </div>
 
-      {/* Scaffolding - always visible from the start */}
-      <g stroke="#000" strokeWidth="0.75" fill="none" opacity="0.6">
-        {/* Vertical poles */}
-        <line x1="35" y1="145" x2="35" y2="30" />
-        <line x1="165" y1="145" x2="165" y2="30" />
+        {/* Terminal content */}
+        <div className="space-y-1 min-h-[120px]">
+          {/* Completed lines with checkmarks */}
+          {completedLines.map((line, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span className="text-green-400">✓</span>
+              <span className="text-gray-400">{line}</span>
+            </div>
+          ))}
 
-        {/* Horizontal supports */}
-        <line x1="32" y1="145" x2="168" y2="145" />
-        <line x1="32" y1="110" x2="168" y2="110" />
-        <line x1="32" y1="75" x2="168" y2="75" />
-        <line x1="32" y1="45" x2="168" y2="45" />
+          {/* Current typing line */}
+          {currentLine && (
+            <div className="flex items-center gap-2">
+              <span className="text-[#4A7C59]">›</span>
+              <span className="text-green-400">
+                {displayedText}
+                <span
+                  className={`inline-block w-2 h-4 ml-0.5 bg-green-400 align-middle ${
+                    cursorVisible ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+              </span>
+            </div>
+          )}
 
-        {/* Cross braces */}
-        <line x1="35" y1="145" x2="50" y2="110" strokeDasharray="2,2" />
-        <line x1="165" y1="145" x2="150" y2="110" strokeDasharray="2,2" />
-        <line x1="35" y1="75" x2="50" y2="45" strokeDasharray="2,2" />
-        <line x1="165" y1="75" x2="150" y2="45" strokeDasharray="2,2" />
+          {/* Remaining lines (dimmed) */}
+          {lines.slice(currentLineIndex + 1).map((line, idx) => (
+            <div key={idx} className="flex items-center gap-2 opacity-30">
+              <span className="text-gray-500">○</span>
+              <span className="text-gray-600">{line}</span>
+            </div>
+          ))}
+        </div>
 
-        {/* Platform boards at work levels */}
-        <line x1="35" y1="110" x2="55" y2="110" strokeWidth="1.5" />
-        <line x1="145" y1="110" x2="165" y2="110" strokeWidth="1.5" />
-        <line x1="60" y1="75" x2="85" y2="75" strokeWidth="1.5" />
-        <line x1="115" y1="75" x2="140" y2="75" strokeWidth="1.5" />
-        <line x1="115" y1="45" x2="140" y2="45" strokeWidth="1.5" />
-      </g>
-
-      {/* Ghost outline of complete house (very light) */}
-      <g opacity="0.1" stroke="#000" strokeWidth="1" fill="none">
-        {/* Foundation */}
-        <line x1="40" y1="140" x2="160" y2="140" />
-        {/* Left wall */}
-        <line x1="50" y1="140" x2="50" y2="80" />
-        {/* Right wall */}
-        <line x1="150" y1="140" x2="150" y2="80" />
-        {/* Roof left */}
-        <line x1="45" y1="80" x2="100" y2="40" />
-        {/* Roof right */}
-        <line x1="155" y1="80" x2="100" y2="40" />
-        {/* Door */}
-        <rect x="90" y="105" width="20" height="35" />
-        {/* Window */}
-        <rect x="125" y="100" width="15" height="15" />
-        {/* Chimney */}
-        <rect x="120" y="35" width="12" height="25" />
-      </g>
-
-      {/* Animated construction elements - thin black lines */}
-      <g stroke="#000" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        {/* Foundation */}
-        <line
-          x1="40"
-          y1="140"
-          x2="160"
-          y2="140"
-          strokeDasharray="120"
-          strokeDashoffset={getStrokeDashoffset(120, showFoundation)}
-          className="transition-all duration-700 ease-out"
-        />
-
-        {/* Left wall */}
-        <line
-          x1="50"
-          y1="140"
-          x2="50"
-          y2="80"
-          strokeDasharray="60"
-          strokeDashoffset={getStrokeDashoffset(60, showLeftWall)}
-          className="transition-all duration-500 ease-out"
-        />
-
-        {/* Right wall */}
-        <line
-          x1="150"
-          y1="140"
-          x2="150"
-          y2="80"
-          strokeDasharray="60"
-          strokeDashoffset={getStrokeDashoffset(60, showRightWall)}
-          className="transition-all duration-500 ease-out"
-        />
-
-        {/* Top wall connecting line */}
-        {showRightWall && (
-          <line
-            x1="50"
-            y1="80"
-            x2="150"
-            y2="80"
-            strokeDasharray="100"
-            strokeDashoffset={0}
-            className="transition-all duration-500 ease-out"
-          />
-        )}
-
-        {/* Roof left side */}
-        <line
-          x1="45"
-          y1="80"
-          x2="100"
-          y2="40"
-          strokeDasharray="70"
-          strokeDashoffset={getStrokeDashoffset(70, showRoofLeft)}
-          className="transition-all duration-500 ease-out"
-        />
-
-        {/* Roof right side */}
-        <line
-          x1="155"
-          y1="80"
-          x2="100"
-          y2="40"
-          strokeDasharray="70"
-          strokeDashoffset={getStrokeDashoffset(70, showRoofRight)}
-          className="transition-all duration-500 ease-out"
-        />
-
-        {/* Door */}
-        <rect
-          x="90"
-          y="105"
-          width="20"
-          height="35"
-          strokeDasharray="110"
-          strokeDashoffset={getStrokeDashoffset(110, showDoor)}
-          className="transition-all duration-500 ease-out"
-        />
-        {/* Door knob */}
-        {showDoor && (
-          <circle cx="105" cy="122" r="1.5" fill="#000" />
-        )}
-
-        {/* Window */}
-        <rect
-          x="125"
-          y="100"
-          width="15"
-          height="15"
-          strokeDasharray="60"
-          strokeDashoffset={getStrokeDashoffset(60, showWindow)}
-          className="transition-all duration-500 ease-out"
-        />
-        {/* Window cross */}
-        {showWindow && (
-          <>
-            <line x1="132.5" y1="100" x2="132.5" y2="115" strokeWidth="1" />
-            <line x1="125" y1="107.5" x2="140" y2="107.5" strokeWidth="1" />
-          </>
-        )}
-
-        {/* Chimney */}
-        <rect
-          x="120"
-          y="35"
-          width="12"
-          height="25"
-          strokeDasharray="74"
-          strokeDashoffset={getStrokeDashoffset(74, showChimney)}
-          className="transition-all duration-500 ease-out"
-        />
-        {/* Smoke */}
-        {showChimney && progress >= 95 && (
-          <g className="animate-pulse" opacity="0.5">
-            <path
-              d="M126 33 Q129 25 124 18 Q122 12 126 5"
-              strokeWidth="1"
-              fill="none"
+        {/* Progress bar */}
+        <div className="mt-4 pt-3 border-t border-gray-700">
+          <div className="flex justify-between text-xs text-gray-500 mb-1">
+            <span>Progress</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+          <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#4A7C59] rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${progress}%` }}
             />
-          </g>
-        )}
-      </g>
-
-      {/* Animated stick figure construction worker - black & white */}
-      <g
-        transform={`translate(${workerX}, ${workerY})`}
-        stroke="#000"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        className="transition-all duration-300 ease-in-out"
-      >
-        {/* Head - simple circle */}
-        <circle cx="0" cy="-28" r="4" fill="none" />
-
-        {/* Body - single line */}
-        <line x1="0" y1="-24" x2="0" y2="-10" />
-
-        {/* Legs - two lines */}
-        <line x1="0" y1="-10" x2="-5" y2="0" />
-        <line x1="0" y1="-10" x2="5" y2="0" />
-
-        {/* Arms - animated based on position */}
-        {workerPosition === 0 && (
-          <>
-            <line x1="0" y1="-20" x2="-8" y2="-15" />
-            <line x1="0" y1="-20" x2="8" y2="-25" />
-            {/* Hammer */}
-            <line x1="8" y1="-25" x2="12" y2="-30" strokeWidth="1" />
-            <line x1="10" y1="-32" x2="14" y2="-28" strokeWidth="2" />
-          </>
-        )}
-        {workerPosition === 1 && (
-          <>
-            <line x1="0" y1="-20" x2="-8" y2="-18" />
-            <line x1="0" y1="-20" x2="8" y2="-18" />
-            {/* Hammer */}
-            <line x1="8" y1="-18" x2="14" y2="-18" strokeWidth="1" />
-            <line x1="14" y1="-20" x2="14" y2="-16" strokeWidth="2" />
-          </>
-        )}
-        {workerPosition === 2 && (
-          <>
-            <line x1="0" y1="-20" x2="-8" y2="-25" />
-            <line x1="0" y1="-20" x2="8" y2="-12" />
-            {/* Hammer */}
-            <line x1="8" y1="-12" x2="12" y2="-8" strokeWidth="1" />
-            <line x1="10" y1="-6" x2="14" y2="-10" strokeWidth="2" />
-          </>
-        )}
-      </g>
-    </svg>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -402,7 +224,7 @@ export default function RunPage() {
       <div className="max-w-2xl mx-auto px-6 space-y-6">
         {/* House Construction Animation */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-          <HouseConstruction progress={runStatus.progress_percent} />
+          <TypingAnimation progress={runStatus.progress_percent} />
 
           {/* Progress Info */}
           <div className="mt-8 text-center">
