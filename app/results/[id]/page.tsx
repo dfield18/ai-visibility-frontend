@@ -10547,6 +10547,7 @@ export default function ResultsPage() {
         effort: 'high' | 'medium' | 'low';
         impactReason: string;
         effortReason: string;
+        tactics: string[];
       }> = [];
 
       // Helper to estimate effort based on keywords - returns level and reason
