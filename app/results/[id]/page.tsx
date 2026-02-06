@@ -10760,15 +10760,16 @@ export default function ResultsPage() {
             return (
             <div className="mb-6">
               <div className="relative bg-white rounded-lg p-4">
-                {/* Y-axis label */}
-                <div className="absolute -left-1 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-medium text-gray-400 whitespace-nowrap">
-                  Impact
-                </div>
-
                 {/* Chart container */}
                 <div className="ml-8">
                   {/* Y-axis labels */}
                   <div className="flex">
+                    {/* Y-axis label (rotated) - positioned to align with grid center */}
+                    <div className="relative w-6 flex items-center justify-center" style={{ height: '160px' }}>
+                      <span className="-rotate-90 text-xs font-medium text-gray-400 whitespace-nowrap">
+                        Impact
+                      </span>
+                    </div>
                     <div className="w-10 flex flex-col justify-between text-right pr-2 text-xs text-gray-400" style={{ height: '160px' }}>
                       <span>High</span>
                       <span>Med</span>
@@ -10779,26 +10780,26 @@ export default function ResultsPage() {
                     <div className="flex-1 relative" style={{ height: '160px' }}>
                       {/* Background grid - simplified */}
                       <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
-                        {/* Quick Wins quadrant (top-left) */}
-                        <div className="bg-[#E8F5E9] border border-gray-100 flex items-center justify-center">
-                          <span className="text-[9px] text-[#4A7C59] font-medium opacity-60">Quick Wins</span>
+                        {/* Quick Wins quadrant (top-left) - label in top-left corner */}
+                        <div className="bg-[#E8F5E9] border border-gray-100 relative">
+                          <span className="absolute top-1 left-1 text-[9px] text-[#4A7C59] font-medium opacity-70">Quick Wins</span>
                         </div>
                         <div className="bg-[#E8F5E9]/50 border border-gray-100" />
-                        {/* Major Projects quadrant (top-right) */}
-                        <div className="bg-amber-50/70 border border-gray-100 flex items-center justify-center">
-                          <span className="text-[9px] text-amber-600 font-medium opacity-60">Major Projects</span>
+                        {/* Major Projects quadrant (top-right) - label in top-right corner */}
+                        <div className="bg-amber-50/70 border border-gray-100 relative">
+                          <span className="absolute top-1 right-1 text-[9px] text-amber-600 font-medium opacity-70">Major Projects</span>
                         </div>
                         <div className="bg-gray-50 border border-gray-100" />
                         <div className="bg-gray-50 border border-gray-100" />
                         <div className="bg-gray-50 border border-gray-100" />
-                        {/* Fill-ins quadrant (bottom-left) */}
-                        <div className="bg-blue-50/50 border border-gray-100 flex items-center justify-center">
-                          <span className="text-[9px] text-blue-500 font-medium opacity-60">Fill-ins</span>
+                        {/* Fill-ins quadrant (bottom-left) - label in bottom-left corner */}
+                        <div className="bg-blue-50/50 border border-gray-100 relative">
+                          <span className="absolute bottom-1 left-1 text-[9px] text-blue-500 font-medium opacity-70">Fill-ins</span>
                         </div>
                         <div className="bg-gray-50/50 border border-gray-100" />
-                        {/* Avoid quadrant (bottom-right) */}
-                        <div className="bg-red-50/50 border border-gray-100 flex items-center justify-center">
-                          <span className="text-[9px] text-red-400 font-medium opacity-60">Avoid</span>
+                        {/* Avoid quadrant (bottom-right) - label in bottom-right corner */}
+                        <div className="bg-red-50/50 border border-gray-100 relative">
+                          <span className="absolute bottom-1 right-1 text-[9px] text-red-400 font-medium opacity-70">Avoid</span>
                         </div>
                       </div>
 
@@ -10846,7 +10847,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                   {/* X-axis labels */}
                   <div className="flex mt-2">
-                    <div className="w-10" />
+                    <div className="w-16" /> {/* Spacer to align with grid (w-6 Impact label + w-10 Y-axis values) */}
                     <div className="flex-1 grid grid-cols-3 text-center text-xs text-gray-400">
                       <span>Low</span>
                       <span>Medium</span>
@@ -10855,8 +10856,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   </div>
 
                   {/* X-axis label */}
-                  <div className="text-center text-xs font-medium text-gray-400 mt-1">
-                    Effort
+                  <div className="flex mt-1">
+                    <div className="w-16" />
+                    <div className="flex-1 text-center text-xs font-medium text-gray-400">
+                      Effort
+                    </div>
                   </div>
                 </div>
 
