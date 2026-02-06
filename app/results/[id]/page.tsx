@@ -10766,7 +10766,7 @@ export default function ResultsPage() {
                   <div className="flex">
                     {/* Y-axis label (rotated) - positioned to align with grid center */}
                     <div className="relative w-6 flex items-center justify-center" style={{ height: '200px' }}>
-                      <span className="-rotate-90 text-xs font-medium text-gray-400 whitespace-nowrap">
+                      <span className="-rotate-90 text-sm font-semibold text-gray-600 whitespace-nowrap">
                         Impact
                       </span>
                     </div>
@@ -10869,7 +10869,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   {/* X-axis label */}
                   <div className="flex mt-1">
                     <div className="w-16" />
-                    <div className="flex-1 text-center text-xs font-medium text-gray-400">
+                    <div className="flex-1 text-center text-sm font-semibold text-gray-600">
                       Effort
                     </div>
                   </div>
