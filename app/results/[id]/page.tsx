@@ -10771,17 +10771,18 @@ export default function ResultsPage() {
               positionGroups[key].push(idx);
             });
 
-            // Calculate offset for each item
+            // Calculate offset for each item - stack vertically when overlapping
             const getOffset = (idx: number, rec: typeof parsedAiRecommendations[0]) => {
               const key = `${rec.effort}-${rec.impact}`;
               const group = positionGroups[key];
               const posInGroup = group.indexOf(idx);
               const total = group.length;
               if (total === 1) return { x: 0, y: 0 };
-              // Spread items in a small circle around the center point
-              const angle = (posInGroup / total) * 2 * Math.PI - Math.PI / 2;
-              const radius = 12; // pixels
-              return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+              // Stack items vertically with 20px spacing between each
+              const verticalSpacing = 20;
+              const totalHeight = (total - 1) * verticalSpacing;
+              const startY = -totalHeight / 2;
+              return { x: 0, y: startY + posInGroup * verticalSpacing };
             };
 
             return (
