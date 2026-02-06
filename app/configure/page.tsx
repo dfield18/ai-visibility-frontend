@@ -303,7 +303,7 @@ export default function ConfigurePage() {
                   <div
                     className={`flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all ${
                       selectedPrompts.size === prompts.length
-                        ? 'hover:bg-gray-50'
+                        ? 'bg-gray-100 hover:bg-gray-200'
                         : 'bg-[#E8F5E9]'
                     }`}
                     onClick={() => {
