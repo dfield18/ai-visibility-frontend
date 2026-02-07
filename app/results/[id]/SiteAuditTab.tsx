@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Globe, Search, Loader2, CheckCircle, XCircle, AlertCircle, ExternalLink, ChevronDown, ChevronUp, FileText, Shield, Code2 } from 'lucide-react';
+import { Globe, Search, Loader2, CheckCircle, XCircle, AlertCircle, ExternalLink, ChevronDown, ChevronUp, FileText, Shield, Code2, Sparkles } from 'lucide-react';
 import { useCreateSiteAudit, useSiteAudits } from '@/hooks/useApi';
 import { getSessionId } from '@/lib/utils';
 import { SiteAuditResult, CrawlerStatus } from '@/lib/types';
@@ -125,10 +125,42 @@ const AuditResultCard: React.FC<{ audit: SiteAuditResult }> = ({ audit }) => {
 export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isLoadingWebsite, setIsLoadingWebsite] = useState(false);
+  const [websiteLoaded, setWebsiteLoaded] = useState(false);
   const router = useRouter();
   const createAudit = useCreateSiteAudit();
   const sessionId = getSessionId();
   const { data: auditsData, isLoading: auditsLoading } = useSiteAudits(sessionId);
+
+  // Fetch brand's website when component mounts
+  useEffect(() => {
+    const fetchBrandWebsite = async () => {
+      if (!brand || websiteLoaded) return;
+
+      setIsLoadingWebsite(true);
+      try {
+        const response = await fetch('/api/brand-website', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ brand }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.website) {
+            setUrl(data.website);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch brand website:', err);
+      } finally {
+        setIsLoadingWebsite(false);
+        setWebsiteLoaded(true);
+      }
+    };
+
+    fetchBrandWebsite();
+  }, [brand, websiteLoaded]);
 
   const validateUrl = (input: string): boolean => {
     try {
@@ -181,24 +213,32 @@ export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
 
       {/* New Audit Form */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h3 className="font-medium text-gray-900 mb-4">Run a New Audit</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-medium text-gray-900">Run a New Audit</h3>
+          {isLoadingWebsite && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>Finding {brand}'s website...</span>
+            </div>
+          )}
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className={`flex items-center bg-gray-50 border rounded-xl p-1.5 ${error ? 'border-red-300' : 'border-gray-200'}`}>
             <Search className="w-5 h-5 text-gray-400 ml-3" />
             <input
               type="text"
-              placeholder="Enter website URL (e.g., example.com)"
+              placeholder={isLoadingWebsite ? `Looking up ${brand}'s website...` : "Enter website URL (e.g., example.com)"}
               value={url}
               onChange={(e) => {
                 setUrl(e.target.value);
                 if (error) setError(null);
               }}
-              disabled={createAudit.isPending}
+              disabled={createAudit.isPending || isLoadingWebsite}
               className="flex-1 px-3 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent disabled:opacity-50"
             />
             <button
               type="submit"
-              disabled={!url.trim() || createAudit.isPending}
+              disabled={!url.trim() || createAudit.isPending || isLoadingWebsite}
               className="px-5 py-2.5 text-sm bg-[#4A7C59] text-white font-medium rounded-lg hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {createAudit.isPending ? (
@@ -214,6 +254,12 @@ export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
               )}
             </button>
           </div>
+          {websiteLoaded && url && !error && (
+            <p className="text-sm text-[#4A7C59] flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Auto-filled with {brand}'s website. You can edit or enter a different URL.
+            </p>
+          )}
           {error && (
             <p className="text-sm text-red-600">{error}</p>
           )}
