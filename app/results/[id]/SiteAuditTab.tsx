@@ -610,6 +610,14 @@ export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
     }
   };
 
+  const normalizeUrl = (input: string): string => {
+    const trimmed = input.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    return `https://${trimmed}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedUrl = url.trim();
@@ -627,8 +635,9 @@ export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
     setError(null);
 
     try {
+      const normalizedUrl = normalizeUrl(trimmedUrl);
       const result = await createAudit.mutateAsync({
-        url: trimmedUrl,
+        url: normalizedUrl,
         session_id: sessionId,
       });
       setSelectedAuditId(result.audit_id);
