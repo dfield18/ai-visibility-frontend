@@ -76,9 +76,10 @@ import {
 import { Result, Source } from '@/lib/types';
 import { ReportsTab } from './ReportsTab';
 import { ModifyQueryModal } from './ModifyQueryModal';
+import { SiteAuditTab } from './SiteAuditTab';
 
 type FilterType = 'all' | 'mentioned' | 'not_mentioned';
-type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports';
+type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit';
 
 const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Visibility', icon: <LayoutGrid className="w-4 h-4" /> },
@@ -86,6 +87,7 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
   { id: 'sentiment', label: 'Sentiment & Framing', icon: <MessageSquare className="w-4 h-4" /> },
   { id: 'sources', label: 'Sources', icon: <Globe className="w-4 h-4" /> },
   { id: 'recommendations', label: 'Recommendations', icon: <Lightbulb className="w-4 h-4" /> },
+  { id: 'site-audit', label: 'Site Audit', icon: <Search className="w-4 h-4" /> },
   { id: 'reports', label: 'Automated Reports', icon: <FileBarChart className="w-4 h-4" /> },
   { id: 'reference', label: 'Reference', icon: <FileText className="w-4 h-4" /> },
 ];
@@ -12611,6 +12613,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
         {activeTab === 'sources' && <SourcesTab />}
         {activeTab === 'recommendations' && <RecommendationsTab />}
         {activeTab === 'reports' && <ReportsTab runStatus={runStatus ?? null} />}
+        {activeTab === 'site-audit' && <SiteAuditTab brand={runStatus?.brand || ''} />}
       </div>
 
       {/* Snippet Detail Modal */}
