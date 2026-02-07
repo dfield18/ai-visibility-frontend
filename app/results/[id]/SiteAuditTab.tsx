@@ -241,6 +241,35 @@ const AuditResultsView: React.FC<{
         </a>
       </div>
 
+      {/* What This Audit Means - Overview for non-technical users */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-5">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-4 h-4 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-2">What This Audit Means</h3>
+            <p className="text-sm text-gray-700 leading-relaxed mb-3">
+              When people ask AI assistants like ChatGPT, Claude, or Perplexity questions about products or services, these AI systems need to <strong>find</strong>, <strong>read</strong>, and <strong>understand</strong> your website to recommend your brand. This audit checks if your site is set up to be discovered by AI.
+            </p>
+            <div className="grid sm:grid-cols-3 gap-3 text-xs">
+              <div className="bg-white/60 rounded-lg p-2.5">
+                <p className="font-medium text-gray-900 mb-1">Score 90+</p>
+                <p className="text-gray-600">Your site is well-optimized. AI systems can easily find and understand your brand.</p>
+              </div>
+              <div className="bg-white/60 rounded-lg p-2.5">
+                <p className="font-medium text-gray-900 mb-1">Score 50-89</p>
+                <p className="text-gray-600">Some improvements needed. AI may miss key information about your business.</p>
+              </div>
+              <div className="bg-white/60 rounded-lg p-2.5">
+                <p className="font-medium text-gray-900 mb-1">Score below 50</p>
+                <p className="text-gray-600">Significant barriers exist. AI systems may struggle to accurately represent your brand.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Score and Key Insights Row */}
       <div className="grid md:grid-cols-4 gap-3">
         {/* Score Card */}
