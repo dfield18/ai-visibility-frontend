@@ -11079,90 +11079,126 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
           {/* Recommendations Table */}
           {parsedAiRecommendations.length > 0 && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <h3 className="text-base font-semibold text-gray-800 mb-4">Detailed Recommendations</h3>
-              <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Recommendation</th>
-                    <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Tactics</th>
-                    <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-24">Impact</th>
-                    <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-24">Effort</th>
-                    <th className="text-center py-3 px-3 text-sm font-medium text-gray-600 w-28">Category</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parsedAiRecommendations.map((rec, idx) => {
-                    const quadrantName =
-                      rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
-                      rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
-                      rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
-                      rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mt-8">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Detailed Recommendations</h3>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    {parsedAiRecommendations.length} actionable recommendations based on your visibility analysis
+                  </p>
+                </div>
+              </div>
 
-                    const quadrantColors: Record<string, string> = {
-                      'Quick Win': 'bg-green-100 text-green-700',
-                      'Major Project': 'bg-amber-100 text-amber-700',
-                      'Fill-in': 'bg-blue-100 text-blue-700',
-                      'Avoid': 'bg-red-100 text-red-700',
-                      'Consider': 'bg-gray-100 text-gray-700',
-                    };
+              {/* Table */}
+              <div className="overflow-x-auto min-h-0">
+                <table className="w-full table-fixed">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="w-[30%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Recommendation
+                      </th>
+                      <th className="w-[30%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Tactics
+                      </th>
+                      <th className="w-[12%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Impact
+                      </th>
+                      <th className="w-[12%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Effort
+                      </th>
+                      <th className="w-[16%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Category
+                      </th>
+                    </tr>
+                  </thead>
+                </table>
+                {/* Scrollable tbody wrapper */}
+                <div className="max-h-[540px] overflow-y-auto overscroll-contain">
+                  <table className="w-full table-fixed">
+                    <colgroup>
+                      <col className="w-[30%]" />
+                      <col className="w-[30%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[16%]" />
+                    </colgroup>
+                    <tbody>
+                      {parsedAiRecommendations.map((rec, idx) => {
+                        const quadrantName =
+                          rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
+                          rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
+                          rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
+                          rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
 
-                    const impactColors: Record<string, string> = {
-                      high: 'text-green-600',
-                      medium: 'text-yellow-600',
-                      low: 'text-gray-500',
-                    };
+                        const quadrantColors: Record<string, { bg: string; text: string; border: string }> = {
+                          'Quick Win': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+                          'Major Project': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+                          'Fill-in': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+                          'Avoid': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+                          'Consider': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
+                        };
 
-                    const effortColors: Record<string, string> = {
-                      low: 'text-green-600',
-                      medium: 'text-yellow-600',
-                      high: 'text-red-500',
-                    };
+                        const impactBadge: Record<string, { bg: string; text: string; border: string }> = {
+                          high: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+                          medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+                          low: { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
+                        };
 
-                    return (
-                      <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
-                        <td className="py-3 px-3">
-                          <div className="font-medium text-gray-900">{rec.title}</div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            <span className="block"><strong>Impact:</strong> {rec.impactReason}</span>
-                            <span className="block mt-0.5"><strong>Effort:</strong> {rec.effortReason}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-3">
-                          {rec.tactics && rec.tactics.length > 0 ? (
-                            <ul className="text-xs text-gray-600 space-y-1">
-                              {rec.tactics.map((tactic, tidx) => (
-                                <li key={tidx} className="flex items-start gap-1">
-                                  <span className="text-[#4A7C59] mt-0.5">•</span>
-                                  <span>{tactic}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <span className="text-xs text-gray-400 italic">No specific tactics</span>
-                          )}
-                        </td>
-                        <td className="text-center py-3 px-3">
-                          <span className={`font-medium capitalize ${impactColors[rec.impact]}`}>
-                            {rec.impact}
-                          </span>
-                        </td>
-                        <td className="text-center py-3 px-3">
-                          <span className={`font-medium capitalize ${effortColors[rec.effort]}`}>
-                            {rec.effort}
-                          </span>
-                        </td>
-                        <td className="text-center py-3 px-3">
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${quadrantColors[quadrantName]}`}>
-                            {quadrantName}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        const effortBadge: Record<string, { bg: string; text: string; border: string }> = {
+                          low: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+                          medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+                          high: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
+                        };
+
+                        const quadrantStyle = quadrantColors[quadrantName] || quadrantColors['Consider'];
+                        const impactStyle = impactBadge[rec.impact] || impactBadge['medium'];
+                        const effortStyle = effortBadge[rec.effort] || effortBadge['medium'];
+
+                        return (
+                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                            <td className="py-4 px-4">
+                              <div className="font-medium text-gray-900 text-sm">{rec.title}</div>
+                              <div className="text-xs text-gray-500 mt-1.5 space-y-0.5">
+                                <span className="block"><span className="font-medium text-gray-600">Impact:</span> {rec.impactReason}</span>
+                                <span className="block"><span className="font-medium text-gray-600">Effort:</span> {rec.effortReason}</span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4">
+                              {rec.tactics && rec.tactics.length > 0 ? (
+                                <ul className="text-xs text-gray-600 space-y-1.5">
+                                  {rec.tactics.map((tactic, tidx) => (
+                                    <li key={tidx} className="flex items-start gap-1.5">
+                                      <span className="text-[#4A7C59] mt-0.5 flex-shrink-0">•</span>
+                                      <span>{tactic}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <span className="text-xs text-gray-400 italic">No specific tactics</span>
+                              )}
+                            </td>
+                            <td className="text-center py-4 px-4">
+                              <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${impactStyle.bg} ${impactStyle.text} ${impactStyle.border}`}>
+                                {rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)}
+                              </span>
+                            </td>
+                            <td className="text-center py-4 px-4">
+                              <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${effortStyle.bg} ${effortStyle.text} ${effortStyle.border}`}>
+                                {rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
+                              </span>
+                            </td>
+                            <td className="text-center py-4 px-4">
+                              <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${quadrantStyle.bg} ${quadrantStyle.text} ${quadrantStyle.border}`}>
+                                {quadrantName}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
