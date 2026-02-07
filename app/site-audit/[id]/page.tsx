@@ -43,6 +43,13 @@ function ScoreCircle({ score }: { score: number | null }) {
     return "Poor";
   };
 
+  const getScoreDescription = (s: number) => {
+    if (s >= 90) return "Your site is well-optimized for AI search engines";
+    if (s >= 70) return "Your site is mostly ready, with some improvements possible";
+    if (s >= 50) return "Several areas need attention for better AI visibility";
+    return "Significant changes needed to appear in AI search results";
+  };
+
   return (
     <div className="text-center">
       <div
@@ -55,6 +62,7 @@ function ScoreCircle({ score }: { score: number | null }) {
         <span className="text-sm font-medium">{getScoreLabel(score)}</span>
       </div>
       <p className="text-gray-500 text-sm mt-3">LLM Optimization Score</p>
+      <p className="text-gray-600 text-sm mt-2 max-w-xs mx-auto">{getScoreDescription(score)}</p>
     </div>
   );
 }
@@ -65,12 +73,14 @@ function CollapsibleSection({
   defaultOpen = false,
   children,
   status,
+  description,
 }: {
   title: string;
   icon: React.ElementType;
   defaultOpen?: boolean;
   children: React.ReactNode;
   status?: "pass" | "warning" | "fail";
+  description?: string;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -90,7 +100,10 @@ function CollapsibleSection({
           <div className="w-10 h-10 rounded-lg bg-[#E8F0E8] flex items-center justify-center">
             <Icon className="w-5 h-5 text-[#4A7C59]" />
           </div>
-          <span className="font-semibold text-gray-900">{title}</span>
+          <div className="text-left">
+            <span className="font-semibold text-gray-900 block">{title}</span>
+            {description && <span className="text-sm text-gray-500">{description}</span>}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           {status && statusIcon[status]}
@@ -106,21 +119,35 @@ function CollapsibleSection({
   );
 }
 
+// Crawler descriptions for non-technical users
+const CRAWLER_DESCRIPTIONS: Record<string, string> = {
+  "GPTBot": "OpenAI's crawler for ChatGPT",
+  "ChatGPT-User": "ChatGPT browsing feature",
+  "ClaudeBot": "Anthropic's crawler for Claude",
+  "Claude-Web": "Claude's web browsing feature",
+  "PerplexityBot": "Perplexity AI search engine",
+  "Google-Extended": "Google's Gemini AI crawler",
+  "CCBot": "Common Crawl (used by many AI models)",
+  "Applebot-Extended": "Apple Intelligence features",
+};
+
 function CrawlerRow({ crawler }: { crawler: CrawlerStatus }) {
+  const description = CRAWLER_DESCRIPTIONS[crawler.name] || crawler.user_agent;
+
   return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+    <div className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
       <div className="flex items-center gap-3">
         <Bot className="w-4 h-4 text-gray-400" />
         <div>
           <span className="font-medium text-gray-900">{crawler.name}</span>
-          <span className="text-gray-400 text-sm ml-2">({crawler.user_agent})</span>
+          <span className="text-gray-500 text-sm block">{description}</span>
         </div>
       </div>
       <div className="flex items-center gap-2">
         {crawler.allowed ? (
           <>
             <CheckCircle2 className="w-4 h-4 text-green-500" />
-            <span className="text-green-600 text-sm font-medium">Allowed</span>
+            <span className="text-green-600 text-sm font-medium">Can access</span>
           </>
         ) : (
           <>
@@ -140,16 +167,31 @@ function RecommendationCard({ rec }: { rec: Recommendation }) {
     low: "bg-blue-100 text-blue-700 border-blue-200",
   };
 
+  const priorityLabels = {
+    high: "High Priority",
+    medium: "Medium Priority",
+    low: "Nice to Have",
+  };
+
+  const priorityHints = {
+    high: "Fix this first for the biggest impact",
+    medium: "Important for better visibility",
+    low: "Optional improvement",
+  };
+
   return (
     <div className="bg-white rounded-lg border border-gray-100 p-4">
       <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            "px-2 py-1 rounded text-xs font-medium border",
-            priorityColors[rec.priority]
-          )}
-        >
-          {rec.priority.toUpperCase()}
+        <div className="flex-shrink-0">
+          <div
+            className={cn(
+              "px-2 py-1 rounded text-xs font-medium border",
+              priorityColors[rec.priority]
+            )}
+          >
+            {priorityLabels[rec.priority]}
+          </div>
+          <p className="text-xs text-gray-400 mt-1">{priorityHints[rec.priority]}</p>
         </div>
         <div className="flex-1">
           <h4 className="font-medium text-gray-900 mb-1">{rec.title}</h4>
@@ -332,9 +374,12 @@ export default function SiteAuditResultPage() {
         {/* Recommendations */}
         {recommendations.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Recommendations ({recommendations.length})
             </h3>
+            <p className="text-gray-500 text-sm mb-4">
+              These are specific actions you can take to improve how AI search engines like ChatGPT, Claude, and Perplexity understand and recommend your website.
+            </p>
             <div className="space-y-3">
               {recommendations.map((rec, idx) => (
                 <RecommendationCard key={idx} rec={rec} />
@@ -345,7 +390,12 @@ export default function SiteAuditResultPage() {
 
         {/* Audit Details */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Audit Details</h3>
+          <div className="mb-2">
+            <h3 className="text-lg font-semibold text-gray-900">Audit Details</h3>
+            <p className="text-gray-500 text-sm">
+              Technical factors that determine whether AI systems can access and understand your content.
+            </p>
+          </div>
 
           {/* AI Crawler Access */}
           {results?.robots_txt && (
@@ -354,7 +404,13 @@ export default function SiteAuditResultPage() {
               icon={Shield}
               defaultOpen={true}
               status={getCrawlerStatus()}
+              description="Can AI bots read your website?"
             >
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Why this matters:</strong> AI search engines use "crawlers" (automated bots) to read websites. If these are blocked, AI tools like ChatGPT won't have up-to-date information about your business.
+                </p>
+              </div>
               <div className="space-y-1">
                 {results.robots_txt.crawlers.map((crawler, idx) => (
                   <CrawlerRow key={idx} crawler={crawler} />
@@ -362,7 +418,7 @@ export default function SiteAuditResultPage() {
               </div>
               {!results.robots_txt.found && (
                 <p className="text-sm text-gray-500 mt-3">
-                  No robots.txt found - all crawlers are allowed by default
+                  No robots.txt found - all crawlers are allowed by default (this is good!)
                 </p>
               )}
             </CollapsibleSection>
@@ -374,29 +430,41 @@ export default function SiteAuditResultPage() {
               title="Meta Directives"
               icon={FileText}
               status={getMetaStatus()}
+              description="Hidden tags that tell AI what to do"
             >
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Why this matters:</strong> Some websites add hidden code that tells AI systems not to use their content. If these "noai" tags are present, AI tools may ignore your site entirely.
+                </p>
+              </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-gray-700">noai directive</span>
+                  <div>
+                    <span className="text-gray-700 block">noai directive</span>
+                    <span className="text-xs text-gray-400">Blocks all AI from using your content</span>
+                  </div>
                   {results.meta_directives.has_noai ? (
                     <span className="text-red-600 font-medium flex items-center gap-1">
-                      <XCircle className="w-4 h-4" /> Found (blocks AI)
+                      <XCircle className="w-4 h-4" /> Found (blocking AI)
                     </span>
                   ) : (
                     <span className="text-green-600 font-medium flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" /> Not found
+                      <CheckCircle2 className="w-4 h-4" /> Not found (good)
                     </span>
                   )}
                 </div>
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-gray-700">noimageai directive</span>
+                  <div>
+                    <span className="text-gray-700 block">noimageai directive</span>
+                    <span className="text-xs text-gray-400">Blocks AI from using your images</span>
+                  </div>
                   {results.meta_directives.has_noimageai ? (
                     <span className="text-yellow-600 font-medium flex items-center gap-1">
                       <AlertTriangle className="w-4 h-4" /> Found
                     </span>
                   ) : (
                     <span className="text-green-600 font-medium flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" /> Not found
+                      <CheckCircle2 className="w-4 h-4" /> Not found (good)
                     </span>
                   )}
                 </div>
@@ -418,22 +486,36 @@ export default function SiteAuditResultPage() {
               title="llms.txt"
               icon={FileText}
               status={getLlmsTxtStatus()}
+              description="Instructions file for AI systems"
             >
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Why this matters:</strong> An llms.txt file is like a welcome guide for AI. It tells AI systems what your business does and how to describe it accurately. It's an emerging best practice for AI visibility.
+                </p>
+              </div>
               {results.llms_txt.found ? (
                 <div>
                   <p className="text-green-600 font-medium flex items-center gap-1 mb-3">
-                    <CheckCircle2 className="w-4 h-4" /> llms.txt file found
+                    <CheckCircle2 className="w-4 h-4" /> Great! Your site has an llms.txt file
                   </p>
                   {results.llms_txt.content && (
-                    <pre className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 overflow-x-auto max-h-48">
-                      {results.llms_txt.content}
-                    </pre>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-2">Here's what AI systems will see:</p>
+                      <pre className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 overflow-x-auto max-h-48">
+                        {results.llms_txt.content}
+                      </pre>
+                    </div>
                   )}
                 </div>
               ) : (
-                <p className="text-gray-500">
-                  No llms.txt file found. Consider adding one to provide instructions to LLMs.
-                </p>
+                <div>
+                  <p className="text-yellow-600 font-medium flex items-center gap-1 mb-2">
+                    <AlertTriangle className="w-4 h-4" /> No llms.txt file found
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Consider adding an llms.txt file to your website root to help AI systems understand your business better. This is optional but increasingly recommended.
+                  </p>
+                </div>
               )}
             </CollapsibleSection>
           )}
@@ -444,10 +526,19 @@ export default function SiteAuditResultPage() {
               title="Structured Data"
               icon={Code2}
               status={getStructuredDataStatus()}
+              description="Machine-readable info about your business"
             >
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Why this matters:</strong> Structured data is like a business card that AI can read. It provides clear information about your business type, products, and services in a format AI systems understand perfectly.
+                </p>
+              </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-gray-700">JSON-LD</span>
+                  <div>
+                    <span className="text-gray-700 block">JSON-LD Schema</span>
+                    <span className="text-xs text-gray-400">The most important format for AI understanding</span>
+                  </div>
                   {results.structured_data.has_json_ld ? (
                     <span className="text-green-600 font-medium flex items-center gap-1">
                       <CheckCircle2 className="w-4 h-4" />{" "}
@@ -455,24 +546,30 @@ export default function SiteAuditResultPage() {
                     </span>
                   ) : (
                     <span className="text-red-600 font-medium flex items-center gap-1">
-                      <XCircle className="w-4 h-4" /> Not found
+                      <XCircle className="w-4 h-4" /> Missing
                     </span>
                   )}
                 </div>
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-gray-700">Open Graph</span>
+                  <div>
+                    <span className="text-gray-700 block">Open Graph</span>
+                    <span className="text-xs text-gray-400">Used when your site is shared on social media</span>
+                  </div>
                   {results.structured_data.has_open_graph ? (
                     <span className="text-green-600 font-medium flex items-center gap-1">
                       <CheckCircle2 className="w-4 h-4" /> Found
                     </span>
                   ) : (
                     <span className="text-yellow-600 font-medium flex items-center gap-1">
-                      <AlertTriangle className="w-4 h-4" /> Not found
+                      <AlertTriangle className="w-4 h-4" /> Missing
                     </span>
                   )}
                 </div>
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-gray-700">Twitter Cards</span>
+                  <div>
+                    <span className="text-gray-700 block">Twitter/X Cards</span>
+                    <span className="text-xs text-gray-400">Controls how links appear on Twitter/X</span>
+                  </div>
                   {results.structured_data.has_twitter_cards ? (
                     <span className="text-green-600 font-medium flex items-center gap-1">
                       <CheckCircle2 className="w-4 h-4" /> Found
@@ -493,28 +590,43 @@ export default function SiteAuditResultPage() {
               title="Content Accessibility"
               icon={Globe}
               status={getContentStatus()}
+              description="Can AI read your content without JavaScript?"
             >
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Why this matters:</strong> AI crawlers often can't run JavaScript like a web browser. If your content only loads after JavaScript runs, AI systems may see a blank page and miss your content entirely.
+                </p>
+              </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-gray-700">Server-Side Rendered</span>
+                  <div>
+                    <span className="text-gray-700 block">Server-Side Rendered</span>
+                    <span className="text-xs text-gray-400">Content available without JavaScript</span>
+                  </div>
                   {results.content_accessibility.estimated_ssr ? (
                     <span className="text-green-600 font-medium flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" /> Yes
+                      <CheckCircle2 className="w-4 h-4" /> Yes (good!)
                     </span>
                   ) : (
                     <span className="text-yellow-600 font-medium flex items-center gap-1">
-                      <AlertTriangle className="w-4 h-4" /> Likely client-side only
+                      <AlertTriangle className="w-4 h-4" /> JavaScript required
                     </span>
                   )}
                 </div>
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-gray-700">Initial HTML Length</span>
+                  <div>
+                    <span className="text-gray-700 block">Initial Content Size</span>
+                    <span className="text-xs text-gray-400">Amount of content AI sees immediately</span>
+                  </div>
                   <span className="text-gray-600">
-                    {results.content_accessibility.initial_html_length.toLocaleString()} chars
+                    {results.content_accessibility.initial_html_length.toLocaleString()} characters
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-gray-700">noscript Fallback</span>
+                  <div>
+                    <span className="text-gray-700 block">Fallback Content</span>
+                    <span className="text-xs text-gray-400">Backup content for non-JavaScript visitors</span>
+                  </div>
                   {results.content_accessibility.has_noscript_content ? (
                     <span className="text-green-600 font-medium flex items-center gap-1">
                       <CheckCircle2 className="w-4 h-4" /> Found
@@ -533,44 +645,58 @@ export default function SiteAuditResultPage() {
               title="Content Structure"
               icon={Layout}
               status={getStructureStatus()}
+              description="Is your content well-organized for AI?"
             >
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Why this matters:</strong> Well-organized content with clear headings and sections helps AI understand the structure and meaning of your pages, making it easier to extract and cite the right information.
+                </p>
+              </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-gray-700">Valid Heading Hierarchy</span>
+                  <div>
+                    <span className="text-gray-700 block">Proper Heading Order</span>
+                    <span className="text-xs text-gray-400">Headings should flow logically (H1 → H2 → H3)</span>
+                  </div>
                   {results.content_structure.has_valid_heading_hierarchy ? (
                     <span className="text-green-600 font-medium flex items-center gap-1">
                       <CheckCircle2 className="w-4 h-4" /> Yes
                     </span>
                   ) : (
                     <span className="text-yellow-600 font-medium flex items-center gap-1">
-                      <AlertTriangle className="w-4 h-4" /> Issues found
+                      <AlertTriangle className="w-4 h-4" /> Needs improvement
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 py-2">
-                  {[
-                    { label: "header", has: results.content_structure.has_header },
-                    { label: "main", has: results.content_structure.has_main },
-                    { label: "footer", has: results.content_structure.has_footer },
-                    { label: "article", has: results.content_structure.has_article },
-                    { label: "nav", has: results.content_structure.has_nav },
-                  ].map((el) => (
-                    <div
-                      key={el.label}
-                      className={cn(
-                        "px-3 py-2 rounded-lg text-center text-sm",
-                        el.has
-                          ? "bg-green-50 text-green-700"
-                          : "bg-gray-50 text-gray-400"
-                      )}
-                    >
-                      &lt;{el.label}&gt;
-                    </div>
-                  ))}
+                <div>
+                  <p className="text-sm text-gray-500 mb-2">Semantic Page Sections:</p>
+                  <p className="text-xs text-gray-400 mb-2">These HTML elements help AI understand different parts of your page</p>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {[
+                      { label: "header", has: results.content_structure.has_header, desc: "Site header" },
+                      { label: "main", has: results.content_structure.has_main, desc: "Main content" },
+                      { label: "footer", has: results.content_structure.has_footer, desc: "Site footer" },
+                      { label: "article", has: results.content_structure.has_article, desc: "Article content" },
+                      { label: "nav", has: results.content_structure.has_nav, desc: "Navigation" },
+                    ].map((el) => (
+                      <div
+                        key={el.label}
+                        className={cn(
+                          "px-3 py-2 rounded-lg text-center text-sm",
+                          el.has
+                            ? "bg-green-50 text-green-700"
+                            : "bg-gray-50 text-gray-400"
+                        )}
+                        title={el.desc}
+                      >
+                        &lt;{el.label}&gt;
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {results.content_structure.headings.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-sm text-gray-500 mb-2">Heading Structure:</p>
+                    <p className="text-sm text-gray-500 mb-2">Your Heading Structure:</p>
                     <div className="bg-gray-50 p-3 rounded-lg text-sm max-h-32 overflow-y-auto">
                       {results.content_structure.headings.slice(0, 10).map((h, idx) => (
                         <div key={idx} style={{ marginLeft: `${(h.level - 1) * 16}px` }}>
