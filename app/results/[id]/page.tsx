@@ -647,9 +647,9 @@ export default function ResultsPage() {
       ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
       : runStatus.brand;
     const brandLower = (selectedBrand || '').toLowerCase();
-    const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-      ? result.all_brands_mentioned
-      : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+      : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
     // First try exact match
     let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
@@ -1106,9 +1106,9 @@ export default function ResultsPage() {
 
           // Use all_brands_mentioned if available (includes all detected brands),
           // otherwise fall back to tracked brands only
-          const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-            ? result.all_brands_mentioned
-            : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+          const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+            ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+            : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
           // Find position of selected brand in the ordered list
           // First try exact match
@@ -1219,9 +1219,9 @@ export default function ResultsPage() {
       promptResults.forEach(r => {
         if (!r.brand_mentioned) return;
 
-        const allBrands = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
-          ? r.all_brands_mentioned
-          : [searchedBrand, ...(r.competitors_mentioned || [])].filter(Boolean);
+        const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+          ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+          : [searchedBrand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
         const brandLower = searchedBrand.toLowerCase();
         let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
@@ -1345,9 +1345,9 @@ export default function ResultsPage() {
         const isMentioned = isSearchedBrand ? r.brand_mentioned : r.competitors_mentioned?.includes(brand);
         if (!isMentioned) return;
 
-        const allBrandsInResponse = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
-          ? r.all_brands_mentioned
-          : [searchedBrand, ...(r.competitors_mentioned || [])].filter(Boolean);
+        const allBrandsInResponse: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+          ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+          : [searchedBrand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
         const brandLower = brand.toLowerCase();
         let foundIndex = allBrandsInResponse.findIndex(b => b.toLowerCase() === brandLower);
@@ -2838,9 +2838,9 @@ export default function ResultsPage() {
         if (isMentioned) {
           // Use all_brands_mentioned if available (includes all detected brands),
           // otherwise fall back to tracked brands only
-          const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-            ? result.all_brands_mentioned
-            : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+          const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+            ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+            : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
           // Find position of selected brand in the ordered list
           // First try exact match
@@ -3101,9 +3101,9 @@ export default function ResultsPage() {
       if (!result.response_text) continue;
 
       // Use all_brands_mentioned if available (includes all detected brands)
-      const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-        ? result.all_brands_mentioned
-        : [runStatus.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+      const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+        ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+        : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
       if (selectedBrand) {
         const brandLower = selectedBrand.toLowerCase();
@@ -3232,9 +3232,9 @@ export default function ResultsPage() {
         let rank = '';
         if (r.response_text && r.brand_mentioned) {
           // Use all_brands_mentioned if available (includes all detected brands)
-          const allBrands = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
-            ? r.all_brands_mentioned
-            : [runStatus.brand, ...(r.competitors_mentioned || [])].filter(Boolean);
+          const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+            ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+            : [runStatus.brand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
           const brandLower = runStatus.brand.toLowerCase();
           // First try exact match
@@ -3361,9 +3361,9 @@ export default function ResultsPage() {
         let rank = 0;
         const brandLower = runStatus.brand.toLowerCase();
         if (r.brand_mentioned && r.response_text) {
-          const allBrands = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
-            ? r.all_brands_mentioned
-            : [runStatus.brand, ...(r.competitors_mentioned || [])].filter(Boolean);
+          const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+            ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+            : [runStatus.brand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
           let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
           if (foundIndex === -1) {
@@ -4572,9 +4572,9 @@ export default function ResultsPage() {
                           if (result.response_text && selectedBrand && isMentioned) {
                             const brandLower = selectedBrand.toLowerCase();
                             // Use all_brands_mentioned if available (includes all detected brands)
-                            const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                              ? result.all_brands_mentioned
-                              : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+                            const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                              ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                              : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                             // First try exact match
                             let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
@@ -4769,9 +4769,9 @@ export default function ResultsPage() {
                     : result.brand_mentioned;
 
                   if (isMentioned && brandLower) {
-                    const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                      ? result.all_brands_mentioned
-                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                     let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
                     if (foundIndex === -1) {
@@ -4951,9 +4951,9 @@ export default function ResultsPage() {
                     : result.brand_mentioned;
 
                   if (isMentioned && brandLower) {
-                    const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                      ? result.all_brands_mentioned
-                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
                     let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
                     if (foundIndex === -1) {
                       foundIndex = allBrands.findIndex(b =>
@@ -5030,14 +5030,14 @@ export default function ResultsPage() {
         )}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
           <p className="text-sm text-gray-500 mb-1">Total Calls</p>
-          <p className="text-4xl font-bold text-gray-900">{runStatus.total_calls}</p>
-          {runStatus.failed_calls > 0 && (
-            <p className="text-xs text-red-500 mt-1">{runStatus.failed_calls} failed</p>
+          <p className="text-4xl font-bold text-gray-900">{runStatus?.total_calls}</p>
+          {(runStatus?.failed_calls ?? 0) > 0 && (
+            <p className="text-xs text-red-500 mt-1">{runStatus?.failed_calls} failed</p>
           )}
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
           <p className="text-sm text-gray-500 mb-1">Total Cost</p>
-          <p className="text-4xl font-bold text-gray-900">{formatCurrency(runStatus.actual_cost)}</p>
+          <p className="text-4xl font-bold text-gray-900">{formatCurrency(runStatus?.actual_cost ?? 0)}</p>
         </div>
       </div>
 
@@ -5873,13 +5873,13 @@ export default function ResultsPage() {
                 onClick={() => setFilter('mentioned')}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
               >
-                {runStatus.brand} Mentioned
+                {runStatus?.brand} Mentioned
               </button>
               <button
                 onClick={() => setFilter('not_mentioned')}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filter === 'not_mentioned' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}
               >
-                {runStatus.brand} Not Mentioned
+                {runStatus?.brand} Not Mentioned
               </button>
             </div>
             <select
@@ -6839,10 +6839,10 @@ export default function ResultsPage() {
             </div>
             <div>
               <span className="text-gray-500">Total Cost: </span>
-              <span className="font-medium text-gray-900">{formatCurrency(runStatus.actual_cost)}</span>
+              <span className="font-medium text-gray-900">{formatCurrency(runStatus?.actual_cost ?? 0)}</span>
             </div>
           </div>
-          <div className="text-gray-400 text-xs">{runStatus.completed_calls} successful calls · {runStatus.failed_calls} failed</div>
+          <div className="text-gray-400 text-xs">{runStatus?.completed_calls ?? 0} successful calls · {runStatus?.failed_calls ?? 0} failed</div>
         </div>
       </div>
     </div>
@@ -9280,9 +9280,9 @@ export default function ResultsPage() {
                   const isMentioned = result.brand_mentioned;
 
                   if (isMentioned && result.response_text) {
-                    const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                      ? result.all_brands_mentioned
-                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                     // Try exact match first
                     let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
@@ -10243,9 +10243,9 @@ export default function ResultsPage() {
                         let rank = 0;
                         const brandLower = (runStatus?.brand || '').toLowerCase();
                         if (result.brand_mentioned && result.response_text) {
-                          const allBrands = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                            ? result.all_brands_mentioned
-                            : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter(Boolean);
+                          const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                            ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                            : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                           let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
                           if (foundIndex === -1) {
@@ -12610,7 +12610,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
         {activeTab === 'sentiment' && <SentimentTab />}
         {activeTab === 'sources' && <SourcesTab />}
         {activeTab === 'recommendations' && <RecommendationsTab />}
-        {activeTab === 'reports' && <ReportsTab runStatus={runStatus} />}
+        {activeTab === 'reports' && <ReportsTab runStatus={runStatus ?? null} />}
       </div>
 
       {/* Snippet Detail Modal */}
@@ -12733,7 +12733,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     {!isCategory && (
                       <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg ${selectedResult.brand_mentioned ? 'bg-[#E8F0E8] text-[#4A7C59]' : 'bg-gray-100 text-gray-600'}`}>
                         {selectedResult.brand_mentioned ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
-                        {runStatus.brand} {selectedResult.brand_mentioned ? 'Mentioned' : 'Not Mentioned'}
+                        {runStatus?.brand} {selectedResult.brand_mentioned ? 'Mentioned' : 'Not Mentioned'}
                       </span>
                     )}
                     {selectedResult.competitors_mentioned && selectedResult.competitors_mentioned.length > 0 && (
