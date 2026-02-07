@@ -3558,42 +3558,13 @@ export default function ResultsPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (isLoading) {
-    return (
-      <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
-        <div className="flex flex-col items-center">
-          <Spinner size="lg" />
-          <p className="mt-4 text-gray-500">Loading results...</p>
-        </div>
-      </main>
-    );
-  }
+  // Note: Don't use early returns here - there are useMemo calls below that must always run
+  const showLoading = isLoading;
+  const showError = !isLoading && (error || !runStatus);
 
-  if (error || !runStatus) {
-    return (
-      <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 max-w-md w-full text-center p-8">
-          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-semibold text-gray-900 mb-2">
-            Failed to load results
-          </h1>
-          <p className="text-gray-500 mb-6">
-            {error instanceof Error ? error.message : 'Results not found'}
-          </p>
-          <button
-            onClick={() => router.push('/')}
-            className="px-6 py-3 bg-[#4A7C59] text-white font-medium rounded-xl hover:bg-[#3d6649] transition-colors"
-          >
-            Start New Analysis
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  const summary = runStatus.summary;
+  const summary = runStatus?.summary ?? null;
   const brandMentionRate = summary?.brand_mention_rate ?? 0;
-  const isCategory = runStatus.search_type === 'category';
+  const isCategory = runStatus?.search_type === 'category';
 
   const getMentionRateColor = (rate: number) => {
     if (rate >= 0.7) return 'text-[#4A7C59]';
@@ -11277,6 +11248,44 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
     </div>
   );
 
+  // Loading state
+  if (showLoading) {
+    return (
+      <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Spinner size="lg" />
+          <p className="mt-4 text-gray-500">Loading results...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Error state
+  if (showError) {
+    return (
+      <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 max-w-md w-full text-center p-8">
+          <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            Failed to load results
+          </h1>
+          <p className="text-gray-500 mb-6">
+            {error instanceof Error ? error.message : 'Results not found'}
+          </p>
+          <button
+            onClick={() => router.push('/')}
+            className="px-6 py-3 bg-[#4A7C59] text-white font-medium rounded-xl hover:bg-[#3d6649] transition-colors"
+          >
+            Start New Analysis
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // At this point runStatus is guaranteed to exist
+  const validRunStatus = runStatus!;
+
   return (
     <main className="min-h-screen bg-[#FAFAF8] pb-8">
       {/* Sticky Header Section */}
@@ -11295,20 +11304,20 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 </button>
                 <div>
                   <h1 className="text-lg font-semibold text-gray-900">
-                    Results for <span className="text-[#4A7C59]">{runStatus.brand}</span>
+                    Results for <span className="text-[#4A7C59]">{validRunStatus.brand}</span>
                     {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
                   </h1>
                   <p className="text-sm text-gray-500">
-                    {runStatus.completed_at
-                      ? `Completed ${formatDate(runStatus.completed_at)}`
-                      : `Started ${formatDate(runStatus.created_at)}`}
+                    {validRunStatus.completed_at
+                      ? `Completed ${formatDate(validRunStatus.completed_at)}`
+                      : `Started ${formatDate(validRunStatus.created_at)}`}
                     {' · '}
-                    {formatCurrency(runStatus.actual_cost)}
+                    {formatCurrency(validRunStatus.actual_cost)}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                {runStatus.status === 'complete' && !runStatus.extension_info?.has_running_extension && (
+                {validRunStatus.status === 'complete' && !validRunStatus.extension_info?.has_running_extension && (
                   <button
                     onClick={() => setShowModifyModal(true)}
                     className="px-4 py-2 bg-white text-[#4A7C59] text-sm font-medium rounded-xl border border-[#4A7C59] hover:bg-[#4A7C59]/5 transition-colors flex items-center gap-2"
@@ -11317,7 +11326,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     Modify Query
                   </button>
                 )}
-                {runStatus.extension_info?.has_running_extension && (
+                {validRunStatus.extension_info?.has_running_extension && (
                   <span className="px-3 py-1.5 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg flex items-center gap-2">
                     <Spinner size="sm" />
                     Extension in progress...
