@@ -8520,7 +8520,7 @@ export default function ResultsPage() {
                     <Scatter
                       data={processedData}
                       shape={(props: any) => {
-                        const { cx, cy, payload } = props;
+                        const { cx, cy, payload, index } = props;
                         const groupSize = payload.groupSize || 1;
                         const indexInGroup = payload.indexInGroup || 0;
 
@@ -8549,14 +8549,30 @@ export default function ResultsPage() {
                         const totalWidth = (groupSize - 1) * spacing;
                         const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
-                        // Only show labels for significant sources (high provider count or top position)
-                        const isSignificant = payload.providerCount >= 3 || (payload.avgPosition <= 2 && payload.citationCount >= 3);
-                        const showLabel = isSignificant && groupSize <= 2;
-
                         // Truncate domain for display
-                        const displayDomain = payload.domain.length > 12
-                          ? payload.domain.substring(0, 10) + '...'
+                        const displayDomain = payload.domain.length > 15
+                          ? payload.domain.substring(0, 13) + '...'
                           : payload.domain;
+
+                        // Calculate label position to avoid overlaps
+                        // Use alternating positions: top, bottom, top-right, top-left based on index and group
+                        const labelOffsetY = circleRadius + 12;
+                        const labelOffsetX = 0;
+
+                        // Alternate label positions based on index to reduce overlap
+                        const positionIndex = (index || 0) + indexInGroup;
+                        const positions = [
+                          { dy: -labelOffsetY, dx: 0, anchor: 'middle' },      // top
+                          { dy: labelOffsetY + 8, dx: 0, anchor: 'middle' },   // bottom
+                          { dy: -labelOffsetY + 4, dx: 20, anchor: 'start' },  // top-right
+                          { dy: -labelOffsetY + 4, dx: -20, anchor: 'end' },   // top-left
+                          { dy: 4, dx: circleRadius + 8, anchor: 'start' },    // right
+                          { dy: 4, dx: -(circleRadius + 8), anchor: 'end' },   // left
+                        ];
+
+                        // Use position based on group index and overall index for variety
+                        const posIdx = groupSize > 1 ? (indexInGroup % 4) + 1 : (positionIndex % 6);
+                        const labelPos = positions[posIdx] || positions[0];
 
                         return (
                           <g>
@@ -8570,18 +8586,29 @@ export default function ResultsPage() {
                               opacity={0.9}
                               style={{ cursor: 'pointer' }}
                             />
-                            {showLabel && (
-                              <text
-                                x={cx + xOffset}
-                                y={cy - circleRadius - 4}
-                                textAnchor="middle"
-                                fill="#374151"
-                                fontSize={9}
-                                fontWeight={500}
-                              >
-                                {displayDomain}
-                              </text>
+                            {/* Leader line for offset labels */}
+                            {(Math.abs(labelPos.dx) > 10 || labelPos.dy > 0) && (
+                              <line
+                                x1={cx + xOffset}
+                                y1={cy}
+                                x2={cx + xOffset + labelPos.dx * 0.6}
+                                y2={cy + labelPos.dy * 0.5}
+                                stroke="#9ca3af"
+                                strokeWidth={0.5}
+                                strokeDasharray="2,2"
+                              />
                             )}
+                            <text
+                              x={cx + xOffset + labelPos.dx}
+                              y={cy + labelPos.dy}
+                              textAnchor={labelPos.anchor as 'middle' | 'start' | 'end'}
+                              fill="#374151"
+                              fontSize={9}
+                              fontWeight={500}
+                              style={{ pointerEvents: 'none' }}
+                            >
+                              {displayDomain}
+                            </text>
                           </g>
                         );
                       }}
@@ -8589,7 +8616,7 @@ export default function ResultsPage() {
                   </ScatterChart>
                 </ResponsiveContainer>
               </div>
-              <p className="mt-3 text-center text-xs text-gray-400 italic">Hover over dots for details • Dot size indicates citation frequency</p>
+              <p className="mt-3 text-center text-xs text-gray-400 italic">Dot size indicates citation frequency • Hover for details</p>
             </div>
           );
         })()}
