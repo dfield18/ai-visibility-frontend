@@ -75,6 +75,7 @@ import {
 } from '@/lib/utils';
 import { Result, Source } from '@/lib/types';
 import { ReportsTab } from './ReportsTab';
+import { ModifyQueryModal } from './ModifyQueryModal';
 
 type FilterType = 'all' | 'mentioned' | 'not_mentioned';
 type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports';
@@ -465,6 +466,7 @@ export default function ResultsPage() {
   const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
   const [expandedResultRows, setExpandedResultRows] = useState<Set<string>>(new Set());
   const [brandCarouselIndex, setBrandCarouselIndex] = useState(0);
+  const [showModifyModal, setShowModifyModal] = useState(false);
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
@@ -11306,6 +11308,21 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 </div>
               </div>
               <div className="flex items-center gap-4">
+                {runStatus.status === 'complete' && !runStatus.extension_info?.has_running_extension && (
+                  <button
+                    onClick={() => setShowModifyModal(true)}
+                    className="px-4 py-2 bg-white text-[#4A7C59] text-sm font-medium rounded-xl border border-[#4A7C59] hover:bg-[#4A7C59]/5 transition-colors flex items-center gap-2"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Modify Query
+                  </button>
+                )}
+                {runStatus.extension_info?.has_running_extension && (
+                  <span className="px-3 py-1.5 bg-amber-50 text-amber-700 text-sm font-medium rounded-lg flex items-center gap-2">
+                    <Spinner size="sm" />
+                    Extension in progress...
+                  </span>
+                )}
                 <button
                   onClick={() => router.push('/')}
                   className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-xl hover:bg-[#3d6649] transition-colors flex items-center gap-2"
@@ -13007,6 +13024,18 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modify Query Modal */}
+      {showModifyModal && runStatus && (
+        <ModifyQueryModal
+          runStatus={runStatus}
+          onClose={() => setShowModifyModal(false)}
+          onSuccess={(childRunId) => {
+            setShowModifyModal(false);
+            router.push(`/run/${childRunId}`);
+          }}
+        />
       )}
     </main>
   );

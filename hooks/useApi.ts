@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { RunConfig, RunResponse, RunStatusResponse, CancelResponse, AISummaryResponse } from '@/lib/types';
+import { RunConfig, RunResponse, RunStatusResponse, CancelResponse, AISummaryResponse, ExtendRunRequest, ExtendRunResponse } from '@/lib/types';
 
 /**
  * Hook to fetch suggestions for a brand or category.
@@ -90,5 +90,21 @@ export function useAISummary(runId: string, enabled = true) {
     enabled: enabled && runId.length > 0,
     staleTime: 30 * 60 * 1000, // 30 minutes - summary won't change
     retry: 1, // Only retry once on failure
+  });
+}
+
+/**
+ * Hook to extend a run with new prompts/competitors/providers.
+ */
+export function useExtendRun() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ runId, request }: { runId: string; request: ExtendRunRequest }) =>
+      api.extendRun(runId, request),
+    onSuccess: (data: ExtendRunResponse, variables) => {
+      // Invalidate the parent run query to refresh extension_info
+      queryClient.invalidateQueries({ queryKey: ['run', variables.runId] });
+    },
   });
 }

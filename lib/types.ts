@@ -93,6 +93,12 @@ export interface Result {
   created_at: string;
 }
 
+export interface ExtensionInfo {
+  parent_run_id: string | null;
+  child_run_ids: string[];
+  has_running_extension: boolean;
+}
+
 export interface RunStatusResponse {
   run_id: string;
   status: RunStatus;
@@ -108,6 +114,8 @@ export interface RunStatusResponse {
   completed_at: string | null;
   summary: RunSummary | null;
   results: Result[];
+  config?: RunConfig;
+  extension_info?: ExtensionInfo;
 }
 
 export interface CancelResponse {
@@ -204,4 +212,18 @@ export interface RunNowResponse {
   id: string;
   run_id: string;
   message: string;
+}
+
+export interface ExtendRunRequest {
+  add_prompts?: string[];
+  add_competitors?: string[];
+  add_providers?: string[];
+}
+
+export interface ExtendRunResponse {
+  run_id: string;
+  status: RunStatus;
+  total_calls: number;
+  estimated_cost: number;
+  estimated_duration_seconds: number;
 }

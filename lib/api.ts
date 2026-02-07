@@ -15,6 +15,8 @@ import {
   ScheduledReportListResponse,
   ToggleResponse,
   RunNowResponse,
+  ExtendRunRequest,
+  ExtendRunResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -88,6 +90,13 @@ class ApiClient {
   async cancelRun(runId: string): Promise<CancelResponse> {
     return this.request<CancelResponse>(`/api/v1/run/${runId}/cancel`, {
       method: 'POST',
+    });
+  }
+
+  async extendRun(runId: string, request: ExtendRunRequest): Promise<ExtendRunResponse> {
+    return this.request<ExtendRunResponse>(`/api/v1/run/${runId}/extend`, {
+      method: 'POST',
+      body: JSON.stringify(request),
     });
   }
 
