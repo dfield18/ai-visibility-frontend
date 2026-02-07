@@ -11,6 +11,7 @@ import {
   Download,
   Link2,
   Check,
+  CheckCircle2,
   X,
   ChevronDown,
   ChevronUp,
@@ -65,15 +66,16 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
-import { useRunStatus, useAISummary } from '@/hooks/useApi';
+import { useRunStatus, useAISummary, useSiteAudits } from '@/hooks/useApi';
 import {
   formatCurrency,
   formatDate,
   formatPercent,
   getRateColor,
   truncate,
+  getSessionId,
 } from '@/lib/utils';
-import { Result, Source } from '@/lib/types';
+import { Result, Source, SiteAuditResult } from '@/lib/types';
 import { ReportsTab } from './ReportsTab';
 import { ModifyQueryModal } from './ModifyQueryModal';
 import { SiteAuditTab } from './SiteAuditTab';
@@ -10399,6 +10401,21 @@ export default function ResultsPage() {
 
   // Recommendations Tab Content
   const RecommendationsTab = () => {
+    // Fetch site audits for this session
+    const sessionId = getSessionId();
+    const { data: siteAuditsData } = useSiteAudits(sessionId);
+    const siteAudits = siteAuditsData?.audits || [];
+
+    // Find the most recent completed audit (preferably for the brand's domain)
+    const latestAudit = useMemo(() => {
+      const completed = siteAudits.filter(a => a.status === 'complete' && a.overall_score != null);
+      if (completed.length === 0) return null;
+      // Sort by created_at descending
+      return completed.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )[0];
+    }, [siteAudits]);
+
     // Calculate high-impact actions with unified scoring system
     const quickWins = useMemo(() => {
       if (!runStatus) return [];
@@ -11206,6 +11223,160 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
           )}
         </div>
         )}
+
+        {/* Site Audit Insights */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-[#E8F0E8] rounded-lg flex items-center justify-center">
+              <Globe className="w-5 h-5 text-[#4A7C59]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Website LLM Optimization</h2>
+              <p className="text-sm text-gray-500">Technical factors affecting your AI visibility</p>
+            </div>
+          </div>
+
+          {latestAudit ? (
+            <div className="space-y-4">
+              {/* Audit Summary */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-sm text-gray-500">Latest audit for</p>
+                    <p className="font-medium text-gray-900">{latestAudit.url}</p>
+                  </div>
+                  <div className={`px-4 py-2 rounded-lg ${
+                    (latestAudit.overall_score ?? 0) >= 90 ? 'bg-green-100' :
+                    (latestAudit.overall_score ?? 0) >= 70 ? 'bg-lime-100' :
+                    (latestAudit.overall_score ?? 0) >= 50 ? 'bg-yellow-100' : 'bg-red-100'
+                  }`}>
+                    <span className={`text-2xl font-bold ${
+                      (latestAudit.overall_score ?? 0) >= 90 ? 'text-green-600' :
+                      (latestAudit.overall_score ?? 0) >= 70 ? 'text-lime-600' :
+                      (latestAudit.overall_score ?? 0) >= 50 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {latestAudit.overall_score}
+                    </span>
+                    <span className="text-gray-500 text-sm ml-1">/100</span>
+                  </div>
+                </div>
+
+                {/* Key findings from the audit */}
+                {latestAudit.results && (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                    {/* AI Crawler Access */}
+                    {latestAudit.results.robots_txt && (
+                      <div className="bg-white rounded-lg p-3 border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-1">AI Crawler Access</p>
+                        <div className="flex items-center gap-2">
+                          {latestAudit.results.robots_txt.crawlers.every(c => c.allowed) ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              <span className="text-sm font-medium text-green-700">All allowed</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                              <span className="text-sm font-medium text-yellow-700">
+                                {latestAudit.results.robots_txt.crawlers.filter(c => !c.allowed).length} blocked
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Structured Data */}
+                    {latestAudit.results.structured_data && (
+                      <div className="bg-white rounded-lg p-3 border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-1">Structured Data</p>
+                        <div className="flex items-center gap-2">
+                          {latestAudit.results.structured_data.has_json_ld ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              <span className="text-sm font-medium text-green-700">
+                                {latestAudit.results.structured_data.json_ld_types.slice(0, 2).join(', ')}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <X className="w-4 h-4 text-red-500" />
+                              <span className="text-sm font-medium text-red-700">Missing JSON-LD</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Content Accessibility */}
+                    {latestAudit.results.content_accessibility && (
+                      <div className="bg-white rounded-lg p-3 border border-gray-200">
+                        <p className="text-xs text-gray-500 mb-1">Content Accessibility</p>
+                        <div className="flex items-center gap-2">
+                          {latestAudit.results.content_accessibility.estimated_ssr ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                              <span className="text-sm font-medium text-green-700">Server-rendered</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                              <span className="text-sm font-medium text-yellow-700">JavaScript required</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Audit recommendations */}
+                {latestAudit.recommendations && latestAudit.recommendations.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Top Technical Recommendations</p>
+                    <ul className="space-y-2">
+                      {latestAudit.recommendations.slice(0, 3).map((rec, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                            rec.priority === 'high' ? 'bg-red-100 text-red-700' :
+                            rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-blue-100 text-blue-700'
+                          }`}>
+                            {rec.priority === 'high' ? 'High' : rec.priority === 'medium' ? 'Med' : 'Low'}
+                          </span>
+                          <span className="text-gray-700">{rec.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setActiveTab('site-audit')}
+                className="text-sm text-[#4A7C59] hover:underline flex items-center gap-1"
+              >
+                View full site audit details
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-lg p-6 text-center">
+              <Globe className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-700 font-medium mb-2">No site audit yet</p>
+              <p className="text-sm text-gray-500 mb-4">
+                Run a site audit to check if {runStatus?.brand}'s website is optimized for AI search engines like ChatGPT, Claude, and Perplexity.
+              </p>
+              <button
+                onClick={() => setActiveTab('site-audit')}
+                className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-lg hover:bg-[#3d6649] transition-colors inline-flex items-center gap-2"
+              >
+                <Globe className="w-4 h-4" />
+                Run Site Audit
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Export & Share Footer */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

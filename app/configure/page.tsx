@@ -62,6 +62,8 @@ export default function ConfigurePage() {
   const router = useRouter();
   const {
     brand,
+    brandUrl,
+    setBrandUrl,
     searchType,
     prompts,
     selectedPrompts,
@@ -109,6 +111,8 @@ export default function ConfigurePage() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [addingPrompt, setAddingPrompt] = useState(false);
   const [addingCompetitor, setAddingCompetitor] = useState(false);
+  const [editingUrl, setEditingUrl] = useState(false);
+  const [tempUrl, setTempUrl] = useState('');
 
   const { data: suggestions, isLoading: suggestionsLoading, error: suggestionsError } = useSuggestions(brand, searchType);
   const startRunMutation = useStartRun();
@@ -119,6 +123,15 @@ export default function ConfigurePage() {
       router.push('/');
     }
   }, [brand, router]);
+
+  // Auto-generate brand URL if empty
+  useEffect(() => {
+    if (brand && !brandUrl) {
+      // Generate URL from brand name (e.g., "Nike" -> "nike.com")
+      const generatedUrl = brand.toLowerCase().replace(/\s+/g, '') + '.com';
+      setBrandUrl(generatedUrl);
+    }
+  }, [brand, brandUrl, setBrandUrl]);
 
   // Populate prompts and competitors from suggestions
   useEffect(() => {
@@ -247,9 +260,60 @@ export default function ConfigurePage() {
               </button>
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">Configure Analysis</h1>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#4A7C59]/10 text-[#4A7C59]">
-                  {brand}
-                </span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#4A7C59]/10 text-[#4A7C59]">
+                    {brand}
+                  </span>
+                  {editingUrl ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="text"
+                        value={tempUrl}
+                        onChange={(e) => setTempUrl(e.target.value)}
+                        className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4A7C59] focus:border-[#4A7C59] w-36"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            setBrandUrl(tempUrl);
+                            setEditingUrl(false);
+                          }
+                          if (e.key === 'Escape') {
+                            setEditingUrl(false);
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          setBrandUrl(tempUrl);
+                          setEditingUrl(false);
+                        }}
+                        className="p-0.5 text-[#4A7C59] hover:bg-[#4A7C59]/10 rounded"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setEditingUrl(false)}
+                        className="p-0.5 text-gray-400 hover:bg-gray-100 rounded"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setTempUrl(brandUrl);
+                        setEditingUrl(true);
+                      }}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs text-gray-500 hover:bg-gray-100 transition-colors group"
+                    >
+                      <Globe className="w-3 h-3" />
+                      <span>{brandUrl || 'Add URL'}</span>
+                      <svg className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             <UserButton

@@ -8,8 +8,10 @@ type SearchType = 'brand' | 'category';
 interface VisibilityStore {
   // Brand/Category data
   brand: string;
+  brandUrl: string;
   searchType: SearchType;
   setBrand: (brand: string) => void;
+  setBrandUrl: (url: string) => void;
   setSearchType: (type: SearchType) => void;
 
   // Configuration
@@ -67,8 +69,10 @@ export const useStore = create<VisibilityStore>()(
     (set, get) => ({
       // Brand/Category
       brand: '',
+      brandUrl: '',
       searchType: 'brand' as SearchType,
       setBrand: (brand) => set({ brand }),
+      setBrandUrl: (brandUrl) => set({ brandUrl }),
       setSearchType: (searchType) => set({ searchType }),
 
       // Prompts
@@ -194,6 +198,7 @@ export const useStore = create<VisibilityStore>()(
       reset: () =>
         set({
           brand: '',
+          brandUrl: '',
           searchType: 'brand' as SearchType,
           prompts: [],
           selectedPrompts: new Set<string>(),
@@ -224,6 +229,7 @@ export const useStore = create<VisibilityStore>()(
       name: 'visibility-store',
       partialize: (state) => ({
         brand: state.brand,
+        brandUrl: state.brandUrl,
         searchType: state.searchType,
         prompts: state.prompts,
         selectedPrompts: Array.from(state.selectedPrompts),
