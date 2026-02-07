@@ -139,12 +139,44 @@ export default function ConfigurePage() {
       if (prompts.length === 0) {
         const basePrompts = [...suggestions.prompts];
 
-        // For brand searches, add a comparison question if there's a known competitor
+        // For brand searches, add a specific comparison question if there's a known competitor
         if (!isCategory && suggestions.competitors.length > 0) {
           const rival = suggestions.competitors[0];
-          const comparisonPrompt = `How does ${brand} compare to ${rival}?`;
+
+          // Try to extract product/category context from existing prompts
+          const extractProductContext = (prompts: string[]): string | null => {
+            // Common product keywords to look for
+            const productPatterns = [
+              /best\s+(.+?)(?:\s+for|\s+in|\s+to|\?|$)/i,
+              /top\s+(.+?)(?:\s+for|\s+in|\s+to|\?|$)/i,
+              /recommend(?:ed)?\s+(.+?)(?:\s+for|\s+in|\s+to|\?|$)/i,
+              /looking for\s+(.+?)(?:\s+for|\s+in|\s+to|\?|$)/i,
+            ];
+
+            for (const prompt of prompts) {
+              for (const pattern of productPatterns) {
+                const match = prompt.match(pattern);
+                if (match && match[1]) {
+                  const product = match[1].trim();
+                  // Filter out generic words
+                  if (product.length > 2 && !['the', 'a', 'an', 'some'].includes(product.toLowerCase())) {
+                    return product;
+                  }
+                }
+              }
+            }
+            return null;
+          };
+
+          const productContext = extractProductContext(basePrompts);
+
+          // Create a specific comparison prompt
+          const comparisonPrompt = productContext
+            ? `What are the differences between ${brand} and ${rival} ${productContext}?`
+            : `What are the key differences between ${brand} and ${rival} products?`;
+
           const alreadyHasComparison = basePrompts.some(
-            (p) => p.toLowerCase().includes('compare') || p.toLowerCase().includes(' vs ')
+            (p) => p.toLowerCase().includes('compare') || p.toLowerCase().includes(' vs ') || p.toLowerCase().includes('difference')
           );
           if (!alreadyHasComparison) {
             basePrompts.push(comparisonPrompt);
