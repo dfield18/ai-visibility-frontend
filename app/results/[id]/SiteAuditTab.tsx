@@ -698,14 +698,19 @@ export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
       {/* Audit Form */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700">Website URL</label>
-            {isLoadingWebsite && (
-              <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Finding {brand}'s site...
-              </span>
-            )}
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">Website URL</label>
+              {isLoadingWebsite && (
+                <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Finding {brand}'s site...
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Pre-filled with {brand}'s main website. Enter a different URL to audit another page or site.
+            </p>
           </div>
           <div className={cn(
             "flex items-center bg-gray-50 border rounded-lg overflow-hidden",
@@ -735,12 +740,6 @@ export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
               )}
             </button>
           </div>
-          {websiteLoaded && url && !error && (
-            <p className="text-xs text-[#4A7C59] flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              Auto-filled with {brand}'s website
-            </p>
-          )}
           {error && <p className="text-xs text-red-600">{error}</p>}
         </form>
       </div>
