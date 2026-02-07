@@ -17,6 +17,10 @@ import {
   RunNowResponse,
   ExtendRunRequest,
   ExtendRunResponse,
+  SiteAuditRequest,
+  SiteAuditResponse,
+  SiteAuditResult,
+  SiteAuditListResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -186,6 +190,23 @@ class ApiClient {
         'Authorization': `Bearer ${token}`,
       },
     });
+  }
+
+  // Site Audit API
+
+  async createSiteAudit(request: SiteAuditRequest): Promise<SiteAuditResponse> {
+    return this.request<SiteAuditResponse>('/api/v1/site-audit', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getSiteAudit(auditId: string): Promise<SiteAuditResult> {
+    return this.request<SiteAuditResult>(`/api/v1/site-audit/${auditId}`);
+  }
+
+  async listSiteAudits(sessionId: string): Promise<SiteAuditListResponse> {
+    return this.request<SiteAuditListResponse>(`/api/v1/site-audits?session_id=${encodeURIComponent(sessionId)}`);
   }
 }
 

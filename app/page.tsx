@@ -96,6 +96,9 @@ export default function Home() {
             <span className="font-semibold text-gray-900">AI Visibility</span>
           </div>
           <div className="flex items-center gap-6">
+            <a href="/site-audit" className="text-gray-600 hover:text-gray-900 text-sm">
+              Site Audit
+            </a>
             <a href="#features" className="text-gray-600 hover:text-gray-900 text-sm">
               Features
             </a>

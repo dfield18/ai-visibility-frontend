@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { RunConfig, RunResponse, RunStatusResponse, CancelResponse, AISummaryResponse, ExtendRunRequest, ExtendRunResponse } from '@/lib/types';
+import { RunConfig, RunResponse, RunStatusResponse, CancelResponse, AISummaryResponse, ExtendRunRequest, ExtendRunResponse, SiteAuditRequest, SiteAuditResponse, SiteAuditResult } from '@/lib/types';
 
 /**
  * Hook to fetch suggestions for a brand or category.
@@ -106,5 +106,52 @@ export function useExtendRun() {
       // Invalidate the parent run query to refresh extension_info
       queryClient.invalidateQueries({ queryKey: ['run', variables.runId] });
     },
+  });
+}
+
+/**
+ * Hook to create a new site audit.
+ */
+export function useCreateSiteAudit() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: SiteAuditRequest) => api.createSiteAudit(request),
+    onSuccess: (data: SiteAuditResponse) => {
+      // Invalidate site audits list
+      queryClient.invalidateQueries({ queryKey: ['site-audits'] });
+    },
+  });
+}
+
+/**
+ * Hook to get site audit status with polling.
+ */
+export function useSiteAudit(auditId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['site-audit', auditId],
+    queryFn: () => api.getSiteAudit(auditId),
+    enabled: enabled && auditId.length > 0,
+    refetchInterval: (query) => {
+      const data = query.state.data as SiteAuditResult | undefined;
+      // Stop polling if audit is complete or failed
+      if (data && ['complete', 'failed'].includes(data.status)) {
+        return false;
+      }
+      // Poll every 2 seconds while running
+      return 2000;
+    },
+  });
+}
+
+/**
+ * Hook to list site audits for a session.
+ */
+export function useSiteAudits(sessionId: string, enabled = true) {
+  return useQuery({
+    queryKey: ['site-audits', sessionId],
+    queryFn: () => api.listSiteAudits(sessionId),
+    enabled: enabled && sessionId.length > 0,
+    staleTime: 60 * 1000, // 1 minute
   });
 }

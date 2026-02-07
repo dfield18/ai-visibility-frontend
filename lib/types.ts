@@ -227,3 +227,115 @@ export interface ExtendRunResponse {
   estimated_cost: number;
   estimated_duration_seconds: number;
 }
+
+// Site Audit Types
+
+export type SiteAuditStatus = 'queued' | 'running' | 'complete' | 'failed';
+
+export interface SiteAuditRequest {
+  url: string;
+  session_id: string;
+}
+
+export interface SiteAuditResponse {
+  audit_id: string;
+  status: SiteAuditStatus;
+  url: string;
+}
+
+export interface CrawlerStatus {
+  name: string;
+  user_agent: string;
+  allowed: boolean;
+  rule: string | null;
+}
+
+export interface RobotsTxtResult {
+  found: boolean;
+  crawlers: CrawlerStatus[];
+  raw_content: string | null;
+}
+
+export interface MetaDirectivesResult {
+  has_noai: boolean;
+  has_noimageai: boolean;
+  x_robots_tag: string | null;
+  meta_robots_content: string | null;
+}
+
+export interface LlmsTxtResult {
+  found: boolean;
+  content: string | null;
+  parsed_sections: Record<string, string> | null;
+}
+
+export interface StructuredDataItem {
+  type: string;
+  properties: Record<string, unknown>;
+}
+
+export interface StructuredDataResult {
+  has_json_ld: boolean;
+  has_open_graph: boolean;
+  has_twitter_cards: boolean;
+  json_ld_types: string[];
+  json_ld_items: StructuredDataItem[];
+  open_graph_tags: Record<string, string>;
+  twitter_card_tags: Record<string, string>;
+}
+
+export interface ContentAccessibilityResult {
+  initial_html_length: number;
+  has_noscript_content: boolean;
+  estimated_ssr: boolean;
+  content_snippet: string | null;
+}
+
+export interface HeadingItem {
+  level: number;
+  text: string;
+}
+
+export interface ContentStructureResult {
+  has_valid_heading_hierarchy: boolean;
+  headings: HeadingItem[];
+  has_header: boolean;
+  has_main: boolean;
+  has_footer: boolean;
+  has_article: boolean;
+  has_nav: boolean;
+  semantic_elements_count: number;
+}
+
+export interface AuditResults {
+  robots_txt: RobotsTxtResult;
+  meta_directives: MetaDirectivesResult;
+  llms_txt: LlmsTxtResult;
+  structured_data: StructuredDataResult;
+  content_accessibility: ContentAccessibilityResult;
+  content_structure: ContentStructureResult;
+}
+
+export interface Recommendation {
+  category: string;
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+}
+
+export interface SiteAuditResult {
+  audit_id: string;
+  url: string;
+  status: SiteAuditStatus;
+  overall_score: number | null;
+  results: AuditResults | null;
+  recommendations: Recommendation[] | null;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface SiteAuditListResponse {
+  audits: SiteAuditResult[];
+  total: number;
+}
