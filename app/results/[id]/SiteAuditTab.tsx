@@ -17,7 +17,6 @@ import {
   Sparkles,
   ArrowLeft,
   Layout,
-  Clock,
   Target,
   BookOpen,
   Layers,
@@ -337,7 +336,7 @@ const AuditResultsView: React.FC<{
           </div>
           <div className="space-y-2">
             {highPriority.slice(0, 2).map((rec, idx) => (
-              <div key={idx} className="flex items-start gap-2 bg-red-50 rounded-lg p-2">
+              <div key={`high-${idx}`} className="flex items-start gap-2 bg-red-50 rounded-lg p-2">
                 <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 flex-shrink-0">High</span>
                 <div>
                   <span className="text-sm text-gray-900">{rec.title}</span>
@@ -346,7 +345,7 @@ const AuditResultsView: React.FC<{
               </div>
             ))}
             {mediumPriority.slice(0, 2).map((rec, idx) => (
-              <div key={idx} className="flex items-start gap-2 bg-yellow-50 rounded-lg p-2">
+              <div key={`med-${idx}`} className="flex items-start gap-2 bg-yellow-50 rounded-lg p-2">
                 <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700 flex-shrink-0">Med</span>
                 <div>
                   <span className="text-sm text-gray-900">{rec.title}</span>
@@ -565,13 +564,13 @@ const AuditResultsView: React.FC<{
           <p className="text-sm font-medium text-gray-900 mb-3">Additional Improvements</p>
           <div className="space-y-2">
             {mediumPriority.slice(2).map((rec, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-sm">
+              <div key={`add-med-${idx}`} className="flex items-start gap-2 text-sm">
                 <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700 flex-shrink-0">Med</span>
                 <span className="text-gray-700">{rec.title}</span>
               </div>
             ))}
             {lowPriority.map((rec, idx) => (
-              <div key={idx} className="flex items-start gap-2 text-sm">
+              <div key={`low-${idx}`} className="flex items-start gap-2 text-sm">
                 <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 flex-shrink-0">Low</span>
                 <span className="text-gray-700">{rec.title}</span>
               </div>
