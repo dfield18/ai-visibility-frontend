@@ -19,9 +19,9 @@ import {
   Bot,
   Layout,
 } from 'lucide-react';
-import { useCreateSiteAudit, useSiteAudits, useSiteAudit } from '@/hooks/useApi';
+import { useCreateSiteAudit, useSiteAudit } from '@/hooks/useApi';
 import { getSessionId, cn } from '@/lib/utils';
-import { SiteAuditResult, CrawlerStatus, Recommendation } from '@/lib/types';
+import { CrawlerStatus, Recommendation } from '@/lib/types';
 
 interface SiteAuditTabProps {
   brand: string;
@@ -605,52 +605,6 @@ const AuditResultsView: React.FC<{
   );
 };
 
-// Audit result card for list view
-const AuditResultCard: React.FC<{
-  audit: SiteAuditResult;
-  onSelect: (auditId: string) => void;
-}> = ({ audit, onSelect }) => {
-  return (
-    <div
-      onClick={() => onSelect(audit.audit_id)}
-      className="bg-white border border-gray-200 rounded-xl p-4 hover:border-[#4A7C59] hover:shadow-sm transition-all cursor-pointer"
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-gray-900 truncate">{audit.url}</p>
-          <p className="text-xs text-gray-500 mt-1">
-            {new Date(audit.created_at).toLocaleDateString()} at{' '}
-            {new Date(audit.created_at).toLocaleTimeString()}
-          </p>
-        </div>
-        {audit.status === 'complete' && audit.overall_score != null && (
-          <div className={`px-3 py-1.5 rounded-lg ${getScoreBgColor(audit.overall_score)}`}>
-            <span className={`text-lg font-bold ${getScoreColor(audit.overall_score)}`}>
-              {audit.overall_score}
-            </span>
-          </div>
-        )}
-        {audit.status === 'running' && (
-          <div className="flex items-center gap-2 text-blue-600">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Running...</span>
-          </div>
-        )}
-        {audit.status === 'failed' && (
-          <div className="flex items-center gap-2 text-red-600">
-            <XCircle className="w-4 h-4" />
-            <span className="text-sm">Failed</span>
-          </div>
-        )}
-      </div>
-      <div className="flex items-center gap-2 text-sm text-[#4A7C59]">
-        <span>View details</span>
-        <ChevronDown className="w-3.5 h-3.5 rotate-[-90deg]" />
-      </div>
-    </div>
-  );
-};
-
 // Main component
 export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
   const [url, setUrl] = useState('');
@@ -661,7 +615,6 @@ export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
 
   const createAudit = useCreateSiteAudit();
   const sessionId = getSessionId();
-  const { data: auditsData, isLoading: auditsLoading } = useSiteAudits(sessionId);
 
   // Fetch brand's website when component mounts
   useEffect(() => {
@@ -730,8 +683,6 @@ export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
       setError(err instanceof Error ? err.message : 'Failed to start audit');
     }
   };
-
-  const audits = auditsData?.audits || [];
 
   // If an audit is selected, show it inline
   if (selectedAuditId) {
@@ -826,31 +777,6 @@ export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Previous Audits */}
-      <div>
-        <h3 className="font-medium text-gray-900 mb-4">Previous Audits</h3>
-        {auditsLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-          </div>
-        ) : audits.length === 0 ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
-            <Globe className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No audits yet. Enter a URL above to get started.</p>
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
-            {audits.map((audit) => (
-              <AuditResultCard
-                key={audit.audit_id}
-                audit={audit}
-                onSelect={setSelectedAuditId}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Score Legend */}

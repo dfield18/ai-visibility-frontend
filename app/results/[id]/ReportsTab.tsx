@@ -13,10 +13,17 @@ import {
   PlayCircle,
   Pause,
   Trash2,
+  Globe,
+  ExternalLink,
+  CheckCircle2,
+  XCircle,
+  Loader2,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
-import { ScheduledReport, ScheduledReportCreate, RunStatusResponse } from '@/lib/types';
+import { useSiteAudits } from '@/hooks/useApi';
+import { getSessionId } from '@/lib/utils';
+import { ScheduledReport, ScheduledReportCreate, RunStatusResponse, SiteAuditResult } from '@/lib/types';
 
 interface ReportsTabProps {
   runStatus: RunStatusResponse | null;
@@ -32,10 +39,30 @@ const PROVIDER_LABELS: Record<string, string> = {
   ai_overviews: 'Google AI Overviews',
 };
 
+// Score color helper for site audits
+const getScoreColor = (score: number): string => {
+  if (score >= 90) return 'text-green-600';
+  if (score >= 70) return 'text-lime-600';
+  if (score >= 50) return 'text-yellow-600';
+  return 'text-red-600';
+};
+
+const getScoreBgColor = (score: number): string => {
+  if (score >= 90) return 'bg-green-100';
+  if (score >= 70) return 'bg-lime-100';
+  if (score >= 50) return 'bg-yellow-100';
+  return 'bg-red-100';
+};
+
 export function ReportsTab({ runStatus }: ReportsTabProps) {
   const { getToken } = useAuth();
   const [reports, setReports] = useState<ScheduledReport[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Site audits
+  const sessionId = getSessionId();
+  const { data: auditsData, isLoading: auditsLoading } = useSiteAudits(sessionId);
+  const siteAudits = auditsData?.audits || [];
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [editingReport, setEditingReport] = useState<ScheduledReport | null>(null);
@@ -505,6 +532,75 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
           ))}
         </div>
       )}
+
+      {/* Site Audits Section */}
+      <div className="mt-8 pt-8 border-t border-gray-200">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Previous Site Audits</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            LLM optimization audits you've run to check if websites are ready for AI search
+          </p>
+        </div>
+
+        {auditsLoading ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <Loader2 className="w-6 h-6 animate-spin text-gray-400 mx-auto" />
+          </div>
+        ) : siteAudits.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center">
+            <Globe className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 mb-2">No site audits yet</p>
+            <p className="text-sm text-gray-400">
+              Run a site audit from the Site Audit tab to check if a website is optimized for AI search engines.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {siteAudits.map((audit) => (
+              <a
+                key={audit.audit_id}
+                href={`/site-audit/${audit.audit_id}`}
+                className="block bg-white rounded-xl border border-gray-100 p-4 hover:border-[#4A7C59] hover:shadow-sm transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <p className="font-medium text-gray-900 truncate">{audit.url}</p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1 ml-6">
+                      {new Date(audit.created_at).toLocaleDateString()} at{' '}
+                      {new Date(audit.created_at).toLocaleTimeString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {audit.status === 'complete' && audit.overall_score != null && (
+                      <div className={`px-3 py-1.5 rounded-lg ${getScoreBgColor(audit.overall_score)}`}>
+                        <span className={`text-lg font-bold ${getScoreColor(audit.overall_score)}`}>
+                          {audit.overall_score}
+                        </span>
+                      </div>
+                    )}
+                    {audit.status === 'running' && (
+                      <div className="flex items-center gap-2 text-blue-600">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm">Running...</span>
+                      </div>
+                    )}
+                    {audit.status === 'failed' && (
+                      <div className="flex items-center gap-2 text-red-600">
+                        <XCircle className="w-4 h-4" />
+                        <span className="text-sm">Failed</span>
+                      </div>
+                    )}
+                    <ExternalLink className="w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Create/Edit Modal */}
       {(isCreating || editingReport) && (
