@@ -65,25 +65,48 @@ export function useGeolocation() {
 
       const data = await response.json();
 
-      // Build a readable location string
-      // Prefer: city, state/region for US; city, country for international
-      let city = data.city || data.locality || data.principalSubdivision || '';
+      // Build a readable location string with neighborhood precision
+      // BigDataCloud returns: neighbourhood, locality, city, principalSubdivision (state), countryName
+      const neighbourhood = data.neighbourhood || '';
+      const locality = data.locality || '';
+      const city = data.city || '';
       const region = data.principalSubdivision || '';
       const country = data.countryName || '';
       const countryCode = data.countryCode || '';
 
-      let locationString = city;
-      if (countryCode === 'US' && region && region !== city) {
-        // For US, use "City, State" format
-        locationString = `${city}, ${region}`;
-      } else if (country && country !== city) {
-        // For international, use "City, Country" if different
-        locationString = city ? `${city}, ${country}` : country;
+      // For US locations, prefer: "Neighborhood, City" or "City, State"
+      // For international: "Neighborhood, City" or "City, Country"
+      let locationString = '';
+
+      if (countryCode === 'US') {
+        // US: Try "Neighborhood, City" first, then "City, State"
+        if (neighbourhood && city) {
+          locationString = `${neighbourhood}, ${city}`;
+        } else if (locality && city && locality !== city) {
+          locationString = `${locality}, ${city}`;
+        } else if (city && region) {
+          locationString = `${city}, ${region}`;
+        } else if (locality && region) {
+          locationString = `${locality}, ${region}`;
+        } else {
+          locationString = city || locality || region;
+        }
+      } else {
+        // International: Try "Neighborhood, City" or "City, Country"
+        if (neighbourhood && city) {
+          locationString = `${neighbourhood}, ${city}`;
+        } else if (locality && city && locality !== city) {
+          locationString = `${locality}, ${city}`;
+        } else if (city && country) {
+          locationString = `${city}, ${country}`;
+        } else {
+          locationString = city || locality || country;
+        }
       }
 
       // Fallback if we couldn't get a good name
       if (!locationString) {
-        locationString = `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+        locationString = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
       }
 
       setState({ loading: false, error: null });
