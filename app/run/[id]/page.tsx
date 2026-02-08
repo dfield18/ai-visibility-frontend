@@ -19,104 +19,126 @@ import { useRunStatus, useCancelRun } from '@/hooks/useApi';
 import { formatDuration, truncate } from '@/lib/utils';
 import { Result } from '@/lib/types';
 
-// House Construction Animation Component - Thin black & white stick figure style
-function TypingAnimation({ progress }: { progress: number }) {
-  const [cursorVisible, setCursorVisible] = useState(true);
-  const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const [displayedChars, setDisplayedChars] = useState(0);
+// Circular Progress Ring Animation Component
+function CircularProgressAnimation({ progress, completedProviders = [] }: { progress: number; completedProviders?: string[] }) {
+  const [displayedProgress, setDisplayedProgress] = useState(0);
 
-  const lines = [
-    "Querying AI platforms...",
-    "Analyzing brand mentions...",
-    "Evaluating sentiment...",
-    "Calculating visibility scores...",
-    "Compiling results..."
+  // Animate the number counting up
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (displayedProgress < progress) {
+        setDisplayedProgress(prev => Math.min(prev + 1, progress));
+      }
+    }, 20);
+    return () => clearTimeout(timer);
+  }, [displayedProgress, progress]);
+
+  // Calculate circle properties
+  const size = 180;
+  const strokeWidth = 8;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (progress / 100) * circumference;
+
+  // Platform data with brand colors
+  const platforms = [
+    { key: 'openai', name: 'ChatGPT', color: '#10a37f' },
+    { key: 'anthropic', name: 'Claude', color: '#d97706' },
+    { key: 'gemini', name: 'Gemini', color: '#4285f4' },
+    { key: 'perplexity', name: 'Perplexity', color: '#6366f1' },
+    { key: 'grok', name: 'Grok', color: '#1d9bf0' },
+    { key: 'llama', name: 'Llama', color: '#8b5cf6' },
   ];
 
-  // Blink cursor
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCursorVisible((prev) => !prev);
-    }, 530);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Type characters
-  useEffect(() => {
-    const lineIndex = Math.min(Math.floor(progress / 20), lines.length - 1);
-    setCurrentLineIndex(lineIndex);
-
-    // Calculate how many chars to show based on progress within current segment
-    const segmentProgress = progress % 20;
-    const currentLine = lines[lineIndex];
-    const charsToShow = Math.floor((segmentProgress / 20) * currentLine.length);
-    setDisplayedChars(charsToShow);
-  }, [progress]);
-
-  // Get completed lines
-  const completedLines = lines.slice(0, currentLineIndex);
-  const currentLine = lines[currentLineIndex];
-  const displayedText = currentLine?.substring(0, displayedChars) || "";
+  // Status text based on progress
+  const getStatusText = () => {
+    if (progress < 20) return "Initializing analysis...";
+    if (progress < 40) return "Querying AI platforms...";
+    if (progress < 60) return "Analyzing responses...";
+    if (progress < 80) return "Calculating scores...";
+    if (progress < 100) return "Finalizing results...";
+    return "Complete!";
+  };
 
   return (
-    <div className="w-full max-w-sm mx-auto font-mono text-sm">
-      {/* Terminal-like container */}
-      <div className="bg-gray-900 rounded-lg p-4 shadow-lg">
-        {/* Terminal header */}
-        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-700">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          <div className="w-3 h-3 rounded-full bg-yellow-500" />
-          <div className="w-3 h-3 rounded-full bg-green-500" />
-          <span className="ml-2 text-gray-400 text-xs">AI Visibility Analysis</span>
+    <div className="flex flex-col items-center">
+      {/* Circular Progress Ring */}
+      <div className="relative">
+        <svg
+          width={size}
+          height={size}
+          className="transform -rotate-90"
+        >
+          {/* Background circle */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#E5E7EB"
+            strokeWidth={strokeWidth}
+          />
+          {/* Progress circle */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#111827"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            className="transition-all duration-500 ease-out"
+          />
+        </svg>
+
+        {/* Center content */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-5xl font-bold text-gray-900">
+            {Math.round(displayedProgress)}
+          </span>
+          <span className="text-sm text-gray-400 mt-1">percent</span>
         </div>
+      </div>
 
-        {/* Terminal content */}
-        <div className="space-y-1 min-h-[120px]">
-          {/* Completed lines with checkmarks */}
-          {completedLines.map((line, idx) => (
-            <div key={idx} className="flex items-center gap-2">
-              <span className="text-green-400">✓</span>
-              <span className="text-gray-400">{line}</span>
-            </div>
-          ))}
+      {/* Status text */}
+      <p className="mt-6 text-gray-600 text-sm animate-pulse">
+        {getStatusText()}
+      </p>
 
-          {/* Current typing line */}
-          {currentLine && (
-            <div className="flex items-center gap-2">
-              <span className="text-[#4A7C59]">›</span>
-              <span className="text-green-400">
-                {displayedText}
-                <span
-                  className={`inline-block w-2 h-4 ml-0.5 bg-green-400 align-middle ${
-                    cursorVisible ? 'opacity-100' : 'opacity-0'
-                  }`}
-                />
-              </span>
-            </div>
-          )}
+      {/* Platform indicators */}
+      <div className="mt-8 flex flex-wrap justify-center gap-3">
+        {platforms.map((platform) => {
+          const isActive = completedProviders.includes(platform.key);
+          const isInProgress = progress > 0 && progress < 100 && !isActive;
 
-          {/* Remaining lines (dimmed) */}
-          {lines.slice(currentLineIndex + 1).map((line, idx) => (
-            <div key={idx} className="flex items-center gap-2 opacity-30">
-              <span className="text-gray-500">○</span>
-              <span className="text-gray-600">{line}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Progress bar */}
-        <div className="mt-4 pt-3 border-t border-gray-700">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>Progress</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+          return (
             <div
-              className="h-full bg-[#4A7C59] rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
+              key={platform.key}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
+                isActive
+                  ? 'bg-gray-100'
+                  : 'bg-gray-50 opacity-50'
+              }`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  isActive ? '' : isInProgress ? 'animate-pulse' : ''
+                }`}
+                style={{
+                  backgroundColor: isActive ? platform.color : '#D1D5DB',
+                }}
+              />
+              <span className={isActive ? 'text-gray-700' : 'text-gray-400'}>
+                {platform.name}
+              </span>
+              {isActive && (
+                <Check className="w-3 h-3 text-gray-500" />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -175,7 +197,7 @@ export default function RunPage() {
           </p>
           <button
             onClick={() => router.push('/')}
-            className="px-6 py-3 bg-[#4A7C59] text-white font-medium rounded-xl hover:bg-[#3d6649] transition-colors"
+            className="px-6 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
           >
             Start New Analysis
           </button>
@@ -185,7 +207,16 @@ export default function RunPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FAFAF8] pb-8">
+    <main
+      className="min-h-screen bg-[#FAFAF8] pb-8"
+      style={{
+        backgroundImage: `
+          linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: '48px 48px',
+      }}
+    >
       {/* Header */}
       <header className="pt-6 pb-4">
         <div className="max-w-2xl mx-auto px-6">
@@ -216,47 +247,36 @@ export default function RunPage() {
       </header>
 
       <div className="max-w-2xl mx-auto px-6 space-y-6">
-        {/* House Construction Animation */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-          <TypingAnimation progress={runStatus.progress_percent} />
-
-          {/* Progress Info */}
-          <div className="mt-8 text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Analyzing <span className="text-[#4A7C59]">{runStatus.brand}</span>
+        {/* Circular Progress Animation */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-10">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold text-gray-900">
+              Analyzing <span className="text-gray-900">{runStatus.brand}</span>
             </h2>
-
-            {/* Progress Bar */}
-            <div className="mt-4 mb-3">
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500 bg-[#4A7C59]"
-                  style={{ width: `${runStatus.progress_percent}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center gap-4 text-sm text-gray-600">
-              <span className="font-medium text-lg text-gray-900">
-                {Math.round(runStatus.progress_percent)}%
-              </span>
-              {runStatus.estimated_seconds_remaining !== null && runStatus.status === 'running' && (
-                <>
-                  <span className="text-gray-400">|</span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    ~{formatDuration(runStatus.estimated_seconds_remaining)} remaining
-                  </span>
-                </>
-              )}
-            </div>
+            {runStatus.estimated_seconds_remaining !== null && runStatus.status === 'running' && (
+              <p className="text-sm text-gray-500 mt-2 flex items-center justify-center gap-1">
+                <Clock className="w-4 h-4" />
+                ~{formatDuration(runStatus.estimated_seconds_remaining)} remaining
+              </p>
+            )}
           </div>
+
+          {/* Circular Progress */}
+          <CircularProgressAnimation
+            progress={runStatus.progress_percent}
+            completedProviders={
+              runStatus.results
+                ? [...new Set(runStatus.results.map((r: Result) => r.provider))]
+                : []
+            }
+          />
 
           {/* Status Messages */}
           {runStatus.status === 'complete' && (
-            <div className="mt-6 p-4 bg-[#E8F0E8] rounded-xl text-center">
-              <CheckCircle2 className="w-8 h-8 text-[#4A7C59] mx-auto mb-2" />
-              <p className="text-[#4A7C59] font-medium">
+            <div className="mt-8 p-4 bg-gray-100 rounded-xl text-center">
+              <CheckCircle2 className="w-8 h-8 text-gray-900 mx-auto mb-2" />
+              <p className="text-gray-900 font-medium">
                 Analysis complete! Redirecting to results...
               </p>
             </div>
@@ -330,7 +350,7 @@ export default function RunPage() {
           <div className="text-center">
             <button
               onClick={() => router.push(`/results/${runId}`)}
-              className="px-6 py-3 bg-[#4A7C59] text-white font-medium rounded-xl hover:bg-[#3d6649] transition-colors"
+              className="px-6 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
             >
               View Full Results
             </button>
