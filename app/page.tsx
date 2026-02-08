@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Search, Eye, Sparkles, Zap, Loader2, X, Building2, PenLine, MapPin } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 import { LocationInput } from "@/components/LocationInput";
+
+// Version identifier for debugging deployments
+const HOMEPAGE_VERSION = "2.0.0-redesign";
 
 interface BrandSuggestion {
   name: string;
@@ -13,6 +16,15 @@ interface BrandSuggestion {
 }
 
 export default function Home() {
+  // Debug logging on mount
+  useEffect(() => {
+    console.log("===========================================");
+    console.log("🏠 AI Visibility Homepage Loaded");
+    console.log(`📦 Version: ${HOMEPAGE_VERSION}`);
+    console.log(`🕐 Loaded at: ${new Date().toISOString()}`);
+    console.log("🎨 Design: New redesign with circular score, colored badges");
+    console.log("===========================================");
+  }, []);
   const [brandInput, setBrandInput] = useState("");
   const [industryInput, setIndustryInput] = useState("");
   const [showIndustryField, setShowIndustryField] = useState(false);
@@ -27,6 +39,8 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!brandInput.trim()) return;
+
+    console.log(`🔍 Submitting brand search: "${brandInput}"${industryInput ? ` (industry: ${industryInput})` : ""}`);
 
     setIsValidating(true);
     setError(null);
@@ -67,9 +81,11 @@ export default function Home() {
         brandInput.trim();
 
       const searchType = data.type || 'brand';
+      console.log(`✅ Validated: "${brandName}" (type: ${searchType})`);
 
       // For local search type, show location prompt first
       if (searchType === 'local') {
+        console.log("📍 Local search detected, showing location prompt");
         setPendingBrandName(brandName);
         setShowLocationPrompt(true);
         setIsValidating(false);
