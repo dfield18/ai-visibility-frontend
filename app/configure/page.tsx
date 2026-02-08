@@ -17,6 +17,7 @@ import {
   Bot,
   Settings2,
   Globe,
+  MapPin,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useStore } from '@/hooks/useStore';
@@ -75,6 +76,8 @@ export default function ConfigurePage() {
     brandUrl,
     setBrandUrl,
     searchType,
+    location,
+    setLocation,
     prompts,
     selectedPrompts,
     setPrompts,
@@ -106,12 +109,15 @@ export default function ConfigurePage() {
 
   // Labels based on search type
   const isCategory = searchType === 'category';
-  const brandsLabel = isCategory ? 'Brands to Track' : 'Competitors to Track';
-  const brandsDescription = isCategory
+  const isLocal = searchType === 'local';
+  const brandsLabel = isLocal ? 'Businesses to Track' : isCategory ? 'Brands to Track' : 'Competitors to Track';
+  const brandsDescription = isLocal
+    ? "Select which local businesses you want to monitor in AI responses"
+    : isCategory
     ? "Select which brands you want to monitor in AI responses"
     : "Select competitors to see how they compare to your brand";
-  const brandsLoadingText = isCategory ? 'Finding relevant brands...' : 'Finding your competitors...';
-  const addBrandPlaceholder = isCategory ? 'Add a brand...' : 'Add a competitor...';
+  const brandsLoadingText = isLocal ? 'Finding local businesses...' : isCategory ? 'Finding relevant brands...' : 'Finding your competitors...';
+  const addBrandPlaceholder = isLocal ? 'Add a business...' : isCategory ? 'Add a brand...' : 'Add a competitor...';
 
   const [newPrompt, setNewPrompt] = useState('');
   const [newCompetitor, setNewCompetitor] = useState('');
@@ -123,8 +129,10 @@ export default function ConfigurePage() {
   const [addingCompetitor, setAddingCompetitor] = useState(false);
   const [editingUrl, setEditingUrl] = useState(false);
   const [tempUrl, setTempUrl] = useState('');
+  const [editingLocation, setEditingLocation] = useState(false);
+  const [tempLocation, setTempLocation] = useState('');
 
-  const { data: suggestions, isLoading: suggestionsLoading, error: suggestionsError } = useSuggestions(brand, searchType);
+  const { data: suggestions, isLoading: suggestionsLoading, error: suggestionsError } = useSuggestions(brand, searchType, location);
   const startRunMutation = useStartRun();
 
   // Redirect if no brand
@@ -265,6 +273,7 @@ export default function ConfigurePage() {
         session_id: getSessionId(),
         brand,
         search_type: searchType,
+        ...(isLocal && location ? { location } : {}),
         prompts: selectedPromptsArray,
         competitors: selectedCompetitorsArray,
         providers,
@@ -306,6 +315,59 @@ export default function ConfigurePage() {
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#4A7C59]/10 text-[#4A7C59]">
                     {brand}
                   </span>
+                  {/* Location badge for local search type */}
+                  {isLocal && (
+                    editingLocation ? (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-gray-400" />
+                        <input
+                          type="text"
+                          value={tempLocation}
+                          onChange={(e) => setTempLocation(e.target.value)}
+                          className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4A7C59] focus:border-[#4A7C59] w-36"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              setLocation(tempLocation);
+                              setEditingLocation(false);
+                            }
+                            if (e.key === 'Escape') {
+                              setEditingLocation(false);
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => {
+                            setLocation(tempLocation);
+                            setEditingLocation(false);
+                          }}
+                          className="p-0.5 text-[#4A7C59] hover:bg-[#4A7C59]/10 rounded"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setEditingLocation(false)}
+                          className="p-0.5 text-gray-400 hover:bg-gray-100 rounded"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setTempLocation(location);
+                          setEditingLocation(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors group"
+                      >
+                        <MapPin className="w-3 h-3" />
+                        <span>{location || 'Add location'}</span>
+                        <svg className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    )
+                  )}
                   {editingUrl ? (
                     <div className="flex items-center gap-1">
                       <input

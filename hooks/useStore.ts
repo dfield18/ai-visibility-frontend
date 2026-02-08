@@ -3,7 +3,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type SearchType = 'brand' | 'category';
+type SearchType = 'brand' | 'category' | 'local';
+
+interface LocationCoords {
+  lat: number;
+  lng: number;
+}
 
 interface VisibilityStore {
   // Brand/Category data
@@ -13,6 +18,12 @@ interface VisibilityStore {
   setBrand: (brand: string) => void;
   setBrandUrl: (url: string) => void;
   setSearchType: (type: SearchType) => void;
+
+  // Location (for local search type)
+  location: string;
+  locationCoords: LocationCoords | null;
+  setLocation: (location: string) => void;
+  setLocationCoords: (coords: LocationCoords | null) => void;
 
   // Configuration
   prompts: string[];
@@ -74,6 +85,12 @@ export const useStore = create<VisibilityStore>()(
       setBrand: (brand) => set({ brand }),
       setBrandUrl: (brandUrl) => set({ brandUrl }),
       setSearchType: (searchType) => set({ searchType }),
+
+      // Location (for local search type)
+      location: '',
+      locationCoords: null,
+      setLocation: (location) => set({ location }),
+      setLocationCoords: (locationCoords) => set({ locationCoords }),
 
       // Prompts
       prompts: [],
@@ -200,6 +217,8 @@ export const useStore = create<VisibilityStore>()(
           brand: '',
           brandUrl: '',
           searchType: 'brand' as SearchType,
+          location: '',
+          locationCoords: null,
           prompts: [],
           selectedPrompts: new Set<string>(),
           competitors: [],
@@ -213,6 +232,8 @@ export const useStore = create<VisibilityStore>()(
         }),
       resetConfig: () =>
         set({
+          location: '',
+          locationCoords: null,
           prompts: [],
           selectedPrompts: new Set<string>(),
           competitors: [],
@@ -231,6 +252,8 @@ export const useStore = create<VisibilityStore>()(
         brand: state.brand,
         brandUrl: state.brandUrl,
         searchType: state.searchType,
+        location: state.location,
+        locationCoords: state.locationCoords,
         prompts: state.prompts,
         selectedPrompts: Array.from(state.selectedPrompts),
         competitors: state.competitors,

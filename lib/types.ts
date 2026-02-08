@@ -1,9 +1,10 @@
-export type SearchType = 'brand' | 'category';
+export type SearchType = 'brand' | 'category' | 'local';
 
 export interface SuggestRequest {
   brand: string;
   industry?: string;
   search_type?: SearchType;
+  location?: string;  // Required for local search type
 }
 
 export interface SuggestResponse {
@@ -16,6 +17,7 @@ export interface RunConfig {
   session_id: string;
   brand: string;
   search_type?: SearchType;
+  location?: string;  // Required for local search type
   prompts: string[];
   competitors: string[];
   providers: string[];
@@ -151,6 +153,7 @@ export interface ScheduledReport {
   name: string;
   brand: string;
   search_type: SearchType;
+  location?: string;
   prompts: string[];
   competitors: string[];
   providers: string[];
@@ -171,6 +174,7 @@ export interface ScheduledReportCreate {
   name: string;
   brand: string;
   search_type?: SearchType;
+  location?: string;
   prompts: string[];
   competitors: string[];
   providers: string[];
@@ -186,6 +190,7 @@ export interface ScheduledReportUpdate {
   name?: string;
   brand?: string;
   search_type?: SearchType;
+  location?: string;
   prompts?: string[];
   competitors?: string[];
   providers?: string[];

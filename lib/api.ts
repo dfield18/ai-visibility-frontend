@@ -21,6 +21,7 @@ import {
   SiteAuditResponse,
   SiteAuditResult,
   SiteAuditListResponse,
+  SearchType,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -68,10 +69,18 @@ class ApiClient {
     return JSON.parse(text);
   }
 
-  async getSuggestions(brand: string, searchType: 'brand' | 'category' = 'brand', industry?: string): Promise<SuggestResponse> {
+  async getSuggestions(
+    brand: string,
+    searchType: SearchType = 'brand',
+    location?: string,
+    industry?: string
+  ): Promise<SuggestResponse> {
     const body: SuggestRequest = { brand, search_type: searchType };
     if (industry) {
       body.industry = industry;
+    }
+    if (location) {
+      body.location = location;
     }
 
     return this.request<SuggestResponse>('/api/v1/suggest', {

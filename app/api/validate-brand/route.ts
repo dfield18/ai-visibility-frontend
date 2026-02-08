@@ -35,8 +35,19 @@ export async function POST(request: NextRequest) {
           role: 'system',
           content: `You are a brand and category validator. Given a user input, determine if it's:
 1. A business/brand/company name (including local businesses, restaurants, hotels, coliving spaces, etc.)
-2. A product category (like "cars", "shoes", "laptops", "restaurants", "software")
+2. A product category (physical goods people buy: "cars", "shoes", "laptops", "smartphones", "headphones")
+3. A LOCAL service category (businesses/services people visit or hire locally)
 ${industryContext}
+
+LOCAL SERVICE CATEGORIES include:
+- Food & Drink: restaurants, coffee shops, cafes, bars, bakeries, food trucks
+- Fitness & Wellness: gyms, yoga studios, fitness centers, spas, massage
+- Personal Care: hair salons, barbershops, nail salons, beauty salons
+- Health: dentists, doctors, veterinarians, chiropractors, physical therapists
+- Home Services: plumbers, electricians, contractors, landscapers, cleaners
+- Hospitality: hotels, motels, bed and breakfasts, Airbnbs
+- Auto: auto repair, car wash, mechanics, tire shops
+- Other: dry cleaners, laundromats, pet groomers, tutors, photographers
 
 IMPORTANT RULES:
 - Be PERMISSIVE with business names. Accept any plausible business name, even if you don't recognize it.
@@ -46,14 +57,18 @@ IMPORTANT RULES:
 - If there's ANY chance the input is a DIFFERENT business (not a typo), provide suggestions instead of auto-correcting.
 
 Your task:
-1. FIRST, determine if the input is a CATEGORY or a BRAND/BUSINESS:
-   - Categories are general product/service types: "cars", "shoes", "laptops", "smartphones", "restaurants", "hotels", "software", "headphones", etc.
+1. FIRST, determine if the input is a CATEGORY (product or local) or a BRAND/BUSINESS:
+   - PRODUCT categories: physical goods people buy - "cars", "shoes", "laptops", "smartphones", "headphones", "software"
+   - LOCAL categories: service businesses people visit locally - "restaurants", "coffee shops", "gyms", "dentists", "plumbers", "hotels"
    - Brands/Businesses are specific names: "Toyota", "Nike", "Joe's Pizza", "The Grand Oak Hotel", etc.
 
-2. If it's a CATEGORY, return it normalized (e.g., "car" → "cars", "shoe" → "shoes"):
+2. If it's a PRODUCT CATEGORY (things people buy), return type "category":
    {"valid": true, "type": "category", "correctedName": "normalized category", "suggestions": null}
 
-3. If it's a BRAND/BUSINESS NAME:
+3. If it's a LOCAL SERVICE CATEGORY (businesses people visit locally), return type "local":
+   {"valid": true, "type": "local", "correctedName": "normalized category", "suggestions": null}
+
+4. If it's a BRAND/BUSINESS NAME:
 
    a) CLEAR TYPO (>95% confidence, 1-2 character difference from well-known brand):
       {"valid": true, "type": "brand", "correctedName": "Corrected Name", "suggestions": null}
@@ -76,13 +91,19 @@ Your task:
         {"name": "ORIGINAL_INPUT_HERE", "description": "Use as entered (different business)"}
       ]}
 
-4. ONLY mark as invalid if the input is clearly gibberish:
+5. ONLY mark as invalid if the input is clearly gibberish:
    {"valid": false, "type": null, "correctedName": null, "suggestions": null}
 
 Examples:
 - "cars" → {"valid": true, "type": "category", "correctedName": "cars", "suggestions": null}
+- "laptops" → {"valid": true, "type": "category", "correctedName": "laptops", "suggestions": null}
+- "coffee shops" → {"valid": true, "type": "local", "correctedName": "coffee shops", "suggestions": null}
+- "restaurants" → {"valid": true, "type": "local", "correctedName": "restaurants", "suggestions": null}
+- "gyms" → {"valid": true, "type": "local", "correctedName": "gyms", "suggestions": null}
+- "dentists" → {"valid": true, "type": "local", "correctedName": "dentists", "suggestions": null}
+- "plumbers" → {"valid": true, "type": "local", "correctedName": "plumbers", "suggestions": null}
+- "italian restaurants" → {"valid": true, "type": "local", "correctedName": "italian restaurants", "suggestions": null}
 - "toymota" → {"valid": true, "type": "brand", "correctedName": "Toyota", "suggestions": null} (clear 2-char typo)
-- "Amplitutde" → {"valid": true, "type": "brand", "correctedName": null, "suggestions": [{"name": "Amplitude Analytics", "description": "Product analytics software company"}, {"name": "Amplitutde", "description": "Use as entered (different business)"}]}
 - "Joe's Pizza" → {"valid": true, "type": "brand", "correctedName": "Joe's Pizza", "suggestions": null}
 - "spirit" → {"valid": true, "type": "brand", "correctedName": null, "suggestions": [{"name": "Spirit Airlines", "description": "Budget airline"}, {"name": "Spirit Halloween", "description": "Seasonal costume retailer"}, {"name": "spirit", "description": "Use as entered (different business)"}]}
 - "asdfghjkl" → {"valid": false, "type": null, "correctedName": null, "suggestions": null}

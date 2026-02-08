@@ -2,16 +2,22 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { RunConfig, RunResponse, RunStatusResponse, CancelResponse, AISummaryResponse, ExtendRunRequest, ExtendRunResponse, SiteAuditRequest, SiteAuditResponse, SiteAuditResult } from '@/lib/types';
+import { RunConfig, RunResponse, RunStatusResponse, CancelResponse, AISummaryResponse, ExtendRunRequest, ExtendRunResponse, SiteAuditRequest, SiteAuditResponse, SiteAuditResult, SearchType, SuggestResponse } from '@/lib/types';
 
 /**
- * Hook to fetch suggestions for a brand or category.
+ * Hook to fetch suggestions for a brand, category, or local business.
  */
-export function useSuggestions(brand: string, searchType: 'brand' | 'category' = 'brand', enabled = true) {
-  return useQuery({
-    queryKey: ['suggestions', brand, searchType],
-    queryFn: () => api.getSuggestions(brand, searchType),
-    enabled: enabled && brand.length > 0,
+export function useSuggestions(
+  brand: string,
+  searchType: SearchType = 'brand',
+  location?: string,
+  enabled = true
+) {
+  return useQuery<SuggestResponse>({
+    queryKey: ['suggestions', brand, searchType, location],
+    queryFn: () => api.getSuggestions(brand, searchType, location),
+    // For local search type, also require location
+    enabled: enabled && brand.length > 0 && (searchType !== 'local' || Boolean(location && location.length > 0)),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

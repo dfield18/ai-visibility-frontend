@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { Search, Eye, Sparkles, Zap, Loader2, X, Building2, PenLine } from "lucide-react";
+import { Search, Eye, Sparkles, Zap, Loader2, X, Building2, PenLine, MapPin } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
+import { LocationInput } from "@/components/LocationInput";
 
 interface BrandSuggestion {
   name: string;
@@ -18,8 +19,10 @@ export default function Home() {
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<BrandSuggestion[] | null>(null);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [pendingBrandName, setPendingBrandName] = useState("");
   const router = useRouter();
-  const { setBrand, setSearchType, resetConfig } = useStore();
+  const { setBrand, setSearchType, setLocation, setLocationCoords, resetConfig } = useStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,8 +65,19 @@ export default function Home() {
       const brandName = data.correctedName ||
         (data.suggestions && data.suggestions[0]?.name) ||
         brandInput.trim();
+
+      const searchType = data.type || 'brand';
+
+      // For local search type, show location prompt first
+      if (searchType === 'local') {
+        setPendingBrandName(brandName);
+        setShowLocationPrompt(true);
+        setIsValidating(false);
+        return;
+      }
+
       setBrand(brandName);
-      setSearchType(data.type || 'brand');
+      setSearchType(searchType);
       resetConfig();
       router.push("/configure");
     } catch (err) {
@@ -82,6 +96,28 @@ export default function Home() {
 
   const handleCloseSuggestions = () => {
     setSuggestions(null);
+  };
+
+  const handleLocationChange = (location: string, coords?: { lat: number; lng: number }) => {
+    setLocation(location);
+    if (coords) {
+      setLocationCoords(coords);
+    }
+  };
+
+  const handleLocationContinue = () => {
+    setBrand(pendingBrandName);
+    setSearchType('local');
+    resetConfig();
+    setShowLocationPrompt(false);
+    router.push("/configure");
+  };
+
+  const handleCloseLocationPrompt = () => {
+    setShowLocationPrompt(false);
+    setPendingBrandName("");
+    setLocation("");
+    setLocationCoords(null);
   };
 
   return (
@@ -354,6 +390,59 @@ export default function Home() {
             <div className="mt-6 pt-4 border-t border-gray-100">
               <button
                 onClick={handleCloseSuggestions}
+                className="w-full py-2.5 text-sm text-gray-600 hover:text-gray-900 font-medium"
+              >
+                Cancel and try a different search
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Location Prompt Modal */}
+      {showLocationPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={handleCloseLocationPrompt}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            {/* Close button */}
+            <button
+              onClick={handleCloseLocationPrompt}
+              className="absolute top-4 right-4 p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="mb-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-[#E8F0E8] flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-6 h-6 text-[#4A7C59]" />
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                Where are you searching?
+              </h2>
+              <p className="text-sm text-gray-500">
+                We&apos;ll find the best <span className="font-medium">{pendingBrandName}</span> in your area
+              </p>
+            </div>
+
+            {/* Location Input */}
+            <LocationInput
+              value=""
+              onChange={handleLocationChange}
+              onContinue={handleLocationContinue}
+              showContinueButton
+            />
+
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <button
+                onClick={handleCloseLocationPrompt}
                 className="w-full py-2.5 text-sm text-gray-600 hover:text-gray-900 font-medium"
               >
                 Cancel and try a different search
