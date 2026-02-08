@@ -54,9 +54,14 @@ export function useGeolocation() {
 
       const { latitude: lat, longitude: lng } = position.coords;
 
-      // Reverse geocode using BigDataCloud (free, no API key needed)
+      // Reverse geocode using OpenStreetMap Nominatim (free, detailed neighborhood data)
       const response = await fetch(
-        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&zoom=18`,
+        {
+          headers: {
+            'User-Agent': 'AI-Visibility-App/1.0',
+          },
+        }
       );
 
       if (!response.ok) {
@@ -64,43 +69,52 @@ export function useGeolocation() {
       }
 
       const data = await response.json();
+      const address = data.address || {};
 
-      // Build a readable location string with neighborhood precision
-      // BigDataCloud returns: neighbourhood, locality, city, principalSubdivision (state), countryName
-      const neighbourhood = data.neighbourhood || '';
-      const locality = data.locality || '';
-      const city = data.city || '';
-      const region = data.principalSubdivision || '';
-      const country = data.countryName || '';
-      const countryCode = data.countryCode || '';
+      // Nominatim returns detailed address components:
+      // neighbourhood, suburb, city_district, city/town/village, state, country
+      const neighbourhood = address.neighbourhood || '';
+      const suburb = address.suburb || '';
+      const cityDistrict = address.city_district || '';
+      const city = address.city || address.town || address.village || '';
+      const borough = address.borough || ''; // For NYC boroughs like Brooklyn
+      const state = address.state || '';
+      const country = address.country || '';
+      const countryCode = address.country_code?.toUpperCase() || '';
 
-      // For US locations, prefer: "Neighborhood, City" or "City, State"
-      // For international: "Neighborhood, City" or "City, Country"
+      // Build location string with best available precision
+      // Priority: neighbourhood > suburb > city_district > borough > city
       let locationString = '';
 
-      if (countryCode === 'US') {
-        // US: Try "Neighborhood, City" first, then "City, State"
-        if (neighbourhood && city) {
-          locationString = `${neighbourhood}, ${city}`;
-        } else if (locality && city && locality !== city) {
-          locationString = `${locality}, ${city}`;
-        } else if (city && region) {
-          locationString = `${city}, ${region}`;
-        } else if (locality && region) {
-          locationString = `${locality}, ${region}`;
+      // Get the most specific area name
+      const specificArea = neighbourhood || suburb || cityDistrict || '';
+
+      // For NYC and similar cities with boroughs
+      if (borough && city) {
+        if (specificArea) {
+          // "Williamsburg, Brooklyn" or "Park Slope, Brooklyn"
+          locationString = `${specificArea}, ${borough}`;
         } else {
-          locationString = city || locality || region;
+          // "Brooklyn, New York"
+          locationString = `${borough}, ${city}`;
+        }
+      } else if (countryCode === 'US') {
+        // US: Try "Neighborhood, City" or "City, State"
+        if (specificArea && city) {
+          locationString = `${specificArea}, ${city}`;
+        } else if (city && state) {
+          locationString = `${city}, ${state}`;
+        } else {
+          locationString = city || state;
         }
       } else {
-        // International: Try "Neighborhood, City" or "City, Country"
-        if (neighbourhood && city) {
-          locationString = `${neighbourhood}, ${city}`;
-        } else if (locality && city && locality !== city) {
-          locationString = `${locality}, ${city}`;
+        // International: "Neighborhood, City" or "City, Country"
+        if (specificArea && city) {
+          locationString = `${specificArea}, ${city}`;
         } else if (city && country) {
           locationString = `${city}, ${country}`;
         } else {
-          locationString = city || locality || country;
+          locationString = city || country;
         }
       }
 
