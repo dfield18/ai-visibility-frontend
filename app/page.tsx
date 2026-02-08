@@ -275,7 +275,7 @@ export default function Home() {
           </div>
 
           {/* Right Column - Dashboard Preview Card */}
-          <div className="flex justify-center lg:justify-start lg:ml-[8%]">
+          <div className="flex justify-center lg:justify-start lg:ml-[16%]">
             <div className="bg-white rounded-xl border border-gray-200 shadow-lg w-full max-w-sm">
               {/* Card Header */}
               <div className="px-5 py-4 border-b border-gray-100">
