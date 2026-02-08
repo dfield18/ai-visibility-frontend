@@ -296,9 +296,18 @@ export default function ConfigurePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FAFAF8]">
+    <main
+      className="min-h-screen bg-[#FAFAF8]"
+      style={{
+        backgroundImage: `
+          linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: '48px 48px',
+      }}
+    >
       {/* Header - minimal, transparent */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 bg-[#FAFAF8]/95 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -312,7 +321,7 @@ export default function ConfigurePage() {
               <div>
                 <h1 className="text-lg font-semibold text-gray-900">Configure Analysis</h1>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#4A7C59]/10 text-[#4A7C59]">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-900 text-white">
                     {brand}
                   </span>
                   {/* Location badge for local search type */}
@@ -324,7 +333,7 @@ export default function ConfigurePage() {
                           type="text"
                           value={tempLocation}
                           onChange={(e) => setTempLocation(e.target.value)}
-                          className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4A7C59] focus:border-[#4A7C59] w-36"
+                          className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 w-36"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -341,7 +350,7 @@ export default function ConfigurePage() {
                             setLocation(tempLocation);
                             setEditingLocation(false);
                           }}
-                          className="p-0.5 text-[#4A7C59] hover:bg-[#4A7C59]/10 rounded"
+                          className="p-0.5 text-gray-900 hover:bg-gray-900/10 rounded"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>
@@ -374,7 +383,7 @@ export default function ConfigurePage() {
                         type="text"
                         value={tempUrl}
                         onChange={(e) => setTempUrl(e.target.value)}
-                        className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4A7C59] focus:border-[#4A7C59] w-36"
+                        className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 w-36"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
@@ -391,7 +400,7 @@ export default function ConfigurePage() {
                           setBrandUrl(tempUrl);
                           setEditingUrl(false);
                         }}
-                        className="p-0.5 text-[#4A7C59] hover:bg-[#4A7C59]/10 rounded"
+                        className="p-0.5 text-gray-900 hover:bg-gray-900/10 rounded"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
@@ -454,7 +463,7 @@ export default function ConfigurePage() {
             <div className="flex items-center gap-2 mb-5">
               <MessageSquare className="w-5 h-5 text-gray-400" />
               <h2 className="text-base font-semibold text-gray-900 flex-1">Questions to Ask AI</h2>
-              <span className="text-sm text-[#4A7C59]/70 font-medium">
+              <span className="text-sm text-gray-500 font-medium">
                 {selectedPromptsArray.length} selected
               </span>
             </div>
@@ -485,8 +494,8 @@ export default function ConfigurePage() {
                     <div
                       className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                         selectedPrompts.size === prompts.length
-                          ? 'bg-[#4A7C59]'
-                          : 'border-2 border-[#4A7C59]'
+                          ? 'bg-gray-900'
+                          : 'border-2 border-gray-900'
                       }`}
                     >
                       {selectedPrompts.size === prompts.length && (
@@ -522,7 +531,7 @@ export default function ConfigurePage() {
                     <div
                       className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
                         selectedPrompts.has(prompt)
-                          ? 'bg-[#4A7C59]'
+                          ? 'bg-gray-900'
                           : 'border-2 border-gray-300'
                       }`}
                     >
@@ -536,7 +545,7 @@ export default function ConfigurePage() {
                           type="text"
                           value={editingPromptValue}
                           onChange={(e) => setEditingPromptValue(e.target.value)}
-                          className="flex-1 px-2.5 py-1.5 border border-[#4A7C59] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20"
+                          className="flex-1 px-2.5 py-1.5 border border-gray-900 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleSavePromptEdit();
@@ -545,7 +554,7 @@ export default function ConfigurePage() {
                         />
                         <button
                           onClick={handleSavePromptEdit}
-                          className="p-1.5 text-[#4A7C59] hover:bg-[#4A7C59]/10 rounded-lg transition-colors"
+                          className="p-1.5 text-gray-900 hover:bg-gray-900/10 rounded-lg transition-colors"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>
@@ -566,7 +575,7 @@ export default function ConfigurePage() {
                             e.stopPropagation();
                             handleEditPrompt(index);
                           }}
-                          className="p-1 text-gray-400 hover:text-[#4A7C59] opacity-0 group-hover:opacity-100 transition-all rounded hover:bg-gray-100"
+                          className="p-1 text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-all rounded hover:bg-gray-100"
                           aria-label="Edit question"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -589,7 +598,7 @@ export default function ConfigurePage() {
                       value={newPrompt}
                       onChange={(e) => setNewPrompt(e.target.value)}
                       placeholder="Type your question here..."
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] placeholder-gray-400"
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 placeholder-gray-400"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') { handleAddPrompt(); }
@@ -599,7 +608,7 @@ export default function ConfigurePage() {
                     <button
                       onClick={handleAddPrompt}
                       disabled={!newPrompt.trim()}
-                      className="px-3 py-2 text-sm bg-[#4A7C59] text-white rounded-lg hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                     >
                       Add
                     </button>
@@ -613,7 +622,7 @@ export default function ConfigurePage() {
                 ) : (
                   <button
                     onClick={() => setAddingPrompt(true)}
-                    className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-1.5"
+                    className="text-sm text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1.5"
                   >
                     <Plus className="w-4 h-4" />
                     Add your own question
@@ -631,7 +640,7 @@ export default function ConfigurePage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
-                  <span className="text-sm text-purple-600/70 font-medium">
+                  <span className="text-sm text-gray-500 font-medium">
                     {selectedCompetitorsArray.length} selected
                   </span>
                 </div>
@@ -650,10 +659,10 @@ export default function ConfigurePage() {
                   {competitors.map((competitor) => (
                     <div
                       key={competitor}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#E8F5E9] text-sm cursor-pointer transition-all hover:bg-[#d4edda]"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 text-sm cursor-pointer transition-all hover:bg-gray-200"
                       onClick={() => toggleCompetitor(competitor)}
                     >
-                      <div className="w-5 h-5 rounded-full bg-[#4A7C59] flex items-center justify-center flex-shrink-0">
+                      <div className="w-5 h-5 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
                         <Check className="w-3 h-3 text-white" strokeWidth={3} />
                       </div>
                       <span className="text-gray-700 font-medium">{competitor}</span>
@@ -681,7 +690,7 @@ export default function ConfigurePage() {
                         value={newCompetitor}
                         onChange={(e) => setNewCompetitor(e.target.value)}
                         placeholder={addBrandPlaceholder}
-                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] placeholder-gray-400"
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 placeholder-gray-400"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') { handleAddCompetitor(); }
@@ -691,7 +700,7 @@ export default function ConfigurePage() {
                       <button
                         onClick={handleAddCompetitor}
                         disabled={!newCompetitor.trim()}
-                        className="px-3 py-2 text-sm bg-[#4A7C59] text-white rounded-lg hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                       >
                         Add
                       </button>
@@ -705,7 +714,7 @@ export default function ConfigurePage() {
                   ) : (
                     <button
                       onClick={() => setAddingCompetitor(true)}
-                      className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-1.5"
+                      className="text-sm text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1.5"
                     >
                       <Plus className="w-4 h-4" />
                       Add {isCategory ? 'another brand' : 'another competitor'}
@@ -724,7 +733,7 @@ export default function ConfigurePage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
-                  <span className="text-sm text-[#4A7C59]/70 font-medium">
+                  <span className="text-sm text-gray-500 font-medium">
                     {providers.length} selected
                   </span>
                 </div>
@@ -743,14 +752,14 @@ export default function ConfigurePage() {
                   onClick={() => toggleProvider(key)}
                   className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
                     providers.includes(key)
-                      ? 'bg-[#E8F5E9]'
+                      ? 'bg-gray-100'
                       : 'bg-gray-50 hover:bg-gray-100'
                   }`}
                 >
                   <div
                     className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                       providers.includes(key)
-                        ? 'bg-[#4A7C59]'
+                        ? 'bg-gray-900'
                         : 'border-2 border-gray-300'
                     }`}
                   >
@@ -831,7 +840,7 @@ export default function ConfigurePage() {
                         }}
                         className={`p-4 rounded-xl text-left transition-all ${
                           temperatures.includes(temp)
-                            ? 'bg-[#E8F5E9]'
+                            ? 'bg-gray-100'
                             : 'bg-white hover:bg-gray-50'
                         }`}
                       >
@@ -839,7 +848,7 @@ export default function ConfigurePage() {
                           <div
                             className={`w-4 h-4 rounded-full flex items-center justify-center ${
                               temperatures.includes(temp)
-                                ? 'bg-[#4A7C59]'
+                                ? 'bg-gray-900'
                                 : 'border-2 border-gray-300'
                             }`}
                           >
@@ -847,7 +856,7 @@ export default function ConfigurePage() {
                               <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                             )}
                           </div>
-                          <span className={`text-sm font-medium ${temperatures.includes(temp) ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                          <span className={`text-sm font-medium ${temperatures.includes(temp) ? 'text-gray-900' : 'text-gray-700'}`}>
                             {config.label}
                           </span>
                         </div>
@@ -879,11 +888,11 @@ export default function ConfigurePage() {
                       onClick={() => setRepeats(num)}
                       className={`p-4 rounded-xl text-center transition-all ${
                         repeats === num
-                          ? 'bg-[#E8F5E9]'
+                          ? 'bg-gray-100'
                           : 'bg-white hover:bg-gray-50'
                       }`}
                     >
-                      <span className={`text-lg font-semibold ${repeats === num ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                      <span className={`text-lg font-semibold ${repeats === num ? 'text-gray-900' : 'text-gray-700'}`}>
                         {num}x
                       </span>
                       <p className="text-xs text-gray-500 mt-1">
@@ -907,12 +916,12 @@ export default function ConfigurePage() {
                       onClick={() => setOpenaiModel('gpt-4o-mini')}
                       className={`w-full p-3 rounded-xl text-left transition-all ${
                         openaiModel === 'gpt-4o-mini'
-                          ? 'bg-[#E8F5E9]'
+                          ? 'bg-gray-100'
                           : 'bg-white hover:bg-gray-50'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o-mini' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o-mini' ? 'text-gray-900' : 'text-gray-700'}`}>
                           GPT-4o Mini
                         </span>
                         <span className="text-xs text-gray-500">$0.0003/call</span>
@@ -924,12 +933,12 @@ export default function ConfigurePage() {
                       onClick={() => setOpenaiModel('gpt-4o')}
                       className={`w-full p-3 rounded-xl text-left transition-all ${
                         openaiModel === 'gpt-4o'
-                          ? 'bg-[#E8F5E9]'
+                          ? 'bg-gray-100'
                           : 'bg-white hover:bg-gray-50'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${openaiModel === 'gpt-4o' ? 'text-gray-900' : 'text-gray-700'}`}>
                           GPT-4o
                         </span>
                         <span className="text-xs text-gray-500">$0.003/call</span>
@@ -950,12 +959,12 @@ export default function ConfigurePage() {
                       onClick={() => setAnthropicModel('claude-haiku-4-5-20251001')}
                       className={`w-full p-3 rounded-xl text-left transition-all ${
                         anthropicModel === 'claude-haiku-4-5-20251001'
-                          ? 'bg-[#E8F5E9]'
+                          ? 'bg-gray-100'
                           : 'bg-white hover:bg-gray-50'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${anthropicModel === 'claude-haiku-4-5-20251001' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${anthropicModel === 'claude-haiku-4-5-20251001' ? 'text-gray-900' : 'text-gray-700'}`}>
                           Claude Haiku
                         </span>
                         <span className="text-xs text-gray-500">~$0.025/call</span>
@@ -967,12 +976,12 @@ export default function ConfigurePage() {
                       onClick={() => setAnthropicModel('claude-sonnet-4-20250514')}
                       className={`w-full p-3 rounded-xl text-left transition-all ${
                         anthropicModel === 'claude-sonnet-4-20250514'
-                          ? 'bg-[#E8F5E9]'
+                          ? 'bg-gray-100'
                           : 'bg-white hover:bg-gray-50'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${anthropicModel === 'claude-sonnet-4-20250514' ? 'text-[#4A7C59]' : 'text-gray-700'}`}>
+                        <span className={`text-sm font-medium ${anthropicModel === 'claude-sonnet-4-20250514' ? 'text-gray-900' : 'text-gray-700'}`}>
                           Claude Sonnet
                         </span>
                         <span className="text-xs text-gray-500">~$0.035/call</span>
@@ -997,7 +1006,7 @@ export default function ConfigurePage() {
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] bg-white"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 bg-white"
                 >
                   <option value="us">United States</option>
                   <option value="gb">United Kingdom</option>
@@ -1030,7 +1039,7 @@ export default function ConfigurePage() {
               <span className="text-gray-400">×</span>{' '}
               <span className="font-medium">{providers.length}</span> platform{providers.length !== 1 ? 's' : ''}{' '}
               <span className="text-gray-400">=</span>{' '}
-              <span className="font-semibold text-[#4A7C59]">{totalCalls} API calls</span>
+              <span className="font-semibold text-gray-900">{totalCalls} API calls</span>
             </p>
             <p className="text-sm text-gray-500">
               Estimated cost: {formatCurrency(estimatedCost)} · Time: {formatDuration(estimatedTime)}
@@ -1039,7 +1048,7 @@ export default function ConfigurePage() {
           <button
             onClick={handleRunAnalysis}
             disabled={!canRun}
-            className="px-6 py-3 bg-[#4A7C59] text-white font-semibold rounded-xl hover:bg-[#3d6649] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {startRunMutation.isPending ? (
               <Spinner size="sm" />
