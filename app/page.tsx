@@ -139,9 +139,18 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] flex flex-col">
+    <div
+      className="min-h-screen bg-[#FAFAF8] flex flex-col"
+      style={{
+        backgroundImage: `
+          linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: '48px 48px',
+      }}
+    >
       {/* Navigation */}
-      <header className="sticky top-0 z-50 bg-[#FAFAF8] border-b border-gray-100">
+      <header className="sticky top-0 z-50 bg-[#FAFAF8]/95 backdrop-blur-sm border-b border-gray-100">
         <nav className="flex items-center justify-between px-8 py-4 max-w-7xl mx-auto">
           <span className="text-xl font-medium text-gray-900">Visibility</span>
           <div className="flex items-center gap-8">
