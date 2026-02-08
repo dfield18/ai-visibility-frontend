@@ -57,7 +57,7 @@ interface VisibilityStore {
   resetConfig: () => void;
 }
 
-const DEFAULT_PROVIDERS = ['openai', 'gemini', 'anthropic', 'perplexity', 'ai_overviews'];
+const DEFAULT_PROVIDERS = ['openai', 'gemini', 'anthropic', 'perplexity', 'ai_overviews', 'grok'];
 const DEFAULT_TEMPERATURES = [0.3];
 const DEFAULT_REPEATS = 1;
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini' as const;

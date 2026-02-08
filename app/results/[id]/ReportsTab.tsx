@@ -37,6 +37,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   anthropic: 'Claude',
   perplexity: 'Perplexity',
   ai_overviews: 'Google AI Overviews',
+  grok: 'Grok',
 };
 
 // Score color helper for site audits

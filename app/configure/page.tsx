@@ -56,6 +56,11 @@ const PROVIDER_INFO: Record<string, { name: string; description: string; cost: s
     description: 'AI summaries in Google Search',
     cost: '$0.005/call',
   },
+  grok: {
+    name: 'Grok',
+    description: 'xAI\'s AI with real-time data',
+    cost: '$0.001/call',
+  },
 };
 
 export default function ConfigurePage() {

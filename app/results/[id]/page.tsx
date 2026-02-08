@@ -3589,6 +3589,7 @@ export default function ResultsPage() {
       case 'perplexity': return 'Perplexity Sonar';
       case 'ai_overviews': return 'Google AI Overviews';
       case 'gemini': return 'Google Gemini';
+      case 'grok': return 'xAI Grok';
       default: return provider;
     }
   };
