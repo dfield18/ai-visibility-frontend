@@ -8,7 +8,7 @@ import { useStore } from "@/hooks/useStore";
 import { LocationInput } from "@/components/LocationInput";
 
 // Version identifier for debugging deployments
-const HOMEPAGE_VERSION = "3.0.0-screenshot-design";
+const HOMEPAGE_VERSION = "3.1.0-views-headline";
 
 interface BrandSuggestion {
   name: string;
@@ -22,7 +22,7 @@ export default function Home() {
     console.log("🏠 AI Visibility Homepage Loaded");
     console.log(`📦 Version: ${HOMEPAGE_VERSION}`);
     console.log(`🕐 Loaded at: ${new Date().toISOString()}`);
-    console.log("🎨 Design: Screenshot design with perceives headline, Analyze button");
+    console.log("🎨 Design: Screenshot design with blue 'views' headline, Analyze button");
     console.log("===========================================");
   }, []);
 
@@ -191,7 +191,7 @@ export default function Home() {
             {/* Headline */}
             <h1 className="text-5xl md:text-6xl font-normal text-gray-900 tracking-tight leading-[1.1] mb-12">
               See how AI<br />
-              <span className="italic font-serif">perceives</span> your<br />
+              <span className="italic font-serif" style={{ color: '#4285f4' }}>views</span> your<br />
               brand
             </h1>
 
