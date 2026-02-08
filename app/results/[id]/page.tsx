@@ -4256,22 +4256,64 @@ export default function ResultsPage() {
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Prompt</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                    <div className="whitespace-nowrap">AI Visibility</div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">AI Visibility</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          % of AI responses that mention {runStatus?.brand || 'your brand'} for this question
+                        </div>
+                      </div>
+                    </div>
                     <div className="text-xs text-gray-400 font-normal">% mentioned</div>
                   </th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                    <div className="whitespace-nowrap">Share of Voice</div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Share of Voice</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          {runStatus?.brand || 'Your brand'}'s share of all brand mentions for this question
+                        </div>
+                      </div>
+                    </div>
                     <div className="text-xs text-gray-400 font-normal">% of brand mentions</div>
                   </th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                    <div className="whitespace-nowrap">First Position</div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">First Position</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          How often {runStatus?.brand || 'your brand'} is the #1 recommended result for this question
+                        </div>
+                      </div>
+                    </div>
                     <div className="text-xs text-gray-400 font-normal">% ranked #1</div>
                   </th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                    <div className="whitespace-nowrap">Avg. Position</div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Avg. Position</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          Average ranking position when {runStatus?.brand || 'your brand'} appears (lower is better)
+                        </div>
+                      </div>
+                    </div>
                     <div className="text-xs text-gray-400 font-normal">position when shown</div>
                   </th>
-                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Avg. Sentiment</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Avg. Sentiment</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          How positively AI describes {runStatus?.brand || 'your brand'} when mentioned (from "Not Recommended" to "Highly Recommended")
+                        </div>
+                      </div>
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
