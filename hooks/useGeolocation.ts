@@ -15,6 +15,132 @@ interface GeolocationState {
   error: string | null;
 }
 
+// Google Geocoding API key (optional - falls back to Nominatim if not set)
+const GOOGLE_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_GEOCODING_KEY || '';
+
+/**
+ * Reverse geocode using Google Geocoding API (more accurate neighborhoods)
+ */
+async function reverseGeocodeGoogle(lat: number, lng: number): Promise<string | null> {
+  if (!GOOGLE_API_KEY) return null;
+
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`
+    );
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    if (data.status !== 'OK' || !data.results?.length) return null;
+
+    // Google returns multiple results - first is most specific
+    const components = data.results[0]?.address_components || [];
+
+    // Extract address parts by type
+    const getComponent = (type: string): string => {
+      const comp = components.find((c: { types: string[] }) => c.types.includes(type));
+      return comp?.long_name || '';
+    };
+
+    const neighborhood = getComponent('neighborhood');
+    const sublocality = getComponent('sublocality_level_1') || getComponent('sublocality');
+    const locality = getComponent('locality');
+    const adminArea = getComponent('administrative_area_level_1');
+    const country = getComponent('country');
+
+    // For NYC, sublocality is often the borough (Brooklyn, Manhattan)
+    // and neighborhood is the specific area (Williamsburg, SoHo)
+    const specificArea = neighborhood || '';
+    const borough = sublocality || '';
+    const city = locality || '';
+
+    // Build location string
+    if (specificArea && borough) {
+      // "Williamsburg, Brooklyn" or "SoHo, Manhattan"
+      return `${specificArea}, ${borough}`;
+    } else if (specificArea && city) {
+      return `${specificArea}, ${city}`;
+    } else if (borough && city) {
+      return `${borough}, ${city}`;
+    } else if (city && adminArea) {
+      return `${city}, ${adminArea}`;
+    } else if (city && country) {
+      return `${city}, ${country}`;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Reverse geocode using OpenStreetMap Nominatim (free fallback)
+ */
+async function reverseGeocodeNominatim(lat: number, lng: number): Promise<string> {
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&zoom=18`,
+    {
+      headers: {
+        'User-Agent': 'AI-Visibility-App/1.0',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to get location name');
+  }
+
+  const data = await response.json();
+  const address = data.address || {};
+
+  // Nominatim returns detailed address components
+  const quarter = address.quarter || '';
+  const neighbourhood = address.neighbourhood || '';
+  const suburb = address.suburb || '';
+  const cityDistrict = address.city_district || '';
+  const city = address.city || address.town || address.village || '';
+  const state = address.state || '';
+  const country = address.country || '';
+  const countryCode = address.country_code?.toUpperCase() || '';
+
+  const neighborhood = quarter || neighbourhood || cityDistrict || '';
+  const isNYC = suburb && city === 'New York';
+
+  let locationString = '';
+
+  if (isNYC) {
+    if (neighborhood) {
+      locationString = `${neighborhood}, ${suburb}`;
+    } else {
+      locationString = `${suburb}, ${city}`;
+    }
+  } else if (countryCode === 'US') {
+    if (neighborhood && city) {
+      locationString = `${neighborhood}, ${city}`;
+    } else if (suburb && city) {
+      locationString = `${suburb}, ${city}`;
+    } else if (city && state) {
+      locationString = `${city}, ${state}`;
+    } else {
+      locationString = city || suburb || state;
+    }
+  } else {
+    if (neighborhood && city) {
+      locationString = `${neighborhood}, ${city}`;
+    } else if (suburb && city) {
+      locationString = `${suburb}, ${city}`;
+    } else if (city && country) {
+      locationString = `${city}, ${country}`;
+    } else {
+      locationString = city || suburb || country;
+    }
+  }
+
+  return locationString || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+}
+
 export function useGeolocation() {
   const [state, setState] = useState<GeolocationState>({
     loading: false,
@@ -31,102 +157,31 @@ export function useGeolocation() {
       }
 
       // Get coordinates from browser
-      // Try with low accuracy first (faster), fall back to high accuracy if needed
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        // First attempt with low accuracy (uses network/wifi, faster)
         navigator.geolocation.getCurrentPosition(
           resolve,
           () => {
-            // If low accuracy fails, try high accuracy (GPS)
             navigator.geolocation.getCurrentPosition(resolve, reject, {
               enableHighAccuracy: true,
               timeout: 30000,
-              maximumAge: 300000, // 5 minutes cache
+              maximumAge: 300000,
             });
           },
           {
             enableHighAccuracy: false,
             timeout: 15000,
-            maximumAge: 300000, // 5 minutes cache
+            maximumAge: 300000,
           }
         );
       });
 
       const { latitude: lat, longitude: lng } = position.coords;
 
-      // Reverse geocode using OpenStreetMap Nominatim (free, detailed neighborhood data)
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&zoom=18`,
-        {
-          headers: {
-            'User-Agent': 'AI-Visibility-App/1.0',
-          },
-        }
-      );
+      // Try Google first (more accurate), fall back to Nominatim
+      let locationString = await reverseGeocodeGoogle(lat, lng);
 
-      if (!response.ok) {
-        throw new Error('Failed to get location name');
-      }
-
-      const data = await response.json();
-      const address = data.address || {};
-
-      // Nominatim returns detailed address components:
-      // quarter (NYC neighborhoods), neighbourhood, suburb (Brooklyn), city, state, country
-      const quarter = address.quarter || ''; // NYC uses "quarter" for neighborhoods like Williamsburg
-      const neighbourhood = address.neighbourhood || '';
-      const suburb = address.suburb || ''; // NYC boroughs like Brooklyn are in suburb
-      const cityDistrict = address.city_district || '';
-      const city = address.city || address.town || address.village || '';
-      const state = address.state || '';
-      const country = address.country || '';
-      const countryCode = address.country_code?.toUpperCase() || '';
-
-      // Build location string with best available precision
-      // For NYC: quarter=Williamsburg, suburb=Brooklyn, city=New York
-      let locationString = '';
-
-      // Get the most specific neighborhood name
-      const neighborhood = quarter || neighbourhood || cityDistrict || '';
-
-      // Check if this looks like NYC (has suburb like Brooklyn/Manhattan/Queens and city is New York)
-      const isNYC = suburb && city === 'New York';
-
-      if (isNYC) {
-        if (neighborhood) {
-          // "Williamsburg, Brooklyn" or "Park Slope, Brooklyn"
-          locationString = `${neighborhood}, ${suburb}`;
-        } else {
-          // "Brooklyn, New York"
-          locationString = `${suburb}, ${city}`;
-        }
-      } else if (countryCode === 'US') {
-        // US: Try "Neighborhood, City" or "City, State"
-        if (neighborhood && city) {
-          locationString = `${neighborhood}, ${city}`;
-        } else if (suburb && city) {
-          locationString = `${suburb}, ${city}`;
-        } else if (city && state) {
-          locationString = `${city}, ${state}`;
-        } else {
-          locationString = city || suburb || state;
-        }
-      } else {
-        // International: "Neighborhood, City" or "City, Country"
-        if (neighborhood && city) {
-          locationString = `${neighborhood}, ${city}`;
-        } else if (suburb && city) {
-          locationString = `${suburb}, ${city}`;
-        } else if (city && country) {
-          locationString = `${city}, ${country}`;
-        } else {
-          locationString = city || suburb || country;
-        }
-      }
-
-      // Fallback if we couldn't get a good name
       if (!locationString) {
-        locationString = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        locationString = await reverseGeocodeNominatim(lat, lng);
       }
 
       setState({ loading: false, error: null });
