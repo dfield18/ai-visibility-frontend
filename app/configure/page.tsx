@@ -61,6 +61,11 @@ const PROVIDER_INFO: Record<string, { name: string; description: string; cost: s
     description: 'xAI\'s AI with real-time data',
     cost: '$0.001/call',
   },
+  llama: {
+    name: 'Llama',
+    description: 'Meta\'s open-source LLM',
+    cost: '$0.0005/call',
+  },
 };
 
 export default function ConfigurePage() {

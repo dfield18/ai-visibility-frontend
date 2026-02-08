@@ -38,6 +38,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   perplexity: 'Perplexity',
   ai_overviews: 'Google AI Overviews',
   grok: 'Grok',
+  llama: 'Llama',
 };
 
 // Score color helper for site audits

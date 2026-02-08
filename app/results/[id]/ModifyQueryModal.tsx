@@ -20,9 +20,10 @@ const PROVIDER_LABELS: Record<string, string> = {
   perplexity: 'Perplexity',
   ai_overviews: 'Google AI Overviews',
   grok: 'Grok',
+  llama: 'Llama',
 };
 
-const ALL_PROVIDERS = ['openai', 'gemini', 'anthropic', 'perplexity', 'ai_overviews', 'grok'];
+const ALL_PROVIDERS = ['openai', 'gemini', 'anthropic', 'perplexity', 'ai_overviews', 'grok', 'llama'];
 
 export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryModalProps) {
   const extendRunMutation = useExtendRun();

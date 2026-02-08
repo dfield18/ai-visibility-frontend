@@ -3590,6 +3590,7 @@ export default function ResultsPage() {
       case 'ai_overviews': return 'Google AI Overviews';
       case 'gemini': return 'Google Gemini';
       case 'grok': return 'xAI Grok';
+      case 'llama': return 'Meta Llama';
       default: return provider;
     }
   };
