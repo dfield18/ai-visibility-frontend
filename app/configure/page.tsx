@@ -104,14 +104,6 @@ export default function ConfigurePage() {
     setCountry,
   } = useStore();
 
-  // Debug logging for providers
-  useEffect(() => {
-    console.log('[Configure] PROVIDER_INFO keys:', Object.keys(PROVIDER_INFO));
-    console.log('[Configure] Current providers from store:', providers);
-    console.log('[Configure] Grok in PROVIDER_INFO:', 'grok' in PROVIDER_INFO);
-    console.log('[Configure] Grok in providers array:', providers.includes('grok'));
-  }, [providers]);
-
   // Labels based on search type
   const isCategory = searchType === 'category';
   const brandsLabel = isCategory ? 'Brands to Track' : 'Competitors to Track';
@@ -682,9 +674,7 @@ export default function ConfigurePage() {
 
             {/* 2-column grid */}
             <div className="mt-5 grid grid-cols-2 gap-3">
-              {Object.entries(PROVIDER_INFO).map(([key, info]) => {
-                console.log('[Configure] Rendering provider:', key, info.name);
-                return (
+              {Object.entries(PROVIDER_INFO).map(([key, info]) => (
                 <button
                   key={key}
                   type="button"
@@ -713,8 +703,7 @@ export default function ConfigurePage() {
                     <p className="text-xs text-gray-500">{info.description}</p>
                   </div>
                 </button>
-              );
-              })}
+              ))}
             </div>
           </div>
 
