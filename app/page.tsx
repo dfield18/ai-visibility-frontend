@@ -193,10 +193,10 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <main className="flex-1 max-w-7xl mx-auto px-8 pt-20 pb-16 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-8 pt-[12vh] pb-16 w-full">
         <div className="grid lg:grid-cols-2 gap-16 items-start">
           {/* Left Column */}
-          <div className="pt-8">
+          <div>
             {/* Headline */}
             <h1 className="text-5xl md:text-6xl font-normal text-gray-900 tracking-tight leading-[1.1] mb-4">
               See how AI<br />
