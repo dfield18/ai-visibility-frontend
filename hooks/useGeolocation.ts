@@ -31,12 +31,25 @@ export function useGeolocation() {
       }
 
       // Get coordinates from browser
+      // Try with low accuracy first (faster), fall back to high accuracy if needed
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: false,
-          timeout: 10000,
-          maximumAge: 300000, // 5 minutes cache
-        });
+        // First attempt with low accuracy (uses network/wifi, faster)
+        navigator.geolocation.getCurrentPosition(
+          resolve,
+          () => {
+            // If low accuracy fails, try high accuracy (GPS)
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 30000,
+              maximumAge: 300000, // 5 minutes cache
+            });
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 15000,
+            maximumAge: 300000, // 5 minutes cache
+          }
+        );
       });
 
       const { latitude: lat, longitude: lng } = position.coords;
