@@ -96,18 +96,18 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
 
 // Category colors for source types
 const CATEGORY_COLORS: Record<string, string> = {
-  'Social Media': '#4A7C59',      // Primary green
-  'Video': '#6B9E7A',             // Medium green
-  'Reference': '#3D6B4D',         // Dark green
+  'Social Media': '#111827',      // Primary dark
+  'Video': '#374151',             // Gray-700
+  'Reference': '#1f2937',         // Gray-800
   'News & Media': '#5BA3C0',      // Light blue
-  'E-commerce': '#8BB5A2',        // Sage green
+  'E-commerce': '#6b7280',        // Gray-500
   'Reviews': '#7FBCD4',           // Sky blue
-  'Forums & Q&A': '#2D5A3D',      // Deep green
+  'Forums & Q&A': '#4b5563',      // Gray-600
   'Government': '#4A90A4',        // Teal blue
-  'Blogs': '#A8C5B5',             // Pale green
+  'Blogs': '#9ca3af',             // Gray-400
   'Travel': '#6BA3A0',            // Teal green
   'Finance': '#5B8FA8',           // Steel blue
-  'Other': '#B8C9BE'              // Light gray-green
+  'Other': '#d1d5db'              // Gray-300
 };
 
 // Helper to extract summary from potentially JSON-formatted text
@@ -992,7 +992,7 @@ export default function ResultsPage() {
 
     // Build chart data
     const chartData: { name: string; value: number; percentage: number; color: string; isSelected: boolean; isOther: boolean }[] = [];
-    const accentColor = '#4A7C59'; // Green accent for selected brand
+    const accentColor = '#111827'; // Dark accent for selected brand
     const neutralColor = '#94a3b8'; // Slate gray for other named brands
     const otherColor = '#d1d5db'; // Light gray for "All other brands"
 
@@ -3438,7 +3438,7 @@ export default function ResultsPage() {
         <title>AI Visibility Recommendations - ${runStatus.brand}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-          h1 { color: #4A7C59; margin-bottom: 8px; }
+          h1 { color: #111827; margin-bottom: 8px; }
           .subtitle { color: #6b7280; margin-bottom: 32px; }
           .recommendation { border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
           .rec-title { font-size: 18px; font-weight: 600; color: #111827; margin-bottom: 8px; }
@@ -3571,13 +3571,13 @@ export default function ResultsPage() {
   const isCategory = runStatus?.search_type === 'category';
 
   const getMentionRateColor = (rate: number) => {
-    if (rate >= 0.7) return 'text-[#4A7C59]';
+    if (rate >= 0.7) return 'text-gray-900';
     if (rate >= 0.4) return 'text-yellow-600';
     return 'text-red-500';
   };
 
   const getMentionRateBgColor = (rate: number) => {
-    if (rate >= 0.7) return 'bg-[#5B7B5D]';
+    if (rate >= 0.7) return 'bg-gray-700';
     if (rate >= 0.4) return 'bg-yellow-500';
     return 'bg-red-500';
   };
@@ -3740,7 +3740,7 @@ export default function ResultsPage() {
   const getCardBackground = (tone: InterpretationTone): string => {
     switch (tone) {
       case 'success':
-        return 'bg-gradient-to-br from-green-50/50 to-white';
+        return 'bg-gradient-to-br from-gray-50/50 to-white';
       case 'warn':
         return 'bg-gradient-to-br from-orange-50/50 to-white';
       default:
@@ -4188,7 +4188,7 @@ export default function ResultsPage() {
       </div>
 
       {/* AI Summary */}
-      <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
+      <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-blue-600" />
@@ -4197,7 +4197,7 @@ export default function ResultsPage() {
           {aiSummary?.summary && (
             <button
               onClick={() => setAiSummaryExpanded(!aiSummaryExpanded)}
-              className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+              className="inline-flex items-center gap-1 text-sm text-gray-900 hover:text-gray-700 font-medium"
             >
               {aiSummaryExpanded ? (
                 <>Show less <ChevronUp className="w-4 h-4" /></>
@@ -4225,7 +4225,7 @@ export default function ResultsPage() {
           <div className="mt-2 pt-2 border-t border-gray-100">
             <button
               onClick={() => setAiSummaryExpanded(true)}
-              className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+              className="text-sm text-gray-900 hover:text-gray-700 font-medium"
             >
               Read full analysis →
             </button>
@@ -4244,7 +4244,7 @@ export default function ResultsPage() {
             <select
               value={promptBreakdownLlmFilter}
               onChange={(e) => setPromptBreakdownLlmFilter(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             >
               <option value="all">All Models</option>
               {availableProviders.map((provider) => (
@@ -4412,7 +4412,7 @@ export default function ResultsPage() {
               <button
                 onClick={() => setShowSentimentColors(!showSentimentColors)}
                 className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                  showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
+                  showSentimentColors ? 'bg-gray-900' : 'bg-gray-300'
                 }`}
               >
                 <span
@@ -4533,7 +4533,7 @@ export default function ResultsPage() {
             <select
               value={llmBreakdownBrandFilter || llmBreakdownBrands[0] || ''}
               onChange={(e) => setLlmBreakdownBrandFilter(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             >
               {llmBreakdownBrands.map((brand, index) => (
                 <option key={brand} value={brand}>
@@ -4570,7 +4570,7 @@ export default function ResultsPage() {
                           }
                           setExpandedLLMCards(newExpanded);
                         }}
-                        className="text-xs text-[#4A7C59] hover:text-[#3d6649] font-medium flex items-center gap-1"
+                        className="text-xs text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1"
                       >
                         {isExpanded ? (
                           <>Hide responses <ChevronUp className="w-3 h-3" /></>
@@ -4596,7 +4596,7 @@ export default function ResultsPage() {
                       <p className="text-xs text-gray-500">{stats.mentioned}/{stats.total} mentions</p>
                       <div className="flex items-center gap-3 text-xs">
                         <span className="text-gray-500">
-                          top position: <span className="font-medium text-[#4A7C59]">{stats.mentioned === 0 || stats.topPosition === null ? 'n/a' : `#${stats.topPosition}`}</span>
+                          top position: <span className="font-medium text-gray-900">{stats.mentioned === 0 || stats.topPosition === null ? 'n/a' : `#${stats.topPosition}`}</span>
                         </span>
                         <span className="text-gray-500">
                           avg rank: <span className="font-medium text-gray-700">{stats.mentioned === 0 ? 'n/a' : (stats.avgRank !== null ? `#${stats.avgRank.toFixed(1)}` : 'n/a')}</span>
@@ -4706,7 +4706,7 @@ export default function ResultsPage() {
           <select
             value={providerFilter}
             onChange={(e) => setProviderFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
           >
             <option value="all">All Models</option>
             {availableProviders.map((p) => (
@@ -4727,7 +4727,7 @@ export default function ResultsPage() {
                   <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Prompt
                     {tableSortColumn === 'prompt' && (
-                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                      <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Question sent to AI</div>
@@ -4739,7 +4739,7 @@ export default function ResultsPage() {
                   <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     LLM Model
                     {tableSortColumn === 'llm' && (
-                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                      <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">AI model used</div>
@@ -4751,7 +4751,7 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Position
                     {tableSortColumn === 'position' && (
-                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                      <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Rank in response</div>
@@ -4764,7 +4764,7 @@ export default function ResultsPage() {
                     <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Mentioned
                       {tableSortColumn === 'mentioned' && (
-                        <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                        <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
                     </div>
                     <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Brand included</div>
@@ -4777,7 +4777,7 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Sentiment
                     {tableSortColumn === 'sentiment' && (
-                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                      <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">How AI framed brand</div>
@@ -4789,7 +4789,7 @@ export default function ResultsPage() {
                   <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {isCategory ? 'Brands' : 'Competitors'}
                     {tableSortColumn === 'competitors' && (
-                      <span className="text-[#4A7C59]">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
+                      <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Other brands shown</div>
@@ -4970,7 +4970,7 @@ export default function ResultsPage() {
                         {getCompetitorsList()}
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <span className="inline-flex items-center gap-1 text-sm text-[#4A7C59] font-medium">
+                        <span className="inline-flex items-center gap-1 text-sm text-gray-900 font-medium">
                           View <ExternalLink className="w-3 h-3" />
                         </span>
                       </td>
@@ -5135,7 +5135,7 @@ export default function ResultsPage() {
               onClick={() => setChartTab('allAnswers')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                 chartTab === 'allAnswers'
-                  ? 'border-[#4A7C59] text-[#4A7C59]'
+                  ? 'border-gray-900 text-gray-900'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -5145,7 +5145,7 @@ export default function ResultsPage() {
               onClick={() => setChartTab('performanceRange')}
               className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                 chartTab === 'performanceRange'
-                  ? 'border-[#4A7C59] text-[#4A7C59]'
+                  ? 'border-gray-900 text-gray-900'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -5163,7 +5163,7 @@ export default function ResultsPage() {
                   <button
                     onClick={() => setShowSentimentColors(!showSentimentColors)}
                     className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                      showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
+                      showSentimentColors ? 'bg-gray-900' : 'bg-gray-300'
                     }`}
                   >
                     <span
@@ -5404,7 +5404,7 @@ export default function ResultsPage() {
                   <button
                     onClick={() => setShowSentimentColors(!showSentimentColors)}
                     className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                      showSentimentColors ? 'bg-[#4A7C59]' : 'bg-gray-300'
+                      showSentimentColors ? 'bg-gray-900' : 'bg-gray-300'
                     }`}
                   >
                     <span
@@ -5845,7 +5845,7 @@ export default function ResultsPage() {
         </div>
       )}
       {/* AI Summary */}
-      <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
+      <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-blue-600" />
@@ -5854,7 +5854,7 @@ export default function ResultsPage() {
           {aiSummary?.summary && (
             <button
               onClick={() => setAiSummaryExpanded(!aiSummaryExpanded)}
-              className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+              className="inline-flex items-center gap-1 text-sm text-gray-900 hover:text-gray-700 font-medium"
             >
               {aiSummaryExpanded ? (
                 <>Show less <ChevronUp className="w-4 h-4" /></>
@@ -5882,7 +5882,7 @@ export default function ResultsPage() {
           <div className="mt-2 pt-2 border-t border-gray-100">
             <button
               onClick={() => setAiSummaryExpanded(true)}
-              className="text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+              className="text-sm text-gray-900 hover:text-gray-700 font-medium"
             >
               Read full analysis →
             </button>
@@ -5933,7 +5933,7 @@ export default function ResultsPage() {
             <select
               value={providerFilter}
               onChange={(e) => setProviderFilter(e.target.value)}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             >
               <option value="all">All Models</option>
               <option value="openai">OpenAI</option>
@@ -5979,7 +5979,7 @@ export default function ResultsPage() {
                             <AlertTriangle className="w-3 h-3" />Not Available
                           </span>
                         ) : result.brand_mentioned ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#E8F0E8] text-[#4A7C59] text-xs font-medium rounded-lg">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-900 text-xs font-medium rounded-lg">
                             <Check className="w-3 h-3" />Yes
                           </span>
                         ) : (
@@ -6013,7 +6013,7 @@ export default function ResultsPage() {
                     <td className="py-3 px-4 text-right">
                       <button
                         onClick={() => toggleExpanded(result.id)}
-                        className="inline-flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
+                        className="inline-flex items-center gap-1 text-sm text-gray-900 hover:text-gray-700 font-medium"
                       >
                         {expandedResults.has(result.id) ? (
                           <>Hide <ChevronUp className="w-4 h-4" /></>
@@ -6037,7 +6037,7 @@ export default function ResultsPage() {
                           ) : (
                             <>
                               <p className="text-xs text-gray-500 mb-2">Full Response:</p>
-                              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1 overflow-x-auto">
+                              <div className="text-sm text-gray-700 [&_a]:text-gray-900 [&_a]:underline [&_a]:hover:text-gray-700 [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1 overflow-x-auto">
                                 <ReactMarkdown
                                   remarkPlugins={[remarkGfm]}
                                   components={{
@@ -6066,7 +6066,7 @@ export default function ResultsPage() {
                                           href={source.url}
                                           target="_blank"
                                           rel="noopener noreferrer"
-                                          className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                          className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 hover:underline"
                                         >
                                           <ExternalLink className="w-3 h-3 flex-shrink-0" />
                                           <span className="truncate">
@@ -6088,7 +6088,7 @@ export default function ResultsPage() {
                                         <p className="text-xs text-gray-600 mb-1 line-clamp-2">&quot;{support.segment}&quot;</p>
                                         <div className="flex items-center gap-2">
                                           <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                            <div className="h-full bg-[#5B7B5D] rounded-full" style={{ width: `${(support.confidence_scores[0] || 0) * 100}%` }} />
+                                            <div className="h-full bg-gray-700 rounded-full" style={{ width: `${(support.confidence_scores[0] || 0) * 100}%` }} />
                                           </div>
                                           <span className="text-xs text-gray-500 w-12 text-right">{Math.round((support.confidence_scores[0] || 0) * 100)}%</span>
                                         </div>
@@ -6176,7 +6176,7 @@ export default function ResultsPage() {
               <select
                 value={sourceGapPromptFilter}
                 onChange={(e) => setSourceGapPromptFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[200px]"
               >
                 <option value="all">All Prompts</option>
                 {availablePrompts.map((prompt) => (
@@ -6188,7 +6188,7 @@ export default function ResultsPage() {
               <select
                 value={sourceGapProviderFilter}
                 onChange={(e) => setSourceGapProviderFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">All Models</option>
                 {availableProviders.map((provider) => (
@@ -6204,7 +6204,7 @@ export default function ResultsPage() {
           <div className="mb-6">
             <div className="flex items-center justify-center gap-6 mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#4A7C59]"></div>
+                <div className="w-3 h-3 rounded-full bg-gray-900"></div>
                 <span className="text-sm text-gray-600">{runStatus?.brand || 'Your Brand'}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -6253,7 +6253,7 @@ export default function ResultsPage() {
                         return (
                           <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
                             <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
-                            <p className="text-[#4A7C59]">
+                            <p className="text-gray-900">
                               {runStatus?.brand || 'Brand'}: {data.brandRate.toFixed(1)}%
                             </p>
                             <p className="text-blue-500">
@@ -6325,12 +6325,12 @@ export default function ResultsPage() {
                                   stroke="#9ca3af"
                                   strokeWidth={2}
                                 />
-                                {/* Brand dot (green) */}
+                                {/* Brand dot (dark) */}
                                 <circle
                                   cx={brandX}
                                   cy={yPos}
                                   r={6}
-                                  fill="#4A7C59"
+                                  fill="#111827"
                                   stroke="#fff"
                                   strokeWidth={1.5}
                                 />
@@ -6408,7 +6408,7 @@ export default function ResultsPage() {
                             ) : (
                               <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
                             )}
-                            <span className="text-[#4A7C59] font-medium">{row.domain}</span>
+                            <span className="text-gray-900 font-medium">{row.domain}</span>
                             <span className="text-xs text-gray-400">({row.totalCitations} citations)</span>
                           </div>
                         </td>
@@ -6466,7 +6466,7 @@ export default function ResultsPage() {
                                         <div
                                           key={snippetIdx}
                                           className="text-sm border-l-2 pl-3 py-1 cursor-pointer hover:bg-gray-50 rounded-r transition-colors"
-                                          style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
+                                          style={{ borderColor: snippetInfo.isBrand ? '#111827' : '#3b82f6' }}
                                           onClick={() => setSnippetDetailModal({
                                             brand: snippetInfo.brand,
                                             responseText: snippetInfo.responseText,
@@ -6486,7 +6486,7 @@ export default function ResultsPage() {
                                           <p className="text-gray-600 text-sm leading-relaxed">
                                             {parts.map((part, i) =>
                                               part.toLowerCase() === snippetInfo.brand.toLowerCase() ? (
-                                                <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-[#4A7C59]' : 'text-blue-600'}`}>
+                                                <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-gray-900' : 'text-blue-600'}`}>
                                                   {part}
                                                 </span>
                                               ) : (
@@ -6518,7 +6518,7 @@ export default function ResultsPage() {
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
-                                        className="flex items-start gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline group"
+                                        className="flex items-start gap-2 text-sm text-gray-900 hover:text-gray-700 hover:underline group"
                                       >
                                         <ExternalLink className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                                         <span className="break-all">
@@ -6568,7 +6568,7 @@ export default function ResultsPage() {
               <select
                 value={sentimentComparisonBrand}
                 onChange={(e) => setSentimentComparisonBrand(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="">{runStatus?.brand || 'Your Brand'}</option>
                 {availableBrands.filter(b => b !== runStatus?.brand).map((brand) => (
@@ -6580,7 +6580,7 @@ export default function ResultsPage() {
               <select
                 value={sourceSentimentGapPromptFilter}
                 onChange={(e) => setSourceSentimentGapPromptFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[200px]"
               >
                 <option value="all">All Prompts</option>
                 {availablePrompts.map((prompt) => (
@@ -6592,7 +6592,7 @@ export default function ResultsPage() {
               <select
                 value={sourceSentimentGapProviderFilter}
                 onChange={(e) => setSourceSentimentGapProviderFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">All Models</option>
                 {availableProviders.map((provider) => (
@@ -6608,7 +6608,7 @@ export default function ResultsPage() {
           <div className="mb-6">
             <div className="flex items-center justify-center gap-6 mb-3">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#4A7C59]"></div>
+                <div className="w-3 h-3 rounded-full bg-gray-900"></div>
                 <span className="text-sm text-gray-600">Presented more positively</span>
               </div>
               <div className="flex items-center gap-2">
@@ -6663,12 +6663,12 @@ export default function ResultsPage() {
                           <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
                             <p className="font-medium text-gray-900 mb-2">{data.fullDomain}</p>
                             <p className="text-gray-600 mb-1">
-                              {data.comparisonBrand || 'Brand'}: <span className="font-medium text-[#4A7C59]">{data.brandLabel}</span>
+                              {data.comparisonBrand || 'Brand'}: <span className="font-medium text-gray-900">{data.brandLabel}</span>
                             </p>
                             <p className="text-gray-600 mb-2">
                               {data.competitor || 'Other'}: <span className="font-medium text-blue-600">{data.competitorLabel}</span>
                             </p>
-                            <p className={`font-medium ${data.direction === 'brand' ? 'text-[#4A7C59]' : data.direction === 'competitor' ? 'text-blue-600' : 'text-gray-500'}`}>
+                            <p className={`font-medium ${data.direction === 'brand' ? 'text-gray-900' : data.direction === 'competitor' ? 'text-blue-600' : 'text-gray-500'}`}>
                               {data.labelText}
                             </p>
                           </div>
@@ -6680,12 +6680,12 @@ export default function ResultsPage() {
                   <Bar
                     dataKey="signedValue"
                     radius={[4, 4, 4, 4]}
-                    fill="#4A7C59"
+                    fill="#111827"
                   >
                     {sourceSentimentGapAnalysis.slice(0, 10).map((entry, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={entry.direction === 'brand' ? '#4A7C59' : entry.direction === 'competitor' ? '#3b82f6' : '#d1d5db'}
+                        fill={entry.direction === 'brand' ? '#111827' : entry.direction === 'competitor' ? '#3b82f6' : '#d1d5db'}
                       />
                     ))}
                   </Bar>
@@ -6729,7 +6729,7 @@ export default function ResultsPage() {
                             ) : (
                               <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
                             )}
-                            <span className="text-[#4A7C59] font-medium">{row.domain}</span>
+                            <span className="text-gray-900 font-medium">{row.domain}</span>
                             <span className="text-xs text-gray-400">({row.totalMentions} mentions)</span>
                           </div>
                         </td>
@@ -6804,7 +6804,7 @@ export default function ResultsPage() {
                                     <div
                                       key={snippetIdx}
                                       className="text-sm border-l-2 pl-3 py-2 cursor-pointer hover:bg-gray-50 rounded-r transition-colors"
-                                      style={{ borderColor: snippetInfo.isBrand ? '#4A7C59' : '#3b82f6' }}
+                                      style={{ borderColor: snippetInfo.isBrand ? '#111827' : '#3b82f6' }}
                                       onClick={() => setSnippetDetailModal({
                                         brand: snippetInfo.brand,
                                         responseText: snippetInfo.responseText,
@@ -6822,7 +6822,7 @@ export default function ResultsPage() {
                                         <span className="text-xs text-gray-400">
                                           via {getProviderLabel(snippetInfo.provider)}
                                         </span>
-                                        <span className="text-xs text-[#4A7C59] ml-auto">Click to view full response →</span>
+                                        <span className="text-xs text-gray-900 ml-auto">Click to view full response →</span>
                                       </div>
                                       <div className="bg-gray-50 rounded px-2 py-1.5 mb-1.5">
                                         <p className="text-xs text-gray-500 mb-0.5">Prompt</p>
@@ -6831,7 +6831,7 @@ export default function ResultsPage() {
                                       <p className="text-gray-600 text-sm leading-relaxed">
                                         {parts.map((part, i) =>
                                           part.toLowerCase() === snippetInfo.brand.toLowerCase() ? (
-                                            <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-[#4A7C59]' : 'text-blue-600'}`}>
+                                            <span key={i} className={`font-semibold ${snippetInfo.isBrand ? 'text-gray-900' : 'text-blue-600'}`}>
                                               {part}
                                             </span>
                                           ) : (
@@ -7990,18 +7990,18 @@ export default function ResultsPage() {
     };
 
     const CATEGORY_COLORS: Record<string, string> = {
-      'Social Media': '#4A7C59',      // Primary green
-      'Video': '#6B9E7A',             // Medium green
-      'Reference': '#3D6B4D',         // Dark green
+      'Social Media': '#111827',      // Primary dark
+      'Video': '#374151',             // Gray-700
+      'Reference': '#1f2937',         // Gray-800
       'News & Media': '#5BA3C0',      // Light blue
-      'E-commerce': '#8BB5A2',        // Sage green
+      'E-commerce': '#6b7280',        // Gray-500
       'Reviews': '#7FBCD4',           // Sky blue
-      'Forums & Q&A': '#2D5A3D',      // Deep green
+      'Forums & Q&A': '#4b5563',      // Gray-600
       'Government': '#4A90A4',        // Teal blue
-      'Blogs': '#A8C5B5',             // Pale green
+      'Blogs': '#9ca3af',             // Gray-400
       'Travel': '#6BA3A0',            // Teal green
       'Finance': '#5B8FA8',           // Steel blue
-      'Other': '#B8C9BE'              // Light gray-green
+      'Other': '#d1d5db'              // Gray-300
     };
 
     // Get icon component for a category
@@ -8047,9 +8047,9 @@ export default function ResultsPage() {
       <div className="space-y-6">
         {/* Key Influencers */}
         {keyInfluencers.length > 0 && (
-          <div className="bg-gradient-to-r from-[#E8F0E8] to-[#F0F4F0] rounded-xl border border-[#4A7C59]/20 p-6">
+          <div className="bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl border border-gray-200 p-6">
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-[#4A7C59]" />
+              <Sparkles className="w-5 h-5 text-gray-900" />
               <h2 className="text-lg font-semibold text-gray-900">Key Influencers</h2>
             </div>
             <p className="text-sm text-gray-500 mb-4">
@@ -8072,14 +8072,14 @@ export default function ResultsPage() {
                       }
                       setExpandedInfluencers(newExpanded);
                     }}
-                    className={`inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border hover:border-[#4A7C59] hover:shadow-sm transition-all cursor-pointer group ${isExpanded ? 'border-[#4A7C59] shadow-sm' : 'border-gray-200'}`}
+                    className={`inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border hover:border-gray-900 hover:shadow-sm transition-all cursor-pointer group ${isExpanded ? 'border-gray-900 shadow-sm' : 'border-gray-200'}`}
                   >
                     {isExpanded ? (
-                      <ChevronUp className="w-3.5 h-3.5 text-[#4A7C59]" />
+                      <ChevronUp className="w-3.5 h-3.5 text-gray-900" />
                     ) : (
-                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#4A7C59]" />
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-900" />
                     )}
-                    <span className={`text-sm font-medium ${isExpanded ? 'text-[#4A7C59]' : 'text-gray-700 group-hover:text-[#4A7C59]'}`}>{source.domain}</span>
+                    <span className={`text-sm font-medium ${isExpanded ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'}`}>{source.domain}</span>
                     <span className="text-xs text-gray-400">{source.providers.length} Models · {source.count} {source.count === 1 ? 'citation' : 'citations'}</span>
                   </div>
                 );
@@ -8087,7 +8087,7 @@ export default function ResultsPage() {
             </div>
             {/* Expanded content rendered separately below all items */}
             {keyInfluencers.filter(source => expandedInfluencers.has(source.domain)).map((source) => (
-              <div key={`expanded-${source.domain}`} className="mt-3 p-3 bg-white rounded-lg border border-[#4A7C59]/30 space-y-1.5">
+              <div key={`expanded-${source.domain}`} className="mt-3 p-3 bg-white rounded-lg border border-gray-900/30 space-y-1.5">
                 <p className="text-xs font-medium text-gray-500 mb-2">{source.domain} — {source.urlDetails.length} {source.urlDetails.length === 1 ? 'page' : 'pages'} cited:</p>
                 {source.urlDetails.map((urlDetail, idx) => {
                   const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
@@ -8098,7 +8098,7 @@ export default function ResultsPage() {
                       href={urlDetail.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                      className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <ExternalLink className="w-3 h-3 flex-shrink-0" />
@@ -8142,14 +8142,14 @@ export default function ResultsPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Link2 className="w-5 h-5 text-[#4A7C59]" />
+                  <Link2 className="w-5 h-5 text-gray-900" />
                   <h2 className="text-lg font-semibold text-gray-900">Top Cited Sources</h2>
                 </div>
                 <div className="flex items-center gap-2">
                   <select
                     value={sourcesBrandFilter}
                     onChange={(e) => setSourcesBrandFilter(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
                     <option value="all">All Brands</option>
                     {runStatus?.brand && availableBrands.includes(runStatus.brand) && (
@@ -8162,7 +8162,7 @@ export default function ResultsPage() {
                   <select
                     value={sourcesProviderFilter}
                     onChange={(e) => setSourcesProviderFilter(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
                     <option value="all">All Models</option>
                     {availableProviders.map((provider) => (
@@ -8208,7 +8208,7 @@ export default function ResultsPage() {
                           <span className="flex-shrink-0 relative group/icon" title={categorizeDomain(source.domain)}>
                             {getCategoryIcon(categorizeDomain(source.domain))}
                           </span>
-                          <div className="flex-1 flex items-center gap-1.5 text-sm font-medium text-[#4A7C59] min-w-0">
+                          <div className="flex-1 flex items-center gap-1.5 text-sm font-medium text-gray-900 min-w-0">
                             {isExpanded ? <ChevronUp className="w-3 h-3 flex-shrink-0" /> : <ChevronDown className="w-3 h-3 flex-shrink-0" />}
                             <span className="truncate">{source.domain}</span>
                           </div>
@@ -8246,7 +8246,7 @@ export default function ResultsPage() {
                                       href={urlDetail.url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="flex items-center gap-1.5 text-xs text-[#4A7C59] hover:text-[#3d6649] hover:underline min-w-0 flex-1"
+                                      className="flex items-center gap-1.5 text-xs text-gray-900 hover:text-gray-700 hover:underline min-w-0 flex-1"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
@@ -8449,7 +8449,7 @@ export default function ResultsPage() {
                 <select
                   value={sourcePositioningBrandFilter}
                   onChange={(e) => setSourcePositioningBrandFilter(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                 >
                   {sourcePositioningBrandOptions.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -8653,7 +8653,7 @@ export default function ResultsPage() {
               <select
                 value={brandCitationsBrandFilter}
                 onChange={(e) => setBrandCitationsBrandFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">All Brands</option>
                 {runStatus?.brand && (
@@ -8666,7 +8666,7 @@ export default function ResultsPage() {
               <select
                 value={brandCitationsProviderFilter}
                 onChange={(e) => setBrandCitationsProviderFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">All Models</option>
                 {availableProviders.map((provider) => (
@@ -8696,11 +8696,11 @@ export default function ResultsPage() {
                       }}
                     >
                       <span className="text-sm font-medium text-gray-400 w-6">{index + 1}.</span>
-                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-[#4A7C59]">
+                      <div className="flex-1 flex items-center gap-2 text-sm font-medium text-gray-900">
                         {isExpanded ? <ChevronUp className="w-3.5 h-3.5 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 flex-shrink-0" />}
                         <span>{capitalizeFirst(citation.brand)}&apos;s website</span>
                         {citation.isSearchedBrand && (
-                          <span className="text-xs px-1.5 py-0.5 bg-[#4A7C59] text-white rounded">searched</span>
+                          <span className="text-xs px-1.5 py-0.5 bg-gray-900 text-white rounded">searched</span>
                         )}
                       </div>
                       <div className="flex items-center gap-3">
@@ -8732,7 +8732,7 @@ export default function ResultsPage() {
                                 href={urlDetail.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-[#4A7C59] hover:text-[#3d6649] hover:underline"
+                                className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 hover:underline"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <ExternalLink className="w-3 h-3 flex-shrink-0" />
@@ -8804,7 +8804,7 @@ export default function ResultsPage() {
                       <span className="flex items-center gap-1">
                         Domain
                         {domainSortColumn === 'domain' && (
-                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                          <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </span>
                     </th>
@@ -8815,7 +8815,7 @@ export default function ResultsPage() {
                       <span className="flex items-center justify-center gap-1">
                         Used %
                         {domainSortColumn === 'usedPercent' && (
-                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                          <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </span>
                     </th>
@@ -8826,7 +8826,7 @@ export default function ResultsPage() {
                       <span className="flex items-center justify-center gap-1">
                         Avg Citations
                         {domainSortColumn === 'avgCitation' && (
-                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                          <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </span>
                     </th>
@@ -8837,7 +8837,7 @@ export default function ResultsPage() {
                       <span className="flex items-center justify-center gap-1">
                         Type
                         {domainSortColumn === 'category' && (
-                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                          <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </span>
                     </th>
@@ -8848,7 +8848,7 @@ export default function ResultsPage() {
                       <span className="flex items-center justify-center gap-1">
                         Sentiment
                         {domainSortColumn === 'avgSentiment' && (
-                          <span className="text-[#4A7C59]">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                          <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </span>
                     </th>
@@ -8904,7 +8904,7 @@ export default function ResultsPage() {
                           <div className="flex items-center justify-center gap-2">
                             <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-[#4A7C59] rounded-full"
+                                className="h-full bg-gray-900 rounded-full"
                                 style={{ width: `${Math.min(row.usedPercent, 100)}%` }}
                               />
                             </div>
@@ -9562,7 +9562,7 @@ export default function ResultsPage() {
             <ul className="space-y-3">
               {sentimentInsights.map((insight, idx) => (
                 <li key={idx} className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-[#E8F0E8] text-[#4A7C59] flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 rounded-full bg-gray-100 text-gray-900 flex items-center justify-center text-sm font-medium flex-shrink-0 mt-0.5">
                     {idx + 1}
                   </div>
                   <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
@@ -9686,7 +9686,7 @@ export default function ResultsPage() {
                     <select
                       value={sentimentByPromptSourceFilter}
                       onChange={(e) => setSentimentByPromptSourceFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     >
                       <option value="all">All Sources</option>
                       {sourceOptions.map((domain) => (
@@ -9696,7 +9696,7 @@ export default function ResultsPage() {
                     <select
                       value={sentimentByPromptBrandFilter || runStatus?.brand || ''}
                       onChange={(e) => setSentimentByPromptBrandFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     >
                       {brandOptions.map((option) => (
                         <option key={option.value} value={option.value}>{option.label}</option>
@@ -9756,7 +9756,7 @@ export default function ResultsPage() {
                   <select
                     value={sentimentByPromptSourceFilter}
                     onChange={(e) => setSentimentByPromptSourceFilter(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
                     <option value="all">All Sources</option>
                     {sourceOptions.map((domain) => (
@@ -9766,7 +9766,7 @@ export default function ResultsPage() {
                   <select
                     value={sentimentByPromptBrandFilter || runStatus?.brand || ''}
                     onChange={(e) => setSentimentByPromptBrandFilter(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
                     {brandOptions.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
@@ -9945,7 +9945,7 @@ export default function ResultsPage() {
               <select
                 value={sentimentProviderCitationFilter}
                 onChange={(e) => setSentimentProviderCitationFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">All Sources</option>
                 {citationSourceOptions.map((domain) => (
@@ -9955,7 +9955,7 @@ export default function ResultsPage() {
               <select
                 value={sentimentProviderBrandFilter || runStatus?.brand || ''}
                 onChange={(e) => setSentimentProviderBrandFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 {sentimentProviderBrandOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -10114,9 +10114,9 @@ export default function ResultsPage() {
                 </thead>
                 <tbody>
                   {/* Add the brand first for comparison */}
-                  <tr className="border-b border-gray-200 bg-[#E8F0E8]/30">
+                  <tr className="border-b border-gray-200 bg-gray-100/30">
                     <td className="py-3 px-4">
-                      <span className="text-sm font-medium text-[#4A7C59]">{runStatus?.brand} (Your Brand)</span>
+                      <span className="text-sm font-medium text-gray-900">{runStatus?.brand} (Your Brand)</span>
                     </td>
                     <td className="text-center py-3 px-2">
                       {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0 > 0 && (
@@ -10154,7 +10154,7 @@ export default function ResultsPage() {
                       )}
                     </td>
                     <td className="text-right py-3 px-4">
-                      <span className="text-sm font-medium text-[#4A7C59]">
+                      <span className="text-sm font-medium text-gray-900">
                         {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.percentage.toFixed(0) || 0}%
                       </span>
                     </td>
@@ -10224,7 +10224,7 @@ export default function ResultsPage() {
               <select
                 value={responseSentimentFilter}
                 onChange={(e) => setResponseSentimentFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">All Sentiments</option>
                 <option value="strong_endorsement">Highly Recommended</option>
@@ -10236,7 +10236,7 @@ export default function ResultsPage() {
               <select
                 value={responseLlmFilter}
                 onChange={(e) => setResponseLlmFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">All Models</option>
                 {availableProviders.map((provider) => (
@@ -10406,7 +10406,7 @@ export default function ResultsPage() {
                               {getCompetitorsList()}
                             </td>
                             <td className="py-4 px-4 text-right">
-                              <span className="inline-flex items-center gap-1 text-sm text-[#4A7C59] font-medium">
+                              <span className="inline-flex items-center gap-1 text-sm text-gray-900 font-medium">
                                 View <ExternalLink className="w-3 h-3" />
                               </span>
                             </td>
@@ -10923,7 +10923,7 @@ export default function ResultsPage() {
             </div>
             <div className="bg-white rounded-lg p-8 border border-gray-200">
               <div className="flex flex-col items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#4A7C59] mb-4"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
                 <p className="text-sm text-gray-500">Analyzing your visibility data and generating recommendations...</p>
               </div>
             </div>
@@ -10979,7 +10979,7 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-[#E8F5E9] rounded-lg flex items-center justify-center">
-              <Target className="w-5 h-5 text-[#4A7C59]" />
+              <Target className="w-5 h-5 text-gray-900" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Recommended High-Impact Actions</h2>
@@ -11040,7 +11040,7 @@ export default function ResultsPage() {
                       <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
                         {/* Quick Wins quadrant (top-left) - label in top-left corner */}
                         <div className="bg-[#E8F5E9] border border-gray-100 relative">
-                          <span className="absolute top-1 left-1 text-[9px] text-[#4A7C59] font-medium opacity-70">Quick Wins</span>
+                          <span className="absolute top-1 left-1 text-[9px] text-gray-900 font-medium opacity-70">Quick Wins</span>
                         </div>
                         <div className="bg-[#E8F5E9]/50 border border-gray-100" />
                         {/* Major Projects quadrant (top-right) - label in top-right corner */}
@@ -11104,8 +11104,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           >
                             {/* Dot with label */}
                             <div className="flex items-center gap-1.5 relative">
-                              <div className="w-3 h-3 bg-[#4A7C59] rounded-full shadow-sm border border-white flex-shrink-0 group-hover:scale-125 transition-transform duration-150" />
-                              <span className="text-[11px] font-medium text-gray-700 bg-white/90 px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap group-hover:bg-[#4A7C59] group-hover:text-white transition-colors duration-150">
+                              <div className="w-3 h-3 bg-gray-900 rounded-full shadow-sm border border-white flex-shrink-0 group-hover:scale-125 transition-transform duration-150" />
+                              <span className="text-[11px] font-medium text-gray-700 bg-white/90 px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap group-hover:bg-gray-900 group-hover:text-white transition-colors duration-150">
                                 <span className="group-hover:hidden">{shortTitle}</span>
                                 <span className="hidden group-hover:inline">{isTruncated ? rec.title : shortTitle}</span>
                               </span>
@@ -11232,7 +11232,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                 <ul className="text-xs text-gray-600 space-y-1.5">
                                   {rec.tactics.map((tactic, tidx) => (
                                     <li key={tidx} className="flex items-start gap-1.5">
-                                      <span className="text-[#4A7C59] mt-0.5 flex-shrink-0">•</span>
+                                      <span className="text-gray-900 mt-0.5 flex-shrink-0">•</span>
                                       <span>{tactic}</span>
                                     </li>
                                   ))}
@@ -11271,8 +11271,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
         {/* Site Audit Insights */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-[#E8F0E8] rounded-lg flex items-center justify-center">
-              <Globe className="w-5 h-5 text-[#4A7C59]" />
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Globe className="w-5 h-5 text-gray-900" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Website LLM Optimization</h2>
@@ -11398,7 +11398,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
               <button
                 onClick={() => setActiveTab('site-audit')}
-                className="text-sm text-[#4A7C59] hover:underline flex items-center gap-1"
+                className="text-sm text-gray-900 hover:underline flex items-center gap-1"
               >
                 View full site audit details
                 <ChevronRight className="w-4 h-4" />
@@ -11413,7 +11413,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               </p>
               <button
                 onClick={() => setActiveTab('site-audit')}
-                className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-lg hover:bg-[#3d6649] transition-colors inline-flex items-center gap-2"
+                className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center gap-2"
               >
                 <Globe className="w-4 h-4" />
                 Run Site Audit
@@ -11468,7 +11468,16 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
   // Loading state
   if (showLoading) {
     return (
-      <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
+      <main
+        className="min-h-screen bg-[#FAFAF8] flex items-center justify-center"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: '48px 48px',
+        }}
+      >
         <div className="flex flex-col items-center">
           <Spinner size="lg" />
           <p className="mt-4 text-gray-500">Loading results...</p>
@@ -11480,7 +11489,16 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
   // Error state
   if (showError) {
     return (
-      <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4">
+      <main
+        className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-4"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: '48px 48px',
+        }}
+      >
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 max-w-md w-full text-center p-8">
           <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-xl font-semibold text-gray-900 mb-2">
@@ -11491,7 +11509,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
           </p>
           <button
             onClick={() => router.push('/')}
-            className="px-6 py-3 bg-[#4A7C59] text-white font-medium rounded-xl hover:bg-[#3d6649] transition-colors"
+            className="px-6 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
           >
             Start New Analysis
           </button>
@@ -11504,7 +11522,16 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
   const validRunStatus = runStatus!;
 
   return (
-    <main className="min-h-screen bg-[#FAFAF8] pb-8">
+    <main
+      className="min-h-screen bg-[#FAFAF8] pb-8"
+      style={{
+        backgroundImage: `
+          linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px)
+        `,
+        backgroundSize: '48px 48px',
+      }}
+    >
       {/* Sticky Header Section */}
       <div className="sticky top-0 z-20 bg-[#FAFAF8] shadow-sm">
         {/* Header */}
@@ -11521,7 +11548,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 </button>
                 <div>
                   <h1 className="text-lg font-semibold text-gray-900">
-                    Results for <span className="text-[#4A7C59]">{validRunStatus.brand}</span>
+                    Results for <span className="text-gray-900">{validRunStatus.brand}</span>
                     {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
                   </h1>
                   <p className="text-sm text-gray-500">
@@ -11537,7 +11564,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 {validRunStatus.status === 'complete' && !validRunStatus.extension_info?.has_running_extension && (
                   <button
                     onClick={() => setShowModifyModal(true)}
-                    className="px-4 py-2 bg-white text-[#4A7C59] text-sm font-medium rounded-xl border border-[#4A7C59] hover:bg-[#4A7C59]/5 transition-colors flex items-center gap-2"
+                    className="px-4 py-2 bg-white text-gray-900 text-sm font-medium rounded-xl border border-gray-900 hover:bg-gray-900/5 transition-colors flex items-center gap-2"
                   >
                     <Edit2 className="w-4 h-4" />
                     Modify Query
@@ -11551,7 +11578,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 )}
                 <button
                   onClick={() => router.push('/')}
-                  className="px-4 py-2 bg-[#4A7C59] text-white text-sm font-medium rounded-xl hover:bg-[#3d6649] transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-xl hover:bg-gray-800 transition-colors flex items-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
                   New Analysis
@@ -11578,7 +11605,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === tab.id
-                      ? 'border-[#4A7C59] text-[#4A7C59]'
+                      ? 'border-gray-900 text-gray-900'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -11669,14 +11696,14 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                             <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[220px]">
                               <div className={`bg-white rounded-xl shadow-sm px-4 py-4 h-full hover:shadow-md transition-shadow ${
                                 brandData.isSearchedBrand
-                                  ? 'border-2 border-[#4A7C59] ring-2 ring-[#4A7C59]/20'
+                                  ? 'border-2 border-gray-900 ring-2 ring-gray-900/20'
                                   : 'border border-gray-200'
                               }`}>
                                 {/* Brand Name */}
                                 <div className="flex items-center justify-center gap-2 mb-3">
                                   <span className="font-semibold text-gray-900 text-sm">{brandData.brand}</span>
                                   {brandData.isSearchedBrand && (
-                                    <span className="text-[10px] bg-[#E8F0E8] text-[#4A7C59] px-1.5 py-0.5 rounded-full">Your Brand</span>
+                                    <span className="text-[10px] bg-gray-100 text-gray-900 px-1.5 py-0.5 rounded-full">Your Brand</span>
                                   )}
                                 </div>
 
@@ -11762,7 +11789,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
             {/* Competitive Insights Summary */}
             {competitiveInsights.length > 0 && (
-              <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl shadow-sm border border-blue-100 p-6">
+              <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Lightbulb className="w-5 h-5 text-blue-600" />
                   <h2 className="text-lg font-semibold text-gray-900">Key Competitive Insights</h2>
@@ -11792,7 +11819,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <select
                       value={brandBreakdownPromptFilter}
                       onChange={(e) => setBrandBreakdownPromptFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[200px]"
                     >
                       <option value="all">All Prompts</option>
                       {availablePrompts.map((prompt) => (
@@ -11804,7 +11831,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <select
                       value={brandBreakdownLlmFilter}
                       onChange={(e) => setBrandBreakdownLlmFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     >
                       <option value="all">All Models</option>
                       {availableProviders.map((provider) => (
@@ -11919,11 +11946,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                   ) : (
                                     <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                   )}
-                                  <span className={`font-medium ${stat.isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-900'}`}>
+                                  <span className={`font-medium ${stat.isSearchedBrand ? 'text-gray-900' : 'text-gray-900'}`}>
                                     {stat.brand}
                                   </span>
                                   {stat.isSearchedBrand && (
-                                    <span className="text-xs px-1.5 py-0.5 bg-[#E8F0E8] text-[#4A7C59] rounded">searched</span>
+                                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-900 rounded">searched</span>
                                   )}
                                 </div>
                               </td>
@@ -12083,7 +12110,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <select
                       value={brandPositioningPromptFilter}
                       onChange={(e) => setBrandPositioningPromptFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent max-w-[200px]"
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[200px]"
                     >
                       <option value="all">All Prompts</option>
                       {availablePrompts.map((prompt) => (
@@ -12095,7 +12122,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <select
                       value={brandPositioningLlmFilter}
                       onChange={(e) => setBrandPositioningLlmFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     >
                       <option value="all">All Models</option>
                       {availableProviders.map((provider) => (
@@ -12282,7 +12309,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   <select
                     value={promptMatrixLlmFilter}
                     onChange={(e) => setPromptMatrixLlmFilter(e.target.value)}
-                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
                     <option value="all">All Models</option>
                     {availableProviders.map((provider) => (
@@ -12316,11 +12343,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         return (
                           <tr key={brand} className={brandIdx % 2 === 0 ? 'bg-gray-50' : ''}>
                             <td className={`py-2 px-2 sticky left-0 ${brandIdx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-                              <span className={`font-medium ${isSearchedBrand ? 'text-[#4A7C59]' : 'text-gray-900'}`}>
+                              <span className={`font-medium ${isSearchedBrand ? 'text-gray-900' : 'text-gray-900'}`}>
                                 {brand.length > 15 ? brand.substring(0, 13) + '...' : brand}
                               </span>
                               {isSearchedBrand && (
-                                <span className="text-xs px-1 ml-1 bg-[#E8F0E8] text-[#4A7C59] rounded">you</span>
+                                <span className="text-xs px-1 ml-1 bg-gray-100 text-gray-900 rounded">you</span>
                               )}
                             </td>
                             {promptPerformanceMatrix.matrix[brandIdx].map((rate, promptIdx) => {
@@ -12418,11 +12445,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         <div key={idx} className="flex items-center gap-4">
                           <div className="w-48 flex-shrink-0">
                             <div className="flex items-center gap-1 text-sm">
-                              <span className={pair.brand1 === runStatus?.brand ? 'font-semibold text-[#4A7C59]' : 'text-gray-700'}>
+                              <span className={pair.brand1 === runStatus?.brand ? 'font-semibold text-gray-900' : 'text-gray-700'}>
                                 {pair.brand1.length > 12 ? pair.brand1.substring(0, 10) + '...' : pair.brand1}
                               </span>
                               <span className="text-gray-400">+</span>
-                              <span className={pair.brand2 === runStatus?.brand ? 'font-semibold text-[#4A7C59]' : 'text-gray-700'}>
+                              <span className={pair.brand2 === runStatus?.brand ? 'font-semibold text-gray-900' : 'text-gray-700'}>
                                 {pair.brand2.length > 12 ? pair.brand2.substring(0, 10) + '...' : pair.brand2}
                               </span>
                             </div>
@@ -12608,7 +12635,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         onClick={() => setHeatmapShowSentiment(false)}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                           !heatmapShowSentiment
-                            ? 'border-[#4A7C59] text-[#4A7C59]'
+                            ? 'border-gray-900 text-gray-900'
                             : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                       >
@@ -12618,7 +12645,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         onClick={() => setHeatmapShowSentiment(true)}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
                           heatmapShowSentiment
-                            ? 'border-[#4A7C59] text-[#4A7C59]'
+                            ? 'border-gray-900 text-gray-900'
                             : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                       >
@@ -12628,7 +12655,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <select
                       value={heatmapProviderFilter}
                       onChange={(e) => setHeatmapProviderFilter(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
+                      className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     >
                       <option value="all">All Models</option>
                       {availableProviders.map((provider) => (
@@ -12697,7 +12724,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                             key={brand}
                             className={`text-center py-2 px-3 font-medium border-b border-gray-200 min-w-[100px] ${
                               brand === brandSourceHeatmap.searchedBrand
-                                ? 'text-[#4A7C59] bg-green-50'
+                                ? 'text-gray-900 bg-green-50'
                                 : 'text-gray-600'
                             }`}
                             title={`${brandSourceHeatmap.brandTotals[brand] || 0} total ${(brandSourceHeatmap.brandTotals[brand] || 0) === 1 ? 'mention' : 'mentions'}`}
@@ -12720,7 +12747,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         );
                         return brandSourceHeatmap.data.map((row, index) => (
                           <tr key={row.domain} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                            <td className="py-2 px-3 font-medium text-[#4A7C59] sticky left-0 bg-inherit z-10" title={row.domain}>
+                            <td className="py-2 px-3 font-medium text-gray-900 sticky left-0 bg-inherit z-10" title={row.domain}>
                               <div className="flex items-center gap-2 max-w-[180px]">
                                 <span className="flex-shrink-0 relative group/heatmapicon">
                                   {getCategoryIcon(categorizeDomain(row.domain), "w-3.5 h-3.5")}
@@ -12758,7 +12785,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                   barColor = '#ef4444'; // Not Recommended - red
                                 }
                               } else if (!heatmapShowSentiment && count > 0) {
-                                barColor = isSearchedBrand ? '#4A7C59' : '#5ba3c0';
+                                barColor = isSearchedBrand ? '#111827' : '#5ba3c0';
                               }
 
                               return (
@@ -12857,7 +12884,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   Highlighting: {snippetDetailModal.brand}
                 </span>
               </div>
-              <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1">
+              <div className="text-sm text-gray-700 [&_a]:text-gray-900 [&_a]:underline [&_a]:hover:text-gray-700 [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{
@@ -12916,7 +12943,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 <p className="text-sm text-gray-500">
                   Temperature: {selectedResult.temperature}
                   {selectedResultHighlight && (
-                    <span className="ml-2 text-[#4A7C59]">
+                    <span className="ml-2 text-gray-900">
                       • Highlighting {selectedResultHighlight.domain
                         ? <>references to <span className="font-medium">{selectedResultHighlight.domain}</span></>
                         : <>mentions of <span className="font-medium">{selectedResultHighlight.brand}</span></>
@@ -12949,7 +12976,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 <>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {!isCategory && (
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg ${selectedResult.brand_mentioned ? 'bg-[#E8F0E8] text-[#4A7C59]' : 'bg-gray-100 text-gray-600'}`}>
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg ${selectedResult.brand_mentioned ? 'bg-gray-100 text-gray-900' : 'bg-gray-100 text-gray-600'}`}>
                         {selectedResult.brand_mentioned ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
                         {runStatus?.brand} {selectedResult.brand_mentioned ? 'Mentioned' : 'Not Mentioned'}
                       </span>
@@ -12982,7 +13009,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       </span>
                     )}
                   </div>
-                  <div className="text-sm text-gray-700 [&_a]:text-[#4A7C59] [&_a]:underline [&_a]:hover:text-[#3d6649] [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1">
+                  <div className="text-sm text-gray-700 [&_a]:text-gray-900 [&_a]:underline [&_a]:hover:text-gray-700 [&_p]:mb-3 [&_p]:leading-relaxed [&_ul]:mb-3 [&_ul]:pl-5 [&_ul]:list-disc [&_ol]:mb-3 [&_ol]:pl-5 [&_ol]:list-decimal [&_li]:mb-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:font-semibold [&_h3]:mb-2 [&_strong]:font-semibold [&_table]:w-full [&_table]:mb-3 [&_table]:border-collapse [&_table]:text-xs [&_th]:border [&_th]:border-gray-300 [&_th]:bg-gray-100 [&_th]:px-2 [&_th]:py-1 [&_th]:text-left [&_th]:font-semibold [&_td]:border [&_td]:border-gray-300 [&_td]:px-2 [&_td]:py-1">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       components={{
@@ -13011,7 +13038,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                               href={href}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[#4A7C59] hover:underline"
+                              className="text-gray-900 hover:underline"
                             >
                               {children}
                             </a>
@@ -13150,7 +13177,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                               className={`flex items-center gap-2 text-sm hover:underline ${
                                 isHighlightedDomain
                                   ? 'text-yellow-700 bg-yellow-100 px-2 py-1 rounded -mx-2 border-l-4 border-yellow-400'
-                                  : 'text-[#4A7C59] hover:text-[#3d6649]'
+                                  : 'text-gray-900 hover:text-gray-700'
                               }`}
                             >
                               <ExternalLink className="w-3 h-3 flex-shrink-0" />
@@ -13212,7 +13239,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               {heatmapResultsList.results.map((result, idx) => (
                 <div
                   key={result.id}
-                  className="p-3 border border-gray-200 rounded-lg hover:border-[#4A7C59] hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="p-3 border border-gray-200 rounded-lg hover:border-gray-900 hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => {
                     setSelectedResult(result);
                     setSelectedResultHighlight({ brand: heatmapResultsList.brand, domain: heatmapResultsList.domain });
