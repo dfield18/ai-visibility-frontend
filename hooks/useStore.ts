@@ -232,8 +232,7 @@ export const useStore = create<VisibilityStore>()(
         }),
       resetConfig: () =>
         set({
-          location: '',
-          locationCoords: null,
+          // Note: location is NOT cleared here - it's part of the search context like brand
           prompts: [],
           selectedPrompts: new Set<string>(),
           competitors: [],
