@@ -659,10 +659,11 @@ export default function ConfigurePage() {
                   {competitors.map((competitor) => (
                     <div
                       key={competitor}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 text-sm cursor-pointer transition-all hover:bg-gray-200"
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm cursor-pointer transition-all"
+                      style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
                       onClick={() => toggleCompetitor(competitor)}
                     >
-                      <div className="w-5 h-5 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#8B5CF6' }}>
                         <Check className="w-3 h-3 text-white" strokeWidth={3} />
                       </div>
                       <span className="text-gray-700 font-medium">{competitor}</span>
@@ -750,18 +751,17 @@ export default function ConfigurePage() {
                   key={key}
                   type="button"
                   onClick={() => toggleProvider(key)}
-                  className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
-                    providers.includes(key)
-                      ? 'bg-gray-100'
-                      : 'bg-gray-50 hover:bg-gray-100'
-                  }`}
+                  className="flex items-center gap-3 p-3 rounded-xl text-left transition-all"
+                  style={{
+                    backgroundColor: providers.includes(key) ? 'rgba(139, 92, 246, 0.1)' : 'rgba(0, 0, 0, 0.02)',
+                  }}
                 >
                   <div
-                    className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                      providers.includes(key)
-                        ? 'bg-gray-900'
-                        : 'border-2 border-gray-300'
-                    }`}
+                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+                    style={{
+                      backgroundColor: providers.includes(key) ? '#8B5CF6' : 'transparent',
+                      border: providers.includes(key) ? 'none' : '2px solid #D1D5DB',
+                    }}
                   >
                     {providers.includes(key) && (
                       <Check className="w-3 h-3 text-white" strokeWidth={3} />
