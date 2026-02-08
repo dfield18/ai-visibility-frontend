@@ -189,11 +189,16 @@ export default function Home() {
           {/* Left Column */}
           <div className="pt-8">
             {/* Headline */}
-            <h1 className="text-5xl md:text-6xl font-normal text-gray-900 tracking-tight leading-[1.1] mb-12">
+            <h1 className="text-5xl md:text-6xl font-normal text-gray-900 tracking-tight leading-[1.1] mb-4">
               See how AI<br />
               <span className="italic font-serif" style={{ color: '#4285f4' }}>views</span> your<br />
               brand
             </h1>
+
+            {/* Subheadline */}
+            <p className="text-lg text-gray-500 mb-10 max-w-md">
+              Discover how ChatGPT, Claude, and Gemini recommend your brand vs competitors. Get actionable insights to improve your AI visibility.
+            </p>
 
             {/* Search Form */}
             <form onSubmit={handleSubmit} className="mb-6">
@@ -212,7 +217,7 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={!brandInput.trim() || isValidating}
-                  className="px-6 py-3.5 text-sm bg-gray-400 text-white font-medium hover:bg-gray-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 py-3.5 text-sm bg-gray-900 text-white font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isValidating ? (
                     <>
