@@ -72,49 +72,55 @@ export function useGeolocation() {
       const address = data.address || {};
 
       // Nominatim returns detailed address components:
-      // neighbourhood, suburb, city_district, city/town/village, state, country
+      // quarter (NYC neighborhoods), neighbourhood, suburb (Brooklyn), city, state, country
+      const quarter = address.quarter || ''; // NYC uses "quarter" for neighborhoods like Williamsburg
       const neighbourhood = address.neighbourhood || '';
-      const suburb = address.suburb || '';
+      const suburb = address.suburb || ''; // NYC boroughs like Brooklyn are in suburb
       const cityDistrict = address.city_district || '';
       const city = address.city || address.town || address.village || '';
-      const borough = address.borough || ''; // For NYC boroughs like Brooklyn
       const state = address.state || '';
       const country = address.country || '';
       const countryCode = address.country_code?.toUpperCase() || '';
 
       // Build location string with best available precision
-      // Priority: neighbourhood > suburb > city_district > borough > city
+      // For NYC: quarter=Williamsburg, suburb=Brooklyn, city=New York
       let locationString = '';
 
-      // Get the most specific area name
-      const specificArea = neighbourhood || suburb || cityDistrict || '';
+      // Get the most specific neighborhood name
+      const neighborhood = quarter || neighbourhood || cityDistrict || '';
 
-      // For NYC and similar cities with boroughs
-      if (borough && city) {
-        if (specificArea) {
+      // Check if this looks like NYC (has suburb like Brooklyn/Manhattan/Queens and city is New York)
+      const isNYC = suburb && city === 'New York';
+
+      if (isNYC) {
+        if (neighborhood) {
           // "Williamsburg, Brooklyn" or "Park Slope, Brooklyn"
-          locationString = `${specificArea}, ${borough}`;
+          locationString = `${neighborhood}, ${suburb}`;
         } else {
           // "Brooklyn, New York"
-          locationString = `${borough}, ${city}`;
+          locationString = `${suburb}, ${city}`;
         }
       } else if (countryCode === 'US') {
         // US: Try "Neighborhood, City" or "City, State"
-        if (specificArea && city) {
-          locationString = `${specificArea}, ${city}`;
+        if (neighborhood && city) {
+          locationString = `${neighborhood}, ${city}`;
+        } else if (suburb && city) {
+          locationString = `${suburb}, ${city}`;
         } else if (city && state) {
           locationString = `${city}, ${state}`;
         } else {
-          locationString = city || state;
+          locationString = city || suburb || state;
         }
       } else {
         // International: "Neighborhood, City" or "City, Country"
-        if (specificArea && city) {
-          locationString = `${specificArea}, ${city}`;
+        if (neighborhood && city) {
+          locationString = `${neighborhood}, ${city}`;
+        } else if (suburb && city) {
+          locationString = `${suburb}, ${city}`;
         } else if (city && country) {
           locationString = `${city}, ${country}`;
         } else {
-          locationString = city || country;
+          locationString = city || suburb || country;
         }
       }
 
