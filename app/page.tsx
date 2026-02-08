@@ -210,8 +210,8 @@ export default function Home() {
             </p>
 
             {/* Search Form */}
-            <form onSubmit={handleSubmit} className="mb-6">
-              <div className={`flex items-center bg-white border rounded-lg overflow-hidden ${error ? 'border-red-300' : 'border-gray-200'}`}>
+            <form onSubmit={handleSubmit} className="mb-6 max-w-md">
+              <div className={`flex items-center bg-white border rounded-lg overflow-hidden transition-shadow ${error ? 'border-red-300' : 'border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100'}`}>
                 <input
                   type="text"
                   placeholder="brand, industry or comparison"
@@ -275,8 +275,8 @@ export default function Home() {
           </div>
 
           {/* Right Column - Dashboard Preview Card */}
-          <div className="flex justify-center lg:justify-end">
-            <div className="bg-white rounded-xl border border-gray-200 w-full max-w-sm">
+          <div className="flex justify-center lg:justify-start">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-lg w-full max-w-sm">
               {/* Card Header */}
               <div className="px-5 py-4 border-b border-gray-100">
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Visibility Report</p>
@@ -332,7 +332,7 @@ export default function Home() {
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Recent Mentions</p>
                 <div className="space-y-2">
                   <p className="text-sm text-gray-600">&quot;Best running shoes for beginners&quot;</p>
-                  <p className="text-sm text-gray-600">&quot;Top athletic brands in 2024&quot;</p>
+                  <p className="text-sm text-gray-600">&quot;Top athletic brands in 2026&quot;</p>
                   <p className="text-sm text-gray-600">&quot;Sneakers for marathon training&quot;</p>
                 </div>
               </div>
