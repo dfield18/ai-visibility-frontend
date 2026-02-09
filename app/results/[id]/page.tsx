@@ -3912,9 +3912,9 @@ export default function ResultsPage() {
     if (!sentiment) return '#9ca3af'; // gray for no sentiment
     switch (sentiment) {
       case 'strong_endorsement':
-        return '#111827'; // green-600 - Highly Recommended
+        return '#111827'; // gray-900 - Highly Recommended
       case 'positive_endorsement':
-        return '#6b7280'; // green-400 - Recommended
+        return '#6b7280'; // gray-500 - Recommended
       case 'neutral_mention':
         return '#9ca3af'; // gray-400 - Neutral
       case 'conditional':
@@ -3925,6 +3925,28 @@ export default function ResultsPage() {
         return '#d1d5db'; // gray-300 - Not mentioned
       default:
         return '#9ca3af'; // gray for unknown
+    }
+  };
+
+  // Get platform brand color
+  const getProviderBrandColor = (provider: string): string => {
+    switch (provider.toLowerCase()) {
+      case 'openai':
+        return '#10a37f'; // ChatGPT teal
+      case 'anthropic':
+        return '#d97706'; // Claude orange
+      case 'gemini':
+        return '#4285f4'; // Google blue
+      case 'perplexity':
+        return '#6366f1'; // Perplexity indigo
+      case 'grok':
+        return '#1d9bf0'; // xAI blue
+      case 'llama':
+        return '#8b5cf6'; // Meta purple
+      case 'ai_overviews':
+        return '#ea4335'; // Google red
+      default:
+        return '#6b7280'; // gray fallback
     }
   };
 
@@ -4424,32 +4446,66 @@ export default function ResultsPage() {
             </label>
           </div>
 
-          {/* Legend - only show when sentiment colors are enabled */}
-          {showSentimentColors && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
-              <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
-                <span className="text-xs text-gray-500">Highly Recommended</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
-                <span className="text-xs text-gray-500">Recommended</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
-                <span className="text-xs text-gray-500">Neutral</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
-                <span className="text-xs text-gray-500">With Caveats</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                <span className="text-xs text-gray-500">Not Recommended</span>
-              </div>
-            </div>
-          )}
+          {/* Legend - show platform colors or sentiment colors */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
+            {showSentimentColors ? (
+              <>
+                <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
+                  <span className="text-xs text-gray-500">Highly Recommended</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
+                  <span className="text-xs text-gray-500">Recommended</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
+                  <span className="text-xs text-gray-500">Neutral</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
+                  <span className="text-xs text-gray-500">With Caveats</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
+                  <span className="text-xs text-gray-500">Not Recommended</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-gray-600 font-medium">Platform:</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10a37f' }} />
+                  <span className="text-xs text-gray-500">ChatGPT</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#d97706' }} />
+                  <span className="text-xs text-gray-500">Claude</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4285f4' }} />
+                  <span className="text-xs text-gray-500">Gemini</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6366f1' }} />
+                  <span className="text-xs text-gray-500">Perplexity</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#1d9bf0' }} />
+                  <span className="text-xs text-gray-500">Grok</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
+                  <span className="text-xs text-gray-500">Llama</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ea4335' }} />
+                  <span className="text-xs text-gray-500">AI Overviews</span>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Dot Plot Grid */}
           <div className="space-y-4">
@@ -4467,7 +4523,7 @@ export default function ResultsPage() {
                           <div key={idx} className="relative group">
                             <div
                               className="w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
-                              style={{ backgroundColor: showSentimentColors ? getSentimentDotColor(dot.sentiment) : '#9ca3af' }}
+                              style={{ backgroundColor: showSentimentColors ? getSentimentDotColor(dot.sentiment) : getProviderBrandColor(dot.originalResult?.provider || provider) }}
                               onClick={() => setSelectedResult(dot.originalResult)}
                             />
                             {/* Tooltip on hover */}
