@@ -3719,7 +3719,7 @@ export default function ResultsPage() {
   const getToneStyles = (tone: InterpretationTone): string => {
     switch (tone) {
       case 'success':
-        return 'bg-green-100 text-green-700';
+        return 'bg-gray-100 text-gray-900';
       case 'warn':
         return 'bg-orange-100 text-orange-700';
       default:
@@ -3729,8 +3729,8 @@ export default function ResultsPage() {
 
   // Get donut arc color based on percentage value
   const getArcColorByValue = (value: number): string => {
-    if (value >= 80) return '#16a34a'; // green-600
-    if (value >= 60) return '#22c55e'; // green-500
+    if (value >= 80) return '#111827'; // green-600
+    if (value >= 60) return '#374151'; // green-500
     if (value >= 40) return '#eab308'; // yellow-500
     if (value >= 20) return '#f97316'; // orange-500
     return '#ef4444'; // red-500
@@ -3912,9 +3912,9 @@ export default function ResultsPage() {
     if (!sentiment) return '#9ca3af'; // gray for no sentiment
     switch (sentiment) {
       case 'strong_endorsement':
-        return '#16a34a'; // green-600 - Highly Recommended
+        return '#111827'; // green-600 - Highly Recommended
       case 'positive_endorsement':
-        return '#4ade80'; // green-400 - Recommended
+        return '#6b7280'; // green-400 - Recommended
       case 'neutral_mention':
         return '#9ca3af'; // gray-400 - Neutral
       case 'conditional':
@@ -4139,7 +4139,7 @@ export default function ResultsPage() {
                 <div className="w-full">
                   {/* Large Position Number */}
                   <div className="text-center mb-2">
-                    <span className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: avgRank <= 1.5 ? '#16a34a' : avgRank <= 3 ? '#eab308' : '#f97316' }}>
+                    <span className="text-3xl font-bold tracking-tight tabular-nums" style={{ color: avgRank <= 1.5 ? '#111827' : avgRank <= 3 ? '#eab308' : '#f97316' }}>
                       {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'}
                     </span>
                   </div>
@@ -4155,8 +4155,8 @@ export default function ResultsPage() {
                         // Color based on position value
                         const getPositionColor = () => {
                           if (!isHighlighted) return 'bg-gray-100 text-gray-400';
-                          if (pos <= 1) return 'bg-green-600 text-white';
-                          if (pos <= 2) return 'bg-green-500 text-white';
+                          if (pos <= 1) return 'bg-gray-900 text-white';
+                          if (pos <= 2) return 'bg-gray-700 text-white';
                           if (pos <= 3) return 'bg-yellow-500 text-white';
                           if (pos <= 4) return 'bg-orange-500 text-white';
                           return 'bg-orange-600 text-white';
@@ -4332,8 +4332,8 @@ export default function ResultsPage() {
 
                   const getSentimentColor = (score: number | null): string => {
                     if (score === null) return 'text-gray-400';
-                    if (score >= 4.5) return 'text-green-600';
-                    if (score >= 3.5) return 'text-lime-600';
+                    if (score >= 4.5) return 'text-gray-900';
+                    if (score >= 3.5) return 'text-gray-700';
                     if (score >= 2.5) return 'text-gray-600';
                     if (score >= 1.5) return 'text-amber-500';
                     if (score >= 0.5) return 'text-red-500';
@@ -4348,23 +4348,23 @@ export default function ResultsPage() {
                         </span>
                       </td>
                       <td className="text-center py-3 px-3">
-                        <span className={`font-medium ${stat.visibilityScore >= 50 ? 'text-green-600' : stat.visibilityScore >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                        <span className={`font-medium ${stat.visibilityScore >= 50 ? 'text-gray-900' : stat.visibilityScore >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
                           {stat.visibilityScore.toFixed(0)}%
                         </span>
                       </td>
                       <td className="text-center py-3 px-3">
-                        <span className={`font-medium ${stat.shareOfVoice >= 50 ? 'text-green-600' : stat.shareOfVoice >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                        <span className={`font-medium ${stat.shareOfVoice >= 50 ? 'text-gray-900' : stat.shareOfVoice >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
                           {stat.shareOfVoice.toFixed(0)}%
                         </span>
                       </td>
                       <td className="text-center py-3 px-3">
-                        <span className={`font-medium ${stat.firstPositionRate >= 50 ? 'text-green-600' : stat.firstPositionRate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                        <span className={`font-medium ${stat.firstPositionRate >= 50 ? 'text-gray-900' : stat.firstPositionRate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
                           {stat.firstPositionRate.toFixed(0)}%
                         </span>
                       </td>
                       <td className="text-center py-3 px-3">
                         {stat.avgRank !== null ? (
-                          <span className={`font-medium ${stat.avgRank <= 1.5 ? 'text-green-600' : stat.avgRank <= 3 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                          <span className={`font-medium ${stat.avgRank <= 1.5 ? 'text-gray-900' : stat.avgRank <= 3 ? 'text-yellow-600' : 'text-gray-600'}`}>
                             #{stat.avgRank.toFixed(1)}
                           </span>
                         ) : (
@@ -4429,11 +4429,11 @@ export default function ResultsPage() {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
               <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
                 <span className="text-xs text-gray-500">Highly Recommended</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4ade80' }} />
+                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
                 <span className="text-xs text-gray-500">Recommended</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -4481,8 +4481,8 @@ export default function ResultsPage() {
                                 </p>
                                 {showSentimentColors && dot.sentiment && dot.sentiment !== 'not_mentioned' && (
                                   <p className={`text-xs mt-1 ${
-                                    dot.sentiment === 'strong_endorsement' ? 'text-green-600' :
-                                    dot.sentiment === 'positive_endorsement' ? 'text-lime-600' :
+                                    dot.sentiment === 'strong_endorsement' ? 'text-gray-900' :
+                                    dot.sentiment === 'positive_endorsement' ? 'text-gray-700' :
                                     dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
                                     dot.sentiment === 'conditional' ? 'text-amber-500' :
                                     dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
@@ -4667,7 +4667,7 @@ export default function ResultsPage() {
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 {position ? (
                                   <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                                    position === 1 ? 'bg-green-100 text-green-700' :
+                                    position === 1 ? 'bg-gray-100 text-gray-900' :
                                     position <= 3 ? 'bg-yellow-100 text-yellow-700' :
                                     'bg-gray-100 text-gray-600'
                                   }`}>
@@ -4884,8 +4884,8 @@ export default function ResultsPage() {
                   }
                   if (result.brand_mentioned) {
                     return (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-medium rounded-full">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
+                        <span className="w-1.5 h-1.5 bg-gray-900 rounded-full"></span>
                         Yes
                       </span>
                     );
@@ -4910,8 +4910,8 @@ export default function ResultsPage() {
                     );
                   }
                   const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                    'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
-                    'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
+                    'strong_endorsement': { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300', label: 'Highly Recommended' },
+                    'positive_endorsement': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', label: 'Recommended' },
                     'neutral_mention': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Neutral' },
                     'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
                     'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
@@ -5180,11 +5180,11 @@ export default function ResultsPage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
                   <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
                     <span className="text-xs text-gray-500">Highly Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4ade80' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
                     <span className="text-xs text-gray-500">Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -5207,7 +5207,7 @@ export default function ResultsPage() {
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 50 }}>
                       {/* Horizontal band shading - green gradient (darker = better ranking) */}
-                      <ReferenceArea y1={-0.5} y2={0.5} fill="#86efac" fillOpacity={0.5} />
+                      <ReferenceArea y1={-0.5} y2={0.5} fill="#9ca3af" fillOpacity={0.5} />
                       <ReferenceArea y1={0.5} y2={1.5} fill="#bbf7d0" fillOpacity={0.5} />
                       <ReferenceArea y1={1.5} y2={2.5} fill="#dcfce7" fillOpacity={0.5} />
                       <ReferenceArea y1={2.5} y2={3.5} fill="#ecfdf5" fillOpacity={0.5} />
@@ -5312,8 +5312,8 @@ export default function ResultsPage() {
                                 </p>
                                 {showSentimentColors && data.sentiment && data.sentiment !== 'not_mentioned' && (
                                   <p className={`text-xs mt-1 ${
-                                    data.sentiment === 'strong_endorsement' ? 'text-green-600' :
-                                    data.sentiment === 'positive_endorsement' ? 'text-lime-600' :
+                                    data.sentiment === 'strong_endorsement' ? 'text-gray-900' :
+                                    data.sentiment === 'positive_endorsement' ? 'text-gray-700' :
                                     data.sentiment === 'neutral_mention' ? 'text-gray-600' :
                                     data.sentiment === 'conditional' ? 'text-amber-500' :
                                     data.sentiment === 'negative_comparison' ? 'text-red-500' : ''
@@ -5346,11 +5346,11 @@ export default function ResultsPage() {
                           if (showSentimentColors && payload.sentiment) {
                             switch (payload.sentiment) {
                               case 'strong_endorsement':
-                                fillColor = '#22c55e'; // green-500
+                                fillColor = '#374151'; // green-500
                                 opacity = 0.8;
                                 break;
                               case 'positive_endorsement':
-                                fillColor = '#84cc16'; // lime-500
+                                fillColor = '#4b5563'; // lime-500
                                 opacity = 0.8;
                                 break;
                               case 'neutral_mention':
@@ -5421,11 +5421,11 @@ export default function ResultsPage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
                   <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
                     <span className="text-xs text-gray-500">Highly Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4ade80' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
                     <span className="text-xs text-gray-500">Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -5452,7 +5452,7 @@ export default function ResultsPage() {
                         margin={{ top: 20, right: 20, bottom: 20, left: 50 }}
                       >
                         {/* Background color bands - green gradient (darker = better ranking) */}
-                        <ReferenceArea x1={-0.5} x2={0.5} fill="#86efac" fillOpacity={0.5} /> {/* 1 */}
+                        <ReferenceArea x1={-0.5} x2={0.5} fill="#9ca3af" fillOpacity={0.5} /> {/* 1 */}
                         <ReferenceArea x1={0.5} x2={1.5} fill="#bbf7d0" fillOpacity={0.5} /> {/* 2 */}
                         <ReferenceArea x1={1.5} x2={2.5} fill="#bbf7d0" fillOpacity={0.4} /> {/* 3 */}
                         <ReferenceArea x1={2.5} x2={3.5} fill="#dcfce7" fillOpacity={0.5} /> {/* 4 */}
@@ -5690,8 +5690,8 @@ export default function ResultsPage() {
                                   className="w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
                                   style={{
                                     backgroundColor: showSentimentColors && dot.sentiment
-                                      ? dot.sentiment === 'strong_endorsement' ? '#22c55e'
-                                        : dot.sentiment === 'positive_endorsement' ? '#84cc16'
+                                      ? dot.sentiment === 'strong_endorsement' ? '#374151'
+                                        : dot.sentiment === 'positive_endorsement' ? '#4b5563'
                                         : dot.sentiment === 'neutral_mention' ? '#6b7280'
                                         : dot.sentiment === 'conditional' ? '#fcd34d'
                                         : dot.sentiment === 'negative_comparison' ? '#f87171'
@@ -5712,8 +5712,8 @@ export default function ResultsPage() {
                                     </p>
                                     {showSentimentColors && dot.sentiment && dot.sentiment !== 'not_mentioned' && (
                                       <p className={`text-xs mt-1 ${
-                                        dot.sentiment === 'strong_endorsement' ? 'text-green-600' :
-                                        dot.sentiment === 'positive_endorsement' ? 'text-lime-600' :
+                                        dot.sentiment === 'strong_endorsement' ? 'text-gray-900' :
+                                        dot.sentiment === 'positive_endorsement' ? 'text-gray-700' :
                                         dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
                                         dot.sentiment === 'conditional' ? 'text-amber-500' :
                                         dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
@@ -6413,7 +6413,7 @@ export default function ResultsPage() {
                           </div>
                         </td>
                         <td className="text-center py-3 px-3">
-                          <span className={`font-medium ${row.brandRate >= 50 ? 'text-green-600' : row.brandRate >= 25 ? 'text-yellow-600' : 'text-red-500'}`}>
+                          <span className={`font-medium ${row.brandRate >= 50 ? 'text-gray-900' : row.brandRate >= 25 ? 'text-yellow-600' : 'text-red-500'}`}>
                             {row.brandRate.toFixed(0)}%
                           </span>
                         </td>
@@ -6475,7 +6475,7 @@ export default function ResultsPage() {
                                           })}
                                         >
                                           <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-gray-100 text-gray-900' : 'bg-blue-100 text-blue-700'}`}>
                                               {snippetInfo.brand}
                                             </span>
                                             <span className="text-xs text-gray-400">
@@ -6745,8 +6745,8 @@ export default function ResultsPage() {
                         <td className="text-center py-3 px-3">
                           <div className="flex flex-col items-center">
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              row.brandSentimentIndex >= 4 ? 'bg-green-100 text-green-700' :
-                              row.brandSentimentIndex >= 3 ? 'bg-green-50 text-green-600' :
+                              row.brandSentimentIndex >= 4 ? 'bg-gray-100 text-gray-900' :
+                              row.brandSentimentIndex >= 3 ? 'bg-gray-50 text-gray-700' :
                               row.brandSentimentIndex >= 2 ? 'bg-yellow-100 text-yellow-700' :
                               'bg-red-100 text-red-700'
                             }`}>
@@ -6771,7 +6771,7 @@ export default function ResultsPage() {
                         </td>
                         <td className="text-center py-3 px-3">
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            row.direction === 'brand' ? 'bg-green-100 text-green-700' :
+                            row.direction === 'brand' ? 'bg-gray-100 text-gray-900' :
                             row.direction === 'competitor' ? 'bg-blue-100 text-blue-700' :
                             'bg-gray-100 text-gray-600'
                           }`}>
@@ -6794,8 +6794,8 @@ export default function ResultsPage() {
                                   const cleanSnippet = stripMarkdown(snippetInfo.snippet);
                                   const parts = cleanSnippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
                                   const sentimentColors: Record<string, string> = {
-                                    'strong_endorsement': 'bg-green-100 text-green-700',
-                                    'positive_endorsement': 'bg-green-50 text-green-600',
+                                    'strong_endorsement': 'bg-gray-100 text-gray-900',
+                                    'positive_endorsement': 'bg-gray-50 text-gray-700',
                                     'neutral_mention': 'bg-blue-100 text-blue-700',
                                     'conditional': 'bg-yellow-100 text-yellow-700',
                                     'negative_comparison': 'bg-red-100 text-red-700',
@@ -6813,7 +6813,7 @@ export default function ResultsPage() {
                                       })}
                                     >
                                       <div className="flex items-center gap-2 mb-1">
-                                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${snippetInfo.isBrand ? 'bg-gray-100 text-gray-900' : 'bg-blue-100 text-blue-700'}`}>
                                           {snippetInfo.brand}
                                         </span>
                                         <span className={`text-xs px-1.5 py-0.5 rounded ${sentimentColors[snippetInfo.sentiment] || 'bg-gray-100 text-gray-600'}`}>
@@ -8460,11 +8460,11 @@ export default function ResultsPage() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
                 <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#15803d' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
                   <span className="text-xs text-gray-500">Strong</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#374151' }} />
                   <span className="text-xs text-gray-500">Positive</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -8551,8 +8551,8 @@ export default function ResultsPage() {
                         // Color based on sentiment (1-5 scale)
                         const sentiment = payload.avgSentiment;
                         const getColor = () => {
-                          if (sentiment >= 4.5) return '#15803d';
-                          if (sentiment >= 3.5) return '#22c55e';
+                          if (sentiment >= 4.5) return '#111827';
+                          if (sentiment >= 3.5) return '#374151';
                           if (sentiment >= 2.5) return '#eab308';
                           if (sentiment >= 1.5) return '#f97316';
                           return '#dc2626';
@@ -8877,8 +8877,8 @@ export default function ResultsPage() {
                         return <span className="text-sm text-gray-400">-</span>;
                       }
                       const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                        'strong': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
-                        'positive': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
+                        'strong': { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300', label: 'Highly Recommended' },
+                        'positive': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', label: 'Recommended' },
                         'neutral': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
                         'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
                         'negative': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
@@ -9006,8 +9006,8 @@ export default function ResultsPage() {
     // Helper function to get sentiment color
     const getSentimentColor = (sentiment: string | null | undefined) => {
       switch (sentiment) {
-        case 'strong_endorsement': return 'bg-green-100 text-green-800 border-green-200';
-        case 'positive_endorsement': return 'bg-lime-100 text-lime-800 border-lime-200';
+        case 'strong_endorsement': return 'bg-gray-100 text-gray-900 border-gray-200';
+        case 'positive_endorsement': return 'bg-gray-100 text-gray-700 border-gray-200';
         case 'neutral_mention': return 'bg-blue-100 text-blue-800 border-blue-200';
         case 'conditional': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
         case 'negative_comparison': return 'bg-red-100 text-red-800 border-red-200';
@@ -9019,8 +9019,8 @@ export default function ResultsPage() {
     // Helper function to get sentiment bar color
     const getSentimentBarColor = (sentiment: string) => {
       switch (sentiment) {
-        case 'strong_endorsement': return '#15803d'; // Darker green (green-700)
-        case 'positive_endorsement': return '#84cc16';
+        case 'strong_endorsement': return '#111827'; // Darker green (green-700)
+        case 'positive_endorsement': return '#4b5563';
         case 'neutral_mention': return '#3b82f6';
         case 'conditional': return '#fde68a'; // amber-200 (very light)
         case 'negative_comparison': return '#ef4444';
@@ -9268,9 +9268,9 @@ export default function ResultsPage() {
       const getBadgeStyle = () => {
         switch (sentiment) {
           case 'strong_endorsement':
-            return 'bg-green-500 text-white'; // Filled green
+            return 'bg-gray-700 text-white'; // Filled green
           case 'positive_endorsement':
-            return 'bg-white border-2 border-green-500 text-green-600'; // Outline green
+            return 'bg-white border-2 border-gray-900 text-gray-900'; // Outline green
           case 'neutral_mention':
             return 'bg-white border-2 border-gray-300 text-gray-600'; // Outline gray
           case 'conditional':
@@ -9554,9 +9554,9 @@ export default function ResultsPage() {
 
         {/* Key Sentiment & Framing Insights */}
         {sentimentInsights.length > 0 && (
-          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl shadow-sm border border-teal-100 p-6">
+          <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Lightbulb className="w-5 h-5 text-teal-600" />
+              <Lightbulb className="w-5 h-5 text-gray-600" />
               <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Framing Insights</h2>
             </div>
             <ul className="space-y-3">
@@ -9778,11 +9778,11 @@ export default function ResultsPage() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
                 <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#15803d' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
                   <span className="text-xs text-gray-500">Strong</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#374151' }} />
                   <span className="text-xs text-gray-500">Positive</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -9860,8 +9860,8 @@ export default function ResultsPage() {
                         // Color based on sentiment (green = good, red = bad)
                         const sentiment = payload.avgSentimentScore || 3;
                         const getColor = () => {
-                          if (sentiment >= 4.5) return '#15803d'; // Strong - dark green
-                          if (sentiment >= 3.5) return '#22c55e'; // Positive - green
+                          if (sentiment >= 4.5) return '#111827'; // Strong - dark green
+                          if (sentiment >= 3.5) return '#374151'; // Positive - green
                           if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
                           if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
                           return '#dc2626'; // Negative - red
@@ -9972,11 +9972,11 @@ export default function ResultsPage() {
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-green-600">
+                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-900">
                     <div>Highly</div>
                     <div>Recommended</div>
                   </th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-green-500">Recommended</th>
+                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Recommended</th>
                   <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Mentioned</th>
                   <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">
                     <div>With</div>
@@ -10013,8 +10013,8 @@ export default function ResultsPage() {
                           provider={row.provider}
                           sentiment="strong_endorsement"
                           count={row.strong_endorsement}
-                          bgColor="bg-green-100"
-                          textColor="text-green-800"
+                          bgColor="bg-gray-100"
+                          textColor="text-gray-900"
                           popupPosition={popupPos}
                         />
                       </td>
@@ -10023,8 +10023,8 @@ export default function ResultsPage() {
                           provider={row.provider}
                           sentiment="positive_endorsement"
                           count={row.positive_endorsement}
-                          bgColor="bg-lime-100"
-                          textColor="text-lime-800"
+                          bgColor="bg-gray-100"
+                          textColor="text-gray-700"
                           popupPosition={popupPos}
                         />
                       </td>
@@ -10069,7 +10069,7 @@ export default function ResultsPage() {
                         />
                       </td>
                       <td className="text-center py-3 px-4">
-                        <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-green-500' : row.strongRate >= 25 ? 'text-green-400' : 'text-gray-500'}`}>
+                        <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-gray-600' : row.strongRate >= 25 ? 'text-gray-500' : 'text-gray-500'}`}>
                           {row.strongRate.toFixed(0)}%
                         </span>
                       </td>
@@ -10092,11 +10092,11 @@ export default function ResultsPage() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-green-600">
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-900">
                       <div>Highly</div>
                       <div>Recommended</div>
                     </th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-green-500">Recommended</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Recommended</th>
                     <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Mentioned</th>
                     <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">
                       <div>With</div>
@@ -10120,14 +10120,14 @@ export default function ResultsPage() {
                     </td>
                     <td className="text-center py-3 px-2">
                       {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0 > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-sm font-medium rounded-lg">
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-900 text-sm font-medium rounded-lg">
                           {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0}
                         </span>
                       )}
                     </td>
                     <td className="text-center py-3 px-2">
                       {brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.count || 0 > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-lime-100 text-lime-800 text-sm font-medium rounded-lg">
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg">
                           {brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.count || 0}
                         </span>
                       )}
@@ -10166,14 +10166,14 @@ export default function ResultsPage() {
                       </td>
                       <td className="text-center py-3 px-2">
                         {row.strong_endorsement > 0 && (
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 text-green-800 text-sm font-medium rounded-lg">
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-900 text-sm font-medium rounded-lg">
                             {row.strong_endorsement}
                           </span>
                         )}
                       </td>
                       <td className="text-center py-3 px-2">
                         {row.positive_endorsement > 0 && (
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-lime-100 text-lime-800 text-sm font-medium rounded-lg">
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg">
                             {row.positive_endorsement}
                           </span>
                         )}
@@ -10200,7 +10200,7 @@ export default function ResultsPage() {
                         )}
                       </td>
                       <td className="text-center py-3 px-4">
-                        <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-green-500' : row.strongRate >= 25 ? 'text-green-400' : 'text-gray-500'}`}>
+                        <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-gray-600' : row.strongRate >= 25 ? 'text-gray-500' : 'text-gray-500'}`}>
                           {row.strongRate.toFixed(0)}%
                         </span>
                       </td>
@@ -10352,8 +10352,8 @@ export default function ResultsPage() {
                             );
                           }
                           const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                            'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
-                            'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
+                            'strong_endorsement': { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300', label: 'Highly Recommended' },
+                            'positive_endorsement': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', label: 'Recommended' },
                             'neutral_mention': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Neutral' },
                             'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
                             'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
@@ -10891,7 +10891,7 @@ export default function ResultsPage() {
 
     const getImpactBadge = (impact: 'high' | 'medium' | 'low') => {
       const colors = {
-        high: 'bg-green-100 text-green-700 border-green-200',
+        high: 'bg-gray-100 text-gray-900 border-gray-200',
         medium: 'bg-yellow-100 text-yellow-700 border-yellow-200',
         low: 'bg-gray-100 text-gray-600 border-gray-200',
       };
@@ -11195,7 +11195,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
 
                         const quadrantColors: Record<string, { bg: string; text: string; border: string }> = {
-                          'Quick Win': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
+                          'Quick Win': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
                           'Major Project': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
                           'Fill-in': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
                           'Avoid': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
@@ -11203,13 +11203,13 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         };
 
                         const impactBadge: Record<string, { bg: string; text: string; border: string }> = {
-                          high: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+                          high: { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300' },
                           medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
                           low: { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
                         };
 
                         const effortBadge: Record<string, { bg: string; text: string; border: string }> = {
-                          low: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+                          low: { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300' },
                           medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
                           high: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
                         };
@@ -11290,13 +11290,13 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <p className="font-medium text-gray-900">{latestAudit.url}</p>
                   </div>
                   <div className={`px-4 py-2 rounded-lg ${
-                    (latestAudit.overall_score ?? 0) >= 90 ? 'bg-green-100' :
-                    (latestAudit.overall_score ?? 0) >= 70 ? 'bg-lime-100' :
+                    (latestAudit.overall_score ?? 0) >= 90 ? 'bg-gray-100' :
+                    (latestAudit.overall_score ?? 0) >= 70 ? 'bg-gray-100' :
                     (latestAudit.overall_score ?? 0) >= 50 ? 'bg-yellow-100' : 'bg-red-100'
                   }`}>
                     <span className={`text-2xl font-bold ${
-                      (latestAudit.overall_score ?? 0) >= 90 ? 'text-green-600' :
-                      (latestAudit.overall_score ?? 0) >= 70 ? 'text-lime-600' :
+                      (latestAudit.overall_score ?? 0) >= 90 ? 'text-gray-900' :
+                      (latestAudit.overall_score ?? 0) >= 70 ? 'text-gray-700' :
                       (latestAudit.overall_score ?? 0) >= 50 ? 'text-yellow-600' : 'text-red-600'
                     }`}>
                       {latestAudit.overall_score}
@@ -11315,8 +11315,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         <div className="flex items-center gap-2">
                           {latestAudit.results.robots_txt.crawlers.every(c => c.allowed) ? (
                             <>
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                              <span className="text-sm font-medium text-green-700">All allowed</span>
+                              <CheckCircle2 className="w-4 h-4 text-gray-600" />
+                              <span className="text-sm font-medium text-gray-700">All allowed</span>
                             </>
                           ) : (
                             <>
@@ -11337,8 +11337,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         <div className="flex items-center gap-2">
                           {latestAudit.results.structured_data.has_json_ld ? (
                             <>
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                              <span className="text-sm font-medium text-green-700">
+                              <CheckCircle2 className="w-4 h-4 text-gray-600" />
+                              <span className="text-sm font-medium text-gray-700">
                                 {latestAudit.results.structured_data.json_ld_types.slice(0, 2).join(', ')}
                               </span>
                             </>
@@ -11359,8 +11359,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         <div className="flex items-center gap-2">
                           {latestAudit.results.content_accessibility.estimated_ssr ? (
                             <>
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                              <span className="text-sm font-medium text-green-700">Server-rendered</span>
+                              <CheckCircle2 className="w-4 h-4 text-gray-600" />
+                              <span className="text-sm font-medium text-gray-700">Server-rendered</span>
                             </>
                           ) : (
                             <>
@@ -11673,8 +11673,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                           // Get provider pill color based on score
                           const getProviderPillStyle = (score: number) => {
-                            if (score >= 90) return { bg: 'bg-[#16a34a]', text: 'text-white' }; // Dark green
-                            if (score >= 70) return { bg: 'bg-[#4ade80]', text: 'text-gray-800' }; // Light green
+                            if (score >= 90) return { bg: 'bg-[#111827]', text: 'text-white' }; // Dark green
+                            if (score >= 70) return { bg: 'bg-[#6b7280]', text: 'text-gray-800' }; // Light green
                             if (score >= 50) return { bg: 'bg-[#a3a095]', text: 'text-white' }; // Brown/tan
                             return { bg: 'bg-gray-200', text: 'text-gray-600' }; // Gray
                           };
@@ -11682,8 +11682,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           // Get visibility score color based on value
                           // Gradient: light green (75+) -> light brown (50) -> light gray (0)
                           const getScoreColor = (score: number) => {
-                            if (score >= 75) return '#86efac'; // Light green (green-300)
-                            if (score >= 65) return '#a7f3d0'; // Lighter green (green-200)
+                            if (score >= 75) return '#9ca3af'; // Light green (green-300)
+                            if (score >= 65) return '#d1d5db'; // Lighter green (green-200)
                             if (score >= 55) return '#c4d4a5'; // Green-tan transition
                             if (score >= 45) return '#d4c9a5'; // Light tan/brown
                             if (score >= 35) return '#c9bfa0'; // Tan
@@ -11881,8 +11881,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                         const getSentimentColor = (score: number | null): string => {
                           if (score === null) return 'text-gray-400';
-                          if (score >= 4.5) return 'text-green-600';
-                          if (score >= 3.5) return 'text-lime-600';
+                          if (score >= 4.5) return 'text-gray-900';
+                          if (score >= 3.5) return 'text-gray-700';
                           if (score >= 2.5) return 'text-gray-600';
                           if (score >= 1.5) return 'text-amber-500';
                           if (score >= 0.5) return 'text-red-500';
@@ -11904,8 +11904,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         const getPromptSentimentColor = (sentiment: string | null): string => {
                           if (!sentiment) return 'text-gray-400';
                           const colors: Record<string, string> = {
-                            'strong_endorsement': 'text-green-600',
-                            'positive_endorsement': 'text-lime-600',
+                            'strong_endorsement': 'text-gray-900',
+                            'positive_endorsement': 'text-gray-700',
                             'neutral_mention': 'text-gray-600',
                             'conditional': 'text-amber-500',
                             'negative_comparison': 'text-red-500',
@@ -11918,7 +11918,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         // Get score text color matching the card color scheme
                         // Gradient: light green (75+) -> tan/brown (50) -> gray (0)
                         const getScoreTextColor = (score: number): string => {
-                          if (score >= 75) return '#16a34a'; // Green
+                          if (score >= 75) return '#111827'; // Green
                           if (score >= 60) return '#65a30d'; // Lime-green
                           if (score >= 45) return '#a3a065'; // Tan/olive
                           if (score >= 30) return '#a39580'; // Brown/tan
@@ -11971,7 +11971,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                               </td>
                               <td className="text-center py-3 px-3">
                                 {stat.avgRank !== null ? (
-                                  <span className="font-medium" style={{ color: stat.avgRank <= 1.5 ? '#16a34a' : stat.avgRank <= 2.5 ? '#65a30d' : stat.avgRank <= 3.5 ? '#a3a065' : '#6b7280' }}>
+                                  <span className="font-medium" style={{ color: stat.avgRank <= 1.5 ? '#111827' : stat.avgRank <= 2.5 ? '#65a30d' : stat.avgRank <= 3.5 ? '#a3a065' : '#6b7280' }}>
                                     #{stat.avgRank.toFixed(1)}
                                   </span>
                                 ) : (
@@ -12002,7 +12002,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                           </p>
                                           <div className="flex items-center gap-4 flex-shrink-0">
                                             <div className="text-center">
-                                              <span className={`text-sm font-medium ${promptStat.rate >= 50 ? 'text-green-600' : promptStat.rate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                                              <span className={`text-sm font-medium ${promptStat.rate >= 50 ? 'text-gray-900' : promptStat.rate >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
                                                 {promptStat.rate.toFixed(0)}%
                                               </span>
                                               <p className="text-xs text-gray-400">visibility</p>
@@ -12135,11 +12135,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
                   <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#15803d' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
                     <span className="text-xs text-gray-500">Strong</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#374151' }} />
                     <span className="text-xs text-gray-500">Positive</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -12220,8 +12220,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           // Color based on sentiment (green = good, red = bad)
                           const sentiment = payload.sentiment || 3;
                           const getColor = () => {
-                            if (sentiment >= 4.5) return '#15803d'; // Strong - dark green
-                            if (sentiment >= 3.5) return '#22c55e'; // Positive - green
+                            if (sentiment >= 4.5) return '#111827'; // Strong - dark green
+                            if (sentiment >= 3.5) return '#374151'; // Positive - green
                             if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
                             if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
                             return '#dc2626'; // Negative - red
@@ -12356,11 +12356,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                               const bgColor = rate === 0
                                 ? 'bg-gray-100'
                                 : intensity >= 0.7
-                                  ? 'bg-green-500 text-white'
+                                  ? 'bg-gray-700 text-white'
                                   : intensity >= 0.4
-                                    ? 'bg-green-300'
+                                    ? 'bg-gray-300'
                                     : intensity >= 0.1
-                                      ? 'bg-green-100'
+                                      ? 'bg-gray-100'
                                       : 'bg-gray-100';
                               return (
                                 <td key={promptIdx} className="text-center py-2 px-2">
@@ -12374,7 +12374,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                               );
                             })}
                             <td className="text-center py-2 px-2">
-                              <span className={`font-semibold ${rowAvg >= 50 ? 'text-green-600' : rowAvg >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                              <span className={`font-semibold ${rowAvg >= 50 ? 'text-gray-900' : rowAvg >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
                                 {rowAvg.toFixed(0)}%
                               </span>
                             </td>
@@ -12430,9 +12430,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     const range = maxCount - minCount || 1;
                     const normalized = (count - minCount) / range;
                     if (normalized < 0.25) return '#bbf7d0'; // Very light green
-                    if (normalized < 0.5) return '#86efac';  // Light green
-                    if (normalized < 0.75) return '#4ade80'; // Medium green
-                    return '#22c55e'; // Darker green
+                    if (normalized < 0.5) return '#9ca3af';  // Light green
+                    if (normalized < 0.75) return '#6b7280'; // Medium green
+                    return '#374151'; // Darker green
                   };
 
                   return (
@@ -12475,7 +12475,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       <span>Lower</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }}></div>
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#374151' }}></div>
                       <span>Higher</span>
                     </div>
                   </div>
@@ -12507,12 +12507,12 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   const getColorForCount = (count: number) => {
                     const range = maxCount - minCount || 1;
                     const normalized = (count - minCount) / range; // 0 to 1
-                    // Light green (#bbf7d0) to darker green (#22c55e)
+                    // Light green (#bbf7d0) to darker green (#374151)
                     // Interpolate between these colors
                     if (normalized < 0.25) return '#bbf7d0'; // Very light green
-                    if (normalized < 0.5) return '#86efac';  // Light green
-                    if (normalized < 0.75) return '#4ade80'; // Medium green
-                    return '#22c55e'; // Darker green
+                    if (normalized < 0.5) return '#9ca3af';  // Light green
+                    if (normalized < 0.75) return '#6b7280'; // Medium green
+                    return '#374151'; // Darker green
                   };
 
                   // Function to get label color based on count
@@ -12520,7 +12520,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     const range = maxCount - minCount || 1;
                     const normalized = (count - minCount) / range;
                     if (normalized < 0.25) return '#166534'; // Dark green for light bg
-                    if (normalized < 0.5) return '#15803d';
+                    if (normalized < 0.5) return '#111827';
                     if (normalized < 0.75) return '#14532d';
                     return '#14532d'; // Darkest for contrast
                   };
@@ -12671,11 +12671,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <>
                       <span className="text-gray-600 font-medium">Sentiment:</span>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#16a34a' }} />
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
                         <span>Highly Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4ade80' }} />
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
                         <span>Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -12724,7 +12724,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                             key={brand}
                             className={`text-center py-2 px-3 font-medium border-b border-gray-200 min-w-[100px] ${
                               brand === brandSourceHeatmap.searchedBrand
-                                ? 'text-gray-900 bg-green-50'
+                                ? 'text-gray-900 bg-gray-50'
                                 : 'text-gray-600'
                             }`}
                             title={`${brandSourceHeatmap.brandTotals[brand] || 0} total ${(brandSourceHeatmap.brandTotals[brand] || 0) === 1 ? 'mention' : 'mentions'}`}
@@ -12774,9 +12774,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                               let barColor: string = '#9ca3af';
                               if (heatmapShowSentiment && count > 0) {
                                 if (avgSentiment >= 4.5) {
-                                  barColor = '#16a34a'; // Highly Recommended - dark green
+                                  barColor = '#111827'; // Highly Recommended - dark green
                                 } else if (avgSentiment >= 3.5) {
-                                  barColor = '#4ade80'; // Recommended - light green
+                                  barColor = '#6b7280'; // Recommended - light green
                                 } else if (avgSentiment >= 2.5) {
                                   barColor = '#9ca3af'; // Neutral - gray
                                 } else if (avgSentiment >= 1.5) {
@@ -12993,8 +12993,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     )}
                     {selectedResult.brand_sentiment && selectedResult.brand_sentiment !== 'not_mentioned' && (
                       <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
-                        selectedResult.brand_sentiment === 'strong_endorsement' ? 'bg-green-100 text-green-800' :
-                        selectedResult.brand_sentiment === 'positive_endorsement' ? 'bg-lime-100 text-lime-800' :
+                        selectedResult.brand_sentiment === 'strong_endorsement' ? 'bg-gray-100 text-gray-900' :
+                        selectedResult.brand_sentiment === 'positive_endorsement' ? 'bg-gray-100 text-gray-700' :
                         selectedResult.brand_sentiment === 'neutral_mention' ? 'bg-blue-100 text-blue-800' :
                         selectedResult.brand_sentiment === 'conditional' ? 'bg-yellow-100 text-yellow-800' :
                         selectedResult.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-800' :
@@ -13254,8 +13254,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <div className="flex items-center gap-2">
                       {result.brand_sentiment && result.brand_sentiment !== 'not_mentioned' && (
                         <span className={`px-2 py-0.5 text-xs rounded ${
-                          result.brand_sentiment === 'strong_endorsement' ? 'bg-green-100 text-green-700' :
-                          result.brand_sentiment === 'positive_endorsement' ? 'bg-lime-100 text-lime-700' :
+                          result.brand_sentiment === 'strong_endorsement' ? 'bg-gray-100 text-gray-900' :
+                          result.brand_sentiment === 'positive_endorsement' ? 'bg-gray-100 text-gray-700' :
                           result.brand_sentiment === 'neutral_mention' ? 'bg-blue-100 text-blue-700' :
                           result.brand_sentiment === 'conditional' ? 'bg-yellow-100 text-yellow-700' :
                           'bg-red-100 text-red-700'
