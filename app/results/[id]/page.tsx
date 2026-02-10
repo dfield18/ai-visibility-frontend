@@ -12006,21 +12006,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 }
               };
 
+              // Popularity order for secondary sort
+              const POPULARITY_ORDER = ['openai', 'gemini', 'anthropic', 'perplexity', 'grok', 'llama', 'ai_overviews'];
+
               return (
                 <div id="competitive-cards" className="relative">
-                  {/* Shared provider color legend */}
-                  <div className="flex items-center justify-center gap-4 mb-4 text-xs text-gray-500">
-                    {(() => {
-                      const allProviderKeys = [...new Set(allBrandsAnalysisData.flatMap(b => b.providerScores.map(p => p.provider)))];
-                      return allProviderKeys.map(provider => (
-                        <span key={provider} className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getProviderBrandColor(provider) }} />
-                          {getCarouselProviderLabel(provider)}
-                        </span>
-                      ));
-                    })()}
-                  </div>
-
                   {/* Carousel with Side Navigation */}
                   <div className="relative flex items-center">
                     {/* Left Arrow */}
@@ -12040,12 +12030,13 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         style={{ transform: `translateX(-${brandCarouselIndex * (100 / 3 + 1.33)}%)` }}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
-                          const allProviders = brandData.providerScores;
-                          const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 1);
-                          const mentionedProviders = allProviders.filter(p => p.score > 0);
-                          const notMentionedProviders = allProviders.filter(p => p.score === 0);
-                          const mentionedCount = mentionedProviders.length;
-                          const totalProviderCount = allProviders.length;
+                          const allProviders = [...brandData.providerScores].sort((a, b) => {
+                            if (b.score !== a.score) return b.score - a.score;
+                            const aIdx = POPULARITY_ORDER.indexOf(a.provider);
+                            const bIdx = POPULARITY_ORDER.indexOf(b.provider);
+                            return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+                          });
+                          const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 3);
 
                           return (
                             <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
@@ -12054,81 +12045,56 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                   ? 'border-gray-300 ring-1 ring-gray-100 shadow-lg'
                                   : 'border-gray-200 shadow-sm'
                               }`}>
-                                {/* Card Header + Overall Visibility (compact) */}
-                                <div className="px-5 py-4 border-b border-gray-100">
-                                  <div className="flex items-center justify-between">
-                                    <div>
-                                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Visibility Report</p>
-                                      <div className="flex items-center gap-2">
-                                        <p className="text-lg font-semibold text-gray-900">{brandData.brand}</p>
-                                        {brandData.isSearchedBrand && (
-                                          <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">you</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-3xl font-semibold text-gray-900">
-                                        {Math.round(brandData.visibilityScore)}<span className="text-base text-gray-400 font-normal">/100</span>
-                                      </p>
-                                    </div>
-                                  </div>
-                                  {/* Mention summary bar */}
-                                  <div className="mt-3">
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                        <div
-                                          className="h-full rounded-full"
-                                          style={{
-                                            width: `${totalProviderCount > 0 ? (mentionedCount / totalProviderCount) * 100 : 0}%`,
-                                            backgroundColor: mentionedCount === totalProviderCount ? '#059669' : mentionedCount >= totalProviderCount * 0.5 ? '#f59e0b' : '#ef4444',
-                                          }}
-                                        />
-                                      </div>
-                                      <span className="text-[10px] text-gray-400 whitespace-nowrap">{mentionedCount}/{totalProviderCount} platforms</span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Platform Scores - mini horizontal bars */}
-                                {allProviders.length > 0 && (
-                                  <div className="px-5 py-3 border-b border-gray-100">
-                                    <div className="space-y-1.5">
-                                      {allProviders.map((prov) => {
-                                        const isZero = prov.score === 0;
-                                        return (
-                                          <div key={prov.provider} className={`flex items-center gap-2 ${isZero ? 'opacity-35' : ''}`}>
-                                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
-                                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                              <div
-                                                className="h-full rounded-full transition-all duration-500"
-                                                style={{
-                                                  width: `${prov.score}%`,
-                                                  backgroundColor: getProviderBrandColor(prov.provider),
-                                                }}
-                                              />
-                                            </div>
-                                            <span className={`text-xs tabular-nums w-7 text-right font-medium ${isZero ? 'text-gray-300' : 'text-gray-700'}`}>
-                                              {prov.score}
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                    {notMentionedProviders.length > 0 && notMentionedProviders.length < totalProviderCount && (
-                                      <p className="text-[10px] text-gray-400 mt-2">
-                                        Not found on {notMentionedProviders.map(p => getCarouselProviderLabel(p.provider)).join(', ')}
-                                      </p>
+                                {/* Card Header */}
+                                <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Visibility Report</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-xl font-bold text-gray-900">{brandData.brand}</p>
+                                    {brandData.isSearchedBrand && (
+                                      <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">you</span>
                                     )}
                                   </div>
-                                )}
 
-                                {/* Highlight - single clean quote */}
+                                  {/* Provider Scores - horizontal scroll */}
+                                  {allProviders.length > 0 && (
+                                    <div className="mt-4 -mx-1 overflow-x-auto">
+                                      <div className="flex gap-4 px-1 min-w-0">
+                                        {allProviders.map((prov) => {
+                                          const isZero = prov.score === 0;
+                                          return (
+                                            <div key={prov.provider} className={`flex flex-col items-center gap-1 flex-shrink-0 ${isZero ? 'opacity-30' : ''}`}>
+                                              {getProviderIcon(prov.provider)}
+                                              <span className="text-[10px] text-gray-500 whitespace-nowrap">{getCarouselProviderLabel(prov.provider)}</span>
+                                              <span className={`text-base font-bold tabular-nums ${isZero ? 'text-gray-300' : ''}`} style={!isZero ? { color: getProviderBrandColor(prov.provider) } : undefined}>
+                                                {prov.score}
+                                              </span>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Overall Visibility */}
+                                <div className="px-5 py-4 border-b border-gray-100 text-center">
+                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">Overall Visibility</p>
+                                  <p className="text-4xl font-bold text-gray-900">
+                                    {Math.round(brandData.visibilityScore)}<span className="text-lg text-gray-400 font-normal">/100</span>
+                                  </p>
+                                </div>
+
+                                {/* Recent Mentions */}
                                 {quotes.length > 0 && (
-                                  <div className="px-5 py-3">
-                                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">Highlight</p>
-                                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
-                                      &ldquo;{quotes[0].text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '')}&rdquo;
-                                    </p>
+                                  <div className="px-5 py-4">
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">Recent Mentions</p>
+                                    <div className="space-y-1.5">
+                                      {quotes.map((q, qi) => (
+                                        <p key={qi} className="text-sm text-gray-600 leading-relaxed line-clamp-1">
+                                          &ldquo;{q.text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '')}&rdquo;
+                                        </p>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>
