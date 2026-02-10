@@ -66,7 +66,7 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
-import { useRunStatus, useAISummary, useSiteAudits } from '@/hooks/useApi';
+import { useRunStatus, useAISummary, useSiteAudits, useBrandBlurbs } from '@/hooks/useApi';
 import {
   formatCurrency,
   formatDate,
@@ -3859,6 +3859,17 @@ export default function ResultsPage() {
       };
     });
   }, [runStatus, globallyFilteredResults, brandBreakdownStats]);
+
+  // Fetch AI-generated brand characterization blurbs
+  const brandBlurbsContext = runStatus
+    ? `${runStatus.search_type === 'category' ? 'category' : 'brand'} analysis for ${runStatus.brand}`
+    : '';
+  const { data: brandBlurbsData } = useBrandBlurbs(
+    allBrandsAnalysisData.map(b => b.brand),
+    brandBlurbsContext,
+    allBrandsAnalysisData.length > 0 && runStatus?.status === 'complete'
+  );
+  const brandBlurbs = brandBlurbsData?.blurbs ?? {};
 
   // Position categories for the dot plot chart
   const POSITION_CATEGORIES = ['Top', '2-3', '4-5', '6-10', '>10', 'N/A'];
@@ -11756,12 +11767,17 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                   : 'border border-gray-200'
                               }`}>
                                 {/* Brand Name */}
-                                <div className="flex items-center justify-center gap-2 mb-3">
+                                <div className="flex items-center justify-center gap-2 mb-1">
                                   <span className="font-semibold text-gray-900 text-sm">{brandData.brand}</span>
                                   {brandData.isSearchedBrand && (
                                     <span className="text-[10px] bg-gray-100 text-gray-900 px-1.5 py-0.5 rounded-full">Your Brand</span>
                                   )}
                                 </div>
+                                {brandBlurbs[brandData.brand] ? (
+                                  <p className="text-center text-xs italic text-gray-500 mb-3 px-2 leading-tight">{brandBlurbs[brandData.brand]}</p>
+                                ) : (
+                                  <div className="mb-2" />
+                                )}
 
                                 {/* Large Visibility Score */}
                                 <div className="text-center mb-0.5">

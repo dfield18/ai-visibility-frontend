@@ -161,3 +161,24 @@ export function useSiteAudits(sessionId: string, enabled = true) {
     staleTime: 60 * 1000, // 1 minute
   });
 }
+
+/**
+ * Hook to fetch AI-generated brand characterization blurbs.
+ */
+export function useBrandBlurbs(brands: string[], context: string, enabled = true) {
+  return useQuery<{ blurbs: Record<string, string> }>({
+    queryKey: ['brand-blurbs', brands.join(',')],
+    queryFn: async () => {
+      const res = await fetch('/api/brand-blurbs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brands, context }),
+      });
+      if (!res.ok) throw new Error('Failed to fetch brand blurbs');
+      return res.json();
+    },
+    enabled: enabled && brands.length > 0,
+    staleTime: Infinity,
+    retry: 1,
+  });
+}
