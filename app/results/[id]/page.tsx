@@ -461,7 +461,7 @@ export default function ResultsPage() {
   const [selectedResultHighlight, setSelectedResultHighlight] = useState<{ brand: string; domain?: string } | null>(null);
   const [heatmapResultsList, setHeatmapResultsList] = useState<{ results: Result[]; domain: string; brand: string } | null>(null);
   const [chartTab, setChartTab] = useState<'allAnswers' | 'performanceRange' | 'shareOfVoice'>('allAnswers');
-  const [showSentimentColors, setShowSentimentColors] = useState(true);
+  const [showSentimentColors, setShowSentimentColors] = useState(false);
   const [tableSortColumn, setTableSortColumn] = useState<'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('prompt');
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
@@ -1705,6 +1705,8 @@ export default function ResultsPage() {
           case 'ai_overviews': return 'Google AI Overviews';
           case 'gemini': return 'Gemini';
           case 'google': return 'Gemini';
+          case 'grok': return 'Grok';
+          case 'llama': return 'Llama';
           default: return provider;
         }
       };
@@ -2603,6 +2605,8 @@ export default function ResultsPage() {
           case 'perplexity': return 'Perplexity';
           case 'ai_overviews': return 'Google AI Overviews';
           case 'gemini': return 'Gemini';
+          case 'grok': return 'Grok';
+          case 'llama': return 'Llama';
           default: return p;
         }
       };
@@ -2790,6 +2794,8 @@ export default function ResultsPage() {
     gemini: 'Gemini',
     perplexity: 'Perplexity',
     ai_overviews: 'Google AI Overviews',
+    grok: 'Grok',
+    llama: 'Llama',
   };
 
   // Get unique providers in alphabetical order by display name for X-axis
@@ -3757,6 +3763,8 @@ export default function ResultsPage() {
       case 'perplexity': return 'Pplx';
       case 'ai_overviews': return 'AIO';
       case 'gemini': return 'Gem';
+      case 'grok': return 'Grok';
+      case 'llama': return 'Llama';
       default: return provider;
     }
   };
@@ -4572,71 +4580,49 @@ export default function ResultsPage() {
           </div>
 
           {/* Legend - show platform colors or sentiment colors */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mb-6 pb-4 border-b border-gray-100">
             {showSentimentColors ? (
               <>
-                <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
-                  <span className="text-xs text-gray-500">Highly Recommended</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
-                  <span className="text-xs text-gray-500">Recommended</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
-                  <span className="text-xs text-gray-500">Neutral</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
-                  <span className="text-xs text-gray-500">With Caveats</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                  <span className="text-xs text-gray-500">Not Recommended</span>
-                </div>
+                <span className="text-xs text-gray-600 font-medium mr-1">Sentiment:</span>
+                {[
+                  { color: '#111827', label: 'Highly Recommended' },
+                  { color: '#6b7280', label: 'Recommended' },
+                  { color: '#9ca3af', label: 'Neutral' },
+                  { color: '#fbbf24', label: 'With Caveats' },
+                  { color: '#ef4444', label: 'Not Recommended' },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-xs text-gray-600">{item.label}</span>
+                  </div>
+                ))}
               </>
             ) : (
               <>
-                <span className="text-xs text-gray-600 font-medium">Platform:</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10a37f' }} />
-                  <span className="text-xs text-gray-500">ChatGPT</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#d97706' }} />
-                  <span className="text-xs text-gray-500">Claude</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#4285f4' }} />
-                  <span className="text-xs text-gray-500">Gemini</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6366f1' }} />
-                  <span className="text-xs text-gray-500">Perplexity</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#1d9bf0' }} />
-                  <span className="text-xs text-gray-500">Grok</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
-                  <span className="text-xs text-gray-500">Llama</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ea4335' }} />
-                  <span className="text-xs text-gray-500">AI Overviews</span>
-                </div>
+                <span className="text-xs text-gray-600 font-medium mr-1">Platform:</span>
+                {[
+                  { color: '#10a37f', label: 'ChatGPT' },
+                  { color: '#d97706', label: 'Claude' },
+                  { color: '#4285f4', label: 'Gemini' },
+                  { color: '#6366f1', label: 'Perplexity' },
+                  { color: '#1d9bf0', label: 'Grok' },
+                  { color: '#8b5cf6', label: 'Llama' },
+                  { color: '#ea4335', label: 'AI Overviews' },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="text-xs text-gray-600">{item.label}</span>
+                  </div>
+                ))}
               </>
             )}
           </div>
 
           {/* Dot Plot Grid */}
-          <div className="space-y-4">
-            {Object.entries(positionByPlatformData).map(([provider, categories]) => (
-              <div key={provider} className="flex items-center">
-                <div className="w-24 flex-shrink-0">
+          <div className="space-y-0">
+            {Object.entries(positionByPlatformData).map(([provider, categories], rowIdx) => (
+              <div key={provider} className={`flex items-center py-3 ${rowIdx > 0 ? 'border-t border-gray-50' : ''}`}>
+                <div className="w-28 flex-shrink-0">
                   <span className="text-sm font-medium text-gray-900">{provider}</span>
                 </div>
                 <div className="flex-1 grid grid-cols-6 gap-2">
@@ -4691,7 +4677,7 @@ export default function ResultsPage() {
 
           {/* X-axis labels */}
           <div className="flex items-center mt-4 pt-2 border-t border-gray-100">
-            <div className="w-24 flex-shrink-0" />
+            <div className="w-28 flex-shrink-0" />
             <div className="flex-1 grid grid-cols-6 gap-2">
               {POSITION_CATEGORIES.map((category) => (
                 <div key={category} className="text-center">
@@ -11825,6 +11811,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   case 'gemini': return 'Gemini';
                   case 'perplexity': return 'Perplexity';
                   case 'ai_overviews': return 'AI Overviews';
+                  case 'grok': return 'Grok';
+                  case 'llama': return 'Llama';
                   default: return provider;
                 }
               };
