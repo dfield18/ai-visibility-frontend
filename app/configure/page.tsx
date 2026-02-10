@@ -462,10 +462,7 @@ export default function ConfigurePage() {
             {/* Header with inline icon */}
             <div className="flex items-center gap-2 mb-5">
               <MessageSquare className="w-5 h-5 text-gray-400" />
-              <h2 className="text-base font-semibold text-gray-900 flex-1">Questions to Ask AI</h2>
-              <span className="text-sm text-gray-500 font-medium">
-                {selectedPromptsArray.length} selected
-              </span>
+              <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
             </div>
 
             {suggestionsLoading ? (
@@ -477,12 +474,9 @@ export default function ConfigurePage() {
               <div className="space-y-1">
                 {/* Select All / Deselect All */}
                 {prompts.length > 0 && (
-                  <div
-                    className={`flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all ${
-                      selectedPrompts.size === prompts.length
-                        ? 'bg-gray-100 hover:bg-gray-200'
-                        : 'bg-gray-100 hover:bg-gray-200'
-                    }`}
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all w-full hover:bg-gray-100 active:bg-gray-200"
                     onClick={() => {
                       if (selectedPrompts.size === prompts.length) {
                         deselectAllPrompts();
@@ -495,17 +489,20 @@ export default function ConfigurePage() {
                       className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                         selectedPrompts.size === prompts.length
                           ? 'bg-gray-900'
-                          : 'border-2 border-gray-900'
+                          : 'border-2 border-gray-300'
                       }`}
                     >
                       {selectedPrompts.size === prompts.length && (
                         <Check className="w-3 h-3 text-white" strokeWidth={3} />
                       )}
                     </div>
-                    <span className="text-base font-semibold text-gray-700">
+                    <span className="text-sm text-gray-600 flex-1 text-left">
                       Select all
                     </span>
-                  </div>
+                    <span className="text-sm text-gray-400 font-medium">
+                      {selectedPromptsArray.length}/{prompts.length}
+                    </span>
+                  </button>
                 )}
 
                 {/* Divider line */}
@@ -660,10 +657,10 @@ export default function ConfigurePage() {
                     <div
                       key={competitor}
                       className="inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm cursor-pointer transition-all"
-                      style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)' }}
+                      style={{ backgroundColor: 'rgba(13, 148, 136, 0.1)' }}
                       onClick={() => toggleCompetitor(competitor)}
                     >
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#8B5CF6' }}>
+                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#0D9488' }}>
                         <Check className="w-3 h-3 text-white" strokeWidth={3} />
                       </div>
                       <span className="text-gray-700 font-medium">{competitor}</span>
@@ -779,6 +776,34 @@ export default function ConfigurePage() {
           </div>
 
         </div>{/* End of three-column grid */}
+
+        {/* Action Section */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">{selectedPromptsArray.length}</span> question{selectedPromptsArray.length !== 1 ? 's' : ''}{' '}
+              <span className="text-gray-400">×</span>{' '}
+              <span className="font-medium">{providers.length}</span> platform{providers.length !== 1 ? 's' : ''}{' '}
+              <span className="text-gray-400">=</span>{' '}
+              <span className="font-semibold text-gray-900">{totalCalls} API calls</span>
+            </p>
+            <p className="text-sm text-gray-500">
+              Estimated cost: {formatCurrency(estimatedCost)} · Time: {formatDuration(estimatedTime)}
+            </p>
+          </div>
+          <button
+            onClick={handleRunAnalysis}
+            disabled={!canRun}
+            className="px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {startRunMutation.isPending ? (
+              <Spinner size="sm" />
+            ) : (
+              <Sparkles className="w-5 h-5" />
+            )}
+            Run Analysis
+          </button>
+        </div>
 
         {/* Advanced Settings - full width, subtle gray background */}
         <div className="bg-gray-100/50 rounded-2xl overflow-hidden">
@@ -1030,35 +1055,7 @@ export default function ConfigurePage() {
         </div>
       </div>
 
-      {/* Bottom Action Section - blends with page background */}
-      <div className="max-w-7xl mx-auto px-6 pb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-700">
-              <span className="font-medium">{selectedPromptsArray.length}</span> question{selectedPromptsArray.length !== 1 ? 's' : ''}{' '}
-              <span className="text-gray-400">×</span>{' '}
-              <span className="font-medium">{providers.length}</span> platform{providers.length !== 1 ? 's' : ''}{' '}
-              <span className="text-gray-400">=</span>{' '}
-              <span className="font-semibold text-gray-900">{totalCalls} API calls</span>
-            </p>
-            <p className="text-sm text-gray-500">
-              Estimated cost: {formatCurrency(estimatedCost)} · Time: {formatDuration(estimatedTime)}
-            </p>
-          </div>
-          <button
-            onClick={handleRunAnalysis}
-            disabled={!canRun}
-            className="px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {startRunMutation.isPending ? (
-              <Spinner size="sm" />
-            ) : (
-              <Sparkles className="w-5 h-5" />
-            )}
-            Run Analysis
-          </button>
-        </div>
-      </div>
+      <div className="pb-8" />
     </main>
   );
 }
