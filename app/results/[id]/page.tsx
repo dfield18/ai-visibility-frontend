@@ -626,6 +626,17 @@ export default function ResultsPage() {
     });
   }, [runStatus, globalBrandFilter, globalLlmFilter, globalPromptFilter]);
 
+  // Cost breakdown: prompt costs (per-result LLM calls) vs analysis costs (AI summary/recommendations)
+  const promptCost = useMemo(() => {
+    if (!runStatus) return 0;
+    return runStatus.results
+      .filter((r: Result) => !r.error && r.cost)
+      .reduce((sum: number, r: Result) => sum + (r.cost || 0), 0);
+  }, [runStatus]);
+
+  const totalCost = runStatus?.actual_cost ?? 0;
+  const analysisCost = Math.max(0, totalCost - promptCost);
+
   // Filter results - include AI Overview errors to show "Not Available"
   const filteredResults = useMemo(() => {
     if (!runStatus) return [];
@@ -4891,7 +4902,7 @@ export default function ResultsPage() {
             <thead>
               <tr className="border-b border-gray-200">
                 <th
-                  className="w-[22%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
+                  className="w-[20%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('prompt')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4908,7 +4919,7 @@ export default function ResultsPage() {
                   </span>
                 </th>
                 <th
-                  className="w-[14%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
+                  className="w-[13%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('llm')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4925,7 +4936,7 @@ export default function ResultsPage() {
                   </span>
                 </th>
                 <th
-                  className="w-[8%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
+                  className="w-[7%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('position')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4943,7 +4954,7 @@ export default function ResultsPage() {
                 </th>
                 {!isCategory && (
                   <th
-                    className="w-[8%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
+                    className="w-[12%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleTableSort('mentioned')}
                   >
                     <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4961,7 +4972,7 @@ export default function ResultsPage() {
                   </th>
                 )}
                 <th
-                  className="w-[16%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
+                  className="w-[14%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('sentiment')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4978,7 +4989,7 @@ export default function ResultsPage() {
                   </span>
                 </th>
                 <th
-                  className="w-[22%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
+                  className="w-[20%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('competitors')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -5117,34 +5128,27 @@ export default function ResultsPage() {
                     className={`border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${resultIdx % 2 === 1 ? 'bg-gray-50/30' : ''}`}
                     onClick={() => setSelectedResult(result)}
                   >
-                    <td className="w-[22%] py-3 px-4">
-                        <div className="relative group/prompt">
-                          <p className="text-sm text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
-                          {result.prompt.length > 50 && (
-                            <div className="absolute left-0 top-full mt-1 w-80 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover/prompt:opacity-100 group-hover/prompt:visible transition-all z-50 shadow-lg leading-relaxed pointer-events-none">
-                              {result.prompt}
-                            </div>
-                          )}
-                        </div>
+                    <td className="w-[20%] py-3 px-4" title={result.prompt}>
+                        <p className="text-sm text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
                       </td>
-                      <td className="w-[14%] py-3 px-4">
+                      <td className="w-[13%] py-3 px-4">
                         <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
                           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(result.provider) }} />
                           {providerLabels[result.provider] || result.provider}
                         </span>
                       </td>
-                      <td className="w-[8%] py-3 px-4">
+                      <td className="w-[7%] py-3 px-4">
                         {getPositionBadge()}
                       </td>
                       {!isCategory && (
-                        <td className="w-[8%] py-3 px-4">
+                        <td className="w-[12%] py-3 px-4">
                           {getMentionedBadge()}
                         </td>
                       )}
-                      <td className="w-[16%] py-3 px-4">
+                      <td className="w-[14%] py-3 px-4">
                         {getSentimentBadge()}
                       </td>
-                      <td className="w-[22%] py-3 px-4">
+                      <td className="w-[20%] py-3 px-4">
                         {getCompetitorsList()}
                       </td>
                       <td className="w-[10%] py-3 px-4">
@@ -5261,7 +5265,12 @@ export default function ResultsPage() {
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
           <p className="text-sm text-gray-500 mb-1">Total Cost</p>
-          <p className="text-4xl font-bold text-gray-900">{formatCurrency(runStatus?.actual_cost ?? 0)}</p>
+          <p className="text-4xl font-bold text-gray-900">{formatCurrency(totalCost)}</p>
+          <div className="flex items-center justify-center gap-4 mt-2 text-xs text-gray-500">
+            <span>Prompts <span className="font-medium text-gray-700">{formatCurrency(promptCost)}</span></span>
+            <span className="text-gray-300">|</span>
+            <span>Analysis <span className="font-medium text-gray-700">{formatCurrency(analysisCost)}</span></span>
+          </div>
         </div>
       </div>
 
@@ -7062,8 +7071,16 @@ export default function ResultsPage() {
               </span>
             </div>
             <div>
-              <span className="text-gray-500">Total Cost: </span>
-              <span className="font-medium text-gray-900">{formatCurrency(runStatus?.actual_cost ?? 0)}</span>
+              <span className="text-gray-500">Prompts: </span>
+              <span className="font-medium text-gray-900">{formatCurrency(promptCost)}</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Analysis: </span>
+              <span className="font-medium text-gray-900">{formatCurrency(analysisCost)}</span>
+            </div>
+            <div>
+              <span className="text-gray-500">Total: </span>
+              <span className="font-medium text-gray-900">{formatCurrency(totalCost)}</span>
             </div>
           </div>
           <div className="text-gray-400 text-xs">{runStatus?.completed_calls ?? 0} successful calls · {runStatus?.failed_calls ?? 0} failed</div>
@@ -10393,7 +10410,7 @@ export default function ResultsPage() {
         )}
 
         {/* Individual Results with Sentiment */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
             <div>
@@ -10444,13 +10461,13 @@ export default function ResultsPage() {
                 <div className="overflow-x-auto min-h-0">
                   <table className="w-full table-fixed">
                     <thead>
-                      <tr className="border-b border-gray-200 bg-gray-50/50">
-                        <th className="w-[30%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
-                        <th className="w-[12%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
-                        <th className="w-[10%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
-                        <th className="w-[18%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
-                        <th className="w-[20%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Competitors</th>
-                        <th className="w-[10%] text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <tr className="border-b border-gray-200">
+                        <th className="w-[30%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
+                        <th className="w-[14%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
+                        <th className="w-[8%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                        <th className="w-[16%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
+                        <th className="w-[22%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Competitors</th>
+                        <th className="w-[10%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                       </tr>
                     </thead>
                   </table>
@@ -10459,10 +10476,10 @@ export default function ResultsPage() {
                     <table className="w-full table-fixed">
                       <colgroup>
                         <col className="w-[30%]" />
-                        <col className="w-[12%]" />
-                        <col className="w-[10%]" />
-                        <col className="w-[18%]" />
-                        <col className="w-[20%]" />
+                        <col className="w-[14%]" />
+                        <col className="w-[8%]" />
+                        <col className="w-[16%]" />
+                        <col className="w-[22%]" />
                         <col className="w-[10%]" />
                       </colgroup>
                       <tbody>
@@ -10501,23 +10518,17 @@ export default function ResultsPage() {
                         // Position badge styling
                         const getPositionBadge = () => {
                           if (rank === 0) {
-                            return (
-                              <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg bg-white">
-                                Not shown
-                              </span>
-                            );
+                            return <span className="text-xs text-gray-400">—</span>;
                           }
-                          const colors = rank === 1
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : rank === 2
-                            ? 'bg-gray-50 text-gray-600 border-gray-200'
-                            : rank === 3
-                            ? 'bg-orange-50 text-orange-700 border-orange-200'
-                            : 'bg-gray-50 text-gray-500 border-gray-200';
+                          const color = rank === 1
+                            ? 'text-emerald-700 font-semibold'
+                            : rank <= 3
+                            ? 'text-teal-700 font-medium'
+                            : rank <= 5
+                            ? 'text-amber-600 font-medium'
+                            : 'text-gray-500';
                           return (
-                            <span className={`inline-flex items-center justify-center w-10 h-10 text-sm font-semibold rounded-full border-2 ${colors}`}>
-                              #{rank}
-                            </span>
+                            <span className={`text-sm ${color}`}>#{rank}</span>
                           );
                         };
 
@@ -10525,22 +10536,18 @@ export default function ResultsPage() {
                         const getSentimentBadge = () => {
                           const sentiment = result.brand_sentiment;
                           if (!sentiment || sentiment === 'not_mentioned') {
-                            return (
-                              <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-full bg-white">
-                                Not mentioned
-                              </span>
-                            );
+                            return <span className="text-xs text-gray-400">—</span>;
                           }
-                          const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                            'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
-                            'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
-                            'neutral_mention': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Neutral' },
-                            'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
-                            'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
+                          const configs: Record<string, { text: string; label: string }> = {
+                            'strong_endorsement': { text: 'text-emerald-700', label: 'Highly Recommended' },
+                            'positive_endorsement': { text: 'text-green-600', label: 'Recommended' },
+                            'neutral_mention': { text: 'text-gray-500', label: 'Neutral' },
+                            'conditional': { text: 'text-amber-600', label: 'With Caveats' },
+                            'negative_comparison': { text: 'text-red-600', label: 'Not Recommended' },
                           };
-                          const config = configs[sentiment] || { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200', label: 'Unknown' };
+                          const config = configs[sentiment] || { text: 'text-gray-500', label: 'Unknown' };
                           return (
-                            <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${config.bg} ${config.text} ${config.border}`}>
+                            <span className={`text-xs font-medium ${config.text}`}>
                               {config.label}
                             </span>
                           );
@@ -10550,16 +10557,11 @@ export default function ResultsPage() {
                         const competitors = result.competitors_mentioned || [];
                         const getCompetitorsList = () => {
                           if (competitors.length === 0) {
-                            return <span className="text-sm text-gray-400">None</span>;
+                            return <span className="text-xs text-gray-400">None</span>;
                           }
-                          const displayed = competitors.slice(0, 2);
-                          const remaining = competitors.length - 2;
                           return (
-                            <span className="text-sm text-gray-700">
-                              {displayed.join(', ')}
-                              {remaining > 0 && (
-                                <span className="text-gray-400 ml-1">+{remaining}</span>
-                              )}
+                            <span className="text-xs text-gray-600">
+                              {competitors.join(', ')}
                             </span>
                           );
                         };
@@ -10567,28 +10569,29 @@ export default function ResultsPage() {
                         return (
                           <tr
                             key={result.id}
-                            className="border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50/40"
+                            className={`border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${filteredSentimentResults.indexOf(result) % 2 === 1 ? 'bg-gray-50/30' : ''}`}
                             onClick={() => setSelectedResult(result)}
                           >
-                            <td className="py-4 px-4">
-                              <p className="text-sm text-gray-900 font-medium">{truncate(result.prompt, 40)}</p>
+                            <td className="py-3 px-4" title={result.prompt}>
+                              <p className="text-sm text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
                             </td>
-                            <td className="py-4 px-4">
-                              <span className="text-sm text-gray-600">{getProviderLabel(result.provider)}</span>
+                            <td className="py-3 px-4">
+                              <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(result.provider) }} />
+                                {providerLabels[result.provider] || result.provider}
+                              </span>
                             </td>
-                            <td className="py-4 px-4 text-center">
+                            <td className="py-3 px-4">
                               {getPositionBadge()}
                             </td>
-                            <td className="py-4 px-4 text-center">
+                            <td className="py-3 px-4">
                               {getSentimentBadge()}
                             </td>
-                            <td className="py-4 px-4">
+                            <td className="py-3 px-4">
                               {getCompetitorsList()}
                             </td>
-                            <td className="py-4 px-4 text-right">
-                              <span className="inline-flex items-center gap-1 text-sm text-gray-900 font-medium">
-                                View <ExternalLink className="w-3 h-3" />
-                              </span>
+                            <td className="py-3 px-4">
+                              <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                             </td>
                           </tr>
                         );
@@ -11105,17 +11108,17 @@ export default function ResultsPage() {
     if (isSummaryLoading) {
       return (
         <div className="space-y-6">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <Sparkles className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-gray-900" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">AI-Powered Recommendations</h2>
-                <p className="text-sm text-gray-600">Generating personalized strategy brief...</p>
+                <p className="text-sm text-gray-500">Generating personalized strategy...</p>
               </div>
             </div>
-            <div className="bg-white rounded-lg p-8 border border-gray-200">
+            <div className="bg-gray-50 rounded-lg p-8">
               <div className="flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-4"></div>
                 <p className="text-sm text-gray-500">Analyzing your visibility data and generating recommendations...</p>
@@ -11128,56 +11131,16 @@ export default function ResultsPage() {
 
     return (
       <div className="space-y-6">
-        {/* AI-Generated Recommendations */}
-        {aiSummary?.recommendations && (() => {
-          const recs = aiSummary.recommendations as unknown;
-          if (typeof recs === 'string') return recs.length > 0;
-          if (Array.isArray(recs)) return recs.length > 0;
-          return false;
-        })() && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                <Sparkles className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">AI-Powered Recommendations</h2>
-                <p className="text-sm text-gray-600">Personalized strategy brief based on your visibility analysis</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-5 border border-gray-200">
-              <div className="text-sm text-gray-700 leading-relaxed space-y-4 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0">
-                {typeof (aiSummary.recommendations as unknown) === 'string' ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{aiSummary.recommendations as string}</ReactMarkdown>
-                ) : (
-                  // Fallback for old array format during transition
-                  <div className="space-y-4">
-                    {(aiSummary.recommendations as unknown as Array<{title: string; description: string; tactics?: string[]}>).map((rec, idx) => (
-                      <div key={idx}>
-                        <p><strong>{rec.title}.</strong> {rec.description}</p>
-                        {rec.tactics && rec.tactics.length > 0 && (
-                          <p className="mt-1 text-gray-600">{rec.tactics.join(' ')}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Recommended High-Impact Actions - only show after AI recommendations have loaded */}
+        {/* AI-Powered Recommendations - combined section with chart + cards */}
         {aiSummary?.recommendations && parsedAiRecommendations.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-[#E8F5E9] rounded-lg flex items-center justify-center">
-              <Target className="w-5 h-5 text-gray-900" />
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-gray-900" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Recommended High-Impact Actions</h2>
-              <p className="text-sm text-gray-500">Prioritized opportunities to improve your AI visibility</p>
+              <h2 className="text-lg font-semibold text-gray-900">AI-Powered Recommendations</h2>
+              <p className="text-sm text-gray-500">Personalized strategy based on your visibility analysis</p>
             </div>
           </div>
 
@@ -11334,129 +11297,87 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
             );
           })()}
 
-          {/* Recommendations Table */}
+          {/* Recommendation Cards */}
           {parsedAiRecommendations.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mt-8">
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Detailed Recommendations</h3>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    {parsedAiRecommendations.length} actionable recommendations based on your visibility analysis
-                  </p>
-                </div>
-              </div>
+            <div className="space-y-3 mt-6">
+              {parsedAiRecommendations.map((rec, idx) => {
+                const quadrantName =
+                  rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
+                  rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
+                  rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
+                  rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
 
-              {/* Table */}
-              <div className="overflow-x-auto min-h-0">
-                <table className="w-full table-fixed">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="w-[30%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Recommendation
-                      </th>
-                      <th className="w-[30%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tactics
-                      </th>
-                      <th className="w-[12%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Impact
-                      </th>
-                      <th className="w-[12%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Effort
-                      </th>
-                      <th className="w-[16%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Category
-                      </th>
-                    </tr>
-                  </thead>
-                </table>
-                {/* Scrollable tbody wrapper */}
-                <div className="max-h-[540px] overflow-y-auto overscroll-contain">
-                  <table className="w-full table-fixed">
-                    <colgroup>
-                      <col className="w-[30%]" />
-                      <col className="w-[30%]" />
-                      <col className="w-[12%]" />
-                      <col className="w-[12%]" />
-                      <col className="w-[16%]" />
-                    </colgroup>
-                    <tbody>
-                      {parsedAiRecommendations.map((rec, idx) => {
-                        const quadrantName =
-                          rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
-                          rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
-                          rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
-                          rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
+                const impactColor: Record<string, string> = {
+                  high: 'text-emerald-700',
+                  medium: 'text-amber-600',
+                  low: 'text-gray-500',
+                };
 
-                        const quadrantColors: Record<string, { bg: string; text: string; border: string }> = {
-                          'Quick Win': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
-                          'Major Project': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-                          'Fill-in': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-                          'Avoid': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
-                          'Consider': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200' },
-                        };
+                const effortColor: Record<string, string> = {
+                  low: 'text-emerald-700',
+                  medium: 'text-amber-600',
+                  high: 'text-red-600',
+                };
 
-                        const impactBadge: Record<string, { bg: string; text: string; border: string }> = {
-                          high: { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300' },
-                          medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-                          low: { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
-                        };
+                const categoryColor: Record<string, string> = {
+                  'Quick Win': 'text-gray-700',
+                  'Major Project': 'text-amber-700',
+                  'Fill-in': 'text-blue-700',
+                  'Avoid': 'text-red-700',
+                  'Consider': 'text-gray-700',
+                };
 
-                        const effortBadge: Record<string, { bg: string; text: string; border: string }> = {
-                          low: { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300' },
-                          medium: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-                          high: { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
-                        };
+                return (
+                  <div
+                    key={idx}
+                    className={`rounded-xl border border-gray-100 p-4 hover:shadow-sm transition ${idx % 2 === 1 ? 'bg-gray-50/30' : 'bg-white'}`}
+                  >
+                    {/* Title row with number badge and badges */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-white text-xs font-medium">{idx + 1}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-semibold text-gray-900">{rec.title}</h3>
+                          {rec.description && (
+                            <p className="text-xs text-gray-500 mt-1">{rec.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span
+                          className={`text-xs font-medium ${impactColor[rec.impact] || 'text-gray-500'}`}
+                          title={rec.impactReason ? `Impact: ${rec.impactReason}` : undefined}
+                        >
+                          {rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)} Impact
+                        </span>
+                        <span
+                          className={`text-xs font-medium ${effortColor[rec.effort] || 'text-gray-500'}`}
+                          title={rec.effortReason ? `Effort: ${rec.effortReason}` : undefined}
+                        >
+                          {rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)} Effort
+                        </span>
+                        <span className={`text-xs font-medium ${categoryColor[quadrantName] || 'text-gray-700'}`}>
+                          {quadrantName}
+                        </span>
+                      </div>
+                    </div>
 
-                        const quadrantStyle = quadrantColors[quadrantName] || quadrantColors['Consider'];
-                        const impactStyle = impactBadge[rec.impact] || impactBadge['medium'];
-                        const effortStyle = effortBadge[rec.effort] || effortBadge['medium'];
-
-                        return (
-                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
-                            <td className="py-4 px-4">
-                              <div className="font-medium text-gray-900 text-sm">{rec.title}</div>
-                              <div className="text-xs text-gray-500 mt-1.5 space-y-0.5">
-                                <span className="block"><span className="font-medium text-gray-600">Impact:</span> {rec.impactReason}</span>
-                                <span className="block"><span className="font-medium text-gray-600">Effort:</span> {rec.effortReason}</span>
-                              </div>
-                            </td>
-                            <td className="py-4 px-4">
-                              {rec.tactics && rec.tactics.length > 0 ? (
-                                <ul className="text-xs text-gray-600 space-y-1.5">
-                                  {rec.tactics.map((tactic, tidx) => (
-                                    <li key={tidx} className="flex items-start gap-1.5">
-                                      <span className="text-gray-900 mt-0.5 flex-shrink-0">•</span>
-                                      <span>{tactic}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <span className="text-xs text-gray-400 italic">No specific tactics</span>
-                              )}
-                            </td>
-                            <td className="text-center py-4 px-4">
-                              <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${impactStyle.bg} ${impactStyle.text} ${impactStyle.border}`}>
-                                {rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)}
-                              </span>
-                            </td>
-                            <td className="text-center py-4 px-4">
-                              <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${effortStyle.bg} ${effortStyle.text} ${effortStyle.border}`}>
-                                {rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
-                              </span>
-                            </td>
-                            <td className="text-center py-4 px-4">
-                              <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${quadrantStyle.bg} ${quadrantStyle.text} ${quadrantStyle.border}`}>
-                                {quadrantName}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                    {/* Tactics checklist */}
+                    {rec.tactics && rec.tactics.length > 0 && (
+                      <div className="mt-3 ml-9 space-y-1.5">
+                        {rec.tactics.map((tactic, tidx) => (
+                          <div key={tidx} className="flex items-start gap-2 text-xs text-gray-600">
+                            <span className="text-gray-400 mt-0.5 flex-shrink-0">•</span>
+                            <span>{tactic}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -11750,7 +11671,14 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       ? `Completed ${formatDate(validRunStatus.completed_at)}`
                       : `Started ${formatDate(validRunStatus.created_at)}`}
                     {' · '}
-                    {formatCurrency(validRunStatus.actual_cost)}
+                    <span className="relative group/cost inline-flex items-center cursor-default">
+                      {formatCurrency(totalCost)}
+                      <span className="absolute left-0 top-full mt-1 w-52 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover/cost:opacity-100 group-hover/cost:visible transition-all z-50 shadow-lg">
+                        <span className="flex justify-between mb-1"><span>Prompts</span><span className="font-medium">{formatCurrency(promptCost)}</span></span>
+                        <span className="flex justify-between mb-1"><span>Analysis</span><span className="font-medium">{formatCurrency(analysisCost)}</span></span>
+                        <span className="flex justify-between pt-1 border-t border-gray-700"><span>Total</span><span className="font-medium">{formatCurrency(totalCost)}</span></span>
+                      </span>
+                    </span>
                   </p>
                 </div>
               </div>
@@ -11821,15 +11749,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
             {/* Brand Analysis Carousel */}
             {allBrandsAnalysisData.length > 0 && (() => {
               const totalCards = allBrandsAnalysisData.length;
-              const canNavigate = totalCards > 1;
-
-              const goToPrevious = () => {
-                setBrandCarouselIndex(prev => prev === 0 ? totalCards - 1 : prev - 1);
-              };
-
-              const goToNext = () => {
-                setBrandCarouselIndex(prev => prev === totalCards - 1 ? 0 : prev + 1);
-              };
+              const canNavigate = totalCards > 3;
 
               const getCarouselProviderLabel = (provider: string) => {
                 switch (provider) {
@@ -11849,9 +11769,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   {/* Carousel with Side Navigation */}
                   <div className="relative flex items-center">
                     {/* Left Arrow */}
-                    {canNavigate && (
+                    {canNavigate && brandCarouselIndex > 0 && (
                       <button
-                        onClick={goToPrevious}
+                        onClick={() => setBrandCarouselIndex(prev => Math.max(0, prev - 1))}
                         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
                       >
                         <ChevronLeft className="w-5 h-5" />
@@ -11866,48 +11786,74 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
                           const allProviders = brandData.providerScores;
-                          const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 2);
+                          const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 3);
+                          // Show up to 3 providers in the grid, rest accessible via scroll
+                          const visibleProviders = allProviders.slice(0, 3);
+                          const remainingProviders = allProviders.slice(3);
 
                           return (
                             <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
-                              <div className={`bg-white rounded-2xl shadow-sm px-5 py-5 h-full hover:shadow-md transition-shadow ${
+                              <div className={`bg-white rounded-xl border shadow-lg h-full ${
                                 brandData.isSearchedBrand
-                                  ? 'border-2 border-gray-200 ring-1 ring-gray-100'
-                                  : 'border border-gray-100'
+                                  ? 'border-gray-300 ring-1 ring-gray-100'
+                                  : 'border-gray-200'
                               }`}>
-                                {/* Brand Name + Score */}
-                                <div className="flex items-start justify-between mb-4">
+                                {/* Card Header */}
+                                <div className="px-5 py-4 border-b border-gray-100">
+                                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Visibility Report</p>
                                   <div className="flex items-center gap-2">
-                                    <h3 className="text-xl font-bold text-gray-900">{brandData.brand}</h3>
+                                    <p className="text-xl font-medium text-gray-900">{brandData.brand}</p>
                                     {brandData.isSearchedBrand && (
                                       <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">you</span>
                                     )}
                                   </div>
-                                  <div className="flex items-baseline shrink-0">
-                                    <span className="text-3xl font-bold text-gray-900">{Math.round(brandData.visibilityScore)}</span>
-                                    <span className="text-sm text-gray-400 font-medium">/100</span>
-                                  </div>
                                 </div>
 
-                                {/* Provider Scores - compact single-line */}
+                                {/* Platform Scores */}
                                 {allProviders.length > 0 && (
-                                  <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
-                                    {allProviders.map((prov) => (
-                                      <span key={prov.provider} className="inline-flex items-center gap-1 text-xs text-gray-500">
-                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
-                                        <span>{getCarouselProviderLabel(prov.provider)}</span>
-                                        <span className="font-semibold text-gray-700">{prov.score}</span>
-                                      </span>
-                                    ))}
+                                  <div className="px-5 py-4 border-b border-gray-100">
+                                    <div className="grid grid-cols-3 gap-4">
+                                      {visibleProviders.map((prov) => (
+                                        <div key={prov.provider} className="text-center">
+                                          <div className="flex items-center justify-center gap-1.5 mb-1">
+                                            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
+                                            <span className="text-xs" style={{ color: getProviderBrandColor(prov.provider) }}>{getCarouselProviderLabel(prov.provider)}</span>
+                                          </div>
+                                          <p className="text-2xl font-semibold" style={{ color: getProviderBrandColor(prov.provider) }}>{prov.score}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    {remainingProviders.length > 0 && (
+                                      <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-50">
+                                        {remainingProviders.map((prov) => (
+                                          <div key={prov.provider} className="text-center">
+                                            <div className="flex items-center justify-center gap-1.5 mb-1">
+                                              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
+                                              <span className="text-xs" style={{ color: getProviderBrandColor(prov.provider) }}>{getCarouselProviderLabel(prov.provider)}</span>
+                                            </div>
+                                            <p className="text-2xl font-semibold" style={{ color: getProviderBrandColor(prov.provider) }}>{prov.score}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
 
+                                {/* Overall Visibility */}
+                                <div className="px-5 py-5 border-b border-gray-100 text-center">
+                                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Overall Visibility</p>
+                                  <p className="text-5xl font-semibold text-gray-900">
+                                    {Math.round(brandData.visibilityScore)}<span className="text-2xl text-gray-400 font-normal">/100</span>
+                                  </p>
+                                </div>
+
                                 {/* Recent Mentions */}
                                 {quotes.length > 0 && (
-                                  <div className="border-t border-gray-100 pt-3">
-                                    <div className="space-y-1.5">
+                                  <div className="px-5 py-4">
+                                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Recent Mentions</p>
+                                    <div className="space-y-2">
                                       {quotes.map((quote, qIdx) => (
-                                        <p key={qIdx} className="text-xs text-gray-500 leading-relaxed line-clamp-1">
+                                        <p key={qIdx} className="text-sm text-gray-600 line-clamp-1">
                                           &ldquo;{quote.text}&rdquo;
                                         </p>
                                       ))}
@@ -11922,9 +11868,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     </div>
 
                     {/* Right Arrow */}
-                    {canNavigate && (
+                    {canNavigate && brandCarouselIndex < totalCards - 3 && (
                       <button
-                        onClick={goToNext}
+                        onClick={() => setBrandCarouselIndex(prev => Math.min(totalCards - 3, prev + 1))}
                         className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
                       >
                         <ChevronRight className="w-5 h-5" />
@@ -11933,9 +11879,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   </div>
 
                   {/* Carousel Dots */}
-                  {totalCards > 1 && (
+                  {canNavigate && (
                     <div className="flex justify-center gap-2 mt-6">
-                      {allBrandsAnalysisData.map((_, idx) => (
+                      {Array.from({ length: Math.max(1, totalCards - 2) }).map((_, idx) => (
                         <button
                           key={idx}
                           onClick={() => setBrandCarouselIndex(idx)}
@@ -12853,7 +12799,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   ) : (
                     <>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(74, 124, 89, 0.5)' }} />
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(34, 197, 94, 0.6)' }} />
                         <span>{runStatus?.brand || 'Searched brand'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -12944,7 +12890,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                   barColor = '#ef4444'; // Not Recommended - red
                                 }
                               } else if (!heatmapShowSentiment && count > 0) {
-                                barColor = isSearchedBrand ? '#111827' : '#5ba3c0';
+                                barColor = isSearchedBrand ? '#22c55e' : '#5ba3c0';
                               }
 
                               return (
