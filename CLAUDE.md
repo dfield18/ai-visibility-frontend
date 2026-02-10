@@ -98,7 +98,7 @@ npm run lint    # ESLint
   - Perplexity: `#20b8cd` (teal)
   - Grok: `#1d9bf0` (blue)
   - Llama: `#8b5cf6` (purple)
-  - AI Overviews: `#ea4335` (red)
+  - AI Overviews: `#e8756d` (coral)
 - **Metric cards**: Use gradient backgrounds (`from-gray-100 to-gray-50`)
 - **Purple accent**: Used for selected items on configure page (`rgba(139, 92, 246, 0.1)`)
 
