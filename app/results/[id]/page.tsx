@@ -95,6 +95,123 @@ const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
   { id: 'reference', label: 'Reference', icon: <FileText className="w-4 h-4" /> },
 ];
 
+// Section definitions for each tab (used by the sidebar guide)
+const TAB_SECTIONS: Partial<Record<TabType, { id: string; label: string }[]>> = {
+  overview: [
+    { id: 'overview-metrics', label: 'Metrics Overview' },
+    { id: 'overview-ai-analysis', label: 'AI Analysis' },
+    { id: 'overview-brand-quotes', label: 'Brand Quotes' },
+    { id: 'overview-by-question', label: 'Results by Question' },
+    { id: 'overview-by-platform-chart', label: 'Position by Platform' },
+    { id: 'overview-by-platform', label: 'Results by Platform' },
+    { id: 'overview-all-results', label: 'All Results' },
+  ],
+  competitive: [
+    { id: 'competitive-cards', label: 'Visibility Cards' },
+    { id: 'competitive-insights', label: 'Key Insights' },
+    { id: 'competitive-breakdown', label: 'Brand Breakdown' },
+    { id: 'competitive-positioning', label: 'Brand Positioning' },
+    { id: 'competitive-heatmap', label: 'Performance Matrix' },
+    { id: 'competitive-cooccurrence', label: 'Mentioned Together' },
+    { id: 'competitive-publishers', label: 'Publisher Heatmap' },
+  ],
+  sentiment: [
+    { id: 'sentiment-distribution', label: 'Sentiment Overview' },
+    { id: 'sentiment-insights', label: 'Key Insights' },
+    { id: 'sentiment-by-question', label: 'By Question' },
+    { id: 'sentiment-by-platform', label: 'By AI Platform' },
+    { id: 'sentiment-competitor', label: 'Competitor Comparison' },
+    { id: 'sentiment-details', label: 'Sentiment Details' },
+  ],
+  sources: [
+    { id: 'sources-influencers', label: 'Key Influencers' },
+    { id: 'sources-insights', label: 'Key Insights' },
+    { id: 'sources-top-cited', label: 'Top Cited Sources' },
+    { id: 'sources-helpful', label: 'Sources That Help' },
+    { id: 'sources-brand-website', label: 'Website Citations' },
+    { id: 'sources-publisher', label: 'Publisher Breakdown' },
+  ],
+  recommendations: [
+    { id: 'recommendations-ai', label: 'AI Recommendations' },
+    { id: 'recommendations-llm', label: 'Website Optimization' },
+  ],
+  reference: [
+    { id: 'reference-summary', label: 'Summary' },
+    { id: 'reference-chart', label: 'Brand Position Chart' },
+    { id: 'reference-ai-analysis', label: 'AI Analysis' },
+    { id: 'reference-detailed', label: 'Detailed Results' },
+    { id: 'reference-export', label: 'Export & Share' },
+  ],
+};
+
+// Section Guide sidebar component
+function SectionGuide({ activeTab }: { activeTab: TabType }) {
+  const [activeSection, setActiveSection] = useState('');
+  const sections = TAB_SECTIONS[activeTab];
+
+  useEffect(() => {
+    if (!sections || sections.length === 0) return;
+
+    // Set the first section as default active
+    setActiveSection(sections[0].id);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: '-80px 0px -65% 0px', threshold: 0 }
+    );
+
+    // Small delay to ensure DOM elements exist
+    const timer = setTimeout(() => {
+      sections.forEach(({ id }) => {
+        const el = document.getElementById(id);
+        if (el) observer.observe(el);
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [sections, activeTab]);
+
+  if (!sections || sections.length === 0) return null;
+
+  return (
+    <div className="hidden xl:block w-44 flex-shrink-0">
+      <div className="sticky top-36">
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">On this page</p>
+        <nav className="space-y-0.5">
+          {sections.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => {
+                const el = document.getElementById(id);
+                if (el) {
+                  const y = el.getBoundingClientRect().top + window.scrollY - 90;
+                  window.scrollTo({ top: y, behavior: 'smooth' });
+                }
+              }}
+              className={`block w-full text-left text-[13px] py-1.5 pl-3 border-l-2 transition-colors ${
+                activeSection === id
+                  ? 'border-gray-900 text-gray-900 font-medium'
+                  : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
 // Category colors for source types
 const CATEGORY_COLORS: Record<string, string> = {
   'Social Media': '#111827',      // Primary dark
@@ -4137,7 +4254,7 @@ export default function ResultsPage() {
     return (
     <div className="space-y-6">
       {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div id="overview-metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* AI Visibility Card */}
         {(() => {
           const visibilityTone = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tone;
@@ -4393,7 +4510,7 @@ export default function ResultsPage() {
       </div>
 
       {/* AI Summary */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
+      <div id="overview-ai-analysis" className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-blue-600" />
@@ -4440,7 +4557,7 @@ export default function ResultsPage() {
 
       {/* What AI Says About [Brand] */}
       {brandQuotes.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div id="overview-brand-quotes" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare className="w-5 h-5 text-gray-700" />
             <h2 className="text-lg font-semibold text-gray-900">
@@ -4467,7 +4584,7 @@ export default function ResultsPage() {
 
       {/* Prompt Breakdown Table */}
       {promptBreakdownStats.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div id="overview-by-question" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Results by Question</h2>
@@ -4619,7 +4736,7 @@ export default function ResultsPage() {
 
       {/* AI Brand Position by Platform */}
       {Object.keys(positionByPlatformData).length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div id="overview-by-platform-chart" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -4755,7 +4872,7 @@ export default function ResultsPage() {
 
       {/* Results by AI Platform */}
       {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div id="overview-by-platform" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Results by AI Platform</h2>
             <select
@@ -4929,7 +5046,7 @@ export default function ResultsPage() {
       )}
 
       {/* All Results Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+      <div id="overview-all-results" className="bg-white rounded-2xl shadow-sm border border-gray-200">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
           <div>
@@ -5301,7 +5418,7 @@ export default function ResultsPage() {
   const ReferenceTab = () => (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className={`grid grid-cols-1 ${isCategory ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4`}>
+      <div id="reference-summary" className={`grid grid-cols-1 ${isCategory ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4`}>
         {!isCategory && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
             <p className="text-sm text-gray-500 mb-1">Brand Mention Rate</p>
@@ -5336,7 +5453,7 @@ export default function ResultsPage() {
 
       {/* Charts Section with Tabs */}
       {scatterPlotData.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div id="reference-chart" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           {/* Chart Title */}
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Where your brand appears in AI-generated answers</h2>
 
@@ -6090,7 +6207,7 @@ export default function ResultsPage() {
         </div>
       )}
       {/* AI Summary */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
+      <div id="reference-ai-analysis" className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-blue-600" />
@@ -6151,7 +6268,7 @@ export default function ResultsPage() {
       )}
 
       {/* Detailed Results */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div id="reference-detailed" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <h2 className="text-lg font-semibold text-gray-900">Detailed Results</h2>
           <div className="flex flex-wrap items-center gap-2">
@@ -6386,7 +6503,7 @@ export default function ResultsPage() {
       </div>
 
       {/* Export Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div id="reference-export" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Export & Share</h2>
         <p className="text-sm text-gray-500 mb-4">Download results or share a link to this page</p>
         <div className="flex flex-wrap gap-3">
@@ -8306,7 +8423,7 @@ export default function ResultsPage() {
       <div className="space-y-6">
         {/* Key Influencers */}
         {keyInfluencers.length > 0 && (
-          <div className="bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl border border-gray-200 p-6">
+          <div id="sources-influencers" className="bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl border border-gray-200 p-6">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-5 h-5 text-gray-900" />
               <h2 className="text-lg font-semibold text-gray-900">Key Influencers</h2>
@@ -8378,7 +8495,7 @@ export default function ResultsPage() {
 
         {/* Key Sources Insights */}
         {sourcesInsights.length > 0 && (
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-6">
+          <div id="sources-insights" className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-6">
             <div className="flex items-center gap-2 mb-4">
               <Lightbulb className="w-5 h-5 text-purple-600" />
               <h2 className="text-lg font-semibold text-gray-900">Key Sources Insights</h2>
@@ -8398,7 +8515,7 @@ export default function ResultsPage() {
 
         {/* Top Cited Sources with Pie Chart */}
         {hasAnySources && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div id="sources-top-cited" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Link2 className="w-5 h-5 text-gray-900" />
@@ -8697,7 +8814,7 @@ export default function ResultsPage() {
           });
 
           return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div id="sources-helpful" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">Sources That Help Your Brand</h2>
@@ -8902,7 +9019,7 @@ export default function ResultsPage() {
         })()}
 
         {/* Brand Website Citations */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div id="sources-brand-website" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Website Citations</h3>
@@ -9040,7 +9157,7 @@ export default function ResultsPage() {
 
         {/* Domain Breakdown Table */}
         {domainTableData.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+          <div id="sources-publisher" className="bg-white rounded-2xl shadow-sm border border-gray-200">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
               <div>
@@ -9739,7 +9856,7 @@ export default function ResultsPage() {
     return (
       <div className="space-y-6">
         {/* Brand Sentiment Overview */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div id="sentiment-distribution" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">How AI Describes {runStatus?.brand}</h3>
           <p className="text-sm text-gray-500 mb-6">Sentiment classification of how AI models mention your brand</p>
 
@@ -9817,7 +9934,7 @@ export default function ResultsPage() {
 
         {/* Key Sentiment & Framing Insights */}
         {sentimentInsights.length > 0 && (
-          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl shadow-sm border border-teal-100 p-6">
+          <div id="sentiment-insights" className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl shadow-sm border border-teal-100 p-6">
             <div className="flex items-center gap-2 mb-4">
               <Lightbulb className="w-5 h-5 text-teal-600" />
               <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Framing Insights</h2>
@@ -10007,7 +10124,7 @@ export default function ResultsPage() {
           });
 
           return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div id="sentiment-by-question" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">Sentiment by Question</h2>
@@ -10198,7 +10315,7 @@ export default function ResultsPage() {
         })()}
 
         {/* Sentiment by Provider */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
+        <div id="sentiment-by-platform" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Platform</h3>
@@ -10393,7 +10510,7 @@ export default function ResultsPage() {
 
         {/* Competitor Sentiment Comparison */}
         {competitorSentimentData.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div id="sentiment-competitor" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-1">Competitor Sentiment Comparison</h3>
             <p className="text-sm text-gray-500 mb-6">How AI models describe competitors in the same responses</p>
 
@@ -10523,7 +10640,7 @@ export default function ResultsPage() {
         )}
 
         {/* Individual Results with Sentiment */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div id="sentiment-details" className="bg-white rounded-xl shadow-sm border border-gray-100">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
             <div>
@@ -11246,7 +11363,7 @@ export default function ResultsPage() {
       <div className="space-y-6">
         {/* AI-Powered Recommendations - combined section with chart + cards */}
         {aiSummary?.recommendations && parsedAiRecommendations.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div id="recommendations-ai" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
 
           {/* Effort vs Impact Matrix Chart */}
           {parsedAiRecommendations.length > 0 && (() => {
@@ -11497,7 +11614,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
         )}
 
         {/* Site Audit Insights */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div id="recommendations-llm" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
               <Globe className="w-5 h-5 text-gray-900" />
@@ -11856,6 +11973,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
       {/* Tab Content */}
       <div className="max-w-7xl mx-auto px-6 pt-6">
+        <div className="flex gap-6">
+          <SectionGuide activeTab={activeTab} />
+          <div className="flex-1 min-w-0">
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'reference' && <ReferenceTab />}
         {activeTab === 'competitive' && (
@@ -11879,7 +11999,20 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               };
 
               return (
-                <div className="relative">
+                <div id="competitive-cards" className="relative">
+                  {/* Shared provider color legend */}
+                  <div className="flex items-center justify-center gap-4 mb-4 text-xs text-gray-500">
+                    {(() => {
+                      const allProviderKeys = [...new Set(allBrandsAnalysisData.flatMap(b => b.providerScores.map(p => p.provider)))];
+                      return allProviderKeys.map(provider => (
+                        <span key={provider} className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getProviderBrandColor(provider) }} />
+                          {getCarouselProviderLabel(provider)}
+                        </span>
+                      ));
+                    })()}
+                  </div>
+
                   {/* Carousel with Side Navigation */}
                   <div className="relative flex items-center">
                     {/* Left Arrow */}
@@ -11900,10 +12033,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
                           const allProviders = brandData.providerScores;
-                          const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 3);
-                          // Show up to 3 providers in the grid, rest accessible via scroll
-                          const visibleProviders = allProviders.slice(0, 3);
-                          const remainingProviders = allProviders.slice(3);
+                          const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 1);
+                          const mentionedProviders = allProviders.filter(p => p.score > 0);
+                          const notMentionedProviders = allProviders.filter(p => p.score === 0);
+                          const mentionedCount = mentionedProviders.length;
+                          const totalProviderCount = allProviders.length;
 
                           return (
                             <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
@@ -11912,53 +12046,81 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                   ? 'border-gray-300 ring-1 ring-gray-100 shadow-lg'
                                   : 'border-gray-200 shadow-sm'
                               }`}>
-                                {/* Card Header */}
+                                {/* Card Header + Overall Visibility (compact) */}
                                 <div className="px-5 py-4 border-b border-gray-100">
-                                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Visibility Report</p>
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-xl font-medium text-gray-900">{brandData.brand}</p>
-                                    {brandData.isSearchedBrand && (
-                                      <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">you</span>
-                                    )}
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Visibility Report</p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-lg font-semibold text-gray-900">{brandData.brand}</p>
+                                        {brandData.isSearchedBrand && (
+                                          <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">you</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-3xl font-semibold text-gray-900">
+                                        {Math.round(brandData.visibilityScore)}<span className="text-base text-gray-400 font-normal">/100</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                  {/* Mention summary bar */}
+                                  <div className="mt-3">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                        <div
+                                          className="h-full rounded-full"
+                                          style={{
+                                            width: `${totalProviderCount > 0 ? (mentionedCount / totalProviderCount) * 100 : 0}%`,
+                                            backgroundColor: mentionedCount === totalProviderCount ? '#059669' : mentionedCount >= totalProviderCount * 0.5 ? '#f59e0b' : '#ef4444',
+                                          }}
+                                        />
+                                      </div>
+                                      <span className="text-[10px] text-gray-400 whitespace-nowrap">{mentionedCount}/{totalProviderCount} platforms</span>
+                                    </div>
                                   </div>
                                 </div>
 
-                                {/* Platform Scores */}
+                                {/* Platform Scores - mini horizontal bars */}
                                 {allProviders.length > 0 && (
-                                  <div className="py-4 border-b border-gray-100">
-                                    <div className="flex gap-4 overflow-x-auto px-5">
-                                      {allProviders.map((prov) => (
-                                        <div key={prov.provider} className="text-center flex-shrink-0">
-                                          <div className="flex items-center justify-center gap-1.5 mb-1">
-                                            {getProviderIcon(prov.provider)}
-                                            <span className="text-xs whitespace-nowrap" style={{ color: getProviderBrandColor(prov.provider) }}>{getCarouselProviderLabel(prov.provider)}</span>
+                                  <div className="px-5 py-3 border-b border-gray-100">
+                                    <div className="space-y-1.5">
+                                      {allProviders.map((prov) => {
+                                        const isZero = prov.score === 0;
+                                        return (
+                                          <div key={prov.provider} className={`flex items-center gap-2 ${isZero ? 'opacity-35' : ''}`}>
+                                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
+                                            <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                              <div
+                                                className="h-full rounded-full transition-all duration-500"
+                                                style={{
+                                                  width: `${prov.score}%`,
+                                                  backgroundColor: getProviderBrandColor(prov.provider),
+                                                }}
+                                              />
+                                            </div>
+                                            <span className={`text-xs tabular-nums w-7 text-right font-medium ${isZero ? 'text-gray-300' : 'text-gray-700'}`}>
+                                              {prov.score}
+                                            </span>
                                           </div>
-                                          <p className="text-2xl font-semibold" style={{ color: getProviderBrandColor(prov.provider) }}>{prov.score}</p>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
+                                    {notMentionedProviders.length > 0 && notMentionedProviders.length < totalProviderCount && (
+                                      <p className="text-[10px] text-gray-400 mt-2">
+                                        Not found on {notMentionedProviders.map(p => getCarouselProviderLabel(p.provider)).join(', ')}
+                                      </p>
+                                    )}
                                   </div>
                                 )}
 
-                                {/* Overall Visibility */}
-                                <div className="px-5 py-6 border-b border-gray-100 text-center">
-                                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Overall Visibility</p>
-                                  <p className="text-5xl font-semibold text-gray-900">
-                                    {Math.round(brandData.visibilityScore)}<span className="text-2xl text-gray-400 font-normal">/100</span>
-                                  </p>
-                                </div>
-
-                                {/* Highlights */}
+                                {/* Highlight - single clean quote */}
                                 {quotes.length > 0 && (
-                                  <div className="px-5 py-4">
-                                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Highlights</p>
-                                    <div className="space-y-2">
-                                      {quotes.map((quote, qIdx) => (
-                                        <p key={qIdx} className="text-sm text-gray-600 line-clamp-1">
-                                          &ldquo;{quote.text}&rdquo;
-                                        </p>
-                                      ))}
-                                    </div>
+                                  <div className="px-5 py-3">
+                                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-1.5">Highlight</p>
+                                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
+                                      &ldquo;{quotes[0].text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '')}&rdquo;
+                                    </p>
                                   </div>
                                 )}
                               </div>
@@ -11997,7 +12159,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
             {/* Competitive Insights Summary */}
             {competitiveInsights.length > 0 && (
-              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
+              <div id="competitive-insights" className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Lightbulb className="w-5 h-5 text-amber-600" />
                   <h2 className="text-lg font-semibold text-gray-900">Key Competitive Insights</h2>
@@ -12017,7 +12179,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
             {/* Brand Breakdown Table */}
             {brandBreakdownStats.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div id="competitive-breakdown" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Brand Breakdown</h2>
@@ -12306,7 +12468,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               const yMax = maxMentions + Math.max(1, Math.ceil(maxMentions * 0.15)); // Add ~15% padding at top
 
               return (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div id="competitive-positioning" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Brand Positioning</h2>
@@ -12506,7 +12668,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
             {/* Prompt Performance Matrix (Heatmap) */}
             {promptPerformanceMatrix.brands.length > 0 && promptPerformanceMatrix.prompts.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div id="competitive-heatmap" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Prompt Performance Matrix</h2>
@@ -12597,7 +12759,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
             {/* Brand Co-occurrence Analysis */}
             {brandCooccurrence.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div id="competitive-cooccurrence" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Brands Mentioned Together</h2>
@@ -12826,7 +12988,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
             {/* Brand-Source Heatmap */}
             {brandSourceHeatmap.sources.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div id="competitive-publishers" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Which Publishers Mention Which Brands</h3>
@@ -13062,6 +13224,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
         {activeTab === 'recommendations' && <RecommendationsTab />}
         {activeTab === 'reports' && <ReportsTab runStatus={runStatus ?? null} />}
         {activeTab === 'site-audit' && <SiteAuditTab brand={runStatus?.brand || ''} />}
+          </div>{/* End flex-1 content */}
+        </div>{/* End flex container */}
       </div>
 
       {/* Snippet Detail Modal */}

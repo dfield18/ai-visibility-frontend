@@ -86,18 +86,40 @@ function ProgressBarAnimation({
 
   return (
     <div className="flex flex-col items-center">
-      {/* Progress bar */}
+      {/* Progress bar - Claude-style with shimmer */}
       <div className="w-full flex items-center gap-3">
-        <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className="h-2.5 bg-gray-900 rounded-full transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          />
+            className="h-full rounded-full transition-all duration-700 ease-out relative"
+            style={{
+              width: `${Math.max(progress, 2)}%`,
+              background: progress < 100
+                ? 'linear-gradient(90deg, #d4a574, #c4956a, #b8876a, #c4956a, #d4a574)'
+                : '#d4a574',
+            }}
+          >
+            {progress < 100 && progress > 0 && (
+              <div
+                className="absolute inset-0 rounded-full"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 1.5s ease-in-out infinite',
+                }}
+              />
+            )}
+          </div>
         </div>
         <span className="text-sm font-semibold text-gray-900 tabular-nums w-10 text-right">
           {Math.round(displayedProgress)}%
         </span>
       </div>
+      <style jsx>{`
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
 
       {/* Per-provider progress */}
       {hasProviderDetails ? (

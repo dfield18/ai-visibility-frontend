@@ -9,8 +9,8 @@ import {
   X,
   Check,
   AlertTriangle,
-  Sparkles,
   ChevronDown,
+  ChevronUp,
   HelpCircle,
   MessageSquare,
   Users,
@@ -18,6 +18,7 @@ import {
   Settings2,
   Globe,
   MapPin,
+  ArrowRight,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useStore } from '@/hooks/useStore';
@@ -34,17 +35,17 @@ import {
 const PROVIDER_INFO: Record<string, { name: string; description: string; cost: string }> = {
   openai: {
     name: 'ChatGPT',
-    description: 'Most popular AI chatbot',
+    description: 'Most popular AI assistant',
     cost: 'from $0.0003/call',
   },
   gemini: {
     name: 'Google Gemini',
-    description: 'Google\'s AI assistant',
+    description: "Google's AI with search integration",
     cost: '$0.00025/call',
   },
   anthropic: {
     name: 'Claude',
-    description: 'Anthropic\'s AI assistant',
+    description: "Anthropic's AI with web search",
     cost: 'from $0.025/call',
   },
   perplexity: {
@@ -54,17 +55,17 @@ const PROVIDER_INFO: Record<string, { name: string; description: string; cost: s
   },
   ai_overviews: {
     name: 'Google AI Overviews',
-    description: 'AI answers in Google Search',
+    description: 'AI summaries in Google Search',
     cost: '$0.005/call',
   },
   grok: {
     name: 'Grok',
-    description: 'AI on X (Twitter)',
+    description: "xAI's AI with real-time data",
     cost: '$0.001/call',
   },
   llama: {
     name: 'Llama',
-    description: 'Meta\'s AI model',
+    description: "Meta's open-source LLM",
     cost: '$0.0005/call',
   },
 };
@@ -131,6 +132,7 @@ export default function ConfigurePage() {
   const [tempUrl, setTempUrl] = useState('');
   const [editingLocation, setEditingLocation] = useState(false);
   const [tempLocation, setTempLocation] = useState('');
+  const [questionsExpanded, setQuestionsExpanded] = useState(true);
 
   const { data: suggestions, isLoading: suggestionsLoading, error: suggestionsError } = useSuggestions(brand, searchType, location);
   const startRunMutation = useStartRun();
@@ -145,7 +147,6 @@ export default function ConfigurePage() {
   // Auto-generate brand URL if empty
   useEffect(() => {
     if (brand && !brandUrl) {
-      // Generate URL from brand name (e.g., "Nike" -> "nike.com")
       const generatedUrl = brand.toLowerCase().replace(/\s+/g, '') + '.com';
       setBrandUrl(generatedUrl);
     }
@@ -161,9 +162,7 @@ export default function ConfigurePage() {
         if (!isCategory && suggestions.competitors.length > 0) {
           const rival = suggestions.competitors[0];
 
-          // Try to extract product/category context from existing prompts
           const extractProductContext = (prompts: string[]): string | null => {
-            // Common product keywords to look for
             const productPatterns = [
               /best\s+(.+?)(?:\s+for|\s+in|\s+to|\?|$)/i,
               /top\s+(.+?)(?:\s+for|\s+in|\s+to|\?|$)/i,
@@ -176,7 +175,6 @@ export default function ConfigurePage() {
                 const match = prompt.match(pattern);
                 if (match && match[1]) {
                   const product = match[1].trim();
-                  // Filter out generic words
                   if (product.length > 2 && !['the', 'a', 'an', 'some'].includes(product.toLowerCase())) {
                     return product;
                   }
@@ -188,7 +186,6 @@ export default function ConfigurePage() {
 
           const productContext = extractProductContext(basePrompts);
 
-          // Create a specific comparison prompt
           const comparisonPrompt = productContext
             ? `What are the differences between ${brand} and ${rival} ${productContext}?`
             : `What are the key differences between ${brand} and ${rival} products?`;
@@ -291,6 +288,11 @@ export default function ConfigurePage() {
 
   const canRun = selectedPromptsArray.length > 0 && providers.length > 0 && !startRunMutation.isPending;
 
+  // Questions to display (with show less/more)
+  const COLLAPSED_QUESTION_COUNT = 4;
+  const visiblePrompts = questionsExpanded ? prompts : prompts.slice(0, COLLAPSED_QUESTION_COUNT);
+  const canToggleQuestions = prompts.length > COLLAPSED_QUESTION_COUNT;
+
   if (!brand) {
     return null;
   }
@@ -306,7 +308,7 @@ export default function ConfigurePage() {
         backgroundSize: '48px 48px',
       }}
     >
-      {/* Header - minimal, transparent */}
+      {/* Header */}
       <header className="sticky top-0 z-10 bg-[#FAFAF8]/95 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
@@ -333,7 +335,7 @@ export default function ConfigurePage() {
                           type="text"
                           value={tempLocation}
                           onChange={(e) => setTempLocation(e.target.value)}
-                          className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 w-36"
+                          className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 w-36"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -350,7 +352,7 @@ export default function ConfigurePage() {
                             setLocation(tempLocation);
                             setEditingLocation(false);
                           }}
-                          className="p-0.5 text-gray-900 hover:bg-gray-900/10 rounded"
+                          className="p-0.5 text-teal-600 hover:bg-teal-50 rounded"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>
@@ -383,7 +385,7 @@ export default function ConfigurePage() {
                         type="text"
                         value={tempUrl}
                         onChange={(e) => setTempUrl(e.target.value)}
-                        className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 w-36"
+                        className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 w-36"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
@@ -400,7 +402,7 @@ export default function ConfigurePage() {
                           setBrandUrl(tempUrl);
                           setEditingUrl(false);
                         }}
-                        className="p-0.5 text-gray-900 hover:bg-gray-900/10 rounded"
+                        className="p-0.5 text-teal-600 hover:bg-teal-50 rounded"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
@@ -440,10 +442,10 @@ export default function ConfigurePage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-6 pb-24 space-y-8">
+      <div className="max-w-7xl mx-auto px-6 py-6 pb-24">
         {/* Error Alert */}
         {(error || suggestionsError) && (
-          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
+          <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3 mb-6">
             <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-red-800">Something went wrong</p>
@@ -454,339 +456,417 @@ export default function ConfigurePage() {
           </div>
         )}
 
-        {/* Main layout: Questions full-width, Competitors + Platforms side-by-side */}
-        <div className="space-y-8">
+        <div className="flex gap-8">
+          {/* Left Sidebar - How it works */}
+          <div className="hidden lg:block w-60 flex-shrink-0">
+            <div className="sticky top-20">
+              <h2 className="text-base font-semibold text-gray-900 mb-1">How it works</h2>
+              <p className="text-sm text-gray-500 mb-6">
+                Configure your AI-powered competitive analysis in three simple steps.
+              </p>
 
-          {/* Questions Section - full width card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
-            {/* Header with step number */}
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-7 h-7 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white text-xs font-semibold">1</span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
-                  <span className="text-sm text-gray-500 font-medium">
-                    {selectedPromptsArray.length} selected
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mt-0.5">These questions will be sent to each AI platform to see if they mention your brand</p>
-              </div>
-            </div>
-
-            {suggestionsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Spinner size="lg" />
-                <span className="ml-3 text-gray-500 text-sm">Generating smart questions...</span>
-              </div>
-            ) : (
-              <div className="space-y-0.5">
-                {/* Questions List */}
-                {prompts.map((prompt, index) => (
-                  <div
-                    key={prompt}
-                    className={`flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all group ${
-                      selectedPrompts.has(prompt)
-                        ? 'bg-white'
-                        : 'hover:bg-gray-50'
-                    }`}
-                    onClick={() => {
-                      if (editingPromptIndex !== index) {
-                        togglePrompt(prompt);
-                      }
-                    }}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                        selectedPrompts.has(prompt)
-                          ? 'bg-gray-900'
-                          : 'border-2 border-gray-300'
-                      }`}
-                    >
-                      {selectedPrompts.has(prompt) && (
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                      )}
-                    </div>
-                    {editingPromptIndex === index ? (
-                      <div className="flex-1 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="text"
-                          value={editingPromptValue}
-                          onChange={(e) => setEditingPromptValue(e.target.value)}
-                          className="flex-1 px-2.5 py-1.5 border border-gray-900 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSavePromptEdit();
-                            if (e.key === 'Escape') setEditingPromptIndex(null);
-                          }}
-                        />
-                        <button
-                          onClick={handleSavePromptEdit}
-                          className="p-1.5 text-gray-900 hover:bg-gray-900/10 rounded-lg transition-colors"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setEditingPromptIndex(null)}
-                          className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <span className="flex-1 text-sm text-gray-600 leading-relaxed">
-                          {prompt}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditPrompt(index);
-                          }}
-                          className="p-1 text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-all rounded hover:bg-gray-100"
-                          aria-label="Edit question"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                      </>
-                    )}
+              <div className="space-y-5">
+                <div className="flex gap-3">
+                  <div className="w-5 h-5 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-[10px] font-bold">1</span>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Pick your questions</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Select or add the questions you want each AI platform to answer about your brand.</p>
+                  </div>
+                </div>
 
-            <div className="mt-3 flex items-center justify-between">
-              {prompts.length < 10 ? (
-                <>
-                  {addingPrompt ? (
-                    <div className="flex gap-2 flex-1">
-                      <input
-                        type="text"
-                        value={newPrompt}
-                        onChange={(e) => setNewPrompt(e.target.value)}
-                        placeholder="Type your question here..."
-                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 placeholder-gray-400"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') { handleAddPrompt(); }
-                          if (e.key === 'Escape') { setAddingPrompt(false); setNewPrompt(''); }
-                        }}
-                      />
-                      <button
-                        onClick={handleAddPrompt}
-                        disabled={!newPrompt.trim()}
-                        className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                      >
-                        Add
-                      </button>
-                      <button
-                        onClick={() => { setAddingPrompt(false); setNewPrompt(''); }}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setAddingPrompt(true)}
-                      className="text-sm text-gray-700 hover:bg-gray-100 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 border-dashed transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add your own question
-                    </button>
-                  )}
-                </>
-              ) : <div />}
-              {prompts.length > 0 && !addingPrompt && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (selectedPrompts.size === prompts.length) {
-                      deselectAllPrompts();
-                    } else {
-                      selectAllPrompts();
-                    }
-                  }}
-                  className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
-                >
-                  {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
-                </button>
-              )}
+                <div className="flex gap-3">
+                  <div className="w-5 h-5 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-[10px] font-bold">2</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Choose competitors</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Add the brands you want to benchmark against in the analysis results.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="w-5 h-5 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-[10px] font-bold">3</span>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Select AI platforms</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Pick which AI assistants to query so you can compare responses across platforms.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 bg-amber-50 border border-amber-100 rounded-xl p-4">
+                <p className="text-xs text-amber-800">
+                  <span className="mr-1">💡</span>
+                  <span className="font-medium">Tip:</span> The more questions and platforms you select, the richer your analysis will be.
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Competitors + Platforms side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+          {/* Main Content */}
+          <div className="flex-1 space-y-8">
 
-            {/* Competitors Section */}
-            <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
+            {/* Questions Section - full width card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
               {/* Header with step number */}
-              <div className="flex items-start gap-3 mb-1">
-                <div className="w-7 h-7 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs font-semibold">2</span>
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xs font-semibold">1</span>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
-                    <span className="text-sm text-gray-500 font-medium">
-                      {selectedCompetitorsArray.length} selected
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-0.5">{brandsDescription}</p>
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-gray-400" />
+                  <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
                 </div>
+                <span className="ml-auto text-sm font-semibold text-teal-600">
+                  {selectedPromptsArray.length}/{prompts.length}
+                </span>
               </div>
 
-              <div className="mt-3">
-                {suggestionsLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Spinner size="lg" />
-                    <span className="ml-3 text-gray-500">{brandsLoadingText}</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {competitors.map((competitor) => {
-                      const isSelected = selectedCompetitors.has(competitor);
-                      return (
-                        <div
-                          key={competitor}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm cursor-pointer transition-all group ${
-                            isSelected
-                              ? 'bg-gray-900 text-white font-medium'
-                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                          }`}
-                          onClick={() => toggleCompetitor(competitor)}
-                        >
-                          {isSelected && <Check className="w-3.5 h-3.5" strokeWidth={2.5} />}
-                          <span>{competitor}</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeCompetitor(competitor);
+              {suggestionsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Spinner size="lg" />
+                  <span className="ml-3 text-gray-500 text-sm">Generating smart questions...</span>
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {/* Questions List */}
+                  {visiblePrompts.map((prompt, index) => (
+                    <div
+                      key={prompt}
+                      className={`flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all group ${
+                        selectedPrompts.has(prompt)
+                          ? 'bg-white'
+                          : 'hover:bg-gray-50'
+                      }`}
+                      onClick={() => {
+                        if (editingPromptIndex !== index) {
+                          togglePrompt(prompt);
+                        }
+                      }}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                          selectedPrompts.has(prompt)
+                            ? 'bg-teal-600'
+                            : 'border-2 border-gray-300'
+                        }`}
+                      >
+                        {selectedPrompts.has(prompt) && (
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                        )}
+                      </div>
+                      {editingPromptIndex === index ? (
+                        <div className="flex-1 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={editingPromptValue}
+                            onChange={(e) => setEditingPromptValue(e.target.value)}
+                            className="flex-1 px-2.5 py-1.5 border border-teal-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSavePromptEdit();
+                              if (e.key === 'Escape') setEditingPromptIndex(null);
                             }}
-                            className={`p-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${
-                              isSelected ? 'text-white/70 hover:text-white' : 'text-gray-400 hover:text-gray-600'
-                            }`}
-                            aria-label="Remove"
+                          />
+                          <button
+                            onClick={handleSavePromptEdit}
+                            className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setEditingPromptIndex(null)}
+                            className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      ) : (
+                        <>
+                          <span className="flex-1 text-sm text-gray-600 leading-relaxed">
+                            {prompt}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditPrompt(index);
+                            }}
+                            className="p-1 text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-all rounded hover:bg-gray-100"
+                            aria-label="Edit question"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                {competitors.length < 10 && (
-                  <div className="mt-3">
-                    {addingCompetitor ? (
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={newCompetitor}
-                          onChange={(e) => setNewCompetitor(e.target.value)}
-                          placeholder={addBrandPlaceholder}
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 placeholder-gray-400"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') { handleAddCompetitor(); }
-                            if (e.key === 'Escape') { setAddingCompetitor(false); setNewCompetitor(''); }
-                          }}
-                        />
-                        <button
-                          onClick={handleAddCompetitor}
-                          disabled={!newCompetitor.trim()}
-                          className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                        >
-                          Add
-                        </button>
-                        <button
-                          onClick={() => { setAddingCompetitor(false); setNewCompetitor(''); }}
-                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
+              {/* Show less/more + Deselect all */}
+              {prompts.length > 0 && !suggestionsLoading && (
+                <>
+                  <div className="border-t border-gray-100 mt-3 pt-3 flex items-center justify-between">
+                    {canToggleQuestions ? (
                       <button
-                        onClick={() => setAddingCompetitor(true)}
-                        className="text-sm text-gray-700 hover:bg-gray-100 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 border-dashed transition-colors"
+                        onClick={() => setQuestionsExpanded(!questionsExpanded)}
+                        className="text-sm text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
                       >
-                        <Plus className="w-4 h-4" />
-                        Add {isCategory ? 'another brand' : 'another competitor'}
+                        {questionsExpanded ? (
+                          <>
+                            <ChevronUp className="w-4 h-4" />
+                            Show less
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-4 h-4" />
+                            Show more ({prompts.length - COLLAPSED_QUESTION_COUNT} more)
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <div />
+                    )}
+                    {!addingPrompt && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedPrompts.size === prompts.length) {
+                            deselectAllPrompts();
+                          } else {
+                            selectAllPrompts();
+                          }
+                        }}
+                        className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+                      >
+                        {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
                       </button>
                     )}
                   </div>
-                )}
-              </div>
+
+                  {/* Add question */}
+                  {prompts.length < 10 && (
+                    <div className="border-t border-gray-100 mt-3 pt-3">
+                      {addingPrompt ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newPrompt}
+                            onChange={(e) => setNewPrompt(e.target.value)}
+                            placeholder="Type your question here..."
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 placeholder-gray-400"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') { handleAddPrompt(); }
+                              if (e.key === 'Escape') { setAddingPrompt(false); setNewPrompt(''); }
+                            }}
+                          />
+                          <button
+                            onClick={handleAddPrompt}
+                            disabled={!newPrompt.trim()}
+                            className="px-3 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                          >
+                            Add
+                          </button>
+                          <button
+                            onClick={() => { setAddingPrompt(false); setNewPrompt(''); }}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setAddingPrompt(true)}
+                          className="text-sm text-gray-500 hover:bg-gray-50 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 border-dashed transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add your own question
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
-            {/* AI Platforms Section */}
-            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
-              {/* Header with step number */}
-              <div className="flex items-start gap-3 mb-1">
-                <div className="w-7 h-7 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs font-semibold">3</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
-                    <span className="text-sm text-gray-500 font-medium">
-                      {providers.length} selected
-                    </span>
+            {/* Competitors + Platforms side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+              {/* Competitors Section */}
+              <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
+                {/* Header with step number */}
+                <div className="flex items-start gap-3 mb-1">
+                  <div className="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-semibold">2</span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    Choose which AI assistants to include in your analysis
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
+                  </div>
+                  <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-700">
+                    {selectedCompetitorsArray.length} selected
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1 mb-4 ml-10">{brandsDescription}</p>
+
+                <div>
+                  {suggestionsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Spinner size="lg" />
+                      <span className="ml-3 text-gray-500">{brandsLoadingText}</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {competitors.map((competitor) => {
+                        const isSelected = selectedCompetitors.has(competitor);
+                        return (
+                          <div
+                            key={competitor}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm cursor-pointer transition-all group border ${
+                              isSelected
+                                ? 'border-teal-200 bg-white text-gray-700'
+                                : 'border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100'
+                            }`}
+                            onClick={() => toggleCompetitor(competitor)}
+                          >
+                            {isSelected && (
+                              <div className="w-4 h-4 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0">
+                                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                              </div>
+                            )}
+                            <span>{competitor}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeCompetitor(competitor);
+                              }}
+                              className={`p-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${
+                                isSelected ? 'text-gray-400 hover:text-gray-600' : 'text-gray-400 hover:text-gray-600'
+                              }`}
+                              aria-label="Remove"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {competitors.length < 10 && (
+                    <div className="mt-3">
+                      {addingCompetitor ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={newCompetitor}
+                            onChange={(e) => setNewCompetitor(e.target.value)}
+                            placeholder={addBrandPlaceholder}
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 placeholder-gray-400"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') { handleAddCompetitor(); }
+                              if (e.key === 'Escape') { setAddingCompetitor(false); setNewCompetitor(''); }
+                            }}
+                          />
+                          <button
+                            onClick={handleAddCompetitor}
+                            disabled={!newCompetitor.trim()}
+                            className="px-3 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                          >
+                            Add
+                          </button>
+                          <button
+                            onClick={() => { setAddingCompetitor(false); setNewCompetitor(''); }}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setAddingCompetitor(true)}
+                          className="text-sm text-gray-500 hover:bg-gray-50 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 border-dashed transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add {isCategory ? 'another brand' : 'another competitor'}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* 2-column grid */}
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {Object.entries(PROVIDER_INFO).map(([key, info]) => {
-                  const isSelected = providers.includes(key);
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleProvider(key)}
-                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all ${
-                        isSelected
-                          ? 'bg-white ring-2 ring-gray-900'
-                          : 'bg-gray-50 border border-gray-200 opacity-60'
-                      }`}
-                    >
-                      <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+              {/* AI Platforms Section */}
+              <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
+                {/* Header with step number */}
+                <div className="flex items-start gap-3 mb-1">
+                  <div className="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xs font-semibold">3</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Bot className="w-4 h-4 text-gray-400" />
+                    <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
+                  </div>
+                  <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-700">
+                    {providers.length} selected
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1 mb-4 ml-10">
+                  Choose which AI assistants to include in your analysis
+                </p>
+
+                {/* 2-column grid */}
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(PROVIDER_INFO).map(([key, info]) => {
+                    const isSelected = providers.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleProvider(key)}
+                        className={`flex items-start gap-2.5 px-3 py-3 rounded-xl text-left transition-all ${
                           isSelected
-                            ? 'bg-gray-900'
-                            : 'border-2 border-gray-300'
+                            ? 'bg-white ring-1 ring-gray-200'
+                            : 'bg-gray-50 border border-gray-200 opacity-60'
                         }`}
                       >
-                        {isSelected && (
-                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
-                          {info.name}
-                        </p>
-                        <p className="text-xs text-gray-500">{info.description}</p>
-                      </div>
-                    </button>
-                  );
-                })}
+                        <div
+                          className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                            isSelected
+                              ? 'bg-teal-600'
+                              : 'border-2 border-gray-300'
+                          }`}
+                        >
+                          {isSelected && (
+                            <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">
+                            {info.name}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-          </div>{/* End of Competitors + Platforms grid */}
+            </div>{/* End of Competitors + Platforms grid */}
 
-        </div>{/* End of main layout */}
+          </div>{/* End of main content */}
+        </div>{/* End of sidebar + content flex */}
 
         {/* Advanced Settings - full width, subtle gray background */}
-        <div className="bg-gray-100/50 rounded-2xl overflow-hidden">
+        <div className="bg-gray-100/50 rounded-2xl overflow-hidden mt-8">
           <button
             type="button"
             onClick={() => setAdvancedOpen(!advancedOpen)}
@@ -853,7 +933,7 @@ export default function ConfigurePage() {
                           <div
                             className={`w-4 h-4 rounded-full flex items-center justify-center ${
                               temperatures.includes(temp)
-                                ? 'bg-gray-900'
+                                ? 'bg-teal-600'
                                 : 'border-2 border-gray-300'
                             }`}
                           >
@@ -1011,7 +1091,7 @@ export default function ConfigurePage() {
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 bg-white"
                 >
                   <option value="us">United States</option>
                   <option value="gb">United Kingdom</option>
@@ -1038,29 +1118,23 @@ export default function ConfigurePage() {
       {/* Sticky bottom CTA bar */}
       <div className="sticky bottom-0 z-10 bg-white/80 backdrop-blur-sm border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-700">
-              <span className="font-medium">{selectedPromptsArray.length}</span> question{selectedPromptsArray.length !== 1 ? 's' : ''}{' '}
-              <span className="text-gray-400">&times;</span>{' '}
-              <span className="font-medium">{providers.length}</span> platform{providers.length !== 1 ? 's' : ''}{' '}
-              <span className="text-gray-400">=</span>{' '}
-              <span className="font-semibold text-gray-900">{totalCalls} API calls</span>
-            </p>
-            <p className="text-sm text-gray-500">
-              Estimated cost: {formatCurrency(estimatedCost)} · Time: {formatDuration(estimatedTime)}
-            </p>
-          </div>
+          <p className="text-sm text-gray-500">
+            {selectedPromptsArray.length} question{selectedPromptsArray.length !== 1 ? 's' : ''}
+            {' · '}
+            {selectedCompetitorsArray.length} competitor{selectedCompetitorsArray.length !== 1 ? 's' : ''}
+            {' · '}
+            {providers.length} platform{providers.length !== 1 ? 's' : ''}
+          </p>
           <button
             onClick={handleRunAnalysis}
             disabled={!canRun}
-            className="px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {startRunMutation.isPending ? (
               <Spinner size="sm" />
-            ) : (
-              <Sparkles className="w-5 h-5" />
-            )}
+            ) : null}
             Run Analysis
+            {!startRunMutation.isPending && <ArrowRight className="w-4 h-4" />}
           </button>
         </div>
       </div>
