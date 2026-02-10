@@ -440,7 +440,7 @@ export default function ConfigurePage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 pb-28 space-y-8">
+      <div className="max-w-7xl mx-auto px-6 py-6 pb-24 space-y-6">
         {/* Error Alert */}
         {(error || suggestionsError) && (
           <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
@@ -458,29 +458,12 @@ export default function ConfigurePage() {
         <div className="space-y-6">
 
           {/* Questions Section - full width card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            {/* Header with step number and inline select all */}
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-400 font-semibold">1.</span>
-                <HelpCircle className="w-5 h-5 text-gray-400" />
-                <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
-              </div>
-              {prompts.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (selectedPrompts.size === prompts.length) {
-                      deselectAllPrompts();
-                    } else {
-                      selectAllPrompts();
-                    }
-                  }}
-                  className="text-sm text-gray-500 hover:text-gray-900 tabular-nums transition-colors"
-                >
-                  {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'} · {selectedPromptsArray.length}/{prompts.length}
-                </button>
-              )}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4">
+            {/* Header with step number */}
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-gray-400 font-semibold">1.</span>
+              <HelpCircle className="w-5 h-5 text-gray-400" />
+              <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
             </div>
 
             {suggestionsLoading ? (
@@ -489,12 +472,12 @@ export default function ConfigurePage() {
                 <span className="ml-3 text-gray-500 text-sm">Generating smart questions...</span>
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {/* Questions List */}
                 {prompts.map((prompt, index) => (
                   <div
                     key={prompt}
-                    className={`flex items-start gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all group ${
+                    className={`flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all group ${
                       selectedPrompts.has(prompt)
                         ? 'bg-white'
                         : 'hover:bg-gray-50'
@@ -566,56 +549,73 @@ export default function ConfigurePage() {
               </div>
             )}
 
-            {prompts.length < 10 && (
-              <div className="mt-4">
-                {addingPrompt ? (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newPrompt}
-                      onChange={(e) => setNewPrompt(e.target.value)}
-                      placeholder="Type your question here..."
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 placeholder-gray-400"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') { handleAddPrompt(); }
-                        if (e.key === 'Escape') { setAddingPrompt(false); setNewPrompt(''); }
-                      }}
-                    />
+            <div className="mt-3 flex items-center justify-between">
+              {prompts.length < 10 ? (
+                <>
+                  {addingPrompt ? (
+                    <div className="flex gap-2 flex-1">
+                      <input
+                        type="text"
+                        value={newPrompt}
+                        onChange={(e) => setNewPrompt(e.target.value)}
+                        placeholder="Type your question here..."
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 placeholder-gray-400"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { handleAddPrompt(); }
+                          if (e.key === 'Escape') { setAddingPrompt(false); setNewPrompt(''); }
+                        }}
+                      />
+                      <button
+                        onClick={handleAddPrompt}
+                        disabled={!newPrompt.trim()}
+                        className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      >
+                        Add
+                      </button>
+                      <button
+                        onClick={() => { setAddingPrompt(false); setNewPrompt(''); }}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
                     <button
-                      onClick={handleAddPrompt}
-                      disabled={!newPrompt.trim()}
-                      className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      onClick={() => setAddingPrompt(true)}
+                      className="text-sm text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1.5"
                     >
-                      Add
+                      <Plus className="w-4 h-4" />
+                      Add your own question
                     </button>
-                    <button
-                      onClick={() => { setAddingPrompt(false); setNewPrompt(''); }}
-                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setAddingPrompt(true)}
-                    className="text-sm text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1.5"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add your own question
-                  </button>
-                )}
-              </div>
-            )}
+                  )}
+                </>
+              ) : <div />}
+              {prompts.length > 0 && !addingPrompt && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedPrompts.size === prompts.length) {
+                      deselectAllPrompts();
+                    } else {
+                      selectAllPrompts();
+                    }
+                  }}
+                  className="text-sm text-gray-500 hover:text-gray-900 tabular-nums transition-colors"
+                >
+                  {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'} · {selectedPromptsArray.length}/{prompts.length}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Competitors + Platforms side by side */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
             {/* Competitors Section */}
-            <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4">
               {/* Header with step number */}
-              <div className="flex items-start gap-2 mb-2">
+              <div className="flex items-start gap-2 mb-1">
                 <span className="text-gray-400 font-semibold mt-0.5">2.</span>
                 <Users className="w-5 h-5 text-gray-400 mt-0.5" />
                 <div className="flex-1">
@@ -629,9 +629,9 @@ export default function ConfigurePage() {
                 </div>
               </div>
 
-              <div className="mt-5">
+              <div className="mt-3">
                 {suggestionsLoading ? (
-                  <div className="flex items-center justify-center py-12">
+                  <div className="flex items-center justify-center py-8">
                     <Spinner size="lg" />
                     <span className="ml-3 text-gray-500">{brandsLoadingText}</span>
                   </div>
@@ -667,7 +667,7 @@ export default function ConfigurePage() {
                 )}
 
                 {competitors.length < 10 && (
-                  <div className="mt-5">
+                  <div className="mt-3">
                     {addingCompetitor ? (
                       <div className="flex gap-2">
                         <input
@@ -711,9 +711,9 @@ export default function ConfigurePage() {
             </div>
 
             {/* AI Platforms Section */}
-            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4">
               {/* Header with step number */}
-              <div className="flex items-start gap-2 mb-2">
+              <div className="flex items-start gap-2 mb-1">
                 <span className="text-gray-400 font-semibold mt-0.5">3.</span>
                 <Bot className="w-5 h-5 text-gray-400 mt-0.5" />
                 <div className="flex-1">
@@ -730,7 +730,7 @@ export default function ConfigurePage() {
               </div>
 
               {/* 2-column grid */}
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 {Object.entries(PROVIDER_INFO).map(([key, info]) => {
                   const isSelected = providers.includes(key);
                   return (
@@ -738,7 +738,7 @@ export default function ConfigurePage() {
                       key={key}
                       type="button"
                       onClick={() => toggleProvider(key)}
-                      className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
+                      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all ${
                         isSelected
                           ? 'bg-white ring-2 ring-gray-900'
                           : 'bg-gray-50 border border-gray-200 opacity-60'
