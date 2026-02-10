@@ -3585,15 +3585,15 @@ export default function ResultsPage() {
   const isCategory = runStatus?.search_type === 'category';
 
   const getMentionRateColor = (rate: number) => {
-    if (rate >= 0.7) return 'text-gray-900';
-    if (rate >= 0.4) return 'text-yellow-600';
+    if (rate >= 0.7) return 'text-emerald-700';
+    if (rate >= 0.4) return 'text-amber-600';
     return 'text-red-500';
   };
 
-  const getMentionRateBgColor = (rate: number) => {
-    if (rate >= 0.7) return 'bg-gray-700';
-    if (rate >= 0.4) return 'bg-yellow-500';
-    return 'bg-red-500';
+  const getMentionRateBgColor = (_rate: number, provider?: string) => {
+    // Use platform brand color if provider is specified
+    if (provider) return '';
+    return 'bg-gray-400';
   };
 
   const getProviderLabel = (provider: string) => {
@@ -4723,10 +4723,13 @@ export default function ResultsPage() {
               const selectedBrand = llmBreakdownBrandFilter || llmBreakdownBrands[0] || runStatus?.brand;
 
               return (
-                <div key={provider} className="bg-[#FAFAF8] rounded-xl overflow-hidden">
+                <div key={provider} className="bg-white rounded-xl overflow-hidden border border-gray-100">
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900 text-sm">{getProviderLabel(provider)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(provider) }} />
+                        <span className="font-medium text-gray-900 text-sm">{getProviderLabel(provider)}</span>
+                      </div>
                       <button
                         onClick={() => {
                           const newExpanded = new Set(expandedLLMCards);
@@ -4748,14 +4751,14 @@ export default function ResultsPage() {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${getMentionRateBgColor(stats.rate)}`}
-                            style={{ width: `${stats.rate * 100}%` }}
+                            className="h-full rounded-full transition-all"
+                            style={{ width: `${stats.rate * 100}%`, backgroundColor: getProviderBrandColor(provider) }}
                           />
                         </div>
                       </div>
-                      <span className={`text-sm font-semibold ${getMentionRateColor(stats.rate)}`}>
+                      <span className="text-sm font-semibold" style={{ color: getProviderBrandColor(provider) }}>
                         {formatPercent(stats.rate)}
                       </span>
                     </div>
