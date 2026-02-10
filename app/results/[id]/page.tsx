@@ -3748,12 +3748,13 @@ export default function ResultsPage() {
     return 'bg-gradient-to-br from-orange-50 to-white';
   };
 
-  // Per-metric card backgrounds to give each KPI a distinct color theme
+  // Per-metric card backgrounds — distinct from insight box colors
+  // (insight boxes use: blue, purple, teal, amber)
   const metricCardBackgrounds: Record<string, string> = {
-    visibility: 'bg-gradient-to-br from-blue-50 to-white border-blue-100',
-    shareOfVoice: 'bg-gradient-to-br from-teal-50 to-white border-teal-100',
-    top1Rate: 'bg-gradient-to-br from-indigo-50 to-white border-indigo-100',
-    avgPosition: 'bg-gradient-to-br from-amber-50 to-white border-amber-100',
+    visibility: 'bg-gradient-to-br from-rose-50 to-white border-rose-100',
+    shareOfVoice: 'bg-gradient-to-br from-sky-50 to-white border-sky-100',
+    top1Rate: 'bg-gradient-to-br from-violet-50 to-white border-violet-100',
+    avgPosition: 'bg-gradient-to-br from-orange-50 to-white border-orange-100',
   };
 
   const getProviderShortLabel = (provider: string) => {
