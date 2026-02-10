@@ -4300,10 +4300,10 @@ export default function ResultsPage() {
       </div>
 
       {/* AI Summary */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-6">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-purple-600" />
+            <Lightbulb className="w-5 h-5 text-blue-600" />
             <h2 className="text-lg font-semibold text-gray-900">AI Analysis</h2>
           </div>
           {aiSummary?.summary && (
@@ -6018,10 +6018,10 @@ export default function ResultsPage() {
         </div>
       )}
       {/* AI Summary */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-6">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-purple-600" />
+            <Lightbulb className="w-5 h-5 text-blue-600" />
             <h2 className="text-lg font-semibold text-gray-900">AI Analysis</h2>
           </div>
           {aiSummary?.summary && (
@@ -9727,9 +9727,9 @@ export default function ResultsPage() {
 
         {/* Key Sentiment & Framing Insights */}
         {sentimentInsights.length > 0 && (
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-6">
+          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl shadow-sm border border-teal-100 p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Lightbulb className="w-5 h-5 text-purple-600" />
+              <Lightbulb className="w-5 h-5 text-teal-600" />
               <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Framing Insights</h2>
             </div>
             <ul className="space-y-3">
@@ -11981,9 +11981,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
             {/* Competitive Insights Summary */}
             {competitiveInsights.length > 0 && (
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-6">
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <Lightbulb className="w-5 h-5 text-purple-600" />
+                  <Lightbulb className="w-5 h-5 text-amber-600" />
                   <h2 className="text-lg font-semibold text-gray-900">Key Competitive Insights</h2>
                 </div>
                 <ul className="space-y-3">
