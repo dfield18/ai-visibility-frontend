@@ -11741,7 +11741,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
       </div>
 
       {/* Tab Content */}
-      <div className="max-w-6xl mx-auto px-6 pt-6">
+      <div className="max-w-7xl mx-auto px-6 pt-6">
         {activeTab === 'overview' && <OverviewTab />}
         {activeTab === 'reference' && <ReferenceTab />}
         {activeTab === 'competitive' && (
@@ -11781,7 +11781,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     {/* Carousel Cards - Show 3 at a time */}
                     <div className="overflow-hidden w-full px-12">
                       <div
-                        className="flex transition-transform duration-300 ease-in-out gap-4"
+                        className="flex transition-transform duration-300 ease-in-out gap-6"
                         style={{ transform: `translateX(-${brandCarouselIndex * (100 / 3 + 1.33)}%)` }}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
@@ -11793,10 +11793,10 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                           return (
                             <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
-                              <div className={`bg-white rounded-xl border shadow-lg h-full ${
+                              <div className={`bg-white rounded-xl border h-full ${
                                 brandData.isSearchedBrand
-                                  ? 'border-gray-300 ring-1 ring-gray-100'
-                                  : 'border-gray-200'
+                                  ? 'border-gray-300 ring-1 ring-gray-100 shadow-lg'
+                                  : 'border-gray-200 shadow-sm'
                               }`}>
                                 {/* Card Header */}
                                 <div className="px-5 py-4 border-b border-gray-100">
@@ -11812,45 +11812,32 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                 {/* Platform Scores */}
                                 {allProviders.length > 0 && (
                                   <div className="px-5 py-4 border-b border-gray-100">
-                                    <div className="grid grid-cols-3 gap-4">
-                                      {visibleProviders.map((prov) => (
+                                    <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+                                      {allProviders.map((prov) => (
                                         <div key={prov.provider} className="text-center">
-                                          <div className="flex items-center justify-center gap-1.5 mb-1">
-                                            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
-                                            <span className="text-xs" style={{ color: getProviderBrandColor(prov.provider) }}>{getCarouselProviderLabel(prov.provider)}</span>
+                                          <div className="flex items-center justify-center gap-1 mb-0.5">
+                                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
+                                            <span className="text-[10px] font-medium" style={{ color: getProviderBrandColor(prov.provider) }}>{getCarouselProviderLabel(prov.provider)}</span>
                                           </div>
-                                          <p className="text-2xl font-semibold" style={{ color: getProviderBrandColor(prov.provider) }}>{prov.score}</p>
+                                          <p className="text-lg font-semibold" style={{ color: getProviderBrandColor(prov.provider) }}>{prov.score}</p>
                                         </div>
                                       ))}
                                     </div>
-                                    {remainingProviders.length > 0 && (
-                                      <div className="grid grid-cols-3 gap-4 mt-3 pt-3 border-t border-gray-50">
-                                        {remainingProviders.map((prov) => (
-                                          <div key={prov.provider} className="text-center">
-                                            <div className="flex items-center justify-center gap-1.5 mb-1">
-                                              <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
-                                              <span className="text-xs" style={{ color: getProviderBrandColor(prov.provider) }}>{getCarouselProviderLabel(prov.provider)}</span>
-                                            </div>
-                                            <p className="text-2xl font-semibold" style={{ color: getProviderBrandColor(prov.provider) }}>{prov.score}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
                                   </div>
                                 )}
 
                                 {/* Overall Visibility */}
-                                <div className="px-5 py-5 border-b border-gray-100 text-center">
+                                <div className="px-5 py-6 border-b border-gray-100 text-center">
                                   <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Overall Visibility</p>
                                   <p className="text-5xl font-semibold text-gray-900">
                                     {Math.round(brandData.visibilityScore)}<span className="text-2xl text-gray-400 font-normal">/100</span>
                                   </p>
                                 </div>
 
-                                {/* Recent Mentions */}
+                                {/* Highlights */}
                                 {quotes.length > 0 && (
                                   <div className="px-5 py-4">
-                                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Recent Mentions</p>
+                                    <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">Highlights</p>
                                     <div className="space-y-2">
                                       {quotes.map((quote, qIdx) => (
                                         <p key={qIdx} className="text-sm text-gray-600 line-clamp-1">
