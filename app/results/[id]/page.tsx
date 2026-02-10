@@ -3918,14 +3918,22 @@ export default function ResultsPage() {
           if (
             trimmed.toLowerCase().includes(brand.toLowerCase()) &&
             trimmed.length >= 40 &&
-            trimmed.length <= 300
+            trimmed.length <= 300 &&
+            // Filter out table-like content, raw data, and URLs
+            !/\|/.test(trimmed) &&
+            !/---/.test(trimmed) &&
+            !/https?:\/\//.test(trimmed) &&
+            !/\$\d+/.test(trimmed) &&
+            !/\d+\s*oz\b/i.test(trimmed) &&
+            !/^\d+\s/.test(trimmed) &&
+            !/^\[/.test(trimmed)
           ) {
             allQuotes.push({ text: trimmed, provider: r.provider, prompt: r.prompt });
           }
         }
       });
 
-      map[brand] = selectQuotes(allQuotes, 3);
+      map[brand] = selectQuotes(allQuotes, 2);
     }
 
     return map;
@@ -11821,6 +11829,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                     {/* Carousel Cards - Show 3 at a time */}
                     <div className="overflow-hidden w-full px-12">
+                      <p className="text-[11px] text-gray-400 mb-3 ml-1">Visibility Score = % of AI responses mentioning this brand</p>
                       <div
                         className="flex transition-transform duration-300 ease-in-out gap-4"
                         style={{ transform: `translateX(-${brandCarouselIndex * (100 / 3 + 1.33)}%)` }}
@@ -11830,28 +11839,27 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                           // Get provider pill color based on score
                           const getProviderPillStyle = (score: number) => {
-                            if (score >= 90) return { bg: 'bg-[#111827]', text: 'text-white' }; // Dark green
-                            if (score >= 70) return { bg: 'bg-[#6b7280]', text: 'text-gray-800' }; // Light green
-                            if (score >= 50) return { bg: 'bg-[#a3a095]', text: 'text-white' }; // Brown/tan
-                            return { bg: 'bg-gray-200', text: 'text-gray-600' }; // Gray
+                            if (score >= 90) return { bg: 'bg-gray-200', text: 'text-gray-700' };
+                            if (score >= 70) return { bg: 'bg-gray-100', text: 'text-gray-600' };
+                            if (score >= 50) return { bg: 'bg-gray-100', text: 'text-gray-500' };
+                            return { bg: 'bg-gray-50', text: 'text-gray-400' };
                           };
 
                           // Get visibility score color based on value
-                          // Gradient: light green (75+) -> light brown (50) -> light gray (0)
                           const getScoreColor = (score: number) => {
-                            if (score >= 75) return '#9ca3af'; // Light green (green-300)
-                            if (score >= 65) return '#d1d5db'; // Lighter green (green-200)
-                            if (score >= 55) return '#c4d4a5'; // Green-tan transition
-                            if (score >= 45) return '#d4c9a5'; // Light tan/brown
-                            if (score >= 35) return '#c9bfa0'; // Tan
-                            if (score >= 25) return '#bfb8a8'; // Gray-tan
-                            if (score >= 15) return '#b8b8b8'; // Light gray
-                            return '#d1d5db'; // Lighter gray (gray-300)
+                            if (score >= 75) return '#9ca3af';
+                            if (score >= 65) return '#d1d5db';
+                            if (score >= 55) return '#c4d4a5';
+                            if (score >= 45) return '#d4c9a5';
+                            if (score >= 35) return '#c9bfa0';
+                            if (score >= 25) return '#bfb8a8';
+                            if (score >= 15) return '#b8b8b8';
+                            return '#d1d5db';
                           };
 
                           return (
-                            <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[220px]">
-                              <div className={`bg-white rounded-xl shadow-sm px-4 py-4 h-full hover:shadow-md transition-shadow ${
+                            <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
+                              <div className={`bg-white rounded-xl shadow-sm px-5 py-5 h-full hover:shadow-md transition-shadow ${
                                 brandData.isSearchedBrand
                                   ? 'border-2 border-gray-900 ring-2 ring-gray-900/20'
                                   : 'border border-gray-200'
@@ -11882,15 +11890,15 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                                 {/* Provider Score Pills */}
                                 {providers.length > 0 && (
-                                  <div className="flex justify-center gap-1.5 mb-3">
+                                  <div className="flex justify-center gap-2 mb-3">
                                     {providers.map((prov) => {
                                       const pillStyle = getProviderPillStyle(prov.score);
                                       return (
                                         <div key={prov.provider} className="flex flex-col items-center">
-                                          <div className={`w-9 h-9 rounded-full ${pillStyle.bg} flex items-center justify-center`}>
-                                            <span className={`text-xs font-semibold ${pillStyle.text}`}>{prov.score}</span>
+                                          <div className={`w-7 h-7 rounded-full ${pillStyle.bg} flex items-center justify-center`}>
+                                            <span className={`text-[10px] font-semibold ${pillStyle.text}`}>{prov.score}</span>
                                           </div>
-                                          <span className="text-[9px] text-gray-500 mt-0.5">{getCarouselProviderLabel(prov.provider)}</span>
+                                          <span className="text-[9px] text-gray-400 mt-0.5">{getCarouselProviderLabel(prov.provider)}</span>
                                         </div>
                                       );
                                     })}
@@ -11909,26 +11917,18 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                   </p>
                                 )}
 
-                                {/* Score Definition */}
-                                <div className="flex justify-center mt-auto">
-                                  <p className="text-[10px] text-gray-400 text-center">
-                                    Visibility Score = % of AI responses mentioning this brand
-                                  </p>
-                                </div>
-
                                 {/* Direct Quotes */}
                                 {(brandQuotesMap[brandData.brand] ?? []).length > 0 && (
                                   <div className="mt-3 pt-3 border-t border-gray-100">
-                                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2 text-center">What AI Says</p>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                       {(brandQuotesMap[brandData.brand] ?? []).map((quote, qIdx) => (
-                                        <div key={qIdx} className="flex gap-1.5 items-start">
-                                          <div className="text-gray-300 text-xs leading-none shrink-0 mt-0.5">&ldquo;</div>
+                                        <div key={qIdx} className="flex gap-2 items-start">
+                                          <div className="text-gray-300 text-sm leading-none shrink-0 mt-0.5">&ldquo;</div>
                                           <div className="flex-1 min-w-0">
-                                            <p className="text-[11px] text-gray-600 italic leading-snug line-clamp-3">
+                                            <p className="text-xs text-gray-600 italic leading-relaxed line-clamp-3">
                                               {quote.text}
                                             </p>
-                                            <p className="text-[9px] text-gray-400 mt-0.5">
+                                            <p className="text-[10px] text-gray-400 mt-1">
                                               — {getProviderLabel(quote.provider)}
                                             </p>
                                           </div>
