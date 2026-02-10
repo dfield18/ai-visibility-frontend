@@ -17,10 +17,20 @@ import {
 import { Spinner } from '@/components/ui/Spinner';
 import { useRunStatus, useCancelRun } from '@/hooks/useApi';
 import { formatDuration, truncate } from '@/lib/utils';
-import { Result } from '@/lib/types';
+import { Result, RunConfig } from '@/lib/types';
 
-// Circular Progress Ring Animation Component
-function CircularProgressAnimation({ progress, completedProviders = [] }: { progress: number; completedProviders?: string[] }) {
+// Horizontal Progress Bar Animation Component
+function ProgressBarAnimation({
+  progress,
+  completedProviders = [],
+  config,
+  results,
+}: {
+  progress: number;
+  completedProviders?: string[];
+  config?: RunConfig;
+  results?: Result[];
+}) {
   const [displayedProgress, setDisplayedProgress] = useState(0);
 
   // Animate the number counting up
@@ -32,13 +42,6 @@ function CircularProgressAnimation({ progress, completedProviders = [] }: { prog
     }, 20);
     return () => clearTimeout(timer);
   }, [displayedProgress, progress]);
-
-  // Calculate circle properties
-  const size = 180;
-  const strokeWidth = 8;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (progress / 100) * circumference;
 
   // Platform data with brand colors
   const platforms = [
@@ -60,86 +63,113 @@ function CircularProgressAnimation({ progress, completedProviders = [] }: { prog
     return "Complete!";
   };
 
+  // Calculate per-provider totals and completed counts
+  const totalPerProvider = config
+    ? config.prompts.length * config.temperatures.length * config.repeats
+    : 0;
+
+  const providerCompletedCounts = useMemo(() => {
+    if (!results) return {};
+    const counts: Record<string, number> = {};
+    for (const r of results) {
+      counts[r.provider] = (counts[r.provider] || 0) + 1;
+    }
+    return counts;
+  }, [results]);
+
+  // Filter platforms to only those in the config
+  const activeProviders = config
+    ? platforms.filter(p => config.providers.includes(p.key))
+    : platforms;
+
+  const hasProviderDetails = !!config && !!results;
+
   return (
     <div className="flex flex-col items-center">
-      {/* Circular Progress Ring */}
-      <div className="relative">
-        <svg
-          width={size}
-          height={size}
-          className="transform -rotate-90"
-        >
-          {/* Background circle */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="#E5E7EB"
-            strokeWidth={strokeWidth}
+      {/* Progress bar */}
+      <div className="w-full flex items-center gap-3">
+        <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-2.5 bg-gray-900 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
           />
-          {/* Progress circle */}
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="#111827"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            className="transition-all duration-500 ease-out"
-          />
-        </svg>
-
-        {/* Center content */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-5xl font-bold text-gray-900">
-            {Math.round(displayedProgress)}
-          </span>
-          <span className="text-sm text-gray-400 mt-1">percent</span>
         </div>
+        <span className="text-sm font-semibold text-gray-900 tabular-nums w-10 text-right">
+          {Math.round(displayedProgress)}%
+        </span>
       </div>
+
+      {/* Per-provider progress */}
+      {hasProviderDetails ? (
+        <div className="mt-6 w-full grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
+          {activeProviders.map((platform) => {
+            const completed = providerCompletedCounts[platform.key] || 0;
+            const isCompleted = completed >= totalPerProvider && totalPerProvider > 0;
+            const isInProgress = completed > 0 && !isCompleted;
+
+            return (
+              <div key={platform.key} className="flex items-center gap-2 text-sm">
+                <div
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    isInProgress ? 'animate-pulse' : ''
+                  }`}
+                  style={{
+                    backgroundColor: isCompleted || isInProgress ? platform.color : '#D1D5DB',
+                  }}
+                />
+                <span className={isCompleted || isInProgress ? 'text-gray-700' : 'text-gray-400'}>
+                  {platform.name}
+                </span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  {isCompleted && <Check className="w-3.5 h-3.5 text-gray-500" />}
+                  {isInProgress && <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />}
+                  <span className={`tabular-nums ${isCompleted ? 'font-semibold text-gray-700' : 'text-gray-400'}`}>
+                    {completed}/{totalPerProvider}
+                  </span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {platforms.map((platform) => {
+            const isActive = completedProviders.includes(platform.key);
+            const isInProgress = progress > 0 && progress < 100 && !isActive;
+
+            return (
+              <div
+                key={platform.key}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
+                  isActive
+                    ? 'bg-gray-100'
+                    : 'bg-gray-50 opacity-50'
+                }`}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    isActive ? '' : isInProgress ? 'animate-pulse' : ''
+                  }`}
+                  style={{
+                    backgroundColor: isActive ? platform.color : '#D1D5DB',
+                  }}
+                />
+                <span className={isActive ? 'text-gray-700' : 'text-gray-400'}>
+                  {platform.name}
+                </span>
+                {isActive && (
+                  <Check className="w-3 h-3 text-gray-500" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Status text */}
-      <p className="mt-6 text-gray-600 text-sm animate-pulse">
+      <p className="mt-6 text-sm text-gray-500 text-center">
         {getStatusText()}
       </p>
-
-      {/* Platform indicators */}
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
-        {platforms.map((platform) => {
-          const isActive = completedProviders.includes(platform.key);
-          const isInProgress = progress > 0 && progress < 100 && !isActive;
-
-          return (
-            <div
-              key={platform.key}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 ${
-                isActive
-                  ? 'bg-gray-100'
-                  : 'bg-gray-50 opacity-50'
-              }`}
-            >
-              <div
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  isActive ? '' : isInProgress ? 'animate-pulse' : ''
-                }`}
-                style={{
-                  backgroundColor: isActive ? platform.color : '#D1D5DB',
-                }}
-              />
-              <span className={isActive ? 'text-gray-700' : 'text-gray-400'}>
-                {platform.name}
-              </span>
-              {isActive && (
-                <Check className="w-3 h-3 text-gray-500" />
-              )}
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
@@ -247,7 +277,7 @@ export default function RunPage() {
       </header>
 
       <div className="max-w-2xl mx-auto px-6 space-y-6">
-        {/* Circular Progress Animation */}
+        {/* Progress Animation */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-10">
           {/* Header */}
           <div className="text-center mb-8">
@@ -262,14 +292,16 @@ export default function RunPage() {
             )}
           </div>
 
-          {/* Circular Progress */}
-          <CircularProgressAnimation
+          {/* Progress Bar */}
+          <ProgressBarAnimation
             progress={runStatus.progress_percent}
             completedProviders={
               runStatus.results
                 ? [...new Set(runStatus.results.map((r: Result) => r.provider))]
                 : []
             }
+            config={runStatus.config}
+            results={runStatus.results}
           />
 
           {/* Status Messages */}
