@@ -3871,64 +3871,75 @@ export default function ResultsPage() {
   );
   const brandBlurbs = brandBlurbsData?.blurbs ?? {};
 
-  // Extract direct quotes mentioning the brand from LLM responses
-  const brandQuotes = useMemo(() => {
-    if (!runStatus) return [];
-    const brand = runStatus.brand;
-    const results = globallyFilteredResults.filter(r => r.response_text && !r.error && r.brand_mentioned);
+  // Extract direct quotes mentioning each brand from LLM responses
+  type BrandQuote = { text: string; provider: string; prompt: string };
+  const brandQuotesMap = useMemo(() => {
+    if (!runStatus) return {} as Record<string, BrandQuote[]>;
+    const results = globallyFilteredResults.filter(r => r.response_text && !r.error);
+    const searchedBrand = runStatus.brand;
+    const allBrands = brandBreakdownStats.map(b => b.brand);
 
-    const allQuotes: { text: string; provider: string; prompt: string }[] = [];
-
-    results.forEach(r => {
-      const text = stripMarkdown(r.response_text!);
-      const sentences = text.split(/(?<=[.!?])\s+/);
-      for (const sentence of sentences) {
-        const trimmed = sentence.trim();
-        if (
-          trimmed.toLowerCase().includes(brand.toLowerCase()) &&
-          trimmed.length >= 40 &&
-          trimmed.length <= 300
-        ) {
-          allQuotes.push({ text: trimmed, provider: r.provider, prompt: r.prompt });
-        }
+    const selectQuotes = (candidates: BrandQuote[], max: number): BrandQuote[] => {
+      const selected: BrandQuote[] = [];
+      const usedProviders = new Set<string>();
+      const isTooSimilar = (q: BrandQuote) => {
+        const words = new Set(q.text.toLowerCase().split(/\s+/));
+        return selected.some(s => {
+          const sWords = new Set(s.text.toLowerCase().split(/\s+/));
+          const overlap = [...words].filter(w => sWords.has(w)).length;
+          return overlap / Math.max(words.size, sWords.size) > 0.6;
+        });
+      };
+      // First pass: one quote per provider
+      for (const q of candidates) {
+        if (selected.length >= max) break;
+        if (usedProviders.has(q.provider)) continue;
+        if (isTooSimilar(q)) continue;
+        selected.push(q);
+        usedProviders.add(q.provider);
       }
-    });
+      // Second pass: fill remaining slots
+      for (const q of candidates) {
+        if (selected.length >= max) break;
+        if (selected.some(s => s.text === q.text)) continue;
+        if (isTooSimilar(q)) continue;
+        selected.push(q);
+      }
+      return selected;
+    };
 
-    // Deduplicate and pick up to 3 diverse quotes, preferring different providers
-    const selected: typeof allQuotes = [];
-    const usedProviders = new Set<string>();
+    const map: Record<string, BrandQuote[]> = {};
 
-    // First pass: one quote per provider
-    for (const q of allQuotes) {
-      if (selected.length >= 3) break;
-      if (usedProviders.has(q.provider)) continue;
-      // Skip if too similar to an already-selected quote
-      const words = new Set(q.text.toLowerCase().split(/\s+/));
-      const tooSimilar = selected.some(s => {
-        const sWords = new Set(s.text.toLowerCase().split(/\s+/));
-        const overlap = [...words].filter(w => sWords.has(w)).length;
-        return overlap / Math.max(words.size, sWords.size) > 0.6;
+    for (const brand of allBrands) {
+      const isSearched = brand === searchedBrand;
+      const relevant = results.filter(r =>
+        isSearched ? r.brand_mentioned : r.competitors_mentioned?.includes(brand)
+      );
+
+      const allQuotes: BrandQuote[] = [];
+      relevant.forEach(r => {
+        const text = stripMarkdown(r.response_text!);
+        const sentences = text.split(/(?<=[.!?])\s+/);
+        for (const sentence of sentences) {
+          const trimmed = sentence.trim();
+          if (
+            trimmed.toLowerCase().includes(brand.toLowerCase()) &&
+            trimmed.length >= 40 &&
+            trimmed.length <= 300
+          ) {
+            allQuotes.push({ text: trimmed, provider: r.provider, prompt: r.prompt });
+          }
+        }
       });
-      if (tooSimilar) continue;
-      selected.push(q);
-      usedProviders.add(q.provider);
-    }
-    // Second pass: fill remaining slots
-    for (const q of allQuotes) {
-      if (selected.length >= 3) break;
-      if (selected.some(s => s.text === q.text)) continue;
-      const words = new Set(q.text.toLowerCase().split(/\s+/));
-      const tooSimilar = selected.some(s => {
-        const sWords = new Set(s.text.toLowerCase().split(/\s+/));
-        const overlap = [...words].filter(w => sWords.has(w)).length;
-        return overlap / Math.max(words.size, sWords.size) > 0.6;
-      });
-      if (tooSimilar) continue;
-      selected.push(q);
+
+      map[brand] = selectQuotes(allQuotes, 3);
     }
 
-    return selected;
-  }, [runStatus, globallyFilteredResults]);
+    return map;
+  }, [runStatus, globallyFilteredResults, brandBreakdownStats]);
+
+  // Visibility tab uses quotes for the searched brand
+  const brandQuotes = brandQuotesMap[runStatus?.brand ?? ''] ?? [];
 
   // Position categories for the dot plot chart
   const POSITION_CATEGORIES = ['Top', '2-3', '4-5', '6-10', '>10', 'N/A'];
@@ -11911,6 +11922,28 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                     Visibility Score = % of AI responses mentioning this brand
                                   </p>
                                 </div>
+
+                                {/* Direct Quotes */}
+                                {(brandQuotesMap[brandData.brand] ?? []).length > 0 && (
+                                  <div className="mt-3 pt-3 border-t border-gray-100">
+                                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-2 text-center">What AI Says</p>
+                                    <div className="space-y-2">
+                                      {(brandQuotesMap[brandData.brand] ?? []).map((quote, qIdx) => (
+                                        <div key={qIdx} className="flex gap-1.5 items-start">
+                                          <div className="text-gray-300 text-xs leading-none shrink-0 mt-0.5">&ldquo;</div>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-[11px] text-gray-600 italic leading-snug line-clamp-3">
+                                              {quote.text}
+                                            </p>
+                                            <p className="text-[9px] text-gray-400 mt-0.5">
+                                              — {getProviderLabel(quote.provider)}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           );
