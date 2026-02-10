@@ -440,7 +440,7 @@ export default function ConfigurePage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-28 space-y-8">
         {/* Error Alert */}
         {(error || suggestionsError) && (
           <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
@@ -454,15 +454,33 @@ export default function ConfigurePage() {
           </div>
         )}
 
-        {/* Main three-column layout for desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main layout: Questions full-width, Competitors + Platforms side-by-side */}
+        <div className="space-y-6">
 
-          {/* Questions Section - no border/shadow, grouped section feel */}
-          <div className="bg-white/60 rounded-2xl p-6">
-            {/* Header with inline icon */}
-            <div className="flex items-center gap-2 mb-5">
-              <HelpCircle className="w-5 h-5 text-gray-400" />
-              <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
+          {/* Questions Section - full width card */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            {/* Header with step number and inline select all */}
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400 font-semibold">1.</span>
+                <HelpCircle className="w-5 h-5 text-gray-400" />
+                <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
+              </div>
+              {prompts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedPrompts.size === prompts.length) {
+                      deselectAllPrompts();
+                    } else {
+                      selectAllPrompts();
+                    }
+                  }}
+                  className="text-sm text-gray-500 hover:text-gray-900 tabular-nums transition-colors"
+                >
+                  {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'} · {selectedPromptsArray.length}/{prompts.length}
+                </button>
+              )}
             </div>
 
             {suggestionsLoading ? (
@@ -472,44 +490,6 @@ export default function ConfigurePage() {
               </div>
             ) : (
               <div className="space-y-1">
-                {/* Select All / Deselect All */}
-                {prompts.length > 0 && (
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all w-full hover:bg-gray-100 active:bg-gray-200"
-                    onClick={() => {
-                      if (selectedPrompts.size === prompts.length) {
-                        deselectAllPrompts();
-                      } else {
-                        selectAllPrompts();
-                      }
-                    }}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                        selectedPrompts.size === prompts.length
-                          ? 'bg-gray-900'
-                          : 'border-2 border-gray-300'
-                      }`}
-                    >
-                      {selectedPrompts.size === prompts.length && (
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                      )}
-                    </div>
-                    <span className="text-base text-gray-600 flex-1 text-left">
-                      Select all
-                    </span>
-                    <span className="text-base text-gray-400 font-medium">
-                      {selectedPromptsArray.length}/{prompts.length}
-                    </span>
-                  </button>
-                )}
-
-                {/* Divider line */}
-                {prompts.length > 0 && (
-                  <div className="border-t border-gray-200 my-2" />
-                )}
-
                 {/* Questions List */}
                 {prompts.map((prompt, index) => (
                   <div
@@ -629,181 +609,167 @@ export default function ConfigurePage() {
             )}
           </div>
 
-          {/* Competitors Section */}
-          <div className="bg-white/60 rounded-2xl p-6">
-            {/* Header with inline icon */}
-            <div className="flex items-start gap-2 mb-2">
-              <Users className="w-5 h-5 text-gray-400 mt-0.5" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
-                  <span className="text-sm text-gray-500 font-medium">
-                    {selectedCompetitorsArray.length} selected
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mt-0.5">{brandsDescription}</p>
-              </div>
-            </div>
+          {/* Competitors + Platforms side by side */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
 
-            <div className="mt-5">
-              {suggestionsLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Spinner size="lg" />
-                  <span className="ml-3 text-gray-500">{brandsLoadingText}</span>
+            {/* Competitors Section */}
+            <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              {/* Header with step number */}
+              <div className="flex items-start gap-2 mb-2">
+                <span className="text-gray-400 font-semibold mt-0.5">2.</span>
+                <Users className="w-5 h-5 text-gray-400 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
+                    <span className="text-sm text-gray-500 font-medium">
+                      {selectedCompetitorsArray.length} selected
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-0.5">{brandsDescription}</p>
                 </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {competitors.map((competitor) => (
-                    <div
-                      key={competitor}
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-full text-sm cursor-pointer transition-all"
-                      style={{ backgroundColor: 'rgba(13, 148, 136, 0.1)' }}
-                      onClick={() => toggleCompetitor(competitor)}
-                    >
-                      <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#0D9488' }}>
-                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+              </div>
+
+              <div className="mt-5">
+                {suggestionsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Spinner size="lg" />
+                    <span className="ml-3 text-gray-500">{brandsLoadingText}</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {competitors.map((competitor) => {
+                      const isSelected = selectedCompetitors.has(competitor);
+                      return (
+                        <div
+                          key={competitor}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm cursor-pointer transition-all group ${
+                            isSelected
+                              ? 'bg-gray-100 text-gray-700 font-medium'
+                              : 'bg-gray-50 text-gray-400'
+                          }`}
+                          onClick={() => toggleCompetitor(competitor)}
+                        >
+                          <span>{competitor}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeCompetitor(competitor);
+                            }}
+                            className="p-0.5 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Remove"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {competitors.length < 10 && (
+                  <div className="mt-5">
+                    {addingCompetitor ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newCompetitor}
+                          onChange={(e) => setNewCompetitor(e.target.value)}
+                          placeholder={addBrandPlaceholder}
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 placeholder-gray-400"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') { handleAddCompetitor(); }
+                            if (e.key === 'Escape') { setAddingCompetitor(false); setNewCompetitor(''); }
+                          }}
+                        />
+                        <button
+                          onClick={handleAddCompetitor}
+                          disabled={!newCompetitor.trim()}
+                          className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                        >
+                          Add
+                        </button>
+                        <button
+                          onClick={() => { setAddingCompetitor(false); setNewCompetitor(''); }}
+                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
-                      <span className="text-gray-700 font-medium">{competitor}</span>
+                    ) : (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeCompetitor(competitor);
-                        }}
-                        className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors"
-                        aria-label="Remove"
+                        onClick={() => setAddingCompetitor(true)}
+                        className="text-sm text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1.5"
                       >
-                        <X className="w-4 h-4" />
+                        <Plus className="w-4 h-4" />
+                        Add {isCategory ? 'another brand' : 'another competitor'}
                       </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {competitors.length < 10 && (
-                <div className="mt-5">
-                  {addingCompetitor ? (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newCompetitor}
-                        onChange={(e) => setNewCompetitor(e.target.value)}
-                        placeholder={addBrandPlaceholder}
-                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 placeholder-gray-400"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') { handleAddCompetitor(); }
-                          if (e.key === 'Escape') { setAddingCompetitor(false); setNewCompetitor(''); }
-                        }}
-                      />
-                      <button
-                        onClick={handleAddCompetitor}
-                        disabled={!newCompetitor.trim()}
-                        className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                      >
-                        Add
-                      </button>
-                      <button
-                        onClick={() => { setAddingCompetitor(false); setNewCompetitor(''); }}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setAddingCompetitor(true)}
-                      className="text-sm text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1.5"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Add {isCategory ? 'another brand' : 'another competitor'}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* AI Platforms Section - 2-column grid */}
-          <div className="bg-white/60 rounded-2xl p-6">
-            {/* Header with inline icon */}
-            <div className="flex items-start gap-2 mb-2">
-              <Bot className="w-5 h-5 text-gray-400 mt-0.5" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
-                  <span className="text-sm text-gray-500 font-medium">
-                    {providers.length} selected
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Choose which AI assistants to include in your analysis
-                </p>
-              </div>
-            </div>
-
-            {/* 2-column grid */}
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              {Object.entries(PROVIDER_INFO).map(([key, info]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => toggleProvider(key)}
-                  className="flex items-center gap-3 p-3 rounded-xl text-left transition-all"
-                  style={{
-                    backgroundColor: providers.includes(key) ? 'rgba(139, 92, 246, 0.1)' : 'rgba(0, 0, 0, 0.02)',
-                  }}
-                >
-                  <div
-                    className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
-                    style={{
-                      backgroundColor: providers.includes(key) ? '#8B5CF6' : 'transparent',
-                      border: providers.includes(key) ? 'none' : '2px solid #D1D5DB',
-                    }}
-                  >
-                    {providers.includes(key) && (
-                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
-                      {info.name}
-                    </p>
-                    <p className="text-xs text-gray-500">{info.description}</p>
-                  </div>
-                </button>
-              ))}
+                )}
+              </div>
             </div>
-          </div>
 
-        </div>{/* End of three-column grid */}
+            {/* AI Platforms Section */}
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              {/* Header with step number */}
+              <div className="flex items-start gap-2 mb-2">
+                <span className="text-gray-400 font-semibold mt-0.5">3.</span>
+                <Bot className="w-5 h-5 text-gray-400 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
+                    <span className="text-sm text-gray-500 font-medium">
+                      {providers.length} selected
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-0.5">
+                    Choose which AI assistants to include in your analysis
+                  </p>
+                </div>
+              </div>
 
-        {/* Action Section */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-700">
-              <span className="font-medium">{selectedPromptsArray.length}</span> question{selectedPromptsArray.length !== 1 ? 's' : ''}{' '}
-              <span className="text-gray-400">×</span>{' '}
-              <span className="font-medium">{providers.length}</span> platform{providers.length !== 1 ? 's' : ''}{' '}
-              <span className="text-gray-400">=</span>{' '}
-              <span className="font-semibold text-gray-900">{totalCalls} API calls</span>
-            </p>
-            <p className="text-sm text-gray-500">
-              Estimated cost: {formatCurrency(estimatedCost)} · Time: {formatDuration(estimatedTime)}
-            </p>
-          </div>
-          <button
-            onClick={handleRunAnalysis}
-            disabled={!canRun}
-            className="px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {startRunMutation.isPending ? (
-              <Spinner size="sm" />
-            ) : (
-              <Sparkles className="w-5 h-5" />
-            )}
-            Run Analysis
-          </button>
-        </div>
+              {/* 2-column grid */}
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                {Object.entries(PROVIDER_INFO).map(([key, info]) => {
+                  const isSelected = providers.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleProvider(key)}
+                      className={`flex items-center gap-3 p-3 rounded-xl text-left transition-all ${
+                        isSelected
+                          ? 'bg-white ring-2 ring-gray-900'
+                          : 'bg-gray-50 border border-gray-200 opacity-60'
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                          isSelected
+                            ? 'bg-gray-900'
+                            : 'border-2 border-gray-300'
+                        }`}
+                      >
+                        {isSelected && (
+                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {info.name}
+                        </p>
+                        <p className="text-xs text-gray-500">{info.description}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>{/* End of Competitors + Platforms grid */}
+
+        </div>{/* End of main layout */}
 
         {/* Advanced Settings - full width, subtle gray background */}
         <div className="bg-gray-100/50 rounded-2xl overflow-hidden">
@@ -1055,7 +1021,35 @@ export default function ConfigurePage() {
         </div>
       </div>
 
-      <div className="pb-8" />
+      {/* Sticky bottom CTA bar */}
+      <div className="sticky bottom-0 z-10 bg-white/80 backdrop-blur-sm border-t border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">{selectedPromptsArray.length}</span> question{selectedPromptsArray.length !== 1 ? 's' : ''}{' '}
+              <span className="text-gray-400">&times;</span>{' '}
+              <span className="font-medium">{providers.length}</span> platform{providers.length !== 1 ? 's' : ''}{' '}
+              <span className="text-gray-400">=</span>{' '}
+              <span className="font-semibold text-gray-900">{totalCalls} API calls</span>
+            </p>
+            <p className="text-sm text-gray-500">
+              Estimated cost: {formatCurrency(estimatedCost)} · Time: {formatDuration(estimatedTime)}
+            </p>
+          </div>
+          <button
+            onClick={handleRunAnalysis}
+            disabled={!canRun}
+            className="px-6 py-3 bg-gray-900 text-white font-semibold rounded-xl hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {startRunMutation.isPending ? (
+              <Spinner size="sm" />
+            ) : (
+              <Sparkles className="w-5 h-5" />
+            )}
+            Run Analysis
+          </button>
+        </div>
+      </div>
     </main>
   );
 }
