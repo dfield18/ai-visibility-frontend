@@ -11844,63 +11844,48 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
                           const allProviders = brandData.providerScores;
+                          const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 2);
 
                           return (
                             <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
-                              <div className={`bg-white rounded-2xl shadow-sm px-6 py-6 h-full hover:shadow-md transition-shadow ${
+                              <div className={`bg-white rounded-2xl shadow-sm px-5 py-5 h-full hover:shadow-md transition-shadow ${
                                 brandData.isSearchedBrand
                                   ? 'border-2 border-gray-200 ring-1 ring-gray-100'
                                   : 'border border-gray-100'
                               }`}>
-                                {/* Header: Label + Brand Name */}
-                                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-1">Visibility Report</p>
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="text-xl font-bold text-gray-900">{brandData.brand}</h3>
-                                  {brandData.isSearchedBrand && (
-                                    <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">you</span>
-                                  )}
+                                {/* Brand Name + Score */}
+                                <div className="flex items-start justify-between mb-4">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="text-xl font-bold text-gray-900">{brandData.brand}</h3>
+                                    {brandData.isSearchedBrand && (
+                                      <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">you</span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-baseline shrink-0">
+                                    <span className="text-3xl font-bold text-gray-900">{Math.round(brandData.visibilityScore)}</span>
+                                    <span className="text-sm text-gray-400 font-medium">/100</span>
+                                  </div>
                                 </div>
-                                {brandBlurbs[brandData.brand] ? (
-                                  <p className="text-sm italic text-gray-500 mb-4 leading-snug">{brandBlurbs[brandData.brand]}</p>
-                                ) : (
-                                  <div className="mb-4" />
-                                )}
 
-                                {/* Provider Scores Row */}
+                                {/* Provider Scores - compact single-line */}
                                 {allProviders.length > 0 && (
-                                  <div className="flex flex-wrap items-end gap-4 mb-5">
+                                  <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
                                     {allProviders.map((prov) => (
-                                      <div key={prov.provider} className="flex flex-col items-center">
-                                        <div className="flex items-center gap-1 mb-0.5">
-                                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
-                                          <span className="text-[11px] text-gray-500">{getCarouselProviderLabel(prov.provider)}</span>
-                                        </div>
-                                        <span className="text-lg font-bold" style={{ color: getProviderBrandColor(prov.provider) }}>
-                                          {prov.score}
-                                        </span>
-                                      </div>
+                                      <span key={prov.provider} className="inline-flex items-center gap-1 text-xs text-gray-500">
+                                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
+                                        <span>{getCarouselProviderLabel(prov.provider)}</span>
+                                        <span className="font-semibold text-gray-700">{prov.score}</span>
+                                      </span>
                                     ))}
                                   </div>
                                 )}
 
-                                {/* Overall Visibility Score */}
-                                <div className="border-t border-gray-100 pt-4 mb-4">
-                                  <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-2">Overall Visibility</p>
-                                  <div className="flex items-baseline">
-                                    <span className="text-4xl font-bold text-gray-900">
-                                      {Math.round(brandData.visibilityScore)}
-                                    </span>
-                                    <span className="text-lg text-gray-400 font-medium">/100</span>
-                                  </div>
-                                </div>
-
-                                {/* Recent Mentions (Quotes) */}
-                                {(brandQuotesMap[brandData.brand] ?? []).length > 0 && (
-                                  <div className="border-t border-gray-100 pt-4">
-                                    <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-3">Recent Mentions</p>
-                                    <div className="space-y-2">
-                                      {(brandQuotesMap[brandData.brand] ?? []).map((quote, qIdx) => (
-                                        <p key={qIdx} className="text-sm text-gray-700 leading-relaxed line-clamp-2">
+                                {/* Recent Mentions */}
+                                {quotes.length > 0 && (
+                                  <div className="border-t border-gray-100 pt-3">
+                                    <div className="space-y-1.5">
+                                      {quotes.map((quote, qIdx) => (
+                                        <p key={qIdx} className="text-xs text-gray-500 leading-relaxed line-clamp-1">
                                           &ldquo;{quote.text}&rdquo;
                                         </p>
                                       ))}
