@@ -4610,23 +4610,7 @@ export default function ResultsPage() {
                 ))}
               </>
             ) : (
-              <>
-                <span className="text-xs text-gray-600 font-medium mr-1">Platform:</span>
-                {[
-                  { color: '#10a37f', label: 'ChatGPT' },
-                  { color: '#d97706', label: 'Claude' },
-                  { color: '#4285f4', label: 'Gemini' },
-                  { color: '#6366f1', label: 'Perplexity' },
-                  { color: '#1d9bf0', label: 'Grok' },
-                  { color: '#8b5cf6', label: 'Llama' },
-                  { color: '#ea4335', label: 'AI Overviews' },
-                ].map(item => (
-                  <div key={item.label} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-gray-600">{item.label}</span>
-                  </div>
-                ))}
-              </>
+              <span className="text-xs text-gray-500">Each dot represents one AI response. Toggle sentiment to color by recommendation.</span>
             )}
           </div>
 
@@ -4646,7 +4630,7 @@ export default function ResultsPage() {
                           <div key={idx} className="relative group">
                             <div
                               className="w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
-                              style={{ backgroundColor: showSentimentColors ? getSentimentDotColor(dot.sentiment) : getProviderBrandColor(dot.originalResult?.provider || provider) }}
+                              style={{ backgroundColor: showSentimentColors ? getSentimentDotColor(dot.sentiment) : '#9ca3af' }}
                               onClick={() => setSelectedResult(dot.originalResult)}
                             />
                             {/* Tooltip on hover */}
@@ -5521,8 +5505,8 @@ export default function ResultsPage() {
                         shape={(props: any) => {
                           const { cx, cy, payload } = props;
                           // Sentiment colors: green=strong, gray=neutral, orange=conditional, red=negative
-                          let fillColor = '#6b7280'; // default gray
-                          let opacity = payload.isMentioned ? 0.6 : 0.25;
+                          let fillColor = '#9ca3af'; // default gray
+                          let opacity = 0.6;
 
                           if (showSentimentColors && payload.sentiment) {
                             switch (payload.sentiment) {
@@ -5877,10 +5861,10 @@ export default function ResultsPage() {
                                         : dot.sentiment === 'conditional' ? '#fcd34d'
                                         : dot.sentiment === 'negative_comparison' ? '#f87171'
                                         : '#d1d5db'
-                                      : '#6b7280',
+                                      : '#9ca3af',
                                     opacity: showSentimentColors && dot.sentiment
                                       ? (dot.sentiment === 'not_mentioned' ? 0.4 : 0.8)
-                                      : (dot.isMentioned ? 0.7 : 0.3),
+                                      : 0.6,
                                   }}
                                   onDoubleClick={() => setSelectedResult(dot.originalResult)}
                                 />
