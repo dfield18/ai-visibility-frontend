@@ -3871,6 +3871,65 @@ export default function ResultsPage() {
   );
   const brandBlurbs = brandBlurbsData?.blurbs ?? {};
 
+  // Extract direct quotes mentioning the brand from LLM responses
+  const brandQuotes = useMemo(() => {
+    if (!runStatus) return [];
+    const brand = runStatus.brand;
+    const results = globallyFilteredResults.filter(r => r.response_text && !r.error && r.brand_mentioned);
+
+    const allQuotes: { text: string; provider: string; prompt: string }[] = [];
+
+    results.forEach(r => {
+      const text = stripMarkdown(r.response_text!);
+      const sentences = text.split(/(?<=[.!?])\s+/);
+      for (const sentence of sentences) {
+        const trimmed = sentence.trim();
+        if (
+          trimmed.toLowerCase().includes(brand.toLowerCase()) &&
+          trimmed.length >= 40 &&
+          trimmed.length <= 300
+        ) {
+          allQuotes.push({ text: trimmed, provider: r.provider, prompt: r.prompt });
+        }
+      }
+    });
+
+    // Deduplicate and pick up to 3 diverse quotes, preferring different providers
+    const selected: typeof allQuotes = [];
+    const usedProviders = new Set<string>();
+
+    // First pass: one quote per provider
+    for (const q of allQuotes) {
+      if (selected.length >= 3) break;
+      if (usedProviders.has(q.provider)) continue;
+      // Skip if too similar to an already-selected quote
+      const words = new Set(q.text.toLowerCase().split(/\s+/));
+      const tooSimilar = selected.some(s => {
+        const sWords = new Set(s.text.toLowerCase().split(/\s+/));
+        const overlap = [...words].filter(w => sWords.has(w)).length;
+        return overlap / Math.max(words.size, sWords.size) > 0.6;
+      });
+      if (tooSimilar) continue;
+      selected.push(q);
+      usedProviders.add(q.provider);
+    }
+    // Second pass: fill remaining slots
+    for (const q of allQuotes) {
+      if (selected.length >= 3) break;
+      if (selected.some(s => s.text === q.text)) continue;
+      const words = new Set(q.text.toLowerCase().split(/\s+/));
+      const tooSimilar = selected.some(s => {
+        const sWords = new Set(s.text.toLowerCase().split(/\s+/));
+        const overlap = [...words].filter(w => sWords.has(w)).length;
+        return overlap / Math.max(words.size, sWords.size) > 0.6;
+      });
+      if (tooSimilar) continue;
+      selected.push(q);
+    }
+
+    return selected;
+  }, [runStatus, globallyFilteredResults]);
+
   // Position categories for the dot plot chart
   const POSITION_CATEGORIES = ['Top', '2-3', '4-5', '6-10', '>10', 'N/A'];
 
@@ -4265,6 +4324,33 @@ export default function ResultsPage() {
           </div>
         )}
       </div>
+
+      {/* What AI Says About [Brand] */}
+      {brandQuotes.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <MessageSquare className="w-5 h-5 text-gray-700" />
+            <h2 className="text-lg font-semibold text-gray-900">
+              What AI Says About {runStatus?.brand}
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {brandQuotes.map((quote, idx) => (
+              <div key={idx} className="flex gap-3 items-start">
+                <div className="mt-1 text-gray-300 text-lg leading-none shrink-0">&ldquo;</div>
+                <div className="flex-1">
+                  <p className="text-sm text-gray-700 italic leading-relaxed">
+                    {quote.text}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    — {getProviderLabel(quote.provider)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Prompt Breakdown Table */}
       {promptBreakdownStats.length > 0 && (
