@@ -66,7 +66,8 @@ import {
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
-import { useRunStatus, useAISummary, useSiteAudits, useBrandBlurbs } from '@/hooks/useApi';
+import { useRunStatus, useAISummary, useSiteAudits, useBrandBlurbs, useFilteredQuotes } from '@/hooks/useApi';
+import type { BrandQuote } from '@/hooks/useApi';
 import {
   formatCurrency,
   formatDate,
@@ -3872,42 +3873,12 @@ export default function ResultsPage() {
   );
   const brandBlurbs = brandBlurbsData?.blurbs ?? {};
 
-  // Extract direct quotes mentioning each brand from LLM responses
-  type BrandQuote = { text: string; provider: string; prompt: string };
-  const brandQuotesMap = useMemo(() => {
+  // Extract candidate quotes mentioning each brand from LLM responses (up to 6 per brand for GPT filtering)
+  const candidateQuotesMap = useMemo(() => {
     if (!runStatus) return {} as Record<string, BrandQuote[]>;
     const results = globallyFilteredResults.filter(r => r.response_text && !r.error);
     const searchedBrand = runStatus.brand;
     const allBrands = brandBreakdownStats.map(b => b.brand);
-
-    const selectQuotes = (candidates: BrandQuote[], max: number): BrandQuote[] => {
-      const selected: BrandQuote[] = [];
-      const usedProviders = new Set<string>();
-      const isTooSimilar = (q: BrandQuote) => {
-        const words = new Set(q.text.toLowerCase().split(/\s+/));
-        return selected.some(s => {
-          const sWords = new Set(s.text.toLowerCase().split(/\s+/));
-          const overlap = [...words].filter(w => sWords.has(w)).length;
-          return overlap / Math.max(words.size, sWords.size) > 0.6;
-        });
-      };
-      // First pass: one quote per provider
-      for (const q of candidates) {
-        if (selected.length >= max) break;
-        if (usedProviders.has(q.provider)) continue;
-        if (isTooSimilar(q)) continue;
-        selected.push(q);
-        usedProviders.add(q.provider);
-      }
-      // Second pass: fill remaining slots
-      for (const q of candidates) {
-        if (selected.length >= max) break;
-        if (selected.some(s => s.text === q.text)) continue;
-        if (isTooSimilar(q)) continue;
-        selected.push(q);
-      }
-      return selected;
-    };
 
     const map: Record<string, BrandQuote[]> = {};
 
@@ -3927,32 +3898,62 @@ export default function ResultsPage() {
             trimmed.toLowerCase().includes(brand.toLowerCase()) &&
             trimmed.length >= 40 &&
             trimmed.length <= 300 &&
-            // Filter out table-like content, raw data, URLs, and metadata
+            // Basic filters for obviously broken content
             !/\|/.test(trimmed) &&
             !/---/.test(trimmed) &&
             !/https?:\/\//.test(trimmed) &&
-            !/\$\d+/.test(trimmed) &&
-            !/\d+\s*oz\b/i.test(trimmed) &&
-            !/^\d+\s/.test(trimmed) &&
             !/^\[/.test(trimmed) &&
-            !/\u2022/.test(trimmed) &&
-            !/•/.test(trimmed) &&
-            !/YouTube/i.test(trimmed) &&
-            !/\b\d{4}\s+(Best|Top|Most)\b/.test(trimmed) &&
-            !/^\(/.test(trimmed) &&
-            !/\w+\.\w{2,4}\s/.test(trimmed.substring(0, 30)) &&
-            !/^(Best|Top|Most)\s.*:/.test(trimmed)
+            !/\u2022|•/.test(trimmed)
           ) {
             allQuotes.push({ text: trimmed, provider: r.provider, prompt: r.prompt });
           }
         }
       });
 
-      map[brand] = selectQuotes(allQuotes, 2);
+      // Deduplicate by text similarity, keep up to 6 diverse candidates for GPT to pick from
+      const selected: BrandQuote[] = [];
+      const usedProviders = new Set<string>();
+      const isTooSimilar = (q: BrandQuote) => {
+        const words = new Set(q.text.toLowerCase().split(/\s+/));
+        return selected.some(s => {
+          const sWords = new Set(s.text.toLowerCase().split(/\s+/));
+          const overlap = [...words].filter(w => sWords.has(w)).length;
+          return overlap / Math.max(words.size, sWords.size) > 0.6;
+        });
+      };
+      // First pass: one per provider
+      for (const q of allQuotes) {
+        if (selected.length >= 6) break;
+        if (usedProviders.has(q.provider)) continue;
+        if (isTooSimilar(q)) continue;
+        selected.push(q);
+        usedProviders.add(q.provider);
+      }
+      // Second pass: fill remaining
+      for (const q of allQuotes) {
+        if (selected.length >= 6) break;
+        if (selected.some(s => s.text === q.text)) continue;
+        if (isTooSimilar(q)) continue;
+        selected.push(q);
+      }
+
+      map[brand] = selected;
     }
 
     return map;
   }, [runStatus, globallyFilteredResults, brandBreakdownStats]);
+
+  // Use GPT to filter candidates down to the best 1-2 quotes per brand
+  const hasCandidates = Object.values(candidateQuotesMap).some(q => q.length > 0);
+  const { data: filteredQuotesData } = useFilteredQuotes(
+    candidateQuotesMap,
+    hasCandidates && runStatus?.status === 'complete'
+  );
+  // Use GPT-filtered quotes when available, fall back to candidates (first 2)
+  const brandQuotesMap: Record<string, BrandQuote[]> = filteredQuotesData?.quotes
+    ?? Object.fromEntries(
+      Object.entries(candidateQuotesMap).map(([brand, quotes]) => [brand, quotes.slice(0, 2)])
+    );
 
   // Visibility tab uses quotes for the searched brand
   const brandQuotes = brandQuotesMap[runStatus?.brand ?? ''] ?? [];

@@ -163,6 +163,35 @@ export function useSiteAudits(sessionId: string, enabled = true) {
 }
 
 /**
+ * Hook to filter brand quotes through GPT for quality and relevance.
+ */
+export type BrandQuote = { text: string; provider: string; prompt: string };
+export function useFilteredQuotes(
+  candidates: Record<string, BrandQuote[]>,
+  enabled = true
+) {
+  const candidateKey = Object.entries(candidates)
+    .map(([brand, quotes]) => `${brand}:${quotes.length}`)
+    .join(',');
+
+  return useQuery<{ quotes: Record<string, BrandQuote[]> }>({
+    queryKey: ['filtered-quotes', candidateKey],
+    queryFn: async () => {
+      const res = await fetch('/api/filter-quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidates }),
+      });
+      if (!res.ok) throw new Error('Failed to filter quotes');
+      return res.json();
+    },
+    enabled: enabled && Object.keys(candidates).length > 0,
+    staleTime: Infinity,
+    retry: 1,
+  });
+}
+
+/**
  * Hook to fetch AI-generated brand characterization blurbs.
  */
 export function useBrandBlurbs(brands: string[], context: string, enabled = true) {
