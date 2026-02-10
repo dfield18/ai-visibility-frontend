@@ -152,31 +152,39 @@ function SectionGuide({ activeTab }: { activeTab: TabType }) {
   useEffect(() => {
     if (!sections || sections.length === 0) return;
 
-    // Set the first section as default active
-    setActiveSection(sections[0].id);
+    let rafId: number;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
+    const updateActiveSection = () => {
+      // Walk through sections in order; the last one whose top is above
+      // the threshold (120px from viewport top) is the "current" section
+      let current = sections[0].id;
+
+      for (const { id } of sections) {
+        const el = document.getElementById(id);
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          if (rect.top <= 130) {
+            current = id;
           }
         }
-      },
-      { rootMargin: '-80px 0px -65% 0px', threshold: 0 }
-    );
+      }
 
-    // Small delay to ensure DOM elements exist
-    const timer = setTimeout(() => {
-      sections.forEach(({ id }) => {
-        const el = document.getElementById(id);
-        if (el) observer.observe(el);
-      });
-    }, 100);
+      setActiveSection(current);
+    };
 
+    const handleScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateActiveSection);
+    };
+
+    // Initial check after DOM elements mount
+    const timer = setTimeout(updateActiveSection, 150);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       clearTimeout(timer);
-      observer.disconnect();
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, [sections, activeTab]);
 
