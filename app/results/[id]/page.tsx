@@ -3741,6 +3741,14 @@ export default function ResultsPage() {
     return 'bg-gradient-to-br from-orange-50 to-white';
   };
 
+  // Per-metric card backgrounds to give each KPI a distinct color theme
+  const metricCardBackgrounds: Record<string, string> = {
+    visibility: 'bg-gradient-to-br from-blue-50 to-white border-blue-100',
+    shareOfVoice: 'bg-gradient-to-br from-teal-50 to-white border-teal-100',
+    top1Rate: 'bg-gradient-to-br from-indigo-50 to-white border-indigo-100',
+    avgPosition: 'bg-gradient-to-br from-amber-50 to-white border-amber-100',
+  };
+
   const getProviderShortLabel = (provider: string) => {
     switch (provider) {
       case 'openai': return 'GPT';
@@ -4041,7 +4049,7 @@ export default function ResultsPage() {
         {(() => {
           const visibilityTone = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tone;
           return (
-            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[270px] ${getCardBackground(visibilityTone)}`}>
+            <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">AI Visibility</p>
                 <div className="relative group">
@@ -4101,7 +4109,7 @@ export default function ResultsPage() {
         {(() => {
           const sovTone = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tone;
           return (
-            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[270px] ${getCardBackground(sovTone)}`}>
+            <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.shareOfVoice}`}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Share of Voice</p>
                 <div className="relative group">
@@ -4161,7 +4169,7 @@ export default function ResultsPage() {
         {(() => {
           const topRateTone = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null).tone;
           return (
-            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[270px] ${getCardBackground(topRateTone)}`}>
+            <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.top1Rate}`}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Top Result Rate</p>
                 <div className="relative group">
@@ -4222,7 +4230,7 @@ export default function ResultsPage() {
           const avgPosTone = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null).tone;
           const avgRank = overviewMetrics?.avgRank || 0;
           return (
-            <div className={`rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col h-[270px] ${getCardBackground(avgPosTone)}`}>
+            <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Avg. Position</p>
                 <div className="relative group">
