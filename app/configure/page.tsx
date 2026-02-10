@@ -461,7 +461,7 @@ export default function ConfigurePage() {
           <div className="bg-white/60 rounded-2xl p-6">
             {/* Header with inline icon */}
             <div className="flex items-center gap-2 mb-5">
-              <MessageSquare className="w-5 h-5 text-gray-400" />
+              <HelpCircle className="w-5 h-5 text-gray-400" />
               <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
             </div>
 
@@ -496,10 +496,10 @@ export default function ConfigurePage() {
                         <Check className="w-3 h-3 text-white" strokeWidth={3} />
                       )}
                     </div>
-                    <span className="text-sm text-gray-600 flex-1 text-left">
+                    <span className="text-base text-gray-600 flex-1 text-left">
                       Select all
                     </span>
-                    <span className="text-sm text-gray-400 font-medium">
+                    <span className="text-base text-gray-400 font-medium">
                       {selectedPromptsArray.length}/{prompts.length}
                     </span>
                   </button>
