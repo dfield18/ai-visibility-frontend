@@ -3737,15 +3737,8 @@ export default function ResultsPage() {
   };
 
   // Get card background tint based on performance tone
-  const getCardBackground = (tone: InterpretationTone): string => {
-    switch (tone) {
-      case 'success':
-        return 'bg-gradient-to-br from-gray-100 to-gray-50';
-      case 'warn':
-        return 'bg-gradient-to-br from-orange-50 to-white';
-      default:
-        return 'bg-gradient-to-br from-gray-100 to-gray-50';
-    }
+  const getCardBackground = (_tone: InterpretationTone): string => {
+    return 'bg-gradient-to-br from-orange-50 to-white';
   };
 
   const getProviderShortLabel = (provider: string) => {
