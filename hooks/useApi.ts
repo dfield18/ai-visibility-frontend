@@ -165,7 +165,7 @@ export function useSiteAudits(sessionId: string, enabled = true) {
 /**
  * Hook to filter brand quotes through GPT for quality and relevance.
  */
-export type BrandQuote = { text: string; provider: string; prompt: string };
+export type BrandQuote = { text: string; provider: string; prompt: string; summary?: string };
 export function useFilteredQuotes(
   candidates: Record<string, BrandQuote[]>,
   enabled = true

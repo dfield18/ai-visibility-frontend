@@ -42,16 +42,18 @@ export async function POST(request: NextRequest) {
           role: 'system',
           content: `You are helping curate the best AI-generated quotes about brands for a dashboard.
 
-For each brand, you will be given numbered candidate quotes extracted from AI model responses. Select the best 1-2 quotes per brand that are:
+For each brand, you will be given numbered candidate quotes extracted from AI model responses. Select the best 1-3 quotes per brand that are:
 - Actually about that specific brand (not just mentioning it in passing)
 - Interesting, insightful, or descriptive (tells you something meaningful about the brand)
 - Well-formed natural language sentences (not metadata, lists, tables, or garbled text)
 - Diverse (pick quotes that say different things, not the same point twice)
 
-If NONE of the candidates for a brand are good quality (e.g., they're all generic, garbled, or not really about the brand), return an empty array for that brand. Quality over quantity — it's better to show 0-1 great quotes than 2 mediocre ones.
+If NONE of the candidates for a brand are good quality (e.g., they're all generic, garbled, or not really about the brand), return an empty array for that brand. Quality over quantity — it's better to show 0-1 great quotes than 3 mediocre ones.
 
-Respond ONLY with a JSON object mapping each brand name to an array of the selected quote numbers (1-indexed). Example:
-{"Nike": [1, 3], "Adidas": [2], "Puma": []}`,
+For each selected quote, also provide a short 3-7 word summary that captures the key insight (e.g., "Top choice for serious runners", "Known for affordable quality gear").
+
+Respond ONLY with a JSON object mapping each brand name to an array of objects with "index" (1-indexed quote number) and "summary" (3-7 word summary). Example:
+{"Nike": [{"index": 1, "summary": "Premium gear for serious athletes"}, {"index": 3, "summary": "Industry leader in innovation"}], "Adidas": [{"index": 2, "summary": "Iconic blend of sport and style"}], "Puma": []}`,
         },
         {
           role: 'user',
@@ -71,16 +73,21 @@ Respond ONLY with a JSON object mapping each brand name to an array of the selec
     try {
       // Parse the JSON response - extract just the JSON part if there's extra text
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      const selections: Record<string, number[]> = JSON.parse(jsonMatch ? jsonMatch[0] : content);
+      const selections: Record<string, (number | { index: number; summary?: string })[]> = JSON.parse(jsonMatch ? jsonMatch[0] : content);
 
       // Map selections back to actual quote objects
-      const result: Record<string, { text: string; provider: string; prompt: string }[]> = {};
+      const result: Record<string, { text: string; provider: string; prompt: string; summary?: string }[]> = {};
       for (const brand of brands) {
-        const indices = selections[brand] ?? [];
+        const items = selections[brand] ?? [];
         const brandCandidates = candidates[brand] ?? [];
-        result[brand] = indices
-          .filter(i => i >= 1 && i <= brandCandidates.length)
-          .map((i: number) => brandCandidates[i - 1]);
+        result[brand] = items
+          .map((item) => {
+            const index = typeof item === 'number' ? item : item.index;
+            const summary = typeof item === 'object' ? item.summary : undefined;
+            if (index < 1 || index > brandCandidates.length) return null;
+            return { ...brandCandidates[index - 1], summary };
+          })
+          .filter((q): q is NonNullable<typeof q> => q !== null);
       }
 
       const usage = response.usage;

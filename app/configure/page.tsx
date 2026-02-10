@@ -525,22 +525,33 @@ export default function ConfigurePage() {
                 </span>
               </div>
 
-              {/* Deselect / Select all toggle */}
+              {/* Select All toggle */}
               {prompts.length > 0 && !suggestionsLoading && !addingPrompt && (
                 <div className="flex justify-start mb-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (selectedPrompts.size === prompts.length) {
-                        deselectAllPrompts();
-                      } else {
-                        selectAllPrompts();
-                      }
-                    }}
-                    className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium"
-                  >
-                    {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
-                  </button>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={selectedPrompts.size === prompts.length}
+                      onClick={() => {
+                        if (selectedPrompts.size === prompts.length) {
+                          deselectAllPrompts();
+                        } else {
+                          selectAllPrompts();
+                        }
+                      }}
+                      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
+                        selectedPrompts.size === prompts.length ? 'bg-teal-600' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform mt-[3px] ${
+                          selectedPrompts.size === prompts.length ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm text-gray-600 font-medium">Select All</span>
+                  </label>
                 </div>
               )}
 
