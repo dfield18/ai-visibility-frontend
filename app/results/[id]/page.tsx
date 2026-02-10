@@ -4896,6 +4896,12 @@ export default function ResultsPage() {
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Prompt
+                    <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
+                      <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
+                      <span className="absolute left-0 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
+                        The question sent to each AI model
+                      </span>
+                    </span>
                     {tableSortColumn === 'prompt' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
@@ -4907,6 +4913,12 @@ export default function ResultsPage() {
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Model
+                    <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
+                      <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
+                      <span className="absolute left-0 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
+                        The AI platform that generated this response
+                      </span>
+                    </span>
                     {tableSortColumn === 'llm' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
@@ -4918,6 +4930,12 @@ export default function ResultsPage() {
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Rank
+                    <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
+                      <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
+                      <span className="absolute left-0 top-full mt-1 w-52 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
+                        Where your brand appears in the AI response (#1 = mentioned first)
+                      </span>
+                    </span>
                     {tableSortColumn === 'position' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
@@ -4930,6 +4948,12 @@ export default function ResultsPage() {
                   >
                     <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Mentioned
+                      <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
+                        <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
+                        <span className="absolute left-0 top-full mt-1 w-52 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
+                          Whether the AI included your brand in its response
+                        </span>
+                      </span>
                       {tableSortColumn === 'mentioned' && (
                         <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
@@ -4942,6 +4966,12 @@ export default function ResultsPage() {
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Sentiment
+                    <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
+                      <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
+                      <span className="absolute left-0 top-full mt-1 w-56 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
+                        How positively the AI described your brand, from Not Recommended to Highly Recommended
+                      </span>
+                    </span>
                     {tableSortColumn === 'sentiment' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
@@ -4953,6 +4983,12 @@ export default function ResultsPage() {
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {isCategory ? 'Brands' : 'Competitors'}
+                    <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
+                      <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
+                      <span className="absolute left-0 top-full mt-1 w-52 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
+                        Other brands mentioned in the same AI response
+                      </span>
+                    </span>
                     {tableSortColumn === 'competitors' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
@@ -5082,7 +5118,14 @@ export default function ResultsPage() {
                     onClick={() => setSelectedResult(result)}
                   >
                     <td className="w-[22%] py-3 px-4">
-                        <p className="text-sm text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
+                        <div className="relative group/prompt">
+                          <p className="text-sm text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
+                          {result.prompt.length > 50 && (
+                            <div className="absolute left-0 top-full mt-1 w-80 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover/prompt:opacity-100 group-hover/prompt:visible transition-all z-50 shadow-lg leading-relaxed pointer-events-none">
+                              {result.prompt}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="w-[14%] py-3 px-4">
                         <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
@@ -12543,14 +12586,14 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   const maxCount = brandCooccurrence[0]?.count || 1;
                   const minCount = brandCooccurrence[brandCooccurrence.length - 1]?.count || 1;
 
-                  // Get bar color based on count - lighter for smaller, darker for larger
+                  // Get bar color based on count - green for higher, gray for lower
                   const getBarColor = (count: number) => {
                     const range = maxCount - minCount || 1;
                     const normalized = (count - minCount) / range;
-                    if (normalized < 0.25) return '#bbf7d0'; // Very light green
-                    if (normalized < 0.5) return '#9ca3af';  // Light green
-                    if (normalized < 0.75) return '#6b7280'; // Medium green
-                    return '#374151'; // Darker green
+                    if (normalized < 0.25) return '#d1d5db'; // gray-300
+                    if (normalized < 0.5) return '#9ca3af';  // gray-400
+                    if (normalized < 0.75) return '#4ade80'; // emerald-400
+                    return '#22c55e'; // emerald-500
                   };
 
                   return (
@@ -12589,11 +12632,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
                     <span>Bar shade indicates co-occurrence frequency:</span>
                     <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#bbf7d0' }}></div>
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#d1d5db' }}></div>
                       <span>Lower</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#374151' }}></div>
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }}></div>
                       <span>Higher</span>
                     </div>
                   </div>
@@ -12625,22 +12668,20 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                   const getColorForCount = (count: number) => {
                     const range = maxCount - minCount || 1;
                     const normalized = (count - minCount) / range; // 0 to 1
-                    // Light green (#bbf7d0) to darker green (#374151)
-                    // Interpolate between these colors
-                    if (normalized < 0.25) return '#bbf7d0'; // Very light green
-                    if (normalized < 0.5) return '#9ca3af';  // Light green
-                    if (normalized < 0.75) return '#6b7280'; // Medium green
-                    return '#374151'; // Darker green
+                    if (normalized < 0.25) return '#bbf7d0'; // emerald-200
+                    if (normalized < 0.5) return '#86efac';  // emerald-300
+                    if (normalized < 0.75) return '#4ade80'; // emerald-400
+                    return '#22c55e'; // emerald-500
                   };
 
                   // Function to get label color based on count
                   const getLabelColorForCount = (count: number) => {
                     const range = maxCount - minCount || 1;
                     const normalized = (count - minCount) / range;
-                    if (normalized < 0.25) return '#166534'; // Dark green for light bg
-                    if (normalized < 0.5) return '#111827';
-                    if (normalized < 0.75) return '#14532d';
-                    return '#14532d'; // Darkest for contrast
+                    if (normalized < 0.25) return '#166534'; // emerald-800
+                    if (normalized < 0.5) return '#15803d';  // emerald-700
+                    if (normalized < 0.75) return '#166534'; // emerald-800
+                    return '#14532d'; // emerald-900
                   };
 
                   return (
