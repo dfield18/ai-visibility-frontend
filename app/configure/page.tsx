@@ -467,7 +467,7 @@ export default function ConfigurePage() {
 
               <div className="space-y-5">
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">1</span>
                   </div>
                   <div>
@@ -477,7 +477,7 @@ export default function ConfigurePage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">2</span>
                   </div>
                   <div>
@@ -487,7 +487,7 @@ export default function ConfigurePage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">3</span>
                   </div>
                   <div>

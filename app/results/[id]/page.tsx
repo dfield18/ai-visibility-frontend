@@ -12135,16 +12135,23 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                   </div>
                                 </div>
 
-                                {/* Recent Mentions - short summaries */}
+                                {/* Recent Mentions - short summaries with source */}
                                 {quotes.length > 0 && (
                                   <div className="px-6 py-4">
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">What AI Says</p>
-                                    <div className="flex flex-wrap gap-2">
-                                      {quotes.map((q, qi) => (
-                                        <span key={qi} className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-full px-3 py-1">
-                                          {q.summary || q.text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '').split(/[.!?]/)[0].split(' ').slice(0, 7).join(' ')}
-                                        </span>
-                                      ))}
+                                    <div className="space-y-2">
+                                      {quotes.map((q, qi) => {
+                                        const blurb = q.summary || q.text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '').split(/[.!?]/)[0].split(' ').slice(0, 7).join(' ');
+                                        const shortPrompt = q.prompt.length > 30 ? q.prompt.substring(0, 28) + '...' : q.prompt;
+                                        return (
+                                          <div key={qi} className="text-xs bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                                            <p className="text-gray-700 font-medium">{blurb}</p>
+                                            <p className="text-[10px] text-gray-400 mt-0.5">
+                                              {getCarouselProviderLabel(q.provider)} · {shortPrompt}
+                                            </p>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   </div>
                                 )}
