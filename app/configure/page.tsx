@@ -460,45 +460,45 @@ export default function ConfigurePage() {
           {/* Left Sidebar - How it works */}
           <div className="hidden lg:block w-60 flex-shrink-0">
             <div className="sticky top-20">
-              <h2 className="text-base font-semibold text-gray-900 mb-1">How it works</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-1">How it works</h2>
               <p className="text-sm text-gray-500 mb-6">
                 Configure your AI-powered competitive analysis in three simple steps.
               </p>
 
               <div className="space-y-5">
                 <div className="flex gap-3">
-                  <div className="w-5 h-5 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-[10px] font-bold">1</span>
+                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-xs font-bold">1</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Pick your questions</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Select or add the questions you want each AI platform to answer about your brand.</p>
+                    <p className="text-base font-medium text-gray-900">Pick your questions</p>
+                    <p className="text-sm text-gray-500 mt-0.5">Select or add the questions you want each AI platform to answer about your brand.</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-5 h-5 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-[10px] font-bold">2</span>
+                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-xs font-bold">2</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Choose competitors</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Add the brands you want to benchmark against in the analysis results.</p>
+                    <p className="text-base font-medium text-gray-900">Choose competitors</p>
+                    <p className="text-sm text-gray-500 mt-0.5">Add the brands you want to benchmark against in the analysis results.</p>
                   </div>
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-5 h-5 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-[10px] font-bold">3</span>
+                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-xs font-bold">3</span>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Select AI platforms</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Pick which AI assistants to query so you can compare responses across platforms.</p>
+                    <p className="text-base font-medium text-gray-900">Select AI platforms</p>
+                    <p className="text-sm text-gray-500 mt-0.5">Pick which AI assistants to query so you can compare responses across platforms.</p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-6 bg-amber-50 border border-amber-100 rounded-xl p-4">
-                <p className="text-xs text-amber-800">
+                <p className="text-sm text-amber-800">
                   <span className="mr-1">💡</span>
                   <span className="font-medium">Tip:</span> The more questions and platforms you select, the richer your analysis will be.
                 </p>
@@ -527,7 +527,7 @@ export default function ConfigurePage() {
 
               {/* Deselect / Select all toggle */}
               {prompts.length > 0 && !suggestionsLoading && !addingPrompt && (
-                <div className="flex justify-end mb-2">
+                <div className="flex justify-start mb-2">
                   <button
                     type="button"
                     onClick={() => {
@@ -537,7 +537,7 @@ export default function ConfigurePage() {
                         selectAllPrompts();
                       }
                     }}
-                    className="text-[13px] text-gray-500 hover:text-gray-900 transition-colors font-medium"
+                    className="text-sm text-gray-500 hover:text-gray-900 transition-colors font-medium"
                   >
                     {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
                   </button>

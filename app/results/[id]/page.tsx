@@ -11403,6 +11403,16 @@ export default function ResultsPage() {
 
             return (
             <div className="mb-6">
+              {/* Chart Title */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-gray-900" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Effort vs Impact Matrix</h2>
+                  <p className="text-sm text-gray-500">Prioritize recommendations by their expected impact and implementation effort</p>
+                </div>
+              </div>
               <div className="relative bg-white rounded-lg p-4">
                 {/* Chart container */}
                 <div className="ml-8">
@@ -11410,11 +11420,11 @@ export default function ResultsPage() {
                   <div className="flex">
                     {/* Y-axis label (rotated) - positioned to align with grid center */}
                     <div className="relative w-6 flex items-center justify-center" style={{ height: '315px' }}>
-                      <span className="-rotate-90 text-sm font-semibold text-gray-600 whitespace-nowrap">
+                      <span className="-rotate-90 text-base font-semibold text-gray-600 whitespace-nowrap">
                         Impact
                       </span>
                     </div>
-                    <div className="w-10 flex flex-col justify-between text-right pr-2 text-xs text-gray-400" style={{ height: '315px' }}>
+                    <div className="w-12 flex flex-col justify-between text-right pr-2 text-sm text-gray-400" style={{ height: '315px' }}>
                       <span>High</span>
                       <span>Med</span>
                       <span>Low</span>
@@ -11426,24 +11436,24 @@ export default function ResultsPage() {
                       <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
                         {/* Quick Wins quadrant (top-left) - label in top-left corner */}
                         <div className="bg-[#E8F5E9] border border-gray-100 relative">
-                          <span className="absolute top-1 left-1 text-[9px] text-gray-900 font-medium opacity-70">Quick Wins</span>
+                          <span className="absolute top-1.5 left-1.5 text-xs text-gray-900 font-medium opacity-70">Quick Wins</span>
                         </div>
                         <div className="bg-[#E8F5E9]/50 border border-gray-100" />
                         {/* Major Projects quadrant (top-right) - label in top-right corner */}
                         <div className="bg-amber-50/70 border border-gray-100 relative">
-                          <span className="absolute top-1 right-1 text-[9px] text-amber-600 font-medium opacity-70">Major Projects</span>
+                          <span className="absolute top-1.5 right-1.5 text-xs text-amber-600 font-medium opacity-70">Major Projects</span>
                         </div>
                         <div className="bg-gray-50 border border-gray-100" />
                         <div className="bg-gray-50 border border-gray-100" />
                         <div className="bg-gray-50 border border-gray-100" />
                         {/* Fill-ins quadrant (bottom-left) - label in bottom-left corner */}
                         <div className="bg-blue-50/50 border border-gray-100 relative">
-                          <span className="absolute bottom-1 left-1 text-[9px] text-blue-500 font-medium opacity-70">Fill-ins</span>
+                          <span className="absolute bottom-1.5 left-1.5 text-xs text-blue-500 font-medium opacity-70">Fill-ins</span>
                         </div>
                         <div className="bg-gray-50/50 border border-gray-100" />
                         {/* Avoid quadrant (bottom-right) - label in bottom-right corner */}
                         <div className="bg-red-50/50 border border-gray-100 relative">
-                          <span className="absolute bottom-1 right-1 text-[9px] text-red-400 font-medium opacity-70">Avoid</span>
+                          <span className="absolute bottom-1.5 right-1.5 text-xs text-red-400 font-medium opacity-70">Avoid</span>
                         </div>
                       </div>
 
@@ -11491,7 +11501,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                             {/* Dot with label */}
                             <div className="flex items-center gap-1.5 relative">
                               <div className="w-3 h-3 bg-gray-900 rounded-full shadow-sm border border-white flex-shrink-0 group-hover:scale-125 transition-transform duration-150" />
-                              <span className="text-[11px] font-medium text-gray-700 bg-white/90 px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap group-hover:bg-gray-900 group-hover:text-white transition-colors duration-150">
+                              <span className="text-xs font-medium text-gray-700 bg-white/90 px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap group-hover:bg-gray-900 group-hover:text-white transition-colors duration-150">
                                 <span className="group-hover:hidden">{shortTitle}</span>
                                 <span className="hidden group-hover:inline">{isTruncated ? rec.title : shortTitle}</span>
                               </span>
@@ -11504,8 +11514,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                   {/* X-axis labels */}
                   <div className="flex mt-2">
-                    <div className="w-16" /> {/* Spacer to align with grid (w-6 Impact label + w-10 Y-axis values) */}
-                    <div className="flex-1 grid grid-cols-3 text-center text-xs text-gray-400">
+                    <div className="w-[72px]" /> {/* Spacer to align with grid (w-6 Impact label + w-12 Y-axis values) */}
+                    <div className="flex-1 grid grid-cols-3 text-center text-sm text-gray-400">
                       <span>Low</span>
                       <span>Medium</span>
                       <span>High</span>
@@ -11514,8 +11524,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                   {/* X-axis label */}
                   <div className="flex mt-1">
-                    <div className="w-16" />
-                    <div className="flex-1 text-center text-sm font-semibold text-gray-600">
+                    <div className="w-[72px]" />
+                    <div className="flex-1 text-center text-base font-semibold text-gray-600">
                       Effort
                     </div>
                   </div>
@@ -12027,7 +12037,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <div className="overflow-hidden w-full px-12">
                       <div
                         className="flex transition-transform duration-300 ease-in-out gap-6"
-                        style={{ transform: `translateX(-${brandCarouselIndex * (100 / 3 + 1.33)}%)` }}
+                        style={{ transform: `translateX(-${brandCarouselIndex * (36 + 1.5)}%)` }}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
                           const allProviders = [...brandData.providerScores].sort((a, b) => {
@@ -12039,58 +12049,77 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 3);
 
                           return (
-                            <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
+                            <div key={brandData.brand} className="w-[36%] flex-shrink-0 min-w-[320px]">
                               <div className={`bg-white rounded-xl border h-full ${
                                 brandData.isSearchedBrand
                                   ? 'border-gray-300 ring-1 ring-gray-100 shadow-lg'
                                   : 'border-gray-200 shadow-sm'
                               }`}>
                                 {/* Card Header */}
-                                <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                                <div className="px-6 pt-5 pb-4 border-b border-gray-100">
                                   <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Visibility Report</p>
                                   <div className="flex items-center gap-2">
                                     <p className="text-xl font-bold text-gray-900">{brandData.brand}</p>
                                     {brandData.isSearchedBrand && (
-                                      <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">you</span>
+                                      <span className="text-[10px] bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full font-semibold">you</span>
                                     )}
                                   </div>
 
-                                  {/* Provider Scores - horizontal scroll */}
+                                  {/* Provider Scores - horizontal scroll with fade edges */}
                                   {allProviders.length > 0 && (
-                                    <div className="mt-4 -mx-1 overflow-x-auto">
-                                      <div className="flex gap-4 px-1 min-w-0">
-                                        {allProviders.map((prov) => {
-                                          const isZero = prov.score === 0;
-                                          return (
-                                            <div key={prov.provider} className={`flex flex-col items-center gap-1 flex-shrink-0 ${isZero ? 'opacity-30' : ''}`}>
-                                              {getProviderIcon(prov.provider)}
-                                              <span className="text-[10px] text-gray-500 whitespace-nowrap">{getCarouselProviderLabel(prov.provider)}</span>
-                                              <span className={`text-base font-bold tabular-nums ${isZero ? 'text-gray-300' : ''}`} style={!isZero ? { color: getProviderBrandColor(prov.provider) } : undefined}>
-                                                {prov.score}
-                                              </span>
-                                            </div>
-                                          );
-                                        })}
+                                    <div className="mt-4 -mx-1 relative">
+                                      <div className="overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                                        <div className="flex gap-4 px-1 min-w-0">
+                                          {allProviders.map((prov) => {
+                                            const isZero = prov.score === 0;
+                                            const scoreColor = isZero ? 'text-gray-300' : prov.score >= 80 ? 'text-emerald-600' : prov.score >= 40 ? 'text-amber-500' : 'text-red-400';
+                                            return (
+                                              <div key={prov.provider} className={`flex flex-col items-center gap-1 flex-shrink-0 ${isZero ? 'opacity-30' : ''}`}>
+                                                {getProviderIcon(prov.provider)}
+                                                <span className="text-[10px] text-gray-500 whitespace-nowrap">{getCarouselProviderLabel(prov.provider)}</span>
+                                                <span className={`text-base font-bold tabular-nums ${scoreColor}`}>
+                                                  {prov.score}
+                                                </span>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
                                       </div>
+                                      {/* Fade edges */}
+                                      <div className="pointer-events-none absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-white to-transparent" />
                                     </div>
                                   )}
                                 </div>
 
-                                {/* Overall Visibility */}
-                                <div className="px-5 py-4 border-b border-gray-100 text-center">
-                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">Overall Visibility</p>
-                                  <p className="text-4xl font-bold text-gray-900">
-                                    {Math.round(brandData.visibilityScore)}<span className="text-lg text-gray-400 font-normal">/100</span>
-                                  </p>
+                                {/* Overall Visibility with donut ring */}
+                                <div className="px-6 py-5 border-b border-gray-100 text-center">
+                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-3">Overall Visibility</p>
+                                  <div className="inline-flex items-center justify-center relative">
+                                    <svg width="96" height="96" viewBox="0 0 96 96" className="transform -rotate-90">
+                                      <circle cx="48" cy="48" r="40" fill="none" stroke="#f3f4f6" strokeWidth="6" />
+                                      <circle
+                                        cx="48" cy="48" r="40" fill="none"
+                                        strokeWidth="6"
+                                        strokeLinecap="round"
+                                        stroke={Math.round(brandData.visibilityScore) >= 80 ? '#10b981' : Math.round(brandData.visibilityScore) >= 40 ? '#f59e0b' : '#f87171'}
+                                        strokeDasharray={`${(Math.round(brandData.visibilityScore) / 100) * 251.3} 251.3`}
+                                      />
+                                    </svg>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <p className="text-2xl font-bold text-gray-900">
+                                        {Math.round(brandData.visibilityScore)}<span className="text-xs text-gray-400 font-normal">/100</span>
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
 
-                                {/* Recent Mentions */}
+                                {/* Recent Mentions - full quotes */}
                                 {quotes.length > 0 && (
-                                  <div className="px-5 py-4">
+                                  <div className="px-6 py-4">
                                     <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">Recent Mentions</p>
-                                    <div className="space-y-1.5">
+                                    <div className="space-y-2">
                                       {quotes.map((q, qi) => (
-                                        <p key={qi} className="text-sm text-gray-600 leading-relaxed line-clamp-1">
+                                        <p key={qi} className="text-sm text-gray-600 leading-relaxed line-clamp-2">
                                           &ldquo;{q.text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '')}&rdquo;
                                         </p>
                                       ))}
