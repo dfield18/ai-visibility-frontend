@@ -4056,7 +4056,7 @@ export default function ResultsPage() {
       case 'gemini':
         return '#4285f4'; // Google blue
       case 'perplexity':
-        return '#6366f1'; // Perplexity indigo
+        return '#20b8cd'; // Perplexity teal
       case 'grok':
         return '#1d9bf0'; // xAI blue
       case 'llama':

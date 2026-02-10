@@ -95,7 +95,7 @@ npm run lint    # ESLint
   - ChatGPT: `#10a37f` (teal)
   - Claude: `#d97706` (orange)
   - Gemini: `#4285f4` (blue)
-  - Perplexity: `#6366f1` (indigo)
+  - Perplexity: `#20b8cd` (teal)
   - Grok: `#1d9bf0` (blue)
   - Llama: `#8b5cf6` (purple)
   - AI Overviews: `#ea4335` (red)
