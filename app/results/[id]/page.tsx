@@ -10622,15 +10622,29 @@ export default function ResultsPage() {
     const { data: siteAuditsData } = useSiteAudits(sessionId);
     const siteAudits = siteAuditsData?.audits || [];
 
-    // Find the most recent completed audit (preferably for the brand's domain)
+    // Find the most recent completed audit, preferring one that matches the current run's brand
     const latestAudit = useMemo(() => {
       const completed = siteAudits.filter(a => a.status === 'complete' && a.overall_score != null);
       if (completed.length === 0) return null;
       // Sort by created_at descending
-      return completed.sort((a, b) =>
+      const sorted = completed.sort((a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )[0];
-    }, [siteAudits]);
+      );
+      // Prefer an audit whose URL contains the current run's brand name
+      if (runStatus?.brand) {
+        const brandLower = runStatus.brand.toLowerCase().replace(/\s+/g, '');
+        const brandMatch = sorted.find(a => {
+          try {
+            const hostname = new URL(a.url).hostname.toLowerCase().replace(/^www\./, '');
+            return hostname.includes(brandLower) || brandLower.includes(hostname.split('.')[0]);
+          } catch {
+            return a.url.toLowerCase().includes(brandLower);
+          }
+        });
+        if (brandMatch) return brandMatch;
+      }
+      return sorted[0];
+    }, [siteAudits, runStatus?.brand]);
 
     // Calculate high-impact actions with unified scoring system
     const quickWins = useMemo(() => {
