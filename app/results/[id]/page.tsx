@@ -4062,7 +4062,7 @@ export default function ResultsPage() {
       case 'llama':
         return '#8b5cf6'; // Meta purple
       case 'ai_overviews':
-        return '#e8756d'; // coral
+        return '#FBBC04'; // Google yellow
       default:
         return '#6b7280'; // gray fallback
     }
