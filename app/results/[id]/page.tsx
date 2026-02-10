@@ -4973,7 +4973,7 @@ export default function ResultsPage() {
           <div className="max-h-[600px] overflow-y-auto">
             <table className="w-full">
               <tbody>
-              {sortedResults.map((result: Result) => {
+              {sortedResults.map((result: Result, resultIdx: number) => {
                 // Calculate position for this result
                 let position: number | null = null;
                 if (result.response_text && !result.error) {
@@ -5028,12 +5028,12 @@ export default function ResultsPage() {
                     );
                   }
                   const colors = position === 1
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                    : position <= 3
+                    ? 'bg-teal-50 text-teal-700 border-teal-200'
+                    : position <= 5
                     ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : position === 2
-                    ? 'bg-gray-50 text-gray-600 border-gray-200'
-                    : position === 3
-                    ? 'bg-orange-50 text-orange-700 border-orange-200'
-                    : 'bg-gray-50 text-gray-500 border-gray-200';
+                    : 'bg-red-50 text-red-600 border-red-200';
                   return (
                     <span className={`inline-flex items-center justify-center w-10 h-10 text-sm font-semibold rounded-full border-2 ${colors}`}>
                       #{position}
@@ -5078,9 +5078,9 @@ export default function ResultsPage() {
                     );
                   }
                   const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                    'strong_endorsement': { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300', label: 'Highly Recommended' },
-                    'positive_endorsement': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', label: 'Recommended' },
-                    'neutral_mention': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Neutral' },
+                    'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
+                    'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
+                    'neutral_mention': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
                     'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
                     'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
                   };
@@ -5099,14 +5099,9 @@ export default function ResultsPage() {
                   if (competitors.length === 0) {
                     return <span className="text-sm text-gray-400">None</span>;
                   }
-                  const displayed = competitors.slice(0, 2);
-                  const remaining = competitors.length - 2;
                   return (
                     <span className="text-sm text-gray-700">
-                      {displayed.join(', ')}
-                      {remaining > 0 && (
-                        <span className="text-gray-400 ml-1">+{remaining}</span>
-                      )}
+                      {competitors.join(', ')}
                     </span>
                   );
                 };
@@ -5114,14 +5109,17 @@ export default function ResultsPage() {
                 return (
                   <tr
                     key={result.id}
-                    className="border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50/40"
+                    className={`border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${resultIdx % 2 === 1 ? 'bg-gray-50/30' : ''}`}
                     onClick={() => setSelectedResult(result)}
                   >
                     <td className="py-4 px-4">
                         <p className="text-sm text-gray-900 font-medium">{truncate(result.prompt, 40)}</p>
                       </td>
                       <td className="py-4 px-4">
-                        <span className="text-sm text-gray-600">{getProviderLabel(result.provider)}</span>
+                        <span className="inline-flex items-center gap-2 text-sm text-gray-600">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(result.provider) }} />
+                          {getProviderLabel(result.provider)}
+                        </span>
                       </td>
                       <td className="py-4 px-4 text-center">
                         {getPositionBadge()}
