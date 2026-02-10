@@ -8845,23 +8845,23 @@ export default function ResultsPage() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
                 <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
                   <span className="text-xs text-gray-500">Strong</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#374151' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
                   <span className="text-xs text-gray-500">Positive</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#eab308' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
                   <span className="text-xs text-gray-500">Neutral</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f97316' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
                   <span className="text-xs text-gray-500">Conditional</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#dc2626' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
                   <span className="text-xs text-gray-500">Negative</span>
                 </div>
               </div>
@@ -8936,18 +8936,18 @@ export default function ResultsPage() {
                         // Color based on sentiment (1-5 scale)
                         const sentiment = payload.avgSentiment;
                         const getColor = () => {
-                          if (sentiment >= 4.5) return '#111827';
-                          if (sentiment >= 3.5) return '#374151';
-                          if (sentiment >= 2.5) return '#eab308';
-                          if (sentiment >= 1.5) return '#f97316';
-                          return '#dc2626';
+                          if (sentiment >= 4.5) return '#047857'; // Strong - emerald-700
+                          if (sentiment >= 3.5) return '#10b981'; // Positive - emerald-500
+                          if (sentiment >= 2.5) return '#9ca3af'; // Neutral - gray
+                          if (sentiment >= 1.5) return '#f59e0b'; // Conditional - amber
+                          return '#ef4444'; // Negative - red
                         };
                         const getStroke = () => {
-                          if (sentiment >= 4.5) return '#166534';
-                          if (sentiment >= 3.5) return '#166534';
-                          if (sentiment >= 2.5) return '#a16207';
-                          if (sentiment >= 1.5) return '#c2410c';
-                          return '#991b1b';
+                          if (sentiment >= 4.5) return '#065f46';
+                          if (sentiment >= 3.5) return '#059669';
+                          if (sentiment >= 2.5) return '#6b7280';
+                          if (sentiment >= 1.5) return '#d97706';
+                          return '#dc2626';
                         };
 
                         // Offset for overlapping points - spread horizontally
@@ -10170,23 +10170,23 @@ export default function ResultsPage() {
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
                 <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
                   <span className="text-xs text-gray-500">Strong</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#374151' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
                   <span className="text-xs text-gray-500">Positive</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#eab308' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
                   <span className="text-xs text-gray-500">Neutral</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f97316' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
                   <span className="text-xs text-gray-500">Conditional</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#dc2626' }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
                   <span className="text-xs text-gray-500">Negative</span>
                 </div>
               </div>
@@ -10254,16 +10254,16 @@ export default function ResultsPage() {
                         const getColor = () => {
                           if (sentiment >= 4.5) return '#047857'; // Strong - emerald-700
                           if (sentiment >= 3.5) return '#10b981'; // Positive - emerald-500
-                          if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
-                          if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
-                          return '#dc2626'; // Negative - red
+                          if (sentiment >= 2.5) return '#9ca3af'; // Neutral - gray
+                          if (sentiment >= 1.5) return '#f59e0b'; // Conditional - amber
+                          return '#ef4444'; // Negative - red
                         };
                         const getStroke = () => {
                           if (sentiment >= 4.5) return '#065f46';
                           if (sentiment >= 3.5) return '#059669';
-                          if (sentiment >= 2.5) return '#a16207';
-                          if (sentiment >= 1.5) return '#c2410c';
-                          return '#991b1b';
+                          if (sentiment >= 2.5) return '#6b7280';
+                          if (sentiment >= 1.5) return '#d97706';
+                          return '#dc2626';
                         };
 
                         const circleRadius = 10;
@@ -10422,8 +10422,8 @@ export default function ResultsPage() {
                   // Stacked bar segments
                   const total = row.total || 1;
                   const segments = [
-                    { key: 'strong', value: row.strong_endorsement, color: '#059669' },
-                    { key: 'positive', value: row.positive_endorsement, color: '#34d399' },
+                    { key: 'strong', value: row.strong_endorsement, color: '#047857' },
+                    { key: 'positive', value: row.positive_endorsement, color: '#10b981' },
                     { key: 'neutral', value: row.neutral_mention, color: '#9ca3af' },
                     { key: 'conditional', value: row.conditional, color: '#f59e0b' },
                     { key: 'negative', value: row.negative_comparison, color: '#ef4444' },
@@ -10512,8 +10512,8 @@ export default function ResultsPage() {
 
           {/* Stacked bar legend */}
           <div className="flex items-center justify-center gap-4 pt-2 text-xs text-gray-500">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#059669' }} />Strong</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#34d399' }} />Positive</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />Strong</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />Positive</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />Neutral</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />Conditional</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />Negative</span>
@@ -12011,6 +12011,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
               return (
                 <div id="competitive-cards" className="relative">
+                  {/* Section Header */}
+                  <div className="mb-4">
+                    <h2 className="text-lg font-semibold text-gray-900">Visibility Reports</h2>
+                    <p className="text-sm text-gray-500 mt-1">How often and how favorably each brand appears across AI platforms, based on all questions tested.</p>
+                  </div>
                   {/* Carousel with Side Navigation */}
                   <div className="relative flex items-center">
                     {/* Left Arrow */}
@@ -12040,20 +12045,17 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                           return (
                             <div key={brandData.brand} className="w-[36%] flex-shrink-0 min-w-[320px]">
-                              <div className={`bg-white rounded-xl border h-full ${
+                              <div className={`bg-white rounded-xl border-2 h-full ${
                                 brandData.isSearchedBrand
-                                  ? 'border-gray-300 ring-1 ring-gray-100 shadow-lg'
+                                  ? 'border-teal-400 ring-1 ring-teal-100 shadow-lg'
                                   : 'border-gray-200 shadow-sm'
                               }`}>
                                 {/* Card Header */}
                                 <div className="px-6 pt-5 pb-4 border-b border-gray-100">
-                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Visibility Report</p>
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-xl font-bold text-gray-900">{brandData.brand}</p>
-                                    {brandData.isSearchedBrand && (
-                                      <span className="text-[10px] bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-full font-semibold">you</span>
-                                    )}
-                                  </div>
+                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">
+                                    {brandData.isSearchedBrand ? 'Your Brand' : 'Competitor'}
+                                  </p>
+                                  <p className="text-xl font-bold text-gray-900">{brandData.brand}</p>
 
                                   {/* Provider Scores - paginated with nav buttons */}
                                   {allProviders.length > 0 && (() => {
@@ -12528,23 +12530,23 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
                   <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
                     <span className="text-xs text-gray-500">Strong</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#374151' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
                     <span className="text-xs text-gray-500">Positive</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#eab308' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
                     <span className="text-xs text-gray-500">Neutral</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f97316' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
                     <span className="text-xs text-gray-500">Conditional</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#dc2626' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
                     <span className="text-xs text-gray-500">Negative</span>
                   </div>
                 </div>
@@ -12615,20 +12617,20 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           const getColor = () => {
                             if (sentiment >= 4.5) return '#047857'; // Strong - emerald-700
                             if (sentiment >= 3.5) return '#10b981'; // Positive - emerald-500
-                            if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
-                            if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
-                            return '#dc2626'; // Negative - red
+                            if (sentiment >= 2.5) return '#9ca3af'; // Neutral - gray
+                            if (sentiment >= 1.5) return '#f59e0b'; // Conditional - amber
+                            return '#ef4444'; // Negative - red
                           };
                           const getStroke = () => {
                             if (sentiment >= 4.5) return '#065f46';
                             if (sentiment >= 3.5) return '#059669';
-                            if (sentiment >= 2.5) return '#a16207';
-                            if (sentiment >= 1.5) return '#c2410c';
-                            return '#991b1b';
+                            if (sentiment >= 2.5) return '#6b7280';
+                            if (sentiment >= 1.5) return '#d97706';
+                            return '#dc2626';
                           };
 
                           // Calculate horizontal offset for overlapping points
-                          const circleRadius = isSearched ? 10 : 8;
+                          const circleRadius = isSearched ? 11 : 9;
                           const spacing = 22; // Space between circles
                           const totalWidth = (groupSize - 1) * spacing;
                           const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;

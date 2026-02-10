@@ -541,7 +541,7 @@ export default function ConfigurePage() {
                         }
                       }}
                       className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
-                        selectedPrompts.size === prompts.length ? 'bg-teal-600' : 'bg-gray-300'
+                        selectedPrompts.size === prompts.length ? 'bg-emerald-500' : 'bg-gray-300'
                       }`}
                     >
                       <span
@@ -550,7 +550,7 @@ export default function ConfigurePage() {
                         }`}
                       />
                     </button>
-                    <span className="text-sm text-gray-600 font-medium">Select All</span>
+                    <span className="text-base text-gray-700 font-medium">Select All</span>
                   </label>
                 </div>
               )}
