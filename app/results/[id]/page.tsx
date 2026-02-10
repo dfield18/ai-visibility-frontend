@@ -4889,84 +4889,77 @@ export default function ResultsPage() {
         <div className="overflow-x-auto">
           <table className="w-full table-fixed">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
+              <tr className="border-b border-gray-200">
                 <th
-                  className="w-[20%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[22%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('prompt')}
                 >
-                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Prompt
                     {tableSortColumn === 'prompt' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </div>
-                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Question sent to AI</div>
+                  </span>
                 </th>
                 <th
-                  className="w-[15%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[14%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('llm')}
                 >
-                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    LLM Model
+                  <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Model
                     {tableSortColumn === 'llm' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </div>
-                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">AI model used</div>
+                  </span>
                 </th>
                 <th
-                  className="w-[10%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[8%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('position')}
                 >
-                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Position
+                  <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Rank
                     {tableSortColumn === 'position' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </div>
-                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Rank in response</div>
+                  </span>
                 </th>
                 {!isCategory && (
                   <th
-                    className="w-[10%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                    className="w-[8%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleTableSort('mentioned')}
                   >
-                    <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Mentioned
                       {tableSortColumn === 'mentioned' && (
                         <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                       )}
-                    </div>
-                    <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Brand included</div>
+                    </span>
                   </th>
                 )}
                 <th
-                  className="w-[15%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[16%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('sentiment')}
                 >
-                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Sentiment
                     {tableSortColumn === 'sentiment' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </div>
-                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">How AI framed brand</div>
+                  </span>
                 </th>
                 <th
-                  className="w-[20%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[22%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('competitors')}
                 >
-                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {isCategory ? 'Brands' : 'Competitors'}
                     {tableSortColumn === 'competitors' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
                     )}
-                  </div>
-                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Other brands shown</div>
+                  </span>
                 </th>
-                <th className="w-[10%] text-left py-3 px-4">
-                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</div>
-                  <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">View details</div>
+                <th className="w-[10%] text-left py-2.5 px-4">
+                  <span className="text-xs font-medium text-gray-500 uppercase tracking-wider"></span>
                 </th>
               </tr>
             </thead>
@@ -5021,74 +5014,48 @@ export default function ResultsPage() {
 
                 // Position badge styling
                 const getPositionBadge = () => {
-                  if (result.error) return <span className="text-sm text-gray-400">-</span>;
+                  if (result.error) return <span className="text-xs text-gray-400">—</span>;
                   if (!position) {
-                    return (
-                      <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg bg-white">
-                        Not shown
-                      </span>
-                    );
+                    return <span className="text-xs text-gray-400">—</span>;
                   }
-                  const colors = position === 1
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                  const color = position === 1
+                    ? 'text-emerald-700 font-semibold'
                     : position <= 3
-                    ? 'bg-teal-50 text-teal-700 border-teal-200'
+                    ? 'text-teal-700 font-medium'
                     : position <= 5
-                    ? 'bg-amber-50 text-amber-700 border-amber-200'
-                    : 'bg-red-50 text-red-600 border-red-200';
+                    ? 'text-amber-600 font-medium'
+                    : 'text-gray-500';
                   return (
-                    <span className={`inline-flex items-center justify-center w-10 h-10 text-sm font-semibold rounded-full border-2 ${colors}`}>
-                      #{position}
-                    </span>
+                    <span className={`text-sm ${color}`}>#{position}</span>
                   );
                 };
 
                 // Mentioned badge
                 const getMentionedBadge = () => {
-                  if (result.error) {
-                    return (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-50 text-orange-600 text-xs font-medium rounded-full">
-                        <AlertTriangle className="w-3 h-3" />Error
-                      </span>
-                    );
-                  }
+                  if (result.error) return <span className="text-xs text-gray-400">—</span>;
                   if (result.brand_mentioned) {
-                    return (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-                        <span className="w-1.5 h-1.5 bg-gray-900 rounded-full"></span>
-                        Yes
-                      </span>
-                    );
+                    return <span className="text-xs font-medium text-emerald-600">Yes</span>;
                   }
-                  return (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
-                      <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
-                      No
-                    </span>
-                  );
+                  return <span className="text-xs text-gray-400">No</span>;
                 };
 
                 // Sentiment badge
                 const getSentimentBadge = () => {
-                  if (result.error) return <span className="text-sm text-gray-400">-</span>;
+                  if (result.error) return <span className="text-xs text-gray-400">—</span>;
                   const sentiment = result.brand_sentiment;
                   if (!sentiment || sentiment === 'not_mentioned') {
-                    return (
-                      <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-full bg-white">
-                        Not mentioned
-                      </span>
-                    );
+                    return <span className="text-xs text-gray-400">—</span>;
                   }
-                  const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                    'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
-                    'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
-                    'neutral_mention': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
-                    'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
-                    'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
+                  const configs: Record<string, { text: string; label: string }> = {
+                    'strong_endorsement': { text: 'text-emerald-700', label: 'Highly Recommended' },
+                    'positive_endorsement': { text: 'text-green-600', label: 'Recommended' },
+                    'neutral_mention': { text: 'text-gray-500', label: 'Neutral' },
+                    'conditional': { text: 'text-amber-600', label: 'With Caveats' },
+                    'negative_comparison': { text: 'text-red-600', label: 'Not Recommended' },
                   };
-                  const config = configs[sentiment] || { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200', label: 'Unknown' };
+                  const config = configs[sentiment] || { text: 'text-gray-500', label: 'Unknown' };
                   return (
-                    <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${config.bg} ${config.text} ${config.border}`}>
+                    <span className={`text-xs font-medium ${config.text}`}>
                       {config.label}
                     </span>
                   );
@@ -5096,13 +5063,13 @@ export default function ResultsPage() {
 
                 // Competitors list
                 const getCompetitorsList = () => {
-                  if (result.error) return <span className="text-sm text-gray-400">-</span>;
+                  if (result.error) return <span className="text-xs text-gray-400">—</span>;
                   const competitors = result.competitors_mentioned || [];
                   if (competitors.length === 0) {
-                    return <span className="text-sm text-gray-400">None</span>;
+                    return <span className="text-xs text-gray-400">None</span>;
                   }
                   return (
-                    <span className="text-sm text-gray-700">
+                    <span className="text-xs text-gray-600">
                       {competitors.join(', ')}
                     </span>
                   );
@@ -5114,33 +5081,31 @@ export default function ResultsPage() {
                     className={`border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${resultIdx % 2 === 1 ? 'bg-gray-50/30' : ''}`}
                     onClick={() => setSelectedResult(result)}
                   >
-                    <td className="w-[20%] py-4 px-4">
-                        <p className="text-sm text-gray-900 font-medium truncate">{truncate(result.prompt, 40)}</p>
+                    <td className="w-[22%] py-3 px-4">
+                        <p className="text-sm text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
                       </td>
-                      <td className="w-[15%] py-4 px-4">
-                        <span className="inline-flex items-center gap-2 text-sm text-gray-600">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(result.provider) }} />
-                          {getProviderLabel(result.provider)}
+                      <td className="w-[14%] py-3 px-4">
+                        <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(result.provider) }} />
+                          {providerLabels[result.provider] || result.provider}
                         </span>
                       </td>
-                      <td className="w-[10%] py-4 px-4">
+                      <td className="w-[8%] py-3 px-4">
                         {getPositionBadge()}
                       </td>
                       {!isCategory && (
-                        <td className="w-[10%] py-4 px-4">
+                        <td className="w-[8%] py-3 px-4">
                           {getMentionedBadge()}
                         </td>
                       )}
-                      <td className="w-[15%] py-4 px-4">
+                      <td className="w-[16%] py-3 px-4">
                         {getSentimentBadge()}
                       </td>
-                      <td className="w-[20%] py-4 px-4">
+                      <td className="w-[22%] py-3 px-4">
                         {getCompetitorsList()}
                       </td>
-                      <td className="w-[10%] py-4 px-4">
-                        <span className="inline-flex items-center gap-1 text-sm text-gray-900 font-medium">
-                          View <ExternalLink className="w-3 h-3" />
-                        </span>
+                      <td className="w-[10%] py-3 px-4">
+                        <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
                       </td>
                   </tr>
                 );
