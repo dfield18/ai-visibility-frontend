@@ -3927,14 +3927,21 @@ export default function ResultsPage() {
             trimmed.toLowerCase().includes(brand.toLowerCase()) &&
             trimmed.length >= 40 &&
             trimmed.length <= 300 &&
-            // Filter out table-like content, raw data, and URLs
+            // Filter out table-like content, raw data, URLs, and metadata
             !/\|/.test(trimmed) &&
             !/---/.test(trimmed) &&
             !/https?:\/\//.test(trimmed) &&
             !/\$\d+/.test(trimmed) &&
             !/\d+\s*oz\b/i.test(trimmed) &&
             !/^\d+\s/.test(trimmed) &&
-            !/^\[/.test(trimmed)
+            !/^\[/.test(trimmed) &&
+            !/\u2022/.test(trimmed) &&
+            !/•/.test(trimmed) &&
+            !/YouTube/i.test(trimmed) &&
+            !/\b\d{4}\s+(Best|Top|Most)\b/.test(trimmed) &&
+            !/^\(/.test(trimmed) &&
+            !/\w+\.\w{2,4}\s/.test(trimmed.substring(0, 30)) &&
+            !/^(Best|Top|Most)\s.*:/.test(trimmed)
           ) {
             allQuotes.push({ text: trimmed, provider: r.provider, prompt: r.prompt });
           }
@@ -11843,7 +11850,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         style={{ transform: `translateX(-${brandCarouselIndex * (100 / 3 + 1.33)}%)` }}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
-                          const providers = brandData.providerScores.slice(0, 5);
+                          const allProviders = brandData.providerScores;
+                          const visibleProviders = allProviders.slice(0, 4);
+                          const overflowCount = allProviders.length - visibleProviders.length;
 
                           // Get provider pill color based on score
                           const getProviderPillStyle = (score: number) => {
@@ -11865,22 +11874,27 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                             return '#d1d5db';
                           };
 
+                          // Card background: blue tint for searched brand, light gray for competitors
+                          const cardBg = brandData.isSearchedBrand
+                            ? 'bg-gradient-to-br from-blue-50 to-white'
+                            : 'bg-gradient-to-br from-gray-50 to-white';
+
                           return (
                             <div key={brandData.brand} className="w-1/3 flex-shrink-0 min-w-[280px]">
-                              <div className={`bg-white rounded-xl shadow-sm px-5 py-5 h-full hover:shadow-md transition-shadow ${
+                              <div className={`rounded-xl shadow-sm px-5 py-5 h-full hover:shadow-md transition-shadow ${cardBg} ${
                                 brandData.isSearchedBrand
-                                  ? 'border-2 border-gray-900 ring-2 ring-gray-900/20'
+                                  ? 'border-2 border-blue-200 ring-2 ring-blue-100'
                                   : 'border border-gray-200'
                               }`}>
                                 {/* Brand Name */}
                                 <div className="flex items-center justify-center gap-2 mb-1">
                                   <span className="font-semibold text-gray-900 text-sm">{brandData.brand}</span>
                                   {brandData.isSearchedBrand && (
-                                    <span className="text-[10px] bg-gray-100 text-gray-900 px-1.5 py-0.5 rounded-full">Your Brand</span>
+                                    <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">Your Brand</span>
                                   )}
                                 </div>
                                 {brandBlurbs[brandData.brand] ? (
-                                  <p className="text-center text-xs italic text-gray-500 mb-3 px-2 leading-tight">{brandBlurbs[brandData.brand]}</p>
+                                  <p className="text-center text-sm italic text-gray-500 mb-3 px-2 leading-snug">{brandBlurbs[brandData.brand]}</p>
                                 ) : (
                                   <div className="mb-2" />
                                 )}
@@ -11896,10 +11910,10 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                 </div>
                                 <p className="text-center text-xs text-gray-500 mb-3">Visibility Score</p>
 
-                                {/* Provider Score Pills */}
-                                {providers.length > 0 && (
-                                  <div className="flex justify-center gap-2 mb-3">
-                                    {providers.map((prov) => {
+                                {/* Provider Score Pills - max 4 visible */}
+                                {visibleProviders.length > 0 && (
+                                  <div className="flex justify-center items-end gap-2 mb-3">
+                                    {visibleProviders.map((prov) => {
                                       const pillStyle = getProviderPillStyle(prov.score);
                                       return (
                                         <div key={prov.provider} className="flex flex-col items-center">
@@ -11910,19 +11924,31 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                         </div>
                                       );
                                     })}
+                                    {overflowCount > 0 && (
+                                      <div className="flex flex-col items-center">
+                                        <div className="w-7 h-7 rounded-full bg-gray-50 flex items-center justify-center">
+                                          <span className="text-[10px] font-medium text-gray-400">+{overflowCount}</span>
+                                        </div>
+                                        <span className="text-[9px] text-gray-400 mt-0.5">more</span>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
 
-                                {/* Comparison Text */}
+                                {/* Comparison Badge */}
                                 {brandData.comparisonRatio !== null && brandData.comparisonRatio !== Infinity && (
-                                  <p className="text-center text-xs text-gray-600 mb-2">
-                                    Mentioned <span className="font-semibold">
+                                  <div className="flex justify-center mb-2">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      brandData.comparisonRatio >= 1
+                                        ? 'bg-emerald-50 text-emerald-700'
+                                        : 'bg-red-50 text-red-700'
+                                    }`}>
                                       {brandData.comparisonRatio >= 1
-                                        ? `${brandData.comparisonRatio.toFixed(1)}x more`
-                                        : `${(1 / brandData.comparisonRatio).toFixed(1)}x less`
+                                        ? `${brandData.comparisonRatio.toFixed(1)}x more than avg`
+                                        : `${(1 / brandData.comparisonRatio).toFixed(1)}x less than avg`
                                       }
-                                    </span> than avg
-                                  </p>
+                                    </span>
+                                  </div>
                                 )}
 
                                 {/* Direct Quotes */}
