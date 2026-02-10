@@ -3736,8 +3736,8 @@ export default function ResultsPage() {
 
   // Get donut arc color based on percentage value
   const getArcColorByValue = (value: number): string => {
-    if (value >= 80) return '#111827'; // green-600
-    if (value >= 60) return '#374151'; // green-500
+    if (value >= 80) return '#047857'; // emerald-700
+    if (value >= 60) return '#10b981'; // emerald-500
     if (value >= 40) return '#eab308'; // yellow-500
     if (value >= 20) return '#f97316'; // orange-500
     return '#ef4444'; // red-500
@@ -4019,9 +4019,9 @@ export default function ResultsPage() {
     if (!sentiment) return '#9ca3af'; // gray for no sentiment
     switch (sentiment) {
       case 'strong_endorsement':
-        return '#111827'; // gray-900 - Highly Recommended
+        return '#047857'; // emerald-700 - Highly Recommended
       case 'positive_endorsement':
-        return '#6b7280'; // gray-500 - Recommended
+        return '#10b981'; // emerald-500 - Recommended
       case 'neutral_mention':
         return '#9ca3af'; // gray-400 - Neutral
       case 'conditional':
@@ -4586,8 +4586,8 @@ export default function ResultsPage() {
               <>
                 <span className="text-xs text-gray-600 font-medium mr-1">Sentiment:</span>
                 {[
-                  { color: '#111827', label: 'Highly Recommended' },
-                  { color: '#6b7280', label: 'Recommended' },
+                  { color: '#047857', label: 'Highly Recommended' },
+                  { color: '#10b981', label: 'Recommended' },
                   { color: '#9ca3af', label: 'Neutral' },
                   { color: '#fbbf24', label: 'With Caveats' },
                   { color: '#ef4444', label: 'Not Recommended' },
@@ -4649,8 +4649,8 @@ export default function ResultsPage() {
                                 </p>
                                 {showSentimentColors && dot.sentiment && dot.sentiment !== 'not_mentioned' && (
                                   <p className={`text-xs mt-1 ${
-                                    dot.sentiment === 'strong_endorsement' ? 'text-gray-900' :
-                                    dot.sentiment === 'positive_endorsement' ? 'text-gray-700' :
+                                    dot.sentiment === 'strong_endorsement' ? 'text-emerald-700' :
+                                    dot.sentiment === 'positive_endorsement' ? 'text-emerald-600' :
                                     dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
                                     dot.sentiment === 'conditional' ? 'text-amber-500' :
                                     dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
@@ -5346,11 +5346,11 @@ export default function ResultsPage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
                   <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
                     <span className="text-xs text-gray-500">Highly Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
                     <span className="text-xs text-gray-500">Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -5478,8 +5478,8 @@ export default function ResultsPage() {
                                 </p>
                                 {showSentimentColors && data.sentiment && data.sentiment !== 'not_mentioned' && (
                                   <p className={`text-xs mt-1 ${
-                                    data.sentiment === 'strong_endorsement' ? 'text-gray-900' :
-                                    data.sentiment === 'positive_endorsement' ? 'text-gray-700' :
+                                    data.sentiment === 'strong_endorsement' ? 'text-emerald-700' :
+                                    data.sentiment === 'positive_endorsement' ? 'text-emerald-600' :
                                     data.sentiment === 'neutral_mention' ? 'text-gray-600' :
                                     data.sentiment === 'conditional' ? 'text-amber-500' :
                                     data.sentiment === 'negative_comparison' ? 'text-red-500' : ''
@@ -5512,11 +5512,11 @@ export default function ResultsPage() {
                           if (showSentimentColors && payload.sentiment) {
                             switch (payload.sentiment) {
                               case 'strong_endorsement':
-                                fillColor = '#374151'; // green-500
+                                fillColor = '#047857'; // emerald-700
                                 opacity = 0.8;
                                 break;
                               case 'positive_endorsement':
-                                fillColor = '#4b5563'; // lime-500
+                                fillColor = '#10b981'; // emerald-500
                                 opacity = 0.8;
                                 break;
                               case 'neutral_mention':
@@ -5587,11 +5587,11 @@ export default function ResultsPage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
                   <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
                     <span className="text-xs text-gray-500">Highly Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
                     <span className="text-xs text-gray-500">Recommended</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -5856,8 +5856,8 @@ export default function ResultsPage() {
                                   className="w-3 h-3 rounded-full cursor-pointer hover:scale-125 transition-transform"
                                   style={{
                                     backgroundColor: showSentimentColors && dot.sentiment
-                                      ? dot.sentiment === 'strong_endorsement' ? '#374151'
-                                        : dot.sentiment === 'positive_endorsement' ? '#4b5563'
+                                      ? dot.sentiment === 'strong_endorsement' ? '#047857'
+                                        : dot.sentiment === 'positive_endorsement' ? '#10b981'
                                         : dot.sentiment === 'neutral_mention' ? '#6b7280'
                                         : dot.sentiment === 'conditional' ? '#fcd34d'
                                         : dot.sentiment === 'negative_comparison' ? '#f87171'
@@ -5878,8 +5878,8 @@ export default function ResultsPage() {
                                     </p>
                                     {showSentimentColors && dot.sentiment && dot.sentiment !== 'not_mentioned' && (
                                       <p className={`text-xs mt-1 ${
-                                        dot.sentiment === 'strong_endorsement' ? 'text-gray-900' :
-                                        dot.sentiment === 'positive_endorsement' ? 'text-gray-700' :
+                                        dot.sentiment === 'strong_endorsement' ? 'text-emerald-700' :
+                                        dot.sentiment === 'positive_endorsement' ? 'text-emerald-600' :
                                         dot.sentiment === 'neutral_mention' ? 'text-gray-600' :
                                         dot.sentiment === 'conditional' ? 'text-amber-500' :
                                         dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
@@ -6960,8 +6960,8 @@ export default function ResultsPage() {
                                   const cleanSnippet = stripMarkdown(snippetInfo.snippet);
                                   const parts = cleanSnippet.split(new RegExp(`(${snippetInfo.brand})`, 'gi'));
                                   const sentimentColors: Record<string, string> = {
-                                    'strong_endorsement': 'bg-gray-100 text-gray-900',
-                                    'positive_endorsement': 'bg-gray-50 text-gray-700',
+                                    'strong_endorsement': 'bg-emerald-50 text-emerald-700',
+                                    'positive_endorsement': 'bg-green-50 text-green-700',
                                     'neutral_mention': 'bg-blue-100 text-blue-700',
                                     'conditional': 'bg-yellow-100 text-yellow-700',
                                     'negative_comparison': 'bg-red-100 text-red-700',
@@ -9043,8 +9043,8 @@ export default function ResultsPage() {
                         return <span className="text-sm text-gray-400">-</span>;
                       }
                       const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                        'strong': { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300', label: 'Highly Recommended' },
-                        'positive': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', label: 'Recommended' },
+                        'strong': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
+                        'positive': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
                         'neutral': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
                         'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
                         'negative': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
@@ -9172,8 +9172,8 @@ export default function ResultsPage() {
     // Helper function to get sentiment color
     const getSentimentColor = (sentiment: string | null | undefined) => {
       switch (sentiment) {
-        case 'strong_endorsement': return 'bg-gray-100 text-gray-900 border-gray-200';
-        case 'positive_endorsement': return 'bg-gray-100 text-gray-700 border-gray-200';
+        case 'strong_endorsement': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        case 'positive_endorsement': return 'bg-green-50 text-green-700 border-green-200';
         case 'neutral_mention': return 'bg-blue-100 text-blue-800 border-blue-200';
         case 'conditional': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
         case 'negative_comparison': return 'bg-red-100 text-red-800 border-red-200';
@@ -9185,8 +9185,8 @@ export default function ResultsPage() {
     // Helper function to get sentiment bar color
     const getSentimentBarColor = (sentiment: string) => {
       switch (sentiment) {
-        case 'strong_endorsement': return '#111827'; // Darker green (green-700)
-        case 'positive_endorsement': return '#4b5563';
+        case 'strong_endorsement': return '#047857'; // emerald-700
+        case 'positive_endorsement': return '#10b981'; // emerald-500
         case 'neutral_mention': return '#3b82f6';
         case 'conditional': return '#fde68a'; // amber-200 (very light)
         case 'negative_comparison': return '#ef4444';
@@ -9434,9 +9434,9 @@ export default function ResultsPage() {
       const getBadgeStyle = () => {
         switch (sentiment) {
           case 'strong_endorsement':
-            return 'bg-gray-700 text-white'; // Filled green
+            return 'bg-emerald-600 text-white'; // Filled green
           case 'positive_endorsement':
-            return 'bg-white border-2 border-gray-900 text-gray-900'; // Outline green
+            return 'bg-white border-2 border-emerald-500 text-emerald-700'; // Outline green
           case 'neutral_mention':
             return 'bg-white border-2 border-gray-300 text-gray-600'; // Outline gray
           case 'conditional':
@@ -10026,15 +10026,15 @@ export default function ResultsPage() {
                         // Color based on sentiment (green = good, red = bad)
                         const sentiment = payload.avgSentimentScore || 3;
                         const getColor = () => {
-                          if (sentiment >= 4.5) return '#111827'; // Strong - dark green
-                          if (sentiment >= 3.5) return '#374151'; // Positive - green
+                          if (sentiment >= 4.5) return '#047857'; // Strong - emerald-700
+                          if (sentiment >= 3.5) return '#10b981'; // Positive - emerald-500
                           if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
                           if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
                           return '#dc2626'; // Negative - red
                         };
                         const getStroke = () => {
-                          if (sentiment >= 4.5) return '#166534';
-                          if (sentiment >= 3.5) return '#166534';
+                          if (sentiment >= 4.5) return '#065f46';
+                          if (sentiment >= 3.5) return '#059669';
                           if (sentiment >= 2.5) return '#a16207';
                           if (sentiment >= 1.5) return '#c2410c';
                           return '#991b1b';
@@ -10518,8 +10518,8 @@ export default function ResultsPage() {
                             );
                           }
                           const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                            'strong_endorsement': { bg: 'bg-gray-100', text: 'text-gray-900', border: 'border-gray-300', label: 'Highly Recommended' },
-                            'positive_endorsement': { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', label: 'Recommended' },
+                            'strong_endorsement': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
+                            'positive_endorsement': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
                             'neutral_mention': { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Neutral' },
                             'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
                             'negative_comparison': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
@@ -12110,8 +12110,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         const getPromptSentimentColor = (sentiment: string | null): string => {
                           if (!sentiment) return 'text-gray-400';
                           const colors: Record<string, string> = {
-                            'strong_endorsement': 'text-gray-900',
-                            'positive_endorsement': 'text-gray-700',
+                            'strong_endorsement': 'text-emerald-700',
+                            'positive_endorsement': 'text-emerald-600',
                             'neutral_mention': 'text-gray-600',
                             'conditional': 'text-amber-500',
                             'negative_comparison': 'text-red-500',
@@ -12426,15 +12426,15 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           // Color based on sentiment (green = good, red = bad)
                           const sentiment = payload.sentiment || 3;
                           const getColor = () => {
-                            if (sentiment >= 4.5) return '#111827'; // Strong - dark green
-                            if (sentiment >= 3.5) return '#374151'; // Positive - green
+                            if (sentiment >= 4.5) return '#047857'; // Strong - emerald-700
+                            if (sentiment >= 3.5) return '#10b981'; // Positive - emerald-500
                             if (sentiment >= 2.5) return '#eab308'; // Neutral - yellow
                             if (sentiment >= 1.5) return '#f97316'; // Conditional - orange
                             return '#dc2626'; // Negative - red
                           };
                           const getStroke = () => {
-                            if (sentiment >= 4.5) return '#166534';
-                            if (sentiment >= 3.5) return '#166534';
+                            if (sentiment >= 4.5) return '#065f46';
+                            if (sentiment >= 3.5) return '#059669';
                             if (sentiment >= 2.5) return '#a16207';
                             if (sentiment >= 1.5) return '#c2410c';
                             return '#991b1b';
@@ -12877,11 +12877,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <>
                       <span className="text-gray-600 font-medium">Sentiment:</span>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#111827' }} />
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
                         <span>Highly Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#6b7280' }} />
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
                         <span>Recommended</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -12980,9 +12980,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                               let barColor: string = '#9ca3af';
                               if (heatmapShowSentiment && count > 0) {
                                 if (avgSentiment >= 4.5) {
-                                  barColor = '#111827'; // Highly Recommended - dark green
+                                  barColor = '#047857'; // Highly Recommended - emerald-700
                                 } else if (avgSentiment >= 3.5) {
-                                  barColor = '#6b7280'; // Recommended - light green
+                                  barColor = '#10b981'; // Recommended - emerald-500
                                 } else if (avgSentiment >= 2.5) {
                                   barColor = '#9ca3af'; // Neutral - gray
                                 } else if (avgSentiment >= 1.5) {
@@ -13199,8 +13199,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     )}
                     {selectedResult.brand_sentiment && selectedResult.brand_sentiment !== 'not_mentioned' && (
                       <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
-                        selectedResult.brand_sentiment === 'strong_endorsement' ? 'bg-gray-100 text-gray-900' :
-                        selectedResult.brand_sentiment === 'positive_endorsement' ? 'bg-gray-100 text-gray-700' :
+                        selectedResult.brand_sentiment === 'strong_endorsement' ? 'bg-emerald-50 text-emerald-700' :
+                        selectedResult.brand_sentiment === 'positive_endorsement' ? 'bg-green-50 text-green-700' :
                         selectedResult.brand_sentiment === 'neutral_mention' ? 'bg-blue-100 text-blue-800' :
                         selectedResult.brand_sentiment === 'conditional' ? 'bg-yellow-100 text-yellow-800' :
                         selectedResult.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-800' :
@@ -13460,8 +13460,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     <div className="flex items-center gap-2">
                       {result.brand_sentiment && result.brand_sentiment !== 'not_mentioned' && (
                         <span className={`px-2 py-0.5 text-xs rounded ${
-                          result.brand_sentiment === 'strong_endorsement' ? 'bg-gray-100 text-gray-900' :
-                          result.brand_sentiment === 'positive_endorsement' ? 'bg-gray-100 text-gray-700' :
+                          result.brand_sentiment === 'strong_endorsement' ? 'bg-emerald-50 text-emerald-700' :
+                          result.brand_sentiment === 'positive_endorsement' ? 'bg-green-50 text-green-700' :
                           result.brand_sentiment === 'neutral_mention' ? 'bg-blue-100 text-blue-700' :
                           result.brand_sentiment === 'conditional' ? 'bg-yellow-100 text-yellow-700' :
                           'bg-red-100 text-red-700'
