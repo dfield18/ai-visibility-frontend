@@ -4885,11 +4885,11 @@ export default function ResultsPage() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full table-fixed">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th
-                  className="text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[20%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('prompt')}
                 >
                   <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4901,7 +4901,7 @@ export default function ResultsPage() {
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Question sent to AI</div>
                 </th>
                 <th
-                  className="text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[15%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('llm')}
                 >
                   <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4913,7 +4913,7 @@ export default function ResultsPage() {
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">AI model used</div>
                 </th>
                 <th
-                  className="text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[10%] text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('position')}
                 >
                   <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4926,7 +4926,7 @@ export default function ResultsPage() {
                 </th>
                 {!isCategory && (
                   <th
-                    className="text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                    className="w-[10%] text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleTableSort('mentioned')}
                   >
                     <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4939,7 +4939,7 @@ export default function ResultsPage() {
                   </th>
                 )}
                 <th
-                  className="text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[15%] text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('sentiment')}
                 >
                   <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4951,7 +4951,7 @@ export default function ResultsPage() {
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">How AI framed brand</div>
                 </th>
                 <th
-                  className="text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[20%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('competitors')}
                 >
                   <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -4962,7 +4962,7 @@ export default function ResultsPage() {
                   </div>
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Other brands shown</div>
                 </th>
-                <th className="text-right py-3 px-4">
+                <th className="w-[10%] text-right py-3 px-4">
                   <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</div>
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">View details</div>
                 </th>
@@ -4971,7 +4971,7 @@ export default function ResultsPage() {
           </table>
           {/* Scrollable tbody wrapper */}
           <div className="max-h-[600px] overflow-y-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <tbody>
               {sortedResults.map((result: Result, resultIdx: number) => {
                 // Calculate position for this result
@@ -5112,30 +5112,30 @@ export default function ResultsPage() {
                     className={`border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${resultIdx % 2 === 1 ? 'bg-gray-50/30' : ''}`}
                     onClick={() => setSelectedResult(result)}
                   >
-                    <td className="py-4 px-4">
-                        <p className="text-sm text-gray-900 font-medium">{truncate(result.prompt, 40)}</p>
+                    <td className="w-[20%] py-4 px-4">
+                        <p className="text-sm text-gray-900 font-medium truncate">{truncate(result.prompt, 40)}</p>
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="w-[15%] py-4 px-4">
                         <span className="inline-flex items-center gap-2 text-sm text-gray-600">
                           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(result.provider) }} />
                           {getProviderLabel(result.provider)}
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-center">
+                      <td className="w-[10%] py-4 px-4 text-center">
                         {getPositionBadge()}
                       </td>
                       {!isCategory && (
-                        <td className="py-4 px-4 text-center">
+                        <td className="w-[10%] py-4 px-4 text-center">
                           {getMentionedBadge()}
                         </td>
                       )}
-                      <td className="py-4 px-4 text-center">
+                      <td className="w-[15%] py-4 px-4 text-center">
                         {getSentimentBadge()}
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="w-[20%] py-4 px-4">
                         {getCompetitorsList()}
                       </td>
-                      <td className="py-4 px-4 text-right">
+                      <td className="w-[10%] py-4 px-4 text-right">
                         <span className="inline-flex items-center gap-1 text-sm text-gray-900 font-medium">
                           View <ExternalLink className="w-3 h-3" />
                         </span>
