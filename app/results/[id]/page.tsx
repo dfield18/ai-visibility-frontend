@@ -87,12 +87,12 @@ type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources
 const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
   { id: 'overview', label: 'Visibility', icon: <LayoutGrid className="w-4 h-4" /> },
   { id: 'competitive', label: 'Competitive Landscape', icon: <TrendingUp className="w-4 h-4" /> },
-  { id: 'sentiment', label: 'Sentiment & Framing', icon: <MessageSquare className="w-4 h-4" /> },
+  { id: 'sentiment', label: 'Sentiment & Tone', icon: <MessageSquare className="w-4 h-4" /> },
   { id: 'sources', label: 'Sources', icon: <Globe className="w-4 h-4" /> },
   { id: 'recommendations', label: 'Recommendations', icon: <Lightbulb className="w-4 h-4" /> },
   { id: 'site-audit', label: 'Site Audit', icon: <Search className="w-4 h-4" /> },
   { id: 'reports', label: 'Automated Reports', icon: <FileBarChart className="w-4 h-4" /> },
-  { id: 'reference', label: 'Reference', icon: <FileText className="w-4 h-4" /> },
+  { id: 'reference', label: 'Raw Data', icon: <FileText className="w-4 h-4" /> },
 ];
 
 // Section definitions for each tab (used by the sidebar guide)
@@ -2809,11 +2809,11 @@ export default function ResultsPage() {
     const topSentiment = Object.entries(sentimentCounts).sort((a, b) => b[1] - a[1])[0];
     if (topSentiment && topSentiment[1] > 0) {
       const labelMap: Record<string, string> = {
-        strong_endorsement: 'Highly Recommended',
-        positive_endorsement: 'Recommended',
-        neutral_mention: 'Neutral Mention',
-        conditional: 'Mentioned with Caveats',
-        negative_comparison: 'Not Recommended',
+        strong_endorsement: 'Strong',
+        positive_endorsement: 'Positive',
+        neutral_mention: 'Neutral',
+        conditional: 'Conditional',
+        negative_comparison: 'Negative',
       };
       const percentage = total > 0 ? (topSentiment[1] / total * 100).toFixed(0) : 0;
       insights.push(`Most common framing: "${labelMap[topSentiment[0]]}" (${percentage}% of responses)`);
@@ -3576,7 +3576,7 @@ export default function ResultsPage() {
     const getQuadrantName = (impact: string, effort: string) => {
       if (impact === 'high' && effort === 'low') return 'Quick Win';
       if (impact === 'high' && effort === 'high') return 'Major Project';
-      if (impact === 'low' && effort === 'low') return 'Fill-in';
+      if (impact === 'low' && effort === 'low') return 'Low Priority';
       if (impact === 'low' && effort === 'high') return 'Avoid';
       return 'Consider';
     };
@@ -3687,7 +3687,7 @@ export default function ResultsPage() {
       const quadrantName =
         rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
         rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
-        rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
+        rec.impact === 'low' && rec.effort === 'low' ? 'Low Priority' :
         rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
 
       return [
@@ -3817,11 +3817,11 @@ export default function ResultsPage() {
   };
 
   const getSentimentLabel = (score: number): string => {
-    if (score >= 4.5) return 'Highly Recommended';
-    if (score >= 3.5) return 'Recommended';
+    if (score >= 4.5) return 'Strong';
+    if (score >= 3.5) return 'Positive';
     if (score >= 2.5) return 'Neutral';
-    if (score >= 1.5) return 'With Caveats';
-    return 'Not Recommended';
+    if (score >= 1.5) return 'Conditional';
+    return 'Negative';
   };
 
   // KPI Interpretation types and helper
@@ -3830,6 +3830,7 @@ export default function ResultsPage() {
   interface KPIInterpretation {
     label: string;
     tone: InterpretationTone;
+    tooltip?: string;
   }
 
   const getKPIInterpretation = (
@@ -3842,24 +3843,24 @@ export default function ResultsPage() {
 
     switch (metricKey) {
       case 'visibility':
-        if (value >= 80) return { label: 'High visibility', tone: 'success' };
-        if (value >= 50) return { label: 'Moderate visibility', tone: 'neutral' };
-        return { label: 'Low visibility', tone: 'warn' };
+        if (value >= 80) return { label: 'High visibility', tone: 'success', tooltip: 'High: 80%+  |  Moderate: 50-79%  |  Low: under 50%' };
+        if (value >= 50) return { label: 'Moderate visibility', tone: 'neutral', tooltip: 'High: 80%+  |  Moderate: 50-79%  |  Low: under 50%' };
+        return { label: 'Low visibility', tone: 'warn', tooltip: 'High: 80%+  |  Moderate: 50-79%  |  Low: under 50%' };
 
       case 'shareOfVoice':
-        if (value >= 30) return { label: 'Leading brand', tone: 'success' };
-        if (value >= 15) return { label: 'Competitive', tone: 'neutral' };
-        return { label: 'Low share of voice', tone: 'warn' };
+        if (value >= 30) return { label: 'Leading brand', tone: 'success', tooltip: 'Leading: 30%+  |  Competitive: 15-29%  |  Low: under 15%' };
+        if (value >= 15) return { label: 'Competitive', tone: 'neutral', tooltip: 'Leading: 30%+  |  Competitive: 15-29%  |  Low: under 15%' };
+        return { label: 'Low share of voice', tone: 'warn', tooltip: 'Leading: 30%+  |  Competitive: 15-29%  |  Low: under 15%' };
 
       case 'top1Rate':
-        if (value >= 50) return { label: 'Strong top ranking', tone: 'success' };
-        if (value >= 25) return { label: 'Competitive', tone: 'neutral' };
-        return { label: 'Room to grow', tone: 'warn' };
+        if (value >= 50) return { label: 'Strong top ranking', tone: 'success', tooltip: 'Strong: 50%+  |  Competitive: 25-49%  |  Room to grow: under 25%' };
+        if (value >= 25) return { label: 'Competitive', tone: 'neutral', tooltip: 'Strong: 50%+  |  Competitive: 25-49%  |  Room to grow: under 25%' };
+        return { label: 'Room to grow', tone: 'warn', tooltip: 'Strong: 50%+  |  Competitive: 25-49%  |  Room to grow: under 25%' };
 
       case 'avgPosition':
-        if (value <= 1.5) return { label: 'Excellent', tone: 'success' };
-        if (value <= 3.0) return { label: 'Competitive', tone: 'neutral' };
-        return { label: 'Room to grow', tone: 'warn' };
+        if (value <= 1.5) return { label: 'Excellent', tone: 'success', tooltip: 'Excellent: #1-1.5  |  Competitive: #1.5-3  |  Room to grow: #3+' };
+        if (value <= 3.0) return { label: 'Competitive', tone: 'neutral', tooltip: 'Excellent: #1-1.5  |  Competitive: #1.5-3  |  Room to grow: #3+' };
+        return { label: 'Room to grow', tone: 'warn', tooltip: 'Excellent: #1-1.5  |  Competitive: #1.5-3  |  Room to grow: #3+' };
 
       default:
         return { label: '', tone: 'neutral' };
@@ -4170,15 +4171,15 @@ export default function ResultsPage() {
     if (!sentiment) return '#9ca3af'; // gray for no sentiment
     switch (sentiment) {
       case 'strong_endorsement':
-        return '#047857'; // emerald-700 - Highly Recommended
+        return '#047857'; // emerald-700 - Strong
       case 'positive_endorsement':
-        return '#10b981'; // emerald-500 - Recommended
+        return '#10b981'; // emerald-500 - Positive
       case 'neutral_mention':
         return '#9ca3af'; // gray-400 - Neutral
       case 'conditional':
-        return '#fbbf24'; // amber-400 - With Caveats
+        return '#fbbf24'; // amber-400 - Conditional
       case 'negative_comparison':
-        return '#ef4444'; // red-500 - Not Recommended
+        return '#ef4444'; // red-500 - Negative
       case 'not_mentioned':
         return '#d1d5db'; // gray-300 - Not mentioned
       default:
@@ -4313,7 +4314,7 @@ export default function ResultsPage() {
               </div>
               {/* Badge - fixed height container */}
               <div className="h-[28px] flex items-start mt-3">
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(visibilityTone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full cursor-help ${getToneStyles(visibilityTone)}`} title={getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tooltip}>
                   {getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).label}
                 </span>
               </div>
@@ -4373,7 +4374,7 @@ export default function ResultsPage() {
               </div>
               {/* Badge - fixed height container */}
               <div className="h-[28px] flex items-start mt-3">
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(sovTone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full cursor-help ${getToneStyles(sovTone)}`} title={getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tooltip}>
                   {getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).label}
                 </span>
               </div>
@@ -4433,7 +4434,7 @@ export default function ResultsPage() {
               </div>
               {/* Badge - fixed height container */}
               <div className="h-[28px] flex items-start mt-3">
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(topRateTone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full cursor-help ${getToneStyles(topRateTone)}`} title={getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null).tooltip}>
                   {getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null).label}
                 </span>
               </div>
@@ -4506,7 +4507,7 @@ export default function ResultsPage() {
               </div>
               {/* Badge - fixed height container */}
               <div className="h-[28px] flex items-start mt-3">
-                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(avgPosTone)}`}>
+                <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full cursor-help ${getToneStyles(avgPosTone)}`} title={getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null).tooltip}>
                   {getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null).label}
                 </span>
               </div>
@@ -4613,7 +4614,7 @@ export default function ResultsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Prompt</th>
+                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">
                       <span className="whitespace-nowrap">AI Visibility</span>
@@ -4668,7 +4669,7 @@ export default function ResultsPage() {
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          How positively AI describes {runStatus?.brand || 'your brand'} when mentioned (from "Not Recommended" to "Highly Recommended")
+                          How positively AI describes {runStatus?.brand || 'your brand'} when mentioned (from "Negative" to "Strong")
                         </div>
                       </div>
                     </div>
@@ -4679,11 +4680,11 @@ export default function ResultsPage() {
                 {promptBreakdownStats.map((stat, index) => {
                   const getSentimentLabel = (score: number | null): string => {
                     if (score === null) return '-';
-                    if (score >= 4.5) return 'Highly Recommended';
-                    if (score >= 3.5) return 'Recommended';
+                    if (score >= 4.5) return 'Strong';
+                    if (score >= 3.5) return 'Positive';
                     if (score >= 2.5) return 'Neutral';
-                    if (score >= 1.5) return 'With Caveats';
-                    if (score >= 0.5) return 'Not Recommended';
+                    if (score >= 1.5) return 'Conditional';
+                    if (score >= 0.5) return 'Negative';
                     return '-';
                   };
 
@@ -4787,11 +4788,11 @@ export default function ResultsPage() {
               <>
                 <span className="text-xs text-gray-600 font-medium mr-1">Sentiment:</span>
                 {[
-                  { color: '#047857', label: 'Highly Recommended' },
-                  { color: '#10b981', label: 'Recommended' },
+                  { color: '#047857', label: 'Strong' },
+                  { color: '#10b981', label: 'Positive' },
                   { color: '#9ca3af', label: 'Neutral' },
-                  { color: '#fbbf24', label: 'With Caveats' },
-                  { color: '#ef4444', label: 'Not Recommended' },
+                  { color: '#fbbf24', label: 'Conditional' },
+                  { color: '#ef4444', label: 'Negative' },
                 ].map(item => (
                   <div key={item.label} className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
@@ -4840,11 +4841,11 @@ export default function ResultsPage() {
                                     dot.sentiment === 'conditional' ? 'text-amber-500' :
                                     dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
                                   }`}>
-                                    {dot.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
-                                     dot.sentiment === 'positive_endorsement' ? 'Recommended' :
+                                    {dot.sentiment === 'strong_endorsement' ? 'Strong' :
+                                     dot.sentiment === 'positive_endorsement' ? 'Positive' :
                                      dot.sentiment === 'neutral_mention' ? 'Neutral' :
-                                     dot.sentiment === 'conditional' ? 'With Caveats' :
-                                     dot.sentiment === 'negative_comparison' ? 'Not Recommended' : ''}
+                                     dot.sentiment === 'conditional' ? 'Conditional' :
+                                     dot.sentiment === 'negative_comparison' ? 'Negative' : ''}
                                   </p>
                                 )}
                                 <p className="text-xs text-gray-400 mt-2">{dot.label}</p>
@@ -5085,7 +5086,7 @@ export default function ResultsPage() {
                   onClick={() => handleTableSort('prompt')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Prompt
+                    Question
                     <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
                       <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
                       <span className="absolute left-0 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
@@ -5159,7 +5160,7 @@ export default function ResultsPage() {
                     <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
                       <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
                       <span className="absolute left-0 top-full mt-1 w-56 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
-                        How positively the AI described your brand, from Not Recommended to Highly Recommended
+                        How positively the AI described your brand, from Negative to Strong
                       </span>
                     </span>
                     {tableSortColumn === 'sentiment' && (
@@ -5273,11 +5274,11 @@ export default function ResultsPage() {
                     return <span className="text-xs text-gray-400">—</span>;
                   }
                   const configs: Record<string, { text: string; label: string }> = {
-                    'strong_endorsement': { text: 'text-emerald-700', label: 'Highly Recommended' },
-                    'positive_endorsement': { text: 'text-green-600', label: 'Recommended' },
+                    'strong_endorsement': { text: 'text-emerald-700', label: 'Strong' },
+                    'positive_endorsement': { text: 'text-green-600', label: 'Positive' },
                     'neutral_mention': { text: 'text-gray-500', label: 'Neutral' },
-                    'conditional': { text: 'text-amber-600', label: 'With Caveats' },
-                    'negative_comparison': { text: 'text-red-600', label: 'Not Recommended' },
+                    'conditional': { text: 'text-amber-600', label: 'Conditional' },
+                    'negative_comparison': { text: 'text-red-600', label: 'Negative' },
                   };
                   const config = configs[sentiment] || { text: 'text-gray-500', label: 'Unknown' };
                   return (
@@ -5346,7 +5347,7 @@ export default function ResultsPage() {
           <button
             onClick={() => {
               // Generate CSV content
-              const headers = ['Prompt', 'LLM', 'Position', 'Brand Mentioned', 'Sentiment', 'Competitors'];
+              const headers = ['Question', 'AI Model', 'Position', 'Brand Mentioned', 'Sentiment', 'Competitors'];
               const rows = sortedResults.map((result: Result) => {
                 // Calculate position
                 let position: number | string = '-';
@@ -5371,10 +5372,10 @@ export default function ResultsPage() {
                   }
                 }
 
-                const sentimentLabel = result.brand_sentiment === 'strong_endorsement' ? 'Highly Recommended' :
-                  result.brand_sentiment === 'positive_endorsement' ? 'Recommended' :
-                  result.brand_sentiment === 'conditional' ? 'With Caveats' :
-                  result.brand_sentiment === 'negative_comparison' ? 'Not Recommended' :
+                const sentimentLabel = result.brand_sentiment === 'strong_endorsement' ? 'Strong' :
+                  result.brand_sentiment === 'positive_endorsement' ? 'Positive' :
+                  result.brand_sentiment === 'conditional' ? 'Conditional' :
+                  result.brand_sentiment === 'negative_comparison' ? 'Negative' :
                   result.brand_sentiment === 'neutral_mention' ? 'Neutral' : 'Not mentioned';
 
                 return [
@@ -5551,11 +5552,11 @@ export default function ResultsPage() {
                   <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
+                    <span className="text-xs text-gray-500">Strong</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
-                    <span className="text-xs text-gray-500">Recommended</span>
+                    <span className="text-xs text-gray-500">Positive</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
@@ -5563,11 +5564,11 @@ export default function ResultsPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
-                    <span className="text-xs text-gray-500">With Caveats</span>
+                    <span className="text-xs text-gray-500">Conditional</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
+                    <span className="text-xs text-gray-500">Negative</span>
                   </div>
                 </div>
               )}
@@ -5688,11 +5689,11 @@ export default function ResultsPage() {
                                     data.sentiment === 'conditional' ? 'text-amber-500' :
                                     data.sentiment === 'negative_comparison' ? 'text-red-500' : ''
                                   }`}>
-                                    {data.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
-                                     data.sentiment === 'positive_endorsement' ? 'Recommended' :
+                                    {data.sentiment === 'strong_endorsement' ? 'Strong' :
+                                     data.sentiment === 'positive_endorsement' ? 'Positive' :
                                      data.sentiment === 'neutral_mention' ? 'Neutral' :
-                                     data.sentiment === 'conditional' ? 'With Caveats' :
-                                     data.sentiment === 'negative_comparison' ? 'Not Recommended' : ''}
+                                     data.sentiment === 'conditional' ? 'Conditional' :
+                                     data.sentiment === 'negative_comparison' ? 'Negative' : ''}
                                   </p>
                                 )}
                                 <p className="text-xs text-gray-400 mt-2">
@@ -5792,11 +5793,11 @@ export default function ResultsPage() {
                   <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
-                    <span className="text-xs text-gray-500">Highly Recommended</span>
+                    <span className="text-xs text-gray-500">Strong</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
-                    <span className="text-xs text-gray-500">Recommended</span>
+                    <span className="text-xs text-gray-500">Positive</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
@@ -5804,11 +5805,11 @@ export default function ResultsPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
-                    <span className="text-xs text-gray-500">With Caveats</span>
+                    <span className="text-xs text-gray-500">Conditional</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                    <span className="text-xs text-gray-500">Not Recommended</span>
+                    <span className="text-xs text-gray-500">Negative</span>
                   </div>
                 </div>
               )}
@@ -6088,11 +6089,11 @@ export default function ResultsPage() {
                                         dot.sentiment === 'conditional' ? 'text-amber-500' :
                                         dot.sentiment === 'negative_comparison' ? 'text-red-500' : ''
                                       }`}>
-                                        {dot.sentiment === 'strong_endorsement' ? 'Highly Recommended' :
-                                         dot.sentiment === 'positive_endorsement' ? 'Recommended' :
+                                        {dot.sentiment === 'strong_endorsement' ? 'Strong' :
+                                         dot.sentiment === 'positive_endorsement' ? 'Positive' :
                                          dot.sentiment === 'neutral_mention' ? 'Neutral' :
-                                         dot.sentiment === 'conditional' ? 'With Caveats' :
-                                         dot.sentiment === 'negative_comparison' ? 'Not Recommended' : ''}
+                                         dot.sentiment === 'conditional' ? 'Conditional' :
+                                         dot.sentiment === 'negative_comparison' ? 'Negative' : ''}
                                       </p>
                                     )}
                                     <p className="text-xs text-gray-400 mt-2">{dot.label}</p>
@@ -6321,8 +6322,8 @@ export default function ResultsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">LLM</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Question</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">AI Model</th>
                 {!isCategory && (
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brand?</th>
                 )}
@@ -6451,7 +6452,7 @@ export default function ResultsPage() {
                               )}
                               {result.grounding_metadata && result.grounding_metadata.supports && result.grounding_metadata.supports.length > 0 && (
                                 <div className="mt-4 pt-3 border-t border-gray-200">
-                                  <p className="text-xs text-gray-500 mb-2">Grounding Confidence:</p>
+                                  <p className="text-xs text-gray-500 mb-2">Google&apos;s Confidence Score:</p>
                                   <div className="space-y-2">
                                     {result.grounding_metadata.supports.slice(0, 5).map((support, idx) => (
                                       <div key={idx} className="bg-white p-2 rounded-lg border border-gray-100">
@@ -6749,8 +6750,8 @@ export default function ResultsPage() {
                     <div className="text-xs text-gray-400 font-normal">competitor advantage</div>
                   </th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                    <div>Opportunity</div>
-                    <div className="text-xs text-gray-400 font-normal">priority score</div>
+                    <div>Priority</div>
+                    <div className="text-xs text-gray-400 font-normal">higher = more important</div>
                   </th>
                 </tr>
               </thead>
@@ -7072,7 +7073,10 @@ export default function ResultsPage() {
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Models</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">{runStatus?.brand || 'Brand'}</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Top Competitor</th>
-                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">Advantage</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div>Advantage</div>
+                    <div className="text-xs text-gray-400 font-normal">how much more competitors are cited</div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -7291,11 +7295,11 @@ export default function ResultsPage() {
   };
 
   const getSentimentLabelFromScore = (score: number): string => {
-    if (score >= 4.5) return 'Highly Recommended';
-    if (score >= 3.5) return 'Recommended';
+    if (score >= 4.5) return 'Strong';
+    if (score >= 3.5) return 'Positive';
     if (score >= 2.5) return 'Neutral';
-    if (score >= 1.5) return 'With Caveats';
-    if (score >= 0.5) return 'Not Recommended';
+    if (score >= 1.5) return 'Conditional';
+    if (score >= 0.5) return 'Negative';
     return 'N/A';
   };
 
@@ -8876,7 +8880,7 @@ export default function ResultsPage() {
                       ticks={[1, 2, 3, 4].filter(t => t <= Math.max(maxProviders, 4))}
                       tickFormatter={(value) => `${value} model${value !== 1 ? 's' : ''}`}
                       tick={{ fill: '#6b7280', fontSize: 12 }}
-                      label={{ value: 'Provider Diversity (# of AI Models)', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
+                      label={{ value: 'Number of AI Models Citing This Source', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
                     />
                     <YAxis
                       type="number"
@@ -9186,7 +9190,7 @@ export default function ResultsPage() {
                       onClick={() => handleDomainSort('domain')}
                     >
                       <span className="flex items-center gap-1">
-                        Domain
+                        Website
                         {domainSortColumn === 'domain' && (
                           <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
@@ -9196,11 +9200,14 @@ export default function ResultsPage() {
                       className="w-[13%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
                       onClick={() => handleDomainSort('usedPercent')}
                     >
-                      <span className="flex items-center justify-center gap-1">
-                        Used %
-                        {domainSortColumn === 'usedPercent' && (
-                          <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
-                        )}
+                      <span className="flex flex-col items-center">
+                        <span className="flex items-center gap-1">
+                          Cited In
+                          {domainSortColumn === 'usedPercent' && (
+                            <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-normal normal-case tracking-normal">% of AI responses</span>
                       </span>
                     </th>
                     <th
@@ -9261,11 +9268,11 @@ export default function ResultsPage() {
                         return <span className="text-sm text-gray-400">-</span>;
                       }
                       const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                        'strong': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Highly Recommended' },
-                        'positive': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Recommended' },
+                        'strong': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Strong' },
+                        'positive': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Positive' },
                         'neutral': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
-                        'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'With Caveats' },
-                        'negative': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Not Recommended' },
+                        'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'Conditional' },
+                        'negative': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Negative' },
                       };
                       const key = row.avgSentiment >= 4.5 ? 'strong' :
                                   row.avgSentiment >= 3.5 ? 'positive' :
@@ -9377,11 +9384,11 @@ export default function ResultsPage() {
     // Helper function to get sentiment label
     const getSentimentLabel = (sentiment: string | null | undefined) => {
       switch (sentiment) {
-        case 'strong_endorsement': return 'Highly Recommended';
-        case 'positive_endorsement': return 'Recommended';
+        case 'strong_endorsement': return 'Strong';
+        case 'positive_endorsement': return 'Positive';
         case 'neutral_mention': return 'Neutral';
-        case 'conditional': return 'With Caveats';
-        case 'negative_comparison': return 'Not Recommended';
+        case 'conditional': return 'Conditional';
+        case 'negative_comparison': return 'Negative';
         case 'not_mentioned': return 'Not Mentioned';
         default: return 'Unknown';
       }
@@ -9940,12 +9947,12 @@ export default function ResultsPage() {
           </div>
         </div>
 
-        {/* Key Sentiment & Framing Insights */}
+        {/* Key Sentiment & Tone Insights */}
         {sentimentInsights.length > 0 && (
           <div id="sentiment-insights" className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl shadow-sm border border-teal-100 p-6">
             <div className="flex items-center gap-2 mb-4">
               <Lightbulb className="w-5 h-5 text-teal-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Framing Insights</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Key Sentiment & Tone Insights</h2>
             </div>
             <ul className="space-y-3">
               {sentimentInsights.map((insight, idx) => (
@@ -10384,21 +10391,22 @@ export default function ResultsPage() {
                   </th>
                   <th className="text-left py-2.5 px-3" style={{ width: '22%' }}>
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Endorsement Rate</span>
+                    <div className="text-[10px] text-gray-400 font-normal normal-case tracking-normal">% positive or strong</div>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Highly Rec.</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Strong</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Recommended</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Positive</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Mentioned</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Neutral</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Caveats</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Conditional</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Not Rec.</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Negative</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Not Mentioned</span>
@@ -10507,11 +10515,11 @@ export default function ResultsPage() {
 
           {/* Stacked bar legend */}
           <div className="flex items-center justify-center gap-4 pt-2 text-xs text-gray-500">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#059669' }} />Highly Rec.</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#34d399' }} />Recommended</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />Mentioned</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />Caveats</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />Not Rec.</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#059669' }} />Strong</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#34d399' }} />Positive</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />Neutral</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />Conditional</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />Negative</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#e5e7eb' }} />Not Mentioned</span>
           </div>
         </div>
@@ -10527,23 +10535,15 @@ export default function ResultsPage() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-900">
-                      <div>Highly</div>
-                      <div>Recommended</div>
-                    </th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Recommended</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Mentioned</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">
-                      <div>With</div>
-                      <div>Caveats</div>
-                    </th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-red-500">
-                      <div>Not</div>
-                      <div>Recommended</div>
-                    </th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-900">Strong</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Positive</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Neutral</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">Conditional</th>
+                    <th className="text-center py-3 px-2 text-sm font-medium text-red-500">Negative</th>
                     <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">
                       <div>Endorsement</div>
                       <div>Rate</div>
+                      <div className="text-[10px] text-gray-400 font-normal">% positive or strong</div>
                     </th>
                   </tr>
                 </thead>
@@ -10662,11 +10662,11 @@ export default function ResultsPage() {
                 className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">All Sentiments</option>
-                <option value="strong_endorsement">Highly Recommended</option>
-                <option value="positive_endorsement">Recommended</option>
-                <option value="neutral_mention">Mentioned</option>
-                <option value="conditional">With Caveats</option>
-                <option value="negative_comparison">Not Recommended</option>
+                <option value="strong_endorsement">Strong</option>
+                <option value="positive_endorsement">Positive</option>
+                <option value="neutral_mention">Neutral</option>
+                <option value="conditional">Conditional</option>
+                <option value="negative_comparison">Negative</option>
               </select>
               <select
                 value={responseLlmFilter}
@@ -10700,7 +10700,7 @@ export default function ResultsPage() {
                   <table className="w-full table-fixed">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="w-[30%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
+                        <th className="w-[30%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Question</th>
                         <th className="w-[14%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
                         <th className="w-[8%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
                         <th className="w-[16%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
@@ -10777,11 +10777,11 @@ export default function ResultsPage() {
                             return <span className="text-xs text-gray-400">—</span>;
                           }
                           const configs: Record<string, { text: string; label: string }> = {
-                            'strong_endorsement': { text: 'text-emerald-700', label: 'Highly Recommended' },
-                            'positive_endorsement': { text: 'text-green-600', label: 'Recommended' },
+                            'strong_endorsement': { text: 'text-emerald-700', label: 'Strong' },
+                            'positive_endorsement': { text: 'text-green-600', label: 'Positive' },
                             'neutral_mention': { text: 'text-gray-500', label: 'Neutral' },
-                            'conditional': { text: 'text-amber-600', label: 'With Caveats' },
-                            'negative_comparison': { text: 'text-red-600', label: 'Not Recommended' },
+                            'conditional': { text: 'text-amber-600', label: 'Conditional' },
+                            'negative_comparison': { text: 'text-red-600', label: 'Negative' },
                           };
                           const config = configs[sentiment] || { text: 'text-gray-500', label: 'Unknown' };
                           return (
@@ -11446,9 +11446,9 @@ export default function ResultsPage() {
                         <div className="bg-gray-50 border border-gray-100" />
                         <div className="bg-gray-50 border border-gray-100" />
                         <div className="bg-gray-50 border border-gray-100" />
-                        {/* Fill-ins quadrant (bottom-left) - label in bottom-left corner */}
+                        {/* Low Priority quadrant (bottom-left) - label in bottom-left corner */}
                         <div className="bg-blue-50/50 border border-gray-100 relative">
-                          <span className="absolute bottom-1.5 left-1.5 text-xs text-blue-500 font-medium opacity-70">Fill-ins</span>
+                          <span className="absolute bottom-1.5 left-1.5 text-xs text-blue-500 font-medium opacity-70">Low Priority</span>
                         </div>
                         <div className="bg-gray-50/50 border border-gray-100" />
                         {/* Avoid quadrant (bottom-right) - label in bottom-right corner */}
@@ -11467,7 +11467,7 @@ export default function ResultsPage() {
                         const quadrantName =
                           rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
                           rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
-                          rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
+                          rec.impact === 'low' && rec.effort === 'low' ? 'Low Priority' :
                           rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
 
                         const tooltip = `${rec.title}
@@ -11552,7 +11552,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 const quadrantName =
                   rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
                   rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
-                  rec.impact === 'low' && rec.effort === 'low' ? 'Fill-in' :
+                  rec.impact === 'low' && rec.effort === 'low' ? 'Low Priority' :
                   rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
 
                 const impactColor: Record<string, string> = {
@@ -11570,7 +11570,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 const categoryColor: Record<string, string> = {
                   'Quick Win': 'text-gray-700',
                   'Major Project': 'text-amber-700',
-                  'Fill-in': 'text-blue-700',
+                  'Low Priority': 'text-blue-700',
                   'Avoid': 'text-red-700',
                   'Consider': 'text-gray-700',
                 };
@@ -11638,7 +11638,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               <Globe className="w-5 h-5 text-gray-900" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Website LLM Optimization</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Website AI Optimization</h2>
               <p className="text-sm text-gray-500">Technical factors affecting your AI visibility</p>
             </div>
           </div>
@@ -11674,7 +11674,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     {/* AI Crawler Access */}
                     {latestAudit.results.robots_txt && (
                       <div className="bg-white rounded-lg p-3 border border-gray-200">
-                        <p className="text-xs text-gray-500 mb-1">AI Crawler Access</p>
+                        <p className="text-xs text-gray-500 mb-1">AI Bot Access</p>
                         <div className="flex items-center gap-2">
                           {latestAudit.results.robots_txt.crawlers.every(c => c.allowed) ? (
                             <>
@@ -11696,7 +11696,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     {/* Structured Data */}
                     {latestAudit.results.structured_data && (
                       <div className="bg-white rounded-lg p-3 border border-gray-200">
-                        <p className="text-xs text-gray-500 mb-1">Structured Data</p>
+                        <p className="text-xs text-gray-500 mb-1">Rich Data Markup</p>
                         <div className="flex items-center gap-2">
                           {latestAudit.results.structured_data.has_json_ld ? (
                             <>
@@ -11708,7 +11708,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           ) : (
                             <>
                               <X className="w-4 h-4 text-red-500" />
-                              <span className="text-sm font-medium text-red-700">Missing JSON-LD</span>
+                              <span className="text-sm font-medium text-red-700">Missing rich data markup</span>
                             </>
                           )}
                         </div>
@@ -11723,12 +11723,12 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           {latestAudit.results.content_accessibility.estimated_ssr ? (
                             <>
                               <CheckCircle2 className="w-4 h-4 text-gray-600" />
-                              <span className="text-sm font-medium text-gray-700">Server-rendered</span>
+                              <span className="text-sm font-medium text-gray-700">Fully readable by AI</span>
                             </>
                           ) : (
                             <>
                               <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                              <span className="text-sm font-medium text-yellow-700">JavaScript required</span>
+                              <span className="text-sm font-medium text-yellow-700">May be hard for AI to read</span>
                             </>
                           )}
                         </div>
@@ -12093,7 +12093,8 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                                 {/* Overall Visibility with donut ring */}
                                 <div className="px-6 py-5 border-b border-gray-100 text-center">
-                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-3">Overall Visibility</p>
+                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Overall Visibility</p>
+                                  <p className="text-[10px] text-gray-400 mb-2">Based on mention rate across all questions</p>
                                   <div className="inline-flex items-center justify-center relative">
                                     <svg width="96" height="96" viewBox="0 0 96 96" className="transform -rotate-90">
                                       <circle cx="48" cy="48" r="40" fill="none" stroke="#f3f4f6" strokeWidth="6" />
@@ -12244,11 +12245,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       {brandBreakdownStats.map((stat, index) => {
                         const getSentimentLabel = (score: number | null): string => {
                           if (score === null) return '-';
-                          if (score >= 4.5) return 'Highly Recommended';
-                          if (score >= 3.5) return 'Recommended';
+                          if (score >= 4.5) return 'Strong';
+                          if (score >= 3.5) return 'Positive';
                           if (score >= 2.5) return 'Neutral';
-                          if (score >= 1.5) return 'With Caveats';
-                          if (score >= 0.5) return 'Not Recommended';
+                          if (score >= 1.5) return 'Conditional';
+                          if (score >= 0.5) return 'Negative';
                           return '-';
                         };
 
@@ -12834,7 +12835,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                             />
                           </div>
                           <div className="w-24 text-right">
-                            <span className="text-sm font-medium text-gray-900">{pair.count}x</span>
+                            <span className="text-sm font-medium text-gray-900">{pair.count} times</span>
                             <span className="text-xs text-gray-500 ml-1">({pair.percentage.toFixed(1)}%)</span>
                           </div>
                         </div>
@@ -12842,14 +12843,14 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     })}
                   </div>
                   <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
-                    <span>Bar shade indicates co-occurrence frequency:</span>
+                    <span>Bar shade shows how often brands appear together:</span>
                     <div className="flex items-center gap-1">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#d1d5db' }}></div>
-                      <span>Lower</span>
+                      <span>Less often</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }}></div>
-                      <span>Higher</span>
+                      <span>More often</span>
                     </div>
                   </div>
                   </>
@@ -12959,7 +12960,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                                   fontSize="12"
                                   fontWeight="600"
                                 >
-                                  {item.count}x
+                                  {item.count}
                                 </text>
                               </g>
                             );
@@ -13043,11 +13044,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       <span className="text-gray-600 font-medium">Sentiment:</span>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
-                        <span>Highly Recommended</span>
+                        <span>Strong</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
-                        <span>Recommended</span>
+                        <span>Positive</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
@@ -13055,11 +13056,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
-                        <span>With Caveats</span>
+                        <span>Conditional</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                        <span>Not Recommended</span>
+                        <span>Negative</span>
                       </div>
                     </>
                   ) : (
@@ -13145,15 +13146,15 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                               let barColor: string = '#9ca3af';
                               if (heatmapShowSentiment && count > 0) {
                                 if (avgSentiment >= 4.5) {
-                                  barColor = '#047857'; // Highly Recommended - emerald-700
+                                  barColor = '#047857'; // Strong - emerald-700
                                 } else if (avgSentiment >= 3.5) {
-                                  barColor = '#10b981'; // Recommended - emerald-500
+                                  barColor = '#10b981'; // Positive - emerald-500
                                 } else if (avgSentiment >= 2.5) {
                                   barColor = '#9ca3af'; // Neutral - gray
                                 } else if (avgSentiment >= 1.5) {
-                                  barColor = '#fbbf24'; // With Caveats - amber
+                                  barColor = '#fbbf24'; // Conditional - amber
                                 } else {
-                                  barColor = '#ef4444'; // Not Recommended - red
+                                  barColor = '#ef4444'; // Negative - red
                                 }
                               } else if (!heatmapShowSentiment && count > 0) {
                                 barColor = isSearchedBrand ? '#22c55e' : '#5ba3c0';
@@ -13248,7 +13249,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               </button>
             </div>
             <div className="p-4 border-b border-gray-100 bg-gray-50">
-              <p className="text-xs text-gray-500 mb-1">Prompt</p>
+              <p className="text-xs text-gray-500 mb-1">Question</p>
               <p className="text-sm text-gray-900">{snippetDetailModal.prompt}</p>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
@@ -13314,7 +13315,6 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">{getProviderLabel(selectedResult.provider)}</h2>
                 <p className="text-sm text-gray-500">
-                  Temperature: {selectedResult.temperature}
                   {selectedResultHighlight && (
                     <span className="ml-2 text-gray-900">
                       • Highlighting {selectedResultHighlight.domain
@@ -13333,7 +13333,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               </button>
             </div>
             <div className="p-4 border-b border-gray-100 bg-gray-50">
-              <p className="text-xs text-gray-500 mb-1">Prompt</p>
+              <p className="text-xs text-gray-500 mb-1">Question</p>
               <p className="text-sm text-gray-900">{selectedResult.prompt}</p>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
@@ -13373,11 +13373,11 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         selectedResult.brand_sentiment === 'negative_comparison' ? 'bg-red-100 text-red-800' :
                         'bg-gray-100 text-gray-600'
                       }`}>
-                        {selectedResult.brand_sentiment === 'strong_endorsement' ? 'Highly Recommended' :
-                         selectedResult.brand_sentiment === 'positive_endorsement' ? 'Recommended' :
+                        {selectedResult.brand_sentiment === 'strong_endorsement' ? 'Strong' :
+                         selectedResult.brand_sentiment === 'positive_endorsement' ? 'Positive' :
                          selectedResult.brand_sentiment === 'neutral_mention' ? 'Neutral' :
-                         selectedResult.brand_sentiment === 'conditional' ? 'With Caveats' :
-                         selectedResult.brand_sentiment === 'negative_comparison' ? 'Not Recommended' :
+                         selectedResult.brand_sentiment === 'conditional' ? 'Conditional' :
+                         selectedResult.brand_sentiment === 'negative_comparison' ? 'Negative' :
                          'Unknown'}
                       </span>
                     )}
@@ -13633,10 +13633,10 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                           result.brand_sentiment === 'conditional' ? 'bg-yellow-100 text-yellow-700' :
                           'bg-red-100 text-red-700'
                         }`}>
-                          {result.brand_sentiment === 'strong_endorsement' ? 'Highly Recommended' :
-                           result.brand_sentiment === 'positive_endorsement' ? 'Recommended' :
+                          {result.brand_sentiment === 'strong_endorsement' ? 'Strong' :
+                           result.brand_sentiment === 'positive_endorsement' ? 'Positive' :
                            result.brand_sentiment === 'neutral_mention' ? 'Neutral' :
-                           result.brand_sentiment === 'conditional' ? 'With Caveats' : 'Not Recommended'}
+                           result.brand_sentiment === 'conditional' ? 'Conditional' : 'Negative'}
                         </span>
                       )}
                       <ExternalLink className="w-4 h-4 text-gray-400" />
