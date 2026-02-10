@@ -34,17 +34,17 @@ import {
 const PROVIDER_INFO: Record<string, { name: string; description: string; cost: string }> = {
   openai: {
     name: 'ChatGPT',
-    description: 'Most popular AI assistant',
+    description: 'Most popular AI chatbot',
     cost: 'from $0.0003/call',
   },
   gemini: {
     name: 'Google Gemini',
-    description: 'Google\'s AI with search integration',
+    description: 'Google\'s AI assistant',
     cost: '$0.00025/call',
   },
   anthropic: {
     name: 'Claude',
-    description: 'Anthropic\'s AI with web search',
+    description: 'Anthropic\'s AI assistant',
     cost: 'from $0.025/call',
   },
   perplexity: {
@@ -54,17 +54,17 @@ const PROVIDER_INFO: Record<string, { name: string; description: string; cost: s
   },
   ai_overviews: {
     name: 'Google AI Overviews',
-    description: 'AI summaries in Google Search',
+    description: 'AI answers in Google Search',
     cost: '$0.005/call',
   },
   grok: {
     name: 'Grok',
-    description: 'xAI\'s AI with real-time data',
+    description: 'AI on X (Twitter)',
     cost: '$0.001/call',
   },
   llama: {
     name: 'Llama',
-    description: 'Meta\'s open-source LLM',
+    description: 'Meta\'s AI model',
     cost: '$0.0005/call',
   },
 };
@@ -440,7 +440,7 @@ export default function ConfigurePage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-6 pb-24 space-y-6">
+      <div className="max-w-7xl mx-auto px-6 py-6 pb-24 space-y-8">
         {/* Error Alert */}
         {(error || suggestionsError) && (
           <div className="bg-red-50 rounded-xl p-4 flex items-start gap-3">
@@ -455,15 +455,24 @@ export default function ConfigurePage() {
         )}
 
         {/* Main layout: Questions full-width, Competitors + Platforms side-by-side */}
-        <div className="space-y-6">
+        <div className="space-y-8">
 
           {/* Questions Section - full width card */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
             {/* Header with step number */}
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-gray-400 font-semibold">1.</span>
-              <HelpCircle className="w-5 h-5 text-gray-400" />
-              <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-7 h-7 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-xs font-semibold">1</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
+                  <span className="text-sm text-gray-500 font-medium">
+                    {selectedPromptsArray.length} selected
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-0.5">These questions will be sent to each AI platform to see if they mention your brand</p>
+              </div>
             </div>
 
             {suggestionsLoading ? (
@@ -583,7 +592,7 @@ export default function ConfigurePage() {
                   ) : (
                     <button
                       onClick={() => setAddingPrompt(true)}
-                      className="text-sm text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1.5"
+                      className="text-sm text-gray-700 hover:bg-gray-100 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 border-dashed transition-colors"
                     >
                       <Plus className="w-4 h-4" />
                       Add your own question
@@ -601,23 +610,24 @@ export default function ConfigurePage() {
                       selectAllPrompts();
                     }
                   }}
-                  className="text-sm text-gray-500 hover:text-gray-900 tabular-nums transition-colors"
+                  className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
                 >
-                  {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'} · {selectedPromptsArray.length}/{prompts.length}
+                  {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
                 </button>
               )}
             </div>
           </div>
 
           {/* Competitors + Platforms side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
 
             {/* Competitors Section */}
-            <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4">
+            <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
               {/* Header with step number */}
-              <div className="flex items-start gap-2 mb-1">
-                <span className="text-gray-400 font-semibold mt-0.5">2.</span>
-                <Users className="w-5 h-5 text-gray-400 mt-0.5" />
+              <div className="flex items-start gap-3 mb-1">
+                <div className="w-7 h-7 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xs font-semibold">2</span>
+                </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
@@ -644,18 +654,21 @@ export default function ConfigurePage() {
                           key={competitor}
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm cursor-pointer transition-all group ${
                             isSelected
-                              ? 'bg-gray-100 text-gray-700 font-medium'
-                              : 'bg-gray-50 text-gray-400'
+                              ? 'bg-gray-900 text-white font-medium'
+                              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                           }`}
                           onClick={() => toggleCompetitor(competitor)}
                         >
+                          {isSelected && <Check className="w-3.5 h-3.5" strokeWidth={2.5} />}
                           <span>{competitor}</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               removeCompetitor(competitor);
                             }}
-                            className="p-0.5 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className={`p-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${
+                              isSelected ? 'text-white/70 hover:text-white' : 'text-gray-400 hover:text-gray-600'
+                            }`}
                             aria-label="Remove"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -699,7 +712,7 @@ export default function ConfigurePage() {
                     ) : (
                       <button
                         onClick={() => setAddingCompetitor(true)}
-                        className="text-sm text-gray-900 hover:text-gray-700 font-medium flex items-center gap-1.5"
+                        className="text-sm text-gray-700 hover:bg-gray-100 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 border-dashed transition-colors"
                       >
                         <Plus className="w-4 h-4" />
                         Add {isCategory ? 'another brand' : 'another competitor'}
@@ -711,11 +724,12 @@ export default function ConfigurePage() {
             </div>
 
             {/* AI Platforms Section */}
-            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-4">
+            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
               {/* Header with step number */}
-              <div className="flex items-start gap-2 mb-1">
-                <span className="text-gray-400 font-semibold mt-0.5">3.</span>
-                <Bot className="w-5 h-5 text-gray-400 mt-0.5" />
+              <div className="flex items-start gap-3 mb-1">
+                <div className="w-7 h-7 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xs font-semibold">3</span>
+                </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>

@@ -83,9 +83,13 @@ Respond ONLY with a JSON object mapping each brand name to an array of the selec
           .map((i: number) => brandCandidates[i - 1]);
       }
 
-      return NextResponse.json({ quotes: result }, { status: 200 });
+      const usage = response.usage;
+      const inputCost = (usage?.prompt_tokens ?? 0) * 0.00000015;
+      const outputCost = (usage?.completion_tokens ?? 0) * 0.0000006;
+
+      return NextResponse.json({ quotes: result, cost: inputCost + outputCost }, { status: 200 });
     } catch {
-      return NextResponse.json({ quotes: {} }, { status: 200 });
+      return NextResponse.json({ quotes: {}, cost: 0 }, { status: 200 });
     }
   } catch (error) {
     console.error('Filter quotes error:', error);

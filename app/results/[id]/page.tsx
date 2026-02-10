@@ -626,7 +626,7 @@ export default function ResultsPage() {
     });
   }, [runStatus, globalBrandFilter, globalLlmFilter, globalPromptFilter]);
 
-  // Cost breakdown: prompt costs (per-result LLM calls) vs analysis costs (AI summary/recommendations)
+  // Cost breakdown: prompt costs (per-result LLM calls) vs analysis costs (AI summary/recommendations) vs frontend insights costs
   const promptCost = useMemo(() => {
     if (!runStatus) return 0;
     return runStatus.results
@@ -634,8 +634,8 @@ export default function ResultsPage() {
       .reduce((sum: number, r: Result) => sum + (r.cost || 0), 0);
   }, [runStatus]);
 
-  const totalCost = runStatus?.actual_cost ?? 0;
-  const analysisCost = Math.max(0, totalCost - promptCost);
+  const totalBackendCost = runStatus?.actual_cost ?? 0;
+  const analysisCost = Math.max(0, totalBackendCost - promptCost);
 
   // Filter results - include AI Overview errors to show "Not Available"
   const filteredResults = useMemo(() => {
@@ -3986,6 +3986,10 @@ export default function ResultsPage() {
       Object.entries(candidateQuotesMap).map(([brand, quotes]) => [brand, quotes.slice(0, 2)])
     );
 
+  // Frontend insights costs (brand blurbs + quote filtering via gpt-4o-mini)
+  const frontendInsightsCost = (brandBlurbsData?.cost ?? 0) + (filteredQuotesData?.cost ?? 0);
+  const totalCost = totalBackendCost + frontendInsightsCost;
+
   // Visibility tab uses quotes for the searched brand
   const brandQuotes = brandQuotesMap[runStatus?.brand ?? ''] ?? [];
 
@@ -4076,6 +4080,56 @@ export default function ResultsPage() {
         return '#FBBC04'; // Google yellow
       default:
         return '#6b7280'; // gray fallback
+    }
+  };
+
+  const getProviderIcon = (provider: string) => {
+    const color = getProviderBrandColor(provider);
+    switch (provider.toLowerCase()) {
+      case 'openai':
+        return (
+          <svg className="w-4 h-4" style={{ color }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.896zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08-4.778 2.758a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/>
+          </svg>
+        );
+      case 'anthropic':
+        return (
+          <svg className="w-4 h-4" style={{ color }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+          </svg>
+        );
+      case 'gemini':
+        return (
+          <svg className="w-4 h-4" style={{ color }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        );
+      case 'perplexity':
+        return (
+          <svg className="w-4 h-4" style={{ color }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z"/>
+          </svg>
+        );
+      case 'grok':
+        return (
+          <svg className="w-4 h-4" style={{ color }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        );
+      case 'llama':
+        return (
+          <svg className="w-4 h-4" style={{ color }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+        );
+      case 'ai_overviews':
+        return (
+          <svg className="w-4 h-4" style={{ color }} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+        );
+      default:
+        return <span className="w-4 h-4 rounded-full" style={{ backgroundColor: color }} />;
     }
   };
 
@@ -5266,10 +5320,16 @@ export default function ResultsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center">
           <p className="text-sm text-gray-500 mb-1">Total Cost</p>
           <p className="text-4xl font-bold text-gray-900">{formatCurrency(totalCost)}</p>
-          <div className="flex items-center justify-center gap-4 mt-2 text-xs text-gray-500">
-            <span>Prompts <span className="font-medium text-gray-700">{formatCurrency(promptCost)}</span></span>
+          <div className="flex items-center justify-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+            <span>Queries <span className="font-medium text-gray-700">{formatCurrency(promptCost)}</span></span>
             <span className="text-gray-300">|</span>
             <span>Analysis <span className="font-medium text-gray-700">{formatCurrency(analysisCost)}</span></span>
+            {frontendInsightsCost > 0 && (
+              <>
+                <span className="text-gray-300">|</span>
+                <span>Insights <span className="font-medium text-gray-700">{formatCurrency(frontendInsightsCost)}</span></span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -7071,13 +7131,19 @@ export default function ResultsPage() {
               </span>
             </div>
             <div>
-              <span className="text-gray-500">Prompts: </span>
+              <span className="text-gray-500">Queries: </span>
               <span className="font-medium text-gray-900">{formatCurrency(promptCost)}</span>
             </div>
             <div>
               <span className="text-gray-500">Analysis: </span>
               <span className="font-medium text-gray-900">{formatCurrency(analysisCost)}</span>
             </div>
+            {frontendInsightsCost > 0 && (
+              <div>
+                <span className="text-gray-500">Insights: </span>
+                <span className="font-medium text-gray-900">{formatCurrency(frontendInsightsCost)}</span>
+              </div>
+            )}
             <div>
               <span className="text-gray-500">Total: </span>
               <span className="font-medium text-gray-900">{formatCurrency(totalCost)}</span>
@@ -9425,9 +9491,9 @@ export default function ResultsPage() {
       textColor?: string;
       popupPosition?: 'top' | 'bottom';
     }) => {
-      // Show dash for zero count
+      // Show nothing for zero count
       if (count === 0) {
-        return <span className="text-gray-400">-</span>;
+        return null;
       }
 
       const isHovered = hoveredSentimentBadge?.provider === provider && hoveredSentimentBadge?.sentiment === sentiment;
@@ -10133,10 +10199,10 @@ export default function ResultsPage() {
 
         {/* Sentiment by Provider */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Platform</h3>
-              <p className="text-sm text-gray-500 mt-0.5">How each AI platform describes your brand</p>
+              <p className="text-sm text-gray-500 mt-0.5">How each AI platform describes {effectiveSentimentBrand || 'your brand'}</p>
             </div>
             <div className="flex items-center gap-2">
               <select
@@ -10162,56 +10228,108 @@ export default function ResultsPage() {
               </select>
             </div>
           </div>
-          <p className="text-sm text-gray-500 mb-6">How different AI models describe {effectiveSentimentBrand || 'your brand'}</p>
+
+          {/* Summary takeaway */}
+          {sentimentByProvider.length > 0 && (() => {
+            const highEndorsers = sentimentByProvider.filter(r => r.strongRate >= 75);
+            const lowEndorsers = sentimentByProvider.filter(r => r.strongRate < 25 && r.total > 0);
+            const totalProviders = sentimentByProvider.filter(r => r.total > 0).length;
+            return (
+              <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-sm text-gray-700">
+                {highEndorsers.length > 0 && (
+                  <span><span className="font-semibold text-gray-900">{highEndorsers.length} of {totalProviders}</span> platforms endorse {effectiveSentimentBrand || 'your brand'}</span>
+                )}
+                {highEndorsers.length > 0 && lowEndorsers.length > 0 && <span className="mx-2 text-gray-300">·</span>}
+                {lowEndorsers.length > 0 && (
+                  <span><span className="font-semibold text-gray-900">{lowEndorsers.length}</span> {lowEndorsers.length === 1 ? 'platform has' : 'platforms have'} low endorsement</span>
+                )}
+                {highEndorsers.length === 0 && lowEndorsers.length === 0 && (
+                  <span>Mixed sentiment across platforms</span>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="overflow-visible pb-4">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Provider</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-900">
-                    <div>Highly</div>
-                    <div>Recommended</div>
+                  <th className="text-left py-2.5 px-4">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</span>
                   </th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Recommended</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Mentioned</th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">
-                    <div>With</div>
-                    <div>Caveats</div>
+                  <th className="text-left py-2.5 px-3" style={{ width: '22%' }}>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Endorsement Rate</span>
                   </th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-red-500">
-                    <div>Not</div>
-                    <div>Recommended</div>
+                  <th className="text-center py-2.5 px-2">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Highly Rec.</span>
                   </th>
-                  <th className="text-center py-3 px-2 text-sm font-medium text-gray-400">
-                    <div>Not</div>
-                    <div>Mentioned</div>
+                  <th className="text-center py-2.5 px-2">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Recommended</span>
                   </th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">
-                    <div>Endorsement</div>
-                    <div>Rate</div>
+                  <th className="text-center py-2.5 px-2">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Mentioned</span>
+                  </th>
+                  <th className="text-center py-2.5 px-2">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Caveats</span>
+                  </th>
+                  <th className="text-center py-2.5 px-2">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Not Rec.</span>
+                  </th>
+                  <th className="text-center py-2.5 px-2">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Not Mentioned</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {sentimentByProvider.map((row, rowIndex) => {
-                  // Show popup above for bottom 2 rows, below for top 2 rows to prevent cutoff
-                  // Show popup above (top-right) for bottom 2 rows, below (bottom-right) for all others
                   const isBottomRow = rowIndex >= sentimentByProvider.length - 2;
                   const popupPos = isBottomRow ? 'top' : 'bottom';
+                  const providerColor = getProviderBrandColor(row.provider);
+                  const endorsementRate = row.strongRate;
+                  const rateColor = endorsementRate >= 75 ? 'text-emerald-600' : endorsementRate >= 40 ? 'text-amber-600' : endorsementRate > 0 ? 'text-red-500' : 'text-gray-400';
+                  const barColor = endorsementRate >= 75 ? 'bg-emerald-500' : endorsementRate >= 40 ? 'bg-amber-400' : endorsementRate > 0 ? 'bg-red-400' : 'bg-gray-200';
+
+                  // Stacked bar segments
+                  const total = row.total || 1;
+                  const segments = [
+                    { key: 'strong', value: row.strong_endorsement, color: '#059669' },
+                    { key: 'positive', value: row.positive_endorsement, color: '#34d399' },
+                    { key: 'neutral', value: row.neutral_mention, color: '#9ca3af' },
+                    { key: 'conditional', value: row.conditional, color: '#f59e0b' },
+                    { key: 'negative', value: row.negative_comparison, color: '#ef4444' },
+                    { key: 'not_mentioned', value: row.not_mentioned, color: '#e5e7eb' },
+                  ].filter(s => s.value > 0);
 
                   return (
                     <tr key={row.provider} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4">
-                        <span className="text-sm font-medium text-gray-900">{row.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: providerColor }} />
+                          <span className="text-sm font-medium text-gray-900">{row.label}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-3">
+                          <span className={`text-sm font-semibold w-10 ${rateColor}`}>
+                            {endorsementRate.toFixed(0)}%
+                          </span>
+                          {/* Stacked bar */}
+                          <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden flex">
+                            {segments.map((seg) => (
+                              <div
+                                key={seg.key}
+                                className="h-full first:rounded-l-full last:rounded-r-full"
+                                style={{ width: `${(seg.value / total) * 100}%`, backgroundColor: seg.color }}
+                              />
+                            ))}
+                          </div>
+                        </div>
                       </td>
                       <td className="text-center py-3 px-2">
                         <SentimentBadgeWithPreview
                           provider={row.provider}
                           sentiment="strong_endorsement"
                           count={row.strong_endorsement}
-                          bgColor="bg-gray-100"
-                          textColor="text-gray-900"
                           popupPosition={popupPos}
                         />
                       </td>
@@ -10220,8 +10338,6 @@ export default function ResultsPage() {
                           provider={row.provider}
                           sentiment="positive_endorsement"
                           count={row.positive_endorsement}
-                          bgColor="bg-gray-100"
-                          textColor="text-gray-700"
                           popupPosition={popupPos}
                         />
                       </td>
@@ -10230,8 +10346,6 @@ export default function ResultsPage() {
                           provider={row.provider}
                           sentiment="neutral_mention"
                           count={row.neutral_mention}
-                          bgColor="bg-blue-100"
-                          textColor="text-blue-800"
                           popupPosition={popupPos}
                         />
                       </td>
@@ -10240,8 +10354,6 @@ export default function ResultsPage() {
                           provider={row.provider}
                           sentiment="conditional"
                           count={row.conditional}
-                          bgColor="bg-yellow-100"
-                          textColor="text-yellow-800"
                           popupPosition={popupPos}
                         />
                       </td>
@@ -10250,8 +10362,6 @@ export default function ResultsPage() {
                           provider={row.provider}
                           sentiment="negative_comparison"
                           count={row.negative_comparison}
-                          bgColor="bg-red-100"
-                          textColor="text-red-800"
                           popupPosition={popupPos}
                         />
                       </td>
@@ -10260,21 +10370,24 @@ export default function ResultsPage() {
                           provider={row.provider}
                           sentiment="not_mentioned"
                           count={row.not_mentioned}
-                          bgColor="bg-gray-100"
-                          textColor="text-gray-600"
                           popupPosition={popupPos}
                         />
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-gray-600' : row.strongRate >= 25 ? 'text-gray-500' : 'text-gray-500'}`}>
-                          {row.strongRate.toFixed(0)}%
-                        </span>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+          </div>
+
+          {/* Stacked bar legend */}
+          <div className="flex items-center justify-center gap-4 pt-2 text-xs text-gray-500">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#059669' }} />Highly Rec.</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#34d399' }} />Recommended</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />Mentioned</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />Caveats</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />Not Rec.</span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#e5e7eb' }} />Not Mentioned</span>
           </div>
         </div>
 
@@ -11134,15 +11247,6 @@ export default function ResultsPage() {
         {/* AI-Powered Recommendations - combined section with chart + cards */}
         {aiSummary?.recommendations && parsedAiRecommendations.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-gray-900" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">AI-Powered Recommendations</h2>
-              <p className="text-sm text-gray-500">Personalized strategy based on your visibility analysis</p>
-            </div>
-          </div>
 
           {/* Effort vs Impact Matrix Chart */}
           {parsedAiRecommendations.length > 0 && (() => {
@@ -11300,6 +11404,15 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
           {/* Recommendation Cards */}
           {parsedAiRecommendations.length > 0 && (
             <div className="space-y-3 mt-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-gray-900" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">AI-Powered Recommendations</h2>
+                  <p className="text-sm text-gray-500">Personalized strategy based on your visibility analysis</p>
+                </div>
+              </div>
               {parsedAiRecommendations.map((rec, idx) => {
                 const quadrantName =
                   rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
@@ -11673,9 +11786,10 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                     {' · '}
                     <span className="relative group/cost inline-flex items-center cursor-default">
                       {formatCurrency(totalCost)}
-                      <span className="absolute left-0 top-full mt-1 w-52 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover/cost:opacity-100 group-hover/cost:visible transition-all z-50 shadow-lg">
-                        <span className="flex justify-between mb-1"><span>Prompts</span><span className="font-medium">{formatCurrency(promptCost)}</span></span>
-                        <span className="flex justify-between mb-1"><span>Analysis</span><span className="font-medium">{formatCurrency(analysisCost)}</span></span>
+                      <span className="absolute left-0 top-full mt-1 w-56 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover/cost:opacity-100 group-hover/cost:visible transition-all z-50 shadow-lg">
+                        <span className="flex justify-between mb-1"><span>AI queries</span><span className="font-medium">{formatCurrency(promptCost)}</span></span>
+                        <span className="flex justify-between mb-1"><span>Analysis & sentiment</span><span className="font-medium">{formatCurrency(analysisCost)}</span></span>
+                        <span className="flex justify-between mb-1"><span>Insights & curation</span><span className="font-medium">{formatCurrency(frontendInsightsCost)}</span></span>
                         <span className="flex justify-between pt-1 border-t border-gray-700"><span>Total</span><span className="font-medium">{formatCurrency(totalCost)}</span></span>
                       </span>
                     </span>
@@ -11811,15 +11925,15 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                                 {/* Platform Scores */}
                                 {allProviders.length > 0 && (
-                                  <div className="px-5 py-4 border-b border-gray-100">
-                                    <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+                                  <div className="py-4 border-b border-gray-100">
+                                    <div className="flex gap-4 overflow-x-auto px-5">
                                       {allProviders.map((prov) => (
-                                        <div key={prov.provider} className="text-center">
-                                          <div className="flex items-center justify-center gap-1 mb-0.5">
-                                            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: getProviderBrandColor(prov.provider) }} />
-                                            <span className="text-[10px] font-medium" style={{ color: getProviderBrandColor(prov.provider) }}>{getCarouselProviderLabel(prov.provider)}</span>
+                                        <div key={prov.provider} className="text-center flex-shrink-0">
+                                          <div className="flex items-center justify-center gap-1.5 mb-1">
+                                            {getProviderIcon(prov.provider)}
+                                            <span className="text-xs whitespace-nowrap" style={{ color: getProviderBrandColor(prov.provider) }}>{getCarouselProviderLabel(prov.provider)}</span>
                                           </div>
-                                          <p className="text-lg font-semibold" style={{ color: getProviderBrandColor(prov.provider) }}>{prov.score}</p>
+                                          <p className="text-2xl font-semibold" style={{ color: getProviderBrandColor(prov.provider) }}>{prov.score}</p>
                                         </div>
                                       ))}
                                     </div>

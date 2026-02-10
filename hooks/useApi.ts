@@ -174,7 +174,7 @@ export function useFilteredQuotes(
     .map(([brand, quotes]) => `${brand}:${quotes.length}`)
     .join(',');
 
-  return useQuery<{ quotes: Record<string, BrandQuote[]> }>({
+  return useQuery<{ quotes: Record<string, BrandQuote[]>; cost?: number }>({
     queryKey: ['filtered-quotes', candidateKey],
     queryFn: async () => {
       const res = await fetch('/api/filter-quotes', {
@@ -195,7 +195,7 @@ export function useFilteredQuotes(
  * Hook to fetch AI-generated brand characterization blurbs.
  */
 export function useBrandBlurbs(brands: string[], context: string, enabled = true) {
-  return useQuery<{ blurbs: Record<string, string> }>({
+  return useQuery<{ blurbs: Record<string, string>; cost?: number }>({
     queryKey: ['brand-blurbs', brands.join(',')],
     queryFn: async () => {
       const res = await fetch('/api/brand-blurbs', {

@@ -54,11 +54,15 @@ Respond ONLY with a JSON object mapping brand names to their blurbs. Omit brands
       return NextResponse.json({ blurbs: {} }, { status: 200 });
     }
 
+    const usage = response.usage;
+    const inputCost = (usage?.prompt_tokens ?? 0) * 0.00000015;
+    const outputCost = (usage?.completion_tokens ?? 0) * 0.0000006;
+
     try {
       const blurbs = JSON.parse(content);
-      return NextResponse.json({ blurbs }, { status: 200 });
+      return NextResponse.json({ blurbs, cost: inputCost + outputCost }, { status: 200 });
     } catch {
-      return NextResponse.json({ blurbs: {} }, { status: 200 });
+      return NextResponse.json({ blurbs: {}, cost: 0 }, { status: 200 });
     }
   } catch (error) {
     console.error('Brand blurbs error:', error);
