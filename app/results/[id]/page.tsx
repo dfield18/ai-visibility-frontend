@@ -4915,10 +4915,10 @@ export default function ResultsPage() {
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">AI model used</div>
                 </th>
                 <th
-                  className="w-[10%] text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[10%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('position')}
                 >
-                  <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Position
                     {tableSortColumn === 'position' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
@@ -4928,10 +4928,10 @@ export default function ResultsPage() {
                 </th>
                 {!isCategory && (
                   <th
-                    className="w-[10%] text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                    className="w-[10%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                     onClick={() => handleTableSort('mentioned')}
                   >
-                    <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Mentioned
                       {tableSortColumn === 'mentioned' && (
                         <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
@@ -4941,10 +4941,10 @@ export default function ResultsPage() {
                   </th>
                 )}
                 <th
-                  className="w-[15%] text-center py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
+                  className="w-[15%] text-left py-3 px-4 cursor-pointer hover:bg-gray-100 select-none"
                   onClick={() => handleTableSort('sentiment')}
                 >
-                  <div className="flex items-center justify-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Sentiment
                     {tableSortColumn === 'sentiment' && (
                       <span className="text-gray-900">{tableSortDirection === 'asc' ? '↑' : '↓'}</span>
@@ -4964,7 +4964,7 @@ export default function ResultsPage() {
                   </div>
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">Other brands shown</div>
                 </th>
-                <th className="w-[10%] text-right py-3 px-4">
+                <th className="w-[10%] text-left py-3 px-4">
                   <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</div>
                   <div className="text-[10px] font-normal text-gray-400 normal-case tracking-normal mt-0.5">View details</div>
                 </th>
@@ -5123,21 +5123,21 @@ export default function ResultsPage() {
                           {getProviderLabel(result.provider)}
                         </span>
                       </td>
-                      <td className="w-[10%] py-4 px-4 text-center">
+                      <td className="w-[10%] py-4 px-4">
                         {getPositionBadge()}
                       </td>
                       {!isCategory && (
-                        <td className="w-[10%] py-4 px-4 text-center">
+                        <td className="w-[10%] py-4 px-4">
                           {getMentionedBadge()}
                         </td>
                       )}
-                      <td className="w-[15%] py-4 px-4 text-center">
+                      <td className="w-[15%] py-4 px-4">
                         {getSentimentBadge()}
                       </td>
                       <td className="w-[20%] py-4 px-4">
                         {getCompetitorsList()}
                       </td>
-                      <td className="w-[10%] py-4 px-4 text-right">
+                      <td className="w-[10%] py-4 px-4">
                         <span className="inline-flex items-center gap-1 text-sm text-gray-900 font-medium">
                           View <ExternalLink className="w-3 h-3" />
                         </span>
