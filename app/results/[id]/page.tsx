@@ -424,6 +424,9 @@ export default function ResultsPage() {
   const searchParams = useSearchParams();
   const runId = params.id as string;
 
+  // Canonical provider display order (by popularity)
+  const PROVIDER_ORDER = ['openai', 'gemini', 'anthropic', 'perplexity', 'grok', 'llama', 'ai_overviews'];
+
   // Tab state - persisted in URL
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tab = searchParams.get('tab') as TabType;
@@ -574,14 +577,16 @@ export default function ResultsPage() {
     return Array.from(prompts);
   }, [runStatus]);
 
-  // Get unique providers from results for the filter dropdown
+  // Get unique providers from results for the filter dropdown, sorted by popularity
   const availableProviders = useMemo(() => {
     if (!runStatus) return [];
     const providers = new Set<string>();
     runStatus.results.forEach((r: Result) => {
       if (!r.error) providers.add(r.provider);
     });
-    return Array.from(providers);
+    return PROVIDER_ORDER.filter(p => providers.has(p)).concat(
+      Array.from(providers).filter(p => !PROVIDER_ORDER.includes(p))
+    );
   }, [runStatus]);
 
   // Get all brands for filters (searched brand + competitors)
@@ -1571,7 +1576,10 @@ export default function ResultsPage() {
     if (results.length === 0) return [];
 
     const searchedBrand = runStatus.brand;
-    const providers = Array.from(new Set(results.map(r => r.provider)));
+    const providerSet = new Set(results.map(r => r.provider));
+    const providers = PROVIDER_ORDER.filter(p => providerSet.has(p)).concat(
+      Array.from(providerSet).filter(p => !PROVIDER_ORDER.includes(p))
+    );
 
     // Get top brands (searched + top competitors by mention count)
     const brandCounts: Record<string, number> = { [searchedBrand]: 0 };
@@ -2798,16 +2806,14 @@ export default function ResultsPage() {
     llama: 'Llama',
   };
 
-  // Get unique providers in alphabetical order by display name for X-axis
+  // Get unique providers in popularity order for X-axis
   const scatterProviderOrder = useMemo(() => {
     if (!runStatus) return [];
     const providers = new Set<string>();
     globallyFilteredResults.forEach((r: Result) => {
       if (!r.error) providers.add(r.provider);
     });
-    // Alphabetical order by display name: Claude, Gemini, Google AI Overviews, OpenAI, Perplexity
-    const order = ['anthropic', 'gemini', 'ai_overviews', 'openai', 'perplexity'];
-    return order.filter(p => providers.has(p));
+    return PROVIDER_ORDER.filter(p => providers.has(p));
   }, [runStatus, globallyFilteredResults]);
 
   const scatterPlotData = useMemo(() => {
@@ -2957,10 +2963,11 @@ export default function ResultsPage() {
       });
     }
 
-    // Sort providers alphabetically by display label, then map to chart data
-    const alphabeticalOrder = ['anthropic', 'gemini', 'ai_overviews', 'openai', 'perplexity'];
+    // Sort providers by popularity order, then map to chart data
     const sortedProviders = Object.values(providerStats).sort((a, b) => {
-      return alphabeticalOrder.indexOf(a.provider) - alphabeticalOrder.indexOf(b.provider);
+      const aIdx = PROVIDER_ORDER.indexOf(a.provider);
+      const bIdx = PROVIDER_ORDER.indexOf(b.provider);
+      return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
     });
 
     return sortedProviders.map((stats, index) => {
@@ -3849,7 +3856,11 @@ export default function ResultsPage() {
           provider,
           score: stats.total > 0 ? Math.round((stats.mentioned / stats.total) * 100) : 0,
         }))
-        .sort((a, b) => b.score - a.score);
+        .sort((a, b) => {
+          const aIdx = PROVIDER_ORDER.indexOf(a.provider);
+          const bIdx = PROVIDER_ORDER.indexOf(b.provider);
+          return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+        });
 
       // Calculate comparison to avg of other brands
       const otherBrands = brandBreakdownStats.filter(b => b.brand !== brand);
@@ -4716,7 +4727,11 @@ export default function ResultsPage() {
             </div>
           )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Object.entries(llmBreakdownStats).map(([provider, stats]) => {
+            {Object.entries(llmBreakdownStats).sort(([a], [b]) => {
+              const aIdx = PROVIDER_ORDER.indexOf(a);
+              const bIdx = PROVIDER_ORDER.indexOf(b);
+              return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+            }).map(([provider, stats]) => {
               const isExpanded = expandedLLMCards.has(provider);
               const providerResults = globallyFilteredResults.filter(
                 (r: Result) => r.provider === provider && !r.error
@@ -9350,7 +9365,11 @@ export default function ResultsPage() {
           total,
           strongRate: total > 0 ? (positiveTotal / total) * 100 : 0,
         };
-      }).sort((a, b) => b.strongRate - a.strongRate);
+      }).sort((a, b) => {
+        const aIdx = PROVIDER_ORDER.indexOf(a.provider);
+        const bIdx = PROVIDER_ORDER.indexOf(b.provider);
+        return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+      });
     }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderCitationFilter]);
 
     // Helper to get results for a specific provider and sentiment
