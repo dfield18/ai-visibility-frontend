@@ -185,7 +185,7 @@ function SectionGuide({ activeTab }: { activeTab: TabType }) {
   return (
     <div className="hidden xl:block w-44 flex-shrink-0">
       <div className="sticky top-36">
-        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">On this page</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">On this page</p>
         <nav className="space-y-0.5">
           {sections.map(({ id, label }) => (
             <button
@@ -197,7 +197,7 @@ function SectionGuide({ activeTab }: { activeTab: TabType }) {
                   window.scrollTo({ top: y, behavior: 'smooth' });
                 }
               }}
-              className={`block w-full text-left text-[13px] py-1.5 pl-3 border-l-2 transition-colors ${
+              className={`block w-full text-left text-sm py-1.5 pl-3 border-l-2 transition-colors ${
                 activeSection === id
                   ? 'border-gray-900 text-gray-900 font-medium'
                   : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'
