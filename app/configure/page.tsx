@@ -525,6 +525,25 @@ export default function ConfigurePage() {
                 </span>
               </div>
 
+              {/* Deselect / Select all toggle */}
+              {prompts.length > 0 && !suggestionsLoading && !addingPrompt && (
+                <div className="flex justify-end mb-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedPrompts.size === prompts.length) {
+                        deselectAllPrompts();
+                      } else {
+                        selectAllPrompts();
+                      }
+                    }}
+                    className="text-[13px] text-gray-500 hover:text-gray-900 transition-colors font-medium"
+                  >
+                    {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
+                  </button>
+                </div>
+              )}
+
               {suggestionsLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Spinner size="lg" />
@@ -608,11 +627,11 @@ export default function ConfigurePage() {
                 </div>
               )}
 
-              {/* Show less/more + Deselect all */}
+              {/* Show less/more + Add question */}
               {prompts.length > 0 && !suggestionsLoading && (
                 <>
-                  <div className="border-t border-gray-100 mt-3 pt-3 flex items-center justify-between">
-                    {canToggleQuestions ? (
+                  {canToggleQuestions && (
+                    <div className="border-t border-gray-100 mt-3 pt-3">
                       <button
                         onClick={() => setQuestionsExpanded(!questionsExpanded)}
                         className="text-sm text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
@@ -629,25 +648,8 @@ export default function ConfigurePage() {
                           </>
                         )}
                       </button>
-                    ) : (
-                      <div />
-                    )}
-                    {!addingPrompt && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (selectedPrompts.size === prompts.length) {
-                            deselectAllPrompts();
-                          } else {
-                            selectAllPrompts();
-                          }
-                        }}
-                        className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
-                      >
-                        {selectedPrompts.size === prompts.length ? 'Deselect all' : 'Select all'}
-                      </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Add question */}
                   {prompts.length < 10 && (
