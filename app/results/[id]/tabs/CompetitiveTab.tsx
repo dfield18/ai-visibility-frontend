@@ -1443,16 +1443,13 @@ export default function CompetitiveTab({
                               )}
                             </td>
                             {promptPerformanceMatrix.matrix[brandIdx].map((rate, promptIdx) => {
-                              const intensity = rate / 100;
                               const bgColor = rate === 0
-                                ? 'bg-gray-100'
-                                : intensity >= 0.7
-                                  ? 'bg-gray-700 text-white'
-                                  : intensity >= 0.4
-                                    ? 'bg-gray-300'
-                                    : intensity >= 0.1
-                                      ? 'bg-gray-100'
-                                      : 'bg-gray-100';
+                                ? 'bg-gray-100 text-gray-400'
+                                : rate >= 70
+                                  ? 'bg-emerald-600 text-white'
+                                  : rate >= 40
+                                    ? 'bg-amber-50 text-amber-700'
+                                    : 'bg-red-50 text-red-600';
                               return (
                                 <td key={promptIdx} className="text-center py-2 px-2">
                                   <div
@@ -1465,7 +1462,7 @@ export default function CompetitiveTab({
                               );
                             })}
                             <td className="text-center py-2 px-2">
-                              <span className={`font-semibold ${rowAvg >= 50 ? 'text-gray-900' : rowAvg >= 25 ? 'text-yellow-600' : 'text-gray-600'}`}>
+                              <span className={`font-semibold ${rowAvg >= 70 ? 'text-emerald-700' : rowAvg >= 40 ? 'text-amber-600' : 'text-red-500'}`}>
                                 {rowAvg.toFixed(0)}%
                               </span>
                             </td>

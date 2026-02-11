@@ -585,7 +585,6 @@ export const OverviewTab = ({
           </div>
           <div className="space-y-2.5">
             {brandQuotes.slice(0, 2).map((quote, idx) => {
-              const shortPrompt = quote.prompt.length > 35 ? quote.prompt.substring(0, 33) + '...' : quote.prompt;
               // Strip citation markers, bare domains, and redundant leading "Brand: " prefix
               const brandName = runStatus?.brand || '';
               const cleanedText = quote.text
@@ -594,12 +593,12 @@ export const OverviewTab = ({
                 .replace(/\s{2,}/g, ' ')
                 .trim()
                 .replace(new RegExp('^' + brandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[:–—-]\\s*', 'i'), '');
+              const providerLabel = { openai: 'ChatGPT', anthropic: 'Claude', perplexity: 'Perplexity', gemini: 'Gemini', ai_overviews: 'Google AI', grok: 'Grok', llama: 'Llama' }[quote.provider] || quote.provider;
               return (
                 <div key={idx}>
                   <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{cleanedText}&rdquo;</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    — {{ openai: 'ChatGPT', anthropic: 'Claude', perplexity: 'Perplexity', gemini: 'Gemini', ai_overviews: 'Google AI', grok: 'Grok', llama: 'Llama' }[quote.provider] || quote.provider} · {shortPrompt}
-                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">— {providerLabel}</p>
+                  <p className="text-xs text-gray-400 truncate">{quote.prompt}</p>
                 </div>
               );
             })}

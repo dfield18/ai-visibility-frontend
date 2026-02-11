@@ -276,6 +276,8 @@ export const SourcesTab = () => {
         count: number;
         urls: { url: string; title: string; provider: string; count: number }[];
         providers: Set<string>;
+        snippets: { provider: string; prompt: string; text: string }[];
+        seenResultIds: Set<string>;
       }> = {};
 
       let totalResultsWithSources = 0;
@@ -299,7 +301,7 @@ export const SourcesTab = () => {
               const brandDomainCheck = brand.toLowerCase().replace(/\s+/g, '');
               if (domain.includes(brandDomainCheck) || brandDomainCheck.includes(domain.replace('.com', '').replace('.org', '').replace('.net', ''))) {
                 if (!brandCitationData[brand]) {
-                  brandCitationData[brand] = { count: 0, urls: [], providers: new Set() };
+                  brandCitationData[brand] = { count: 0, urls: [], providers: new Set(), snippets: [], seenResultIds: new Set() };
                 }
                 brandCitationData[brand].count++;
                 brandCitationData[brand].providers.add(r.provider);
@@ -316,6 +318,28 @@ export const SourcesTab = () => {
                     count: 1
                   });
                 }
+
+                // Extract response snippet mentioning the brand (once per result)
+                if (r.response_text && !brandCitationData[brand].seenResultIds.has(r.id)) {
+                  brandCitationData[brand].seenResultIds.add(r.id);
+                  const plain = r.response_text.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1');
+                  const sentences = plain.split(/(?<=[.!?])\s+/);
+                  const brandLower = brand.toLowerCase();
+                  for (let si = 0; si < sentences.length; si++) {
+                    if (sentences[si].toLowerCase().includes(brandLower)) {
+                      const snippet = sentences[si] + (sentences[si + 1] ? ' ' + sentences[si + 1] : '');
+                      const cleaned = snippet.replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim();
+                      if (cleaned.length > 20) {
+                        brandCitationData[brand].snippets.push({
+                          provider: r.provider,
+                          prompt: r.prompt,
+                          text: cleaned.length > 200 ? cleaned.substring(0, 200).replace(/\s\S*$/, '') + '...' : cleaned,
+                        });
+                        break;
+                      }
+                    }
+                  }
+                }
               }
             });
           }
@@ -329,6 +353,7 @@ export const SourcesTab = () => {
           count: data.count,
           urls: data.urls.sort((a, b) => b.count - a.count),
           providers: Array.from(data.providers),
+          snippets: data.snippets,
           rate: totalResultsWithSources > 0 ? (data.count / totalResultsWithSources) * 100 : 0,
           isSearchedBrand: brand === runStatus?.brand
         }))
@@ -1749,6 +1774,18 @@ export const SourcesTab = () => {
                             );
                           })}
                         </div>
+                        {citation.snippets && citation.snippets.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                            <p className="text-xs text-gray-500">What AI said:</p>
+                            {citation.snippets.slice(0, 3).map((snip: { provider: string; prompt: string; text: string }, sIdx: number) => (
+                              <div key={sIdx} className="bg-white rounded-lg border border-gray-100 p-2.5">
+                                <p className="text-xs text-gray-600 leading-relaxed italic">&ldquo;{snip.text}&rdquo;</p>
+                                <p className="text-[10px] text-gray-400 mt-1">— {getProviderShortLabel(snip.provider)}</p>
+                                <p className="text-[10px] text-gray-400 truncate">{snip.prompt}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
