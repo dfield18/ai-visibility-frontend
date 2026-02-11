@@ -273,8 +273,10 @@ export const getResultPosition = (result: Result, runStatus: RunStatusResponse):
     ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
     : runStatus.brand;
   const brandLower = (selectedBrand || '').toLowerCase();
-  // Only use tracked brands (searched brand + competitors) for ranking — all_brands_mentioned includes non-competitor entities
-  const allBrands: string[] = [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+  // Use all detected brands for ranking, fall back to tracked brands if unavailable
+  const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+    ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+    : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
   let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
 

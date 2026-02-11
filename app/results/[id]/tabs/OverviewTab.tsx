@@ -178,8 +178,10 @@ export const OverviewTab = ({
     const brandTextPos = textLower.indexOf(brandLower);
     if (brandTextPos === -1) return null;
 
-    // Only use tracked brands (searched brand + competitors) for ranking — all_brands_mentioned includes non-competitor entities
-    const allBrands: string[] = [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+    // Use all detected brands for ranking, fall back to tracked brands if unavailable
+    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+      : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
     // Count how many OTHER brands appear before the searched brand in the text
     let brandsBeforeCount = 0;
@@ -984,8 +986,9 @@ export const OverviewTab = ({
                           let position: number | null = null;
                           if (result.response_text && selectedBrand && isMentioned) {
                             const brandLower = selectedBrand.toLowerCase();
-                            // Only use tracked brands for ranking
-                            const allBrands: string[] = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                            const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                              ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                              : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                             // First try exact match
                             let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
@@ -1212,7 +1215,9 @@ export const OverviewTab = ({
                   if (isMentioned && brandLower) {
                     const brandTextPos = textLower.indexOf(brandLower);
                     if (brandTextPos >= 0) {
-                      const allBrands: string[] = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                      const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                        ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                        : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                       let brandsBeforeCount = 0;
                       for (const b of allBrands) {
@@ -1409,7 +1414,9 @@ export const OverviewTab = ({
                   if (isMentioned && brandLower) {
                     const brandTextPos = textLower.indexOf(brandLower);
                     if (brandTextPos >= 0) {
-                      const allBrands: string[] = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                      const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                        ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                        : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
                       let brandsBeforeCount = 0;
                       for (const b of allBrands) {
                         const bLower = b.toLowerCase();

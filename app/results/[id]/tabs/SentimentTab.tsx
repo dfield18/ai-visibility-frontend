@@ -257,7 +257,9 @@ export const SentimentTab = () => {
           let rank = 0;
           const brandLower = runStatus.brand.toLowerCase();
           if (r.brand_mentioned && r.response_text) {
-            const allBrands: string[] = [runStatus.brand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+            const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+              ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+              : [runStatus.brand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
             let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
             if (foundIndex === -1) {
@@ -594,7 +596,9 @@ export const SentimentTab = () => {
                   const isMentioned = result.brand_mentioned;
 
                   if (isMentioned && result.response_text) {
-                    const allBrands: string[] = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                     // Try exact match first
                     let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
@@ -1595,7 +1599,9 @@ export const SentimentTab = () => {
                         let rank = 0;
                         const brandLower = (runStatus?.brand || '').toLowerCase();
                         if (result.brand_mentioned && result.response_text) {
-                          const allBrands: string[] = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                          const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                            ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                            : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                           let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
                           if (foundIndex === -1) {
