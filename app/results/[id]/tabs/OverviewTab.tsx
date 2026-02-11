@@ -177,27 +177,30 @@ export const OverviewTab = ({
     const brandLower = (selectedBrand || '').toLowerCase();
     const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
 
-    // Find the searched brand's position in the actual text
-    const brandTextPos = textLower.indexOf(brandLower);
-    if (brandTextPos === -1) return null;
-
     // Use all detected brands for ranking, fall back to tracked brands if unavailable
     const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
       ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
       : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
-    // Count how many OTHER brands appear before the searched brand in the text
-    let brandsBeforeCount = 0;
-    for (const b of allBrands) {
-      const bLower = b.toLowerCase();
-      if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-      const bPos = textLower.indexOf(bLower);
-      if (bPos >= 0 && bPos < brandTextPos) {
-        brandsBeforeCount++;
+    // Find the searched brand's position in the actual text
+    const brandTextPos = textLower.indexOf(brandLower);
+    if (brandTextPos >= 0) {
+      // Count how many OTHER brands appear before the searched brand in the text
+      let brandsBeforeCount = 0;
+      for (const b of allBrands) {
+        const bLower = b.toLowerCase();
+        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+        const bPos = textLower.indexOf(bLower);
+        if (bPos >= 0 && bPos < brandTextPos) {
+          brandsBeforeCount++;
+        }
       }
+      return brandsBeforeCount + 1;
     }
 
-    return brandsBeforeCount + 1;
+    // Brand not found in cleaned text but marked as mentioned — place after known brands
+    if (result.brand_mentioned) return allBrands.length + 1;
+    return null;
   };
 
   // Provider popularity order for sorting (ChatGPT first)
@@ -597,8 +600,7 @@ export const OverviewTab = ({
               return (
                 <div key={idx}>
                   <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{cleanedText}&rdquo;</p>
-                  <p className="text-xs text-gray-400 mt-0.5">— {providerLabel}</p>
-                  <p className="text-xs text-gray-400 truncate">{quote.prompt}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 truncate">— {providerLabel} · {quote.prompt}</p>
                 </div>
               );
             })}
@@ -1232,12 +1234,12 @@ export const OverviewTab = ({
                     : result.brand_mentioned;
 
                   if (isMentioned && brandLower) {
+                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+
                     const brandTextPos = textLower.indexOf(brandLower);
                     if (brandTextPos >= 0) {
-                      const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                        ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                        : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
                       let brandsBeforeCount = 0;
                       for (const b of allBrands) {
                         const bLower = b.toLowerCase();
@@ -1247,8 +1249,10 @@ export const OverviewTab = ({
                           brandsBeforeCount++;
                         }
                       }
-                      const rank = brandsBeforeCount + 1;
-                      if (rank > 0) position = rank;
+                      position = brandsBeforeCount + 1;
+                    } else {
+                      // Brand not found in cleaned text but marked as mentioned
+                      position = allBrands.length + 1;
                     }
                   }
                 }

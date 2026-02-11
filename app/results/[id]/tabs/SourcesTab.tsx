@@ -1946,8 +1946,11 @@ export const SourcesTab = () => {
                           <div className="flex items-center justify-center gap-2">
                             <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gray-900 rounded-full"
-                                style={{ width: `${Math.min(row.usedPercent, 100)}%` }}
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${Math.min(row.usedPercent, 100)}%`,
+                                  backgroundColor: row.usedPercent >= 20 ? '#10b981' : row.usedPercent >= 10 ? '#f59e0b' : '#f87171',
+                                }}
                               />
                             </div>
                             <span className="text-sm text-gray-600 min-w-[40px]">{row.usedPercent.toFixed(1)}%</span>
@@ -1970,11 +1973,13 @@ export const SourcesTab = () => {
                             <span className="text-sm text-gray-700">
                               {row.providers.slice(0, 2).map(p => getProviderLabel(p)).join(', ')}
                               {row.providers.length > 2 && (
-                                <span
-                                  className="text-gray-400 ml-1 cursor-help"
-                                  title={row.providers.map(p => getProviderLabel(p)).join(', ')}
-                                >
-                                  +{row.providers.length - 2}
+                                <span className="relative group">
+                                  <span className="text-gray-400 ml-1 cursor-pointer hover:text-gray-600">
+                                    +{row.providers.length - 2}
+                                  </span>
+                                  <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-20 shadow-lg">
+                                    {row.providers.slice(2).map(p => getProviderLabel(p)).join(', ')}
+                                  </span>
                                 </span>
                               )}
                             </span>
@@ -1987,11 +1992,13 @@ export const SourcesTab = () => {
                             <span className="text-sm text-gray-700">
                               {row.brands.slice(0, 2).join(', ')}
                               {row.brands.length > 2 && (
-                                <span
-                                  className="text-gray-400 ml-1 cursor-help"
-                                  title={row.brands.join(', ')}
-                                >
-                                  +{row.brands.length - 2}
+                                <span className="relative group">
+                                  <span className="text-gray-400 ml-1 cursor-pointer hover:text-gray-600">
+                                    +{row.brands.length - 2}
+                                  </span>
+                                  <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-20 shadow-lg">
+                                    {row.brands.slice(2).join(', ')}
+                                  </span>
                                 </span>
                               )}
                             </span>

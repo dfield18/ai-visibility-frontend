@@ -757,11 +757,11 @@ export default function CompetitiveTab({
                                   : 'border-gray-200 shadow-sm'
                               }`}>
                                 {/* Card Header */}
-                                <div className="px-6 pt-5 pb-4 border-b border-gray-100">
-                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">
+                                <div className="px-5 pt-4 pb-3 border-b border-gray-100">
+                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-0.5">
                                     {brandData.isSearchedBrand ? 'Your Brand' : 'Competitor'}
                                   </p>
-                                  <p className="text-xl font-bold text-gray-900">{brandData.brand}</p>
+                                  <p className="text-lg font-bold text-gray-900">{brandData.brand}</p>
 
                                   {/* Provider Scores - paginated with nav buttons */}
                                   {allProviders.length > 0 && (() => {
@@ -770,7 +770,7 @@ export default function CompetitiveTab({
                                     const visibleProviders = allProviders.slice(pIdx, pIdx + VISIBLE_COUNT);
                                     const canScroll = allProviders.length > VISIBLE_COUNT;
                                     return (
-                                      <div className="mt-4 flex items-center gap-1">
+                                      <div className="mt-3 flex items-center gap-1">
                                         {/* Left nav */}
                                         <button
                                           type="button"
@@ -787,7 +787,7 @@ export default function CompetitiveTab({
                                         </button>
 
                                         {/* Provider items */}
-                                        <div className="flex gap-4 flex-1 justify-center">
+                                        <div className="flex gap-3 flex-1 justify-center">
                                           {visibleProviders.map((prov) => {
                                             const isZero = prov.score === 0;
                                             const scoreColor = isZero ? 'text-gray-300' : prov.score >= 80 ? 'text-emerald-600' : prov.score >= 40 ? 'text-amber-500' : 'text-red-400';
@@ -795,7 +795,7 @@ export default function CompetitiveTab({
                                               <div key={prov.provider} className={`flex flex-col items-center gap-1 flex-shrink-0 ${isZero ? 'opacity-30' : ''}`}>
                                                 {getProviderIcon(prov.provider)}
                                                 <span className="text-[10px] text-gray-500 whitespace-nowrap">{getCarouselProviderLabel(prov.provider)}</span>
-                                                <span className={`text-base font-bold tabular-nums ${scoreColor}`}>
+                                                <span className={`text-sm font-bold tabular-nums ${scoreColor}`}>
                                                   {prov.score}
                                                 </span>
                                               </div>
@@ -823,23 +823,23 @@ export default function CompetitiveTab({
                                 </div>
 
                                 {/* Overall Visibility with donut ring */}
-                                <div className="px-6 py-5 border-b border-gray-100 text-center">
-                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Overall Visibility</p>
-                                  <p className="text-[10px] text-gray-400 mb-2">Based on mention rate across all questions</p>
+                                <div className="px-5 py-3 border-b border-gray-100 text-center">
+                                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-0.5">Overall Visibility</p>
+                                  <p className="text-[10px] text-gray-400 mb-1.5">Based on mention rate across all questions</p>
                                   <div className="inline-flex items-center justify-center relative">
-                                    <svg width="120" height="120" viewBox="0 0 120 120" className="transform -rotate-90">
-                                      <circle cx="60" cy="60" r="52" fill="none" stroke="#f3f4f6" strokeWidth="6" />
+                                    <svg width="100" height="100" viewBox="0 0 100 100" className="transform -rotate-90">
+                                      <circle cx="50" cy="50" r="43" fill="none" stroke="#f3f4f6" strokeWidth="5" />
                                       <circle
-                                        cx="60" cy="60" r="52" fill="none"
-                                        strokeWidth="6"
+                                        cx="50" cy="50" r="43" fill="none"
+                                        strokeWidth="5"
                                         strokeLinecap="round"
                                         stroke={Math.round(brandData.visibilityScore) >= 80 ? '#10b981' : Math.round(brandData.visibilityScore) >= 40 ? '#f59e0b' : '#f87171'}
-                                        strokeDasharray={`${(Math.round(brandData.visibilityScore) / 100) * 326.7} 326.7`}
+                                        strokeDasharray={`${(Math.round(brandData.visibilityScore) / 100) * 270.2} 270.2`}
                                       />
                                     </svg>
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                      <p className="text-2xl font-bold text-gray-900">
-                                        {Math.round(brandData.visibilityScore)}<span className="text-xs text-gray-400 font-normal">/100</span>
+                                      <p className="text-xl font-bold text-gray-900">
+                                        {Math.round(brandData.visibilityScore)}<span className="text-[10px] text-gray-400 font-normal">/100</span>
                                       </p>
                                     </div>
                                   </div>
@@ -847,15 +847,15 @@ export default function CompetitiveTab({
 
                                 {/* Recent Mentions - short summaries with source */}
                                 {quotes.length > 0 && (
-                                  <div className="px-6 py-4">
-                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2">What AI Says</p>
-                                    <div className="space-y-2">
+                                  <div className="px-5 py-3">
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1.5">What AI Says</p>
+                                    <div className="space-y-1.5">
                                       {quotes.map((q, qi) => {
                                         const blurb = q.summary || q.text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '').split(/[.!?]/)[0].split(' ').slice(0, 7).join(' ');
                                         const shortPrompt = q.prompt.length > 30 ? q.prompt.substring(0, 28) + '...' : q.prompt;
                                         return (
-                                          <div key={qi} className="text-xs bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
-                                            <p className="text-gray-700 font-medium">{blurb}</p>
+                                          <div key={qi} className="text-xs bg-white border border-gray-100 rounded-lg px-2.5 py-1.5">
+                                            <p className="text-sm text-gray-700 font-medium">{blurb}</p>
                                             <p className="text-[10px] text-gray-400 mt-0.5">
                                               {getCarouselProviderLabel(q.provider)} · {shortPrompt}
                                             </p>
