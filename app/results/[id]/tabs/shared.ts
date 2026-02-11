@@ -269,13 +269,14 @@ export const getSentimentDotColor = (sentiment: string | null): string => {
 // Strip question headers and search result titles from AI Overview responses for ranking
 export const getTextForRanking = (text: string, provider: string): string => {
   if (provider !== 'ai_overviews') return text;
-  // Remove everything before the --- separator (question headers)
+  // Keep answer text, strip question headers and search results section
+  // 1. Remove the [Top Search Results] section and everything after ---
   const separatorIdx = text.indexOf('---');
-  let cleaned = separatorIdx >= 0 ? text.substring(separatorIdx + 3) : text;
-  // Remove [Top Search Results] header
-  cleaned = cleaned.replace(/\*?\*?\[Top Search Results\]\*?\*?/g, '');
-  // Remove search result title lines (bold text followed by colon at start of snippet)
-  cleaned = cleaned.replace(/\*\*[^*]+\*\*\s*:/g, ':');
+  let cleaned = separatorIdx >= 0 ? text.substring(0, separatorIdx) : text;
+  const searchResultsIdx = cleaned.indexOf('[Top Search Results]');
+  if (searchResultsIdx >= 0) cleaned = cleaned.substring(0, searchResultsIdx);
+  // 2. Remove bold question header lines (e.g. "**What shoes fit wide feet?**")
+  cleaned = cleaned.replace(/\*\*[^*]*\?[^*]*\*\*/g, '');
   return cleaned;
 };
 
