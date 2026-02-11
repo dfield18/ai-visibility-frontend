@@ -134,8 +134,9 @@ export const getProviderIcon = (provider: string) => {
         React.createElement('path', { d: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' })
       );
     case 'perplexity':
-      return React.createElement('svg', { className: 'w-4 h-4', style: { color }, viewBox: '0 0 24 24', fill: 'currentColor' },
-        React.createElement('path', { d: 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-2h2zm0-4h-2V7h2z' })
+      return React.createElement('svg', { className: 'w-4 h-4', style: { color }, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' },
+        React.createElement('circle', { cx: '11', cy: '11', r: '8' }),
+        React.createElement('line', { x1: '21', y1: '21', x2: '16.65', y2: '16.65' })
       );
     case 'grok':
       return React.createElement('svg', { className: 'w-4 h-4', style: { color }, viewBox: '0 0 24 24', fill: 'currentColor' },
@@ -272,9 +273,8 @@ export const getResultPosition = (result: Result, runStatus: RunStatusResponse):
     ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
     : runStatus.brand;
   const brandLower = (selectedBrand || '').toLowerCase();
-  const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-    ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-    : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+  // Only use tracked brands (searched brand + competitors) for ranking — all_brands_mentioned includes non-competitor entities
+  const allBrands: string[] = [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
   let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
 

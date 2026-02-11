@@ -178,10 +178,8 @@ export const OverviewTab = ({
     const brandTextPos = textLower.indexOf(brandLower);
     if (brandTextPos === -1) return null;
 
-    // Get all known brands to compare against
-    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-      : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+    // Only use tracked brands (searched brand + competitors) for ranking — all_brands_mentioned includes non-competitor entities
+    const allBrands: string[] = [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
     // Count how many OTHER brands appear before the searched brand in the text
     let brandsBeforeCount = 0;
@@ -986,10 +984,8 @@ export const OverviewTab = ({
                           let position: number | null = null;
                           if (result.response_text && selectedBrand && isMentioned) {
                             const brandLower = selectedBrand.toLowerCase();
-                            // Use all_brands_mentioned if available (includes all detected brands)
-                            const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                              ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                              : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                            // Only use tracked brands for ranking
+                            const allBrands: string[] = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                             // First try exact match
                             let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
@@ -1216,9 +1212,7 @@ export const OverviewTab = ({
                   if (isMentioned && brandLower) {
                     const brandTextPos = textLower.indexOf(brandLower);
                     if (brandTextPos >= 0) {
-                      const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                        ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                        : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                      const allBrands: string[] = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
                       let brandsBeforeCount = 0;
                       for (const b of allBrands) {
@@ -1249,7 +1243,7 @@ export const OverviewTab = ({
                     ? 'text-amber-600 font-medium'
                     : 'text-gray-500';
                   return (
-                    <span className={`text-sm ${color}`}>#{position}</span>
+                    <span className={`text-xs ${color}`}>#{position}</span>
                   );
                 };
 
@@ -1262,19 +1256,53 @@ export const OverviewTab = ({
                   return <span className="text-xs text-gray-400">No</span>;
                 };
 
-                // Sentiment badge
-                const getConditionalReason = (text: string): string => {
+                // Sentiment badge with reason
+                const getSentimentReason = (sentiment: string, text: string, brand: string): string => {
                   const lower = text.toLowerCase();
-                  if (/\b(budget|price|cost|expensive|affordable|pric)\b/.test(lower)) return 'Price-dependent recommendation';
-                  if (/\b(depends on|depending on)\b/.test(lower)) return 'Depends on use case';
-                  if (/\b(beginner|advanced|experienced|skill)\b/.test(lower)) return 'Depends on experience level';
-                  if (/\b(some users|some people|not for everyone)\b/.test(lower)) return 'Not universally recommended';
-                  if (/\b(limited|lacks|missing|drawback)\b/.test(lower)) return 'Notes some limitations';
-                  if (/\b(however|but|although|while|despite)\b/.test(lower)) return 'Mentioned with caveats';
-                  if (/\b(if you|for those who|specific|certain)\b/.test(lower)) return 'Situation-specific mention';
-                  if (/\b(compared to|alternative|better than|worse than)\b/.test(lower)) return 'Competitive comparison';
-                  if (/\b(may not|might not|not always|sometimes)\b/.test(lower)) return 'Qualified recommendation';
-                  return 'Mentioned with conditions';
+                  const brandLower = brand.toLowerCase();
+                  if (sentiment === 'strong_endorsement') {
+                    if (/\b(top pick|top choice|best overall|#1|number one)\b/.test(lower)) return 'Ranked as top choice';
+                    if (/\b(highly recommend|strongly recommend)\b/.test(lower)) return 'Highly recommended';
+                    if (/\b(stands out|leads the|industry leader|market leader)\b/.test(lower)) return 'Positioned as industry leader';
+                    if (/\b(best|excellent|exceptional|outstanding|superior)\b/.test(lower)) return 'Praised as best in class';
+                    if (/\b(go-to|favorite|preferred|ideal)\b/.test(lower)) return 'Named as preferred option';
+                    return 'Clearly recommended';
+                  }
+                  if (sentiment === 'positive_endorsement') {
+                    if (/\b(reliable|dependable|trusted|well-known)\b/.test(lower)) return 'Noted as reliable and trusted';
+                    if (/\b(popular|widely used|well-regarded)\b/.test(lower)) return 'Recognized as popular choice';
+                    if (/\b(good|great|solid|strong)\b/.test(lower)) return 'Described positively';
+                    if (/\b(recommend|worth|impressive)\b/.test(lower)) return 'Generally recommended';
+                    if (/\b(innovative|leading|advanced)\b/.test(lower)) return 'Highlighted for innovation';
+                    return 'Mentioned favorably';
+                  }
+                  if (sentiment === 'conditional') {
+                    if (/\b(budget|price|cost|expensive|affordable|pric)\b/.test(lower)) return 'Price-dependent recommendation';
+                    if (/\b(depends on|depending on)\b/.test(lower)) return 'Depends on use case';
+                    if (/\b(beginner|advanced|experienced|skill)\b/.test(lower)) return 'Depends on experience level';
+                    if (/\b(some users|some people|not for everyone)\b/.test(lower)) return 'Not universally recommended';
+                    if (/\b(limited|lacks|missing|drawback)\b/.test(lower)) return 'Notes some limitations';
+                    if (/\b(however|but|although|while|despite)\b/.test(lower)) return 'Mentioned with caveats';
+                    if (/\b(if you|for those who|specific|certain)\b/.test(lower)) return 'Situation-specific mention';
+                    if (/\b(compared to|alternative|better than|worse than)\b/.test(lower)) return 'Competitive comparison';
+                    if (/\b(may not|might not|not always|sometimes)\b/.test(lower)) return 'Qualified recommendation';
+                    return 'Mentioned with conditions';
+                  }
+                  if (sentiment === 'negative_comparison') {
+                    if (/\b(behind|trails|lags|falling)\b/.test(lower)) return 'Positioned behind competitors';
+                    if (/\b(avoid|stay away|not recommend)\b/.test(lower)) return 'Advised against';
+                    if (/\b(worse|inferior|weaker|poor)\b/.test(lower)) return 'Compared unfavorably';
+                    if (/\b(issue|problem|complaint|concern)\b/.test(lower)) return 'Issues or concerns noted';
+                    if (/\b(decline|struggling|losing)\b/.test(lower)) return 'Noted as declining';
+                    return 'Mentioned unfavorably';
+                  }
+                  if (sentiment === 'neutral_mention') {
+                    if (/\b(list|among|one of|alongside|include)\b/.test(lower)) return 'Listed among options';
+                    if (/\b(available|offers|provides|features)\b/.test(lower)) return 'Described factually';
+                    if (/\b(compare|comparison|versus|vs)\b/.test(lower)) return 'Included in comparison';
+                    return 'Mentioned without opinion';
+                  }
+                  return '';
                 };
 
                 const getSentimentBadge = () => {
@@ -1283,19 +1311,20 @@ export const OverviewTab = ({
                   if (!sentiment || sentiment === 'not_mentioned') {
                     return <span className="text-xs text-gray-400">{'\u2014'}</span>;
                   }
-                  const configs: Record<string, { text: string; label: string }> = {
-                    'strong_endorsement': { text: 'text-emerald-700', label: 'Strong' },
-                    'positive_endorsement': { text: 'text-green-600', label: 'Positive' },
-                    'neutral_mention': { text: 'text-gray-500', label: 'Neutral' },
-                    'conditional': { text: 'text-amber-600', label: 'Conditional' },
-                    'negative_comparison': { text: 'text-red-600', label: 'Negative' },
+                  const configs: Record<string, { text: string; subtext: string; label: string }> = {
+                    'strong_endorsement': { text: 'text-emerald-700', subtext: 'text-emerald-600/70', label: 'Strong' },
+                    'positive_endorsement': { text: 'text-green-600', subtext: 'text-green-500/70', label: 'Positive' },
+                    'neutral_mention': { text: 'text-gray-500', subtext: 'text-gray-400/80', label: 'Neutral' },
+                    'conditional': { text: 'text-amber-600', subtext: 'text-amber-500/70', label: 'Conditional' },
+                    'negative_comparison': { text: 'text-red-600', subtext: 'text-red-500/70', label: 'Negative' },
                   };
-                  const config = configs[sentiment] || { text: 'text-gray-500', label: 'Unknown' };
-                  if (sentiment === 'conditional' && result.response_text) {
+                  const config = configs[sentiment] || { text: 'text-gray-500', subtext: 'text-gray-400/80', label: 'Unknown' };
+                  const reason = result.response_text ? getSentimentReason(sentiment, result.response_text, runStatus?.brand || '') : '';
+                  if (reason) {
                     return (
                       <div>
                         <span className={`text-xs font-medium ${config.text}`}>{config.label}</span>
-                        <p className="text-[10px] text-amber-500/80 leading-tight mt-0.5">{getConditionalReason(result.response_text)}</p>
+                        <p className={`text-[10px] ${config.subtext} leading-tight mt-0.5`}>{reason}</p>
                       </div>
                     );
                   }
@@ -1327,7 +1356,7 @@ export const OverviewTab = ({
                     onClick={() => setSelectedResult(result)}
                   >
                     <td className="w-[20%] py-3 px-4" title={result.prompt}>
-                        <p className="text-sm text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
+                        <p className="text-xs text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
                       </td>
                       <td className="w-[13%] py-3 px-4">
                         <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
@@ -1380,9 +1409,7 @@ export const OverviewTab = ({
                   if (isMentioned && brandLower) {
                     const brandTextPos = textLower.indexOf(brandLower);
                     if (brandTextPos >= 0) {
-                      const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                        ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                        : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                      const allBrands: string[] = [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
                       let brandsBeforeCount = 0;
                       for (const b of allBrands) {
                         const bLower = b.toLowerCase();
