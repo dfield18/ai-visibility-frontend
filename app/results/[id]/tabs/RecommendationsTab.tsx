@@ -849,10 +849,13 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
           );
         })()}
 
-        {/* Recommendation Cards */}
+      </div>
+      )}
+
+        {/* Recommendation Cards - separate section */}
         {parsedAiRecommendations.length > 0 && (
-          <div className="space-y-3 mt-6">
-            <div className="flex items-center gap-3 mb-4">
+          <div id="recommendations-cards" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-gray-900" />
               </div>
@@ -861,6 +864,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 <p className="text-sm text-gray-500">Personalized strategy based on your visibility analysis</p>
               </div>
             </div>
+            <div className="space-y-3">
             {parsedAiRecommendations.map((rec, idx) => {
               const quadrantName =
                 rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
@@ -868,58 +872,60 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 rec.impact === 'low' && rec.effort === 'low' ? 'Low Priority' :
                 rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
 
-              const impactColor: Record<string, string> = {
-                high: 'text-emerald-700',
-                medium: 'text-amber-600',
-                low: 'text-gray-500',
+              const impactBadge: Record<string, string> = {
+                high: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                medium: 'bg-amber-50 text-amber-700 border border-amber-200',
+                low: 'bg-gray-50 text-gray-500 border border-gray-200',
               };
 
-              const effortColor: Record<string, string> = {
-                low: 'text-emerald-700',
-                medium: 'text-amber-600',
-                high: 'text-red-600',
+              const effortBadge: Record<string, string> = {
+                low: 'bg-blue-50 text-blue-700 border border-blue-200',
+                medium: 'bg-orange-50 text-orange-600 border border-orange-200',
+                high: 'bg-red-50 text-red-600 border border-red-200',
               };
 
-              const categoryColor: Record<string, string> = {
-                'Quick Win': 'text-gray-700',
-                'Major Project': 'text-amber-700',
-                'Low Priority': 'text-blue-700',
-                'Avoid': 'text-red-700',
-                'Consider': 'text-gray-700',
+              const categoryStyle: Record<string, { badge: string; border: string; numBg: string }> = {
+                'Quick Win': { badge: 'bg-emerald-50 text-emerald-700 border border-emerald-200', border: 'border-l-emerald-400', numBg: 'bg-emerald-600' },
+                'Major Project': { badge: 'bg-amber-50 text-amber-700 border border-amber-200', border: 'border-l-amber-400', numBg: 'bg-amber-500' },
+                'Low Priority': { badge: 'bg-blue-50 text-blue-600 border border-blue-200', border: 'border-l-blue-400', numBg: 'bg-blue-500' },
+                'Avoid': { badge: 'bg-red-50 text-red-600 border border-red-200', border: 'border-l-red-400', numBg: 'bg-red-500' },
+                'Consider': { badge: 'bg-gray-100 text-gray-700 border border-gray-200', border: 'border-l-gray-400', numBg: 'bg-gray-600' },
               };
+
+              const style = categoryStyle[quadrantName] || categoryStyle['Consider'];
 
               return (
                 <div
                   key={idx}
-                  className={`rounded-xl border border-gray-100 p-4 hover:shadow-sm transition ${idx % 2 === 1 ? 'bg-gray-50/30' : 'bg-white'}`}
+                  className={`rounded-xl border border-gray-100 border-l-[3px] ${style.border} bg-white p-5 hover:shadow-md transition-shadow`}
                 >
-                  {/* Title row with number badge and badges */}
-                  <div className="flex items-start justify-between gap-3">
+                  {/* Title row with number badge and pill badges */}
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-white text-xs font-medium">{idx + 1}</span>
+                      <div className={`w-7 h-7 ${style.numBg} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                        <span className="text-white text-xs font-bold">{idx + 1}</span>
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-gray-900">{rec.title}</h3>
+                        <h3 className="text-sm font-semibold text-gray-900 leading-snug">{rec.title}</h3>
                         {rec.description && (
-                          <p className="text-xs text-gray-500 mt-1">{rec.description}</p>
+                          <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{rec.description}</p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                       <span
-                        className={`text-xs font-medium ${impactColor[rec.impact] || 'text-gray-500'}`}
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${impactBadge[rec.impact] || ''}`}
                         title={rec.impactReason ? `Impact: ${rec.impactReason}` : undefined}
                       >
                         {rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)} Impact
                       </span>
                       <span
-                        className={`text-xs font-medium ${effortColor[rec.effort] || 'text-gray-500'}`}
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${effortBadge[rec.effort] || ''}`}
                         title={rec.effortReason ? `Effort: ${rec.effortReason}` : undefined}
                       >
                         {rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)} Effort
                       </span>
-                      <span className={`text-xs font-medium ${categoryColor[quadrantName] || 'text-gray-700'}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${style.badge}`}>
                         {quadrantName}
                       </span>
                     </div>
@@ -927,10 +933,10 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
                   {/* Tactics checklist */}
                   {rec.tactics && rec.tactics.length > 0 && (
-                    <div className="mt-3 ml-9 space-y-1.5">
+                    <div className="mt-3 ml-10 space-y-2">
                       {rec.tactics.map((tactic, tidx) => (
-                        <div key={tidx} className="flex items-start gap-2 text-xs text-gray-600">
-                          <span className="text-gray-400 mt-0.5 flex-shrink-0">•</span>
+                        <div key={tidx} className="flex items-start gap-2 text-sm text-gray-600">
+                          <CheckCircle2 className="w-4 h-4 text-gray-300 mt-0.5 flex-shrink-0" />
                           <span>{tactic}</span>
                         </div>
                       ))}
@@ -939,10 +945,9 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                 </div>
               );
             })}
+            </div>
           </div>
         )}
-      </div>
-      )}
 
       {/* Site Audit Insights */}
       <div id="recommendations-llm" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

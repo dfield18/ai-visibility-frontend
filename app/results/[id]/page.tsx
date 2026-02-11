@@ -3403,7 +3403,7 @@ export default function ResultsPage() {
     ];
 
     const rows = globallyFilteredResults
-      .filter((r: Result) => !r.error)
+      .filter((r: Result) => !r.error || r.provider === 'ai_overviews')
       .map((r: Result) => {
         // Calculate rank for this result
         let rank = '';
@@ -3457,7 +3457,7 @@ export default function ResultsPage() {
           r.tokens || '',
           r.cost || '',
           `"${(r.sources || []).map(s => s.url).join(', ')}"`,
-          `"${(r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/"/g, '""')}"`,
+          `"${(r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""')}"`,
         ];
       });
 
@@ -3573,7 +3573,7 @@ export default function ResultsPage() {
           r.brand_sentiment || '',
           `"${competitorSentiments}"`,
           `"${(r.all_brands_mentioned || []).join(', ')}"`,
-          `"${(r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/"/g, '""')}"`,
+          `"${(r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""')}"`,
         ];
       });
 
@@ -4570,8 +4570,8 @@ export default function ResultsPage() {
                   <ArrowLeft className="w-5 h-5 text-gray-500" />
                 </button>
                 <div>
-                  <h1 className="text-lg font-semibold text-gray-900">
-                    Results for <span className="text-gray-900">{validRunStatus.brand}</span>
+                  <h1 className="text-lg font-normal text-gray-900">
+                    Results for <span className="font-semibold text-gray-900">{validRunStatus.brand}</span>
                     {isCategory && <span className="text-gray-500 text-sm font-normal ml-1">(category)</span>}
                   </h1>
                   <p className="text-sm text-gray-500">

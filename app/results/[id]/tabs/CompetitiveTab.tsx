@@ -636,8 +636,30 @@ export default function CompetitiveTab({
   }, [runStatus, globallyFilteredResults, heatmapProviderFilter, setSelectedResult, setSelectedResultHighlight, setHeatmapResultsList]);
 
   const handleExportHeatmapCSV = useCallback(() => {
-    if (!brandSourceHeatmap.sources.length) return;
-    const headers = ['Source', ...brandSourceHeatmap.brands];
+    if (!brandSourceHeatmap.sources.length || !runStatus) return;
+
+    // Build headers: Source, then for each brand: count/sentiment + response
+    const headers = ['Source'];
+    brandSourceHeatmap.brands.forEach(brand => {
+      headers.push(heatmapShowSentiment ? `${brand} (Sentiment)` : `${brand} (Citations)`);
+      headers.push(`${brand} (Responses)`);
+    });
+
+    // Helper to find matching results for a domain+brand pair
+    const getResponsesForCell = (domain: string, brand: string): string => {
+      const matching = globallyFilteredResults.filter((result: Result) => {
+        if (result.error || !result.sources || result.sources.length === 0) return false;
+        if (heatmapProviderFilter !== 'all' && result.provider !== heatmapProviderFilter) return false;
+        const brandMentioned = brand === runStatus.brand ? result.brand_mentioned : result.competitors_mentioned?.includes(brand);
+        if (!brandMentioned) return false;
+        return result.sources.some((source: Source) => source.url && getDomain(source.url) === domain);
+      });
+      return matching
+        .map(r => (r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/[\r\n]+/g, ' ').trim())
+        .filter(t => t.length > 0)
+        .join(' ||| ');
+    };
+
     const rows = brandSourceHeatmap.data.map(row => {
       const values = [row.domain as string];
       brandSourceHeatmap.brands.forEach(brand => {
@@ -647,9 +669,11 @@ export default function CompetitiveTab({
         } else {
           values.push(String(row[brand] || 0));
         }
+        values.push(getResponsesForCell(row.domain as string, brand));
       });
       return values;
     });
+
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
@@ -663,7 +687,7 @@ export default function CompetitiveTab({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [brandSourceHeatmap, heatmapShowSentiment, runStatus]);
+  }, [brandSourceHeatmap, heatmapShowSentiment, runStatus, globallyFilteredResults, heatmapProviderFilter]);
 
   // ---- Render ----
 
@@ -700,9 +724,9 @@ export default function CompetitiveTab({
                   {/* Carousel with Side Navigation */}
                   <div className="relative flex items-center">
                     {/* Left Arrow */}
-                    {canNavigate && brandCarouselIndex > 0 && (
+                    {canNavigate && (
                       <button
-                        onClick={() => setBrandCarouselIndex(prev => Math.max(0, prev - 1))}
+                        onClick={() => setBrandCarouselIndex(prev => prev > 0 ? prev - 1 : totalCards - 3)}
                         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
                       >
                         <ChevronLeft className="w-5 h-5" />
@@ -742,18 +766,19 @@ export default function CompetitiveTab({
                                   {allProviders.length > 0 && (() => {
                                     const VISIBLE_COUNT = 4;
                                     const pIdx = providerScrollIndex[brandData.brand] || 0;
-                                    const canScrollLeft = pIdx > 0;
-                                    const canScrollRight = pIdx + VISIBLE_COUNT < allProviders.length;
                                     const visibleProviders = allProviders.slice(pIdx, pIdx + VISIBLE_COUNT);
-
+                                    const canScroll = allProviders.length > VISIBLE_COUNT;
                                     return (
                                       <div className="mt-4 flex items-center gap-1">
                                         {/* Left nav */}
                                         <button
                                           type="button"
-                                          onClick={() => setProviderScrollIndex(prev => ({ ...prev, [brandData.brand]: Math.max(0, pIdx - 1) }))}
+                                          onClick={() => setProviderScrollIndex(prev => ({
+                                            ...prev,
+                                            [brandData.brand]: pIdx > 0 ? pIdx - 1 : allProviders.length - VISIBLE_COUNT
+                                          }))}
                                           className={`p-0.5 rounded-full transition-colors flex-shrink-0 ${
-                                            canScrollLeft ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100' : 'text-transparent pointer-events-none'
+                                            canScroll ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100' : 'text-transparent pointer-events-none'
                                           }`}
                                           aria-label="Previous providers"
                                         >
@@ -780,9 +805,12 @@ export default function CompetitiveTab({
                                         {/* Right nav */}
                                         <button
                                           type="button"
-                                          onClick={() => setProviderScrollIndex(prev => ({ ...prev, [brandData.brand]: Math.min(allProviders.length - VISIBLE_COUNT, pIdx + 1) }))}
+                                          onClick={() => setProviderScrollIndex(prev => ({
+                                            ...prev,
+                                            [brandData.brand]: pIdx < allProviders.length - VISIBLE_COUNT ? pIdx + 1 : 0
+                                          }))}
                                           className={`p-0.5 rounded-full transition-colors flex-shrink-0 ${
-                                            canScrollRight ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100' : 'text-transparent pointer-events-none'
+                                            canScroll ? 'text-gray-400 hover:text-gray-600 hover:bg-gray-100' : 'text-transparent pointer-events-none'
                                           }`}
                                           aria-label="Next providers"
                                         >
@@ -844,9 +872,9 @@ export default function CompetitiveTab({
                     </div>
 
                     {/* Right Arrow */}
-                    {canNavigate && brandCarouselIndex < totalCards - 3 && (
+                    {canNavigate && (
                       <button
-                        onClick={() => setBrandCarouselIndex(prev => Math.min(totalCards - 3, prev + 1))}
+                        onClick={() => setBrandCarouselIndex(prev => prev < totalCards - 3 ? prev + 1 : 0)}
                         className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
                       >
                         <ChevronRight className="w-5 h-5" />
@@ -1521,7 +1549,7 @@ export default function CompetitiveTab({
                               style={{ width: `${widthPercent}%`, backgroundColor: barColor }}
                             />
                           </div>
-                          <div className="w-24 text-right">
+                          <div className="w-32 text-right flex-shrink-0">
                             <span className="text-sm font-medium text-gray-900">{pair.count} times</span>
                             <span className="text-xs text-gray-500 ml-1">({pair.percentage.toFixed(1)}%)</span>
                           </div>

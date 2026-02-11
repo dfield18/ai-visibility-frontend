@@ -796,7 +796,24 @@ export const OverviewTab = ({
 
           {/* Dot Plot Grid */}
           <div className="space-y-0">
-            {Object.entries(positionByPlatformData).map(([provider, categories], rowIdx) => {
+            {(() => {
+              const PROVIDER_POPULARITY_ORDER = [
+                'OpenAI',
+                'Google AI Overviews',
+                'Gemini',
+                'Perplexity',
+                'Claude',
+                'Grok',
+                'Llama',
+              ];
+              return Object.entries(positionByPlatformData)
+                .sort(([a], [b]) => {
+                  const aIdx = PROVIDER_POPULARITY_ORDER.indexOf(a);
+                  const bIdx = PROVIDER_POPULARITY_ORDER.indexOf(b);
+                  // Providers not in the list go to the end, preserving their original order
+                  return (aIdx === -1 ? Infinity : aIdx) - (bIdx === -1 ? Infinity : bIdx);
+                })
+                .map(([provider, categories], rowIdx) => {
               const allDots = Object.values(categories).flat() as any[];
               const providerId = allDots.length > 0 ? allDots[0].originalResult?.provider : '';
               return (
@@ -855,7 +872,8 @@ export const OverviewTab = ({
                 </div>
               </div>
             );
-            })}
+            });
+            })()}
           </div>
 
           {/* X-axis labels */}
@@ -1381,7 +1399,7 @@ export const OverviewTab = ({
                   result.error ? 'Error' : result.brand_mentioned ? 'Yes' : 'No',
                   sentimentLabel,
                   `"${(result.competitors_mentioned || []).join(', ')}"`,
-                  `"${(result.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/"/g, '""')}"`
+                  `"${(result.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""')}"`
                 ].join(',');
               });
 
