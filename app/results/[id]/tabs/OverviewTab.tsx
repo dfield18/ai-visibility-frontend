@@ -1023,36 +1023,20 @@ export const OverviewTab = ({
                               ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
                               : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
-                            // First try exact match
-                            let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
-
-                            // If not found, try partial match
-                            if (foundIndex === -1) {
-                              foundIndex = allBrands.findIndex(b =>
-                                b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
-                              );
-                            }
-
-                            // If still not found, find position by text search
-                            let rank = foundIndex + 1;
-                            if (foundIndex === -1) {
-                              const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
-                              const brandPos = rankingText.indexOf(brandLower);
-                              if (brandPos >= 0) {
-                                let brandsBeforeCount = 0;
-                                for (const b of allBrands) {
-                                  const bPos = rankingText.indexOf(b.toLowerCase());
-                                  if (bPos >= 0 && bPos < brandPos) {
-                                    brandsBeforeCount++;
-                                  }
-                                }
-                                rank = brandsBeforeCount + 1;
-                              } else {
-                                rank = allBrands.length + 1;
+                            const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+                            const brandPos = rankingText.indexOf(brandLower);
+                            if (brandPos >= 0) {
+                              let brandsBeforeCount = 0;
+                              for (const b of allBrands) {
+                                const bLower = b.toLowerCase();
+                                if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+                                const bPos = rankingText.indexOf(bLower);
+                                if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
                               }
+                              position = brandsBeforeCount + 1;
+                            } else {
+                              position = allBrands.length + 1;
                             }
-
-                            if (rank > 0) position = rank;
                           }
 
                           return (
@@ -1298,75 +1282,43 @@ export const OverviewTab = ({
                 // Sentiment badge with reason — extracts context from the sentence containing the brand
                 const getSentimentReason = (sentiment: string, text: string, brand: string): string => {
                   const brandLower = brand.toLowerCase();
-                  // Find the sentence containing the brand name
-                  const sentences = text.split(/(?<=[.!?])\s+/);
-                  const brandSentences = sentences.filter(s => s.toLowerCase().includes(brandLower));
-                  const context = brandSentences.join(' ').toLowerCase();
-                  // If no brand sentences found, use full text
-                  const searchText = context || text.toLowerCase();
+                  // Strip markdown bold/italic for cleaner extraction
+                  const plain = text.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1');
+                  const sentences = plain.split(/(?<=[.!?])\s+/);
 
-                  if (sentiment === 'strong_endorsement') {
-                    if (/\b(top pick|top choice|best overall|#\s?1|number one|first choice)\b/.test(searchText)) return `Called a top pick or #1 choice`;
-                    if (/\bhighly recommend/.test(searchText)) return `Highly recommended by name`;
-                    if (/\b(strongly recommend|must.have|essential)\b/.test(searchText)) return `Described as a must-have`;
-                    if (/\b(industry leader|market leader|leads the)\b/.test(searchText)) return `Called an industry or market leader`;
-                    if (/\b(stands out|sets .* apart|unmatched)\b/.test(searchText)) return `Said to stand out from competitors`;
-                    if (/\b(best.in.class|gold standard|benchmark)\b/.test(searchText)) return `Called best-in-class or gold standard`;
-                    if (/\b(go.to|favorite|preferred)\b/.test(searchText)) return `Named as the go-to or preferred option`;
-                    if (/\b(excellent|exceptional|outstanding|superb|stellar)\b/.test(searchText)) return `Described with strong praise (excellent, exceptional)`;
-                    if (/\b(dominat|unrivaled|unbeatable)\b/.test(searchText)) return `Positioned as dominant in its category`;
-                    if (/\bbest\b/.test(searchText)) return `Called "best" in context`;
-                    if (/\b(superior|excels|ahead of)\b/.test(searchText)) return `Said to be superior to alternatives`;
-                    return `Endorsed as a top recommendation`;
+                  // Build context pairs: brand sentence + the following sentence (captures pronoun-based caveats)
+                  const contextPairs: string[] = [];
+                  for (let i = 0; i < sentences.length; i++) {
+                    if (sentences[i].toLowerCase().includes(brandLower)) {
+                      const pair = sentences[i] + (sentences[i + 1] ? ' ' + sentences[i + 1] : '');
+                      contextPairs.push(pair);
+                    }
                   }
-                  if (sentiment === 'positive_endorsement') {
-                    if (/\b(reliable|dependable)\b/.test(searchText)) return `Described as reliable or dependable`;
-                    if (/\b(well.known|well.established|reputable|trusted)\b/.test(searchText)) return `Recognized as a trusted, reputable brand`;
-                    if (/\b(popular|widely used|widely adopted)\b/.test(searchText)) return `Noted as popular and widely used`;
-                    if (/\b(innovative|cutting.edge|advanced technology)\b/.test(searchText)) return `Highlighted for innovation or technology`;
-                    if (/\b(high.quality|well.made|premium|durable)\b/.test(searchText)) return `Praised for quality or durability`;
-                    if (/\b(great value|good value|affordable)\b/.test(searchText)) return `Noted for good value or affordability`;
-                    if (/\b(recommend|worth considering|worth a look)\b/.test(searchText)) return `Recommended or said to be worth considering`;
-                    if (/\b(impressive|strong performance|performs well)\b/.test(searchText)) return `Praised for strong performance`;
-                    if (/\b(good|great|solid)\b/.test(searchText)) return `Described as a good or solid option`;
-                    if (/\b(versatile|flexible|user.friendly|easy to use)\b/.test(searchText)) return `Noted for ease of use or versatility`;
-                    return `Mentioned in a positive light`;
-                  }
-                  if (sentiment === 'conditional') {
-                    if (/\b(budget|price|cost|expensive|pric)\b/.test(searchText)) return `Recommendation depends on price or budget`;
-                    if (/\b(depends on|depending on) (your |what |how )/.test(searchText)) return `Suitability depends on specific needs`;
-                    if (/\b(beginner|advanced|experienced|skill level)\b/.test(searchText)) return `Fit depends on user experience level`;
-                    if (/\b(not for everyone|some users|some people|niche)\b/.test(searchText)) return `Noted as good for some users, not all`;
-                    if (/\b(limited|lacks|missing|doesn.t have)\b/.test(searchText)) return `Praised but noted for missing features`;
-                    if (/\b(however|but|although|while|despite|caveat)\b/.test(searchText)) return `Positive mention followed by caveats`;
-                    if (/\b(if you|for those who|for people who)\b/.test(searchText)) return `Recommended only for certain use cases`;
-                    if (/\b(trade.off|compromise|downside)\b/.test(searchText)) return `Mentioned with trade-offs or downsides`;
-                    if (/\b(compared to|alternative|better than|worse than)\b/.test(searchText)) return `Mixed when compared to alternatives`;
-                    if (/\b(may not|might not|not always|sometimes)\b/.test(searchText)) return `Said to not always meet expectations`;
-                    return `Endorsed with qualifications or conditions`;
-                  }
-                  if (sentiment === 'negative_comparison') {
-                    if (/\b(behind|trails|lags|falling behind)\b/.test(searchText)) return `Said to lag behind or trail competitors`;
-                    if (/\b(avoid|stay away|not recommend|wouldn.t recommend)\b/.test(searchText)) return `Explicitly not recommended or warned against`;
-                    if (/\b(worse|inferior|weaker) than\b/.test(searchText)) return `Directly compared as worse than rivals`;
-                    if (/\b(issue|problem|complaint|frustrat)\b/.test(searchText)) return `Cited for specific problems or complaints`;
-                    if (/\b(decline|struggling|losing|lost)\b/.test(searchText)) return `Described as declining or losing ground`;
-                    if (/\b(overpriced|too expensive|not worth)\b/.test(searchText)) return `Called overpriced or not worth the cost`;
-                    if (/\b(outdated|behind the times|hasn.t kept up)\b/.test(searchText)) return `Described as outdated vs. competitors`;
-                    if (/\b(disappoint|underwhelm|fall.short)\b/.test(searchText)) return `Said to disappoint or fall short`;
-                    if (/\b(poor|bad|terrible|worst)\b/.test(searchText)) return `Described negatively (poor, bad)`;
-                    if (/\b(lack|missing|absent|no )\b/.test(searchText)) return `Criticized for lacking key features`;
-                    return `Framed negatively vs. competitors`;
-                  }
-                  if (sentiment === 'neutral_mention') {
-                    if (/\b(one of (many|several|the)|among (the|several|many))\b/.test(searchText)) return `Listed as one of several options`;
-                    if (/\b(also|available|option|alternative)\b/.test(searchText)) return `Mentioned as an available option`;
-                    if (/\b(compare|comparison|versus|vs)\b/.test(searchText)) return `Included in a factual comparison`;
-                    if (/\b(offers|provides|features|includes)\b/.test(searchText)) return `Features described without opinion`;
-                    if (/\b(known for|specializes)\b/.test(searchText)) return `Described for what it's known for`;
-                    return `Referenced without positive or negative framing`;
-                  }
-                  return '';
+                  if (contextPairs.length === 0) return '';
+
+                  // Pick the pair that best matches the sentiment keywords
+                  const pickBest = (keywords: RegExp): string => {
+                    return contextPairs.find(s => keywords.test(s.toLowerCase())) || contextPairs[0];
+                  };
+
+                  // Truncate to a readable snippet
+                  const snippet = (s: string, maxLen = 90): string => {
+                    const cleaned = s.replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim();
+                    if (cleaned.length <= maxLen) return cleaned;
+                    const cut = cleaned.substring(0, maxLen).lastIndexOf(' ');
+                    return cleaned.substring(0, cut > 40 ? cut : maxLen) + '...';
+                  };
+
+                  const kwMap: Record<string, RegExp> = {
+                    strong_endorsement: /best|top|#1|number one|highly|must.have|leader|go.to|favorite|excellent|exceptional|outstanding|superior|dominat/,
+                    positive_endorsement: /recommend|reliable|trusted|popular|innovative|quality|durable|great|good|solid|impressive|versatile/,
+                    conditional: /however|but|although|while|despite|if you|depends|limited|lacks|expensive|trade.off|compared|may not|caveat|downside/,
+                    negative_comparison: /behind|trails|avoid|worse|inferior|issue|problem|decline|overpriced|outdated|disappoint|poor|bad|lack|missing/,
+                    neutral_mention: /one of|among|also|option|alternative|offers|provides|features|known for/,
+                  };
+                  const kw = kwMap[sentiment];
+                  if (!kw) return '';
+                  return snippet(pickBest(kw));
                 };
 
                 const getSentimentBadge = () => {

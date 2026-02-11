@@ -286,38 +286,31 @@ export const getResultPosition = (result: Result, runStatus: RunStatusResponse):
     ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
     : runStatus.brand;
   const brandLower = (selectedBrand || '').toLowerCase();
+  if (!brandLower) return null;
   // Use all detected brands for ranking, fall back to tracked brands if unavailable
   const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
     ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
     : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
-  let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
-
-  if (foundIndex === -1) {
-    foundIndex = allBrands.findIndex(b =>
-      b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
-    );
-  }
-
-  if (foundIndex === -1 && result.brand_mentioned && result.response_text) {
-    const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
-    const brandPos = rankingText.indexOf(brandLower);
-    if (brandPos >= 0) {
-      let brandsBeforeCount = 0;
-      for (const b of allBrands) {
-        const bLower = b.toLowerCase();
-        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-        const bPos = rankingText.indexOf(bLower);
-        if (bPos >= 0 && bPos < brandPos) {
-          brandsBeforeCount++;
-        }
+  // Always rank by text position — array order from backend is not reliable
+  const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+  const brandPos = rankingText.indexOf(brandLower);
+  if (brandPos >= 0) {
+    let brandsBeforeCount = 0;
+    for (const b of allBrands) {
+      const bLower = b.toLowerCase();
+      if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+      const bPos = rankingText.indexOf(bLower);
+      if (bPos >= 0 && bPos < brandPos) {
+        brandsBeforeCount++;
       }
-      return brandsBeforeCount + 1;
     }
-    return allBrands.length + 1;
+    return brandsBeforeCount + 1;
   }
 
-  return foundIndex >= 0 ? foundIndex + 1 : null;
+  // Brand not found in text but marked as mentioned — place after known brands
+  if (result.brand_mentioned) return allBrands.length + 1;
+  return null;
 };
 
 export const rankToRangeX = (rank: number): number => {
