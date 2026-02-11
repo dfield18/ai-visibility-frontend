@@ -1281,14 +1281,13 @@ export const OverviewTab = ({
                   return <span className="text-xs text-gray-400">No</span>;
                 };
 
-                // Sentiment badge with reason — extracts context from the sentence containing the brand
+                // Sentiment badge with reason — interprets WHY the sentiment was classified
                 const getSentimentReason = (sentiment: string, text: string, brand: string): string => {
                   const brandLower = brand.toLowerCase();
-                  // Strip markdown bold/italic for cleaner extraction
                   const plain = text.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1');
                   const sentences = plain.split(/(?<=[.!?])\s+/);
 
-                  // Build context pairs: brand sentence + the following sentence (captures pronoun-based caveats)
+                  // Collect sentences mentioning the brand (+ following sentence for context)
                   const contextPairs: string[] = [];
                   for (let i = 0; i < sentences.length; i++) {
                     if (sentences[i].toLowerCase().includes(brandLower)) {
@@ -1297,30 +1296,71 @@ export const OverviewTab = ({
                     }
                   }
                   if (contextPairs.length === 0) return '';
+                  const joined = contextPairs.join(' ').toLowerCase();
 
-                  // Pick the pair that best matches the sentiment keywords
-                  const pickBest = (keywords: RegExp): string => {
-                    return contextPairs.find(s => keywords.test(s.toLowerCase())) || contextPairs[0];
+                  // Map: [keyword regex, interpretive description] — first match wins per sentiment
+                  const descMap: Record<string, [RegExp, string][]> = {
+                    strong_endorsement: [
+                      [/best/, 'Called the best in its category'],
+                      [/#1|number one|top.pick/, 'Named the #1 choice'],
+                      [/leader|dominat/, 'Recognized as a market leader'],
+                      [/go.to|must.have/, 'Called a go-to choice'],
+                      [/excellent|exceptional|outstanding/, 'Praised for exceptional quality'],
+                      [/superior/, 'Called superior to alternatives'],
+                      [/top/, 'Named a top choice'],
+                      [/highly/, 'Described as highly recommended'],
+                      [/favorite/, 'Called a favorite in the category'],
+                    ],
+                    positive_endorsement: [
+                      [/recommend/, 'Directly recommended by response'],
+                      [/quality/, 'Noted for high product quality'],
+                      [/reliable|trusted/, 'Praised as reliable and trusted'],
+                      [/innovative/, 'Recognized for innovation'],
+                      [/durable/, 'Praised for product durability'],
+                      [/popular/, 'Recognized as a popular choice'],
+                      [/versatile|impressive/, 'Noted for versatility and features'],
+                      [/great|good|solid/, 'Described favorably overall'],
+                    ],
+                    conditional: [
+                      [/expensive|pric/, 'Praised but noted as expensive'],
+                      [/limited|lacks|missing/, 'Recommended but noted as limited'],
+                      [/however|but|although|while|despite/, 'Positive mention followed by limitations'],
+                      [/depends|if you/, 'Recommended for specific use cases only'],
+                      [/trade.off|caveat|downside/, 'Recommended with notable trade-offs'],
+                      [/compared|may not/, 'Mixed when compared to alternatives'],
+                    ],
+                    negative_comparison: [
+                      [/behind|trail|inferior|worse/, 'Said to trail behind competitors'],
+                      [/overpriced/, 'Described as overpriced'],
+                      [/outdated/, 'Called outdated or behind the times'],
+                      [/disappoint|poor|bad/, 'Received a poor overall assessment'],
+                      [/avoid/, 'Response suggests avoiding the brand'],
+                      [/issue|problem|decline/, 'Has noted product or quality issues'],
+                      [/lack|missing/, 'Called out for missing features'],
+                    ],
+                    neutral_mention: [
+                      [/one of|among/, 'Listed as one of several options'],
+                      [/also/, 'Mentioned alongside other brands'],
+                      [/option|alternative/, 'Listed as an available alternative'],
+                      [/offers|provides|features/, 'Referenced for what it offers'],
+                      [/known for/, 'Mentioned for brand recognition'],
+                    ],
                   };
 
-                  // Truncate to a readable snippet
-                  const snippet = (s: string, maxLen = 90): string => {
-                    const cleaned = s.replace(/\[\d+\]/g, '').replace(/\s+/g, ' ').trim();
-                    if (cleaned.length <= maxLen) return cleaned;
-                    const cut = cleaned.substring(0, maxLen).lastIndexOf(' ');
-                    return cleaned.substring(0, cut > 40 ? cut : maxLen) + '...';
-                  };
+                  const descriptions = descMap[sentiment];
+                  if (!descriptions) return '';
+                  for (const [regex, desc] of descriptions) {
+                    if (regex.test(joined)) return desc;
+                  }
 
-                  const kwMap: Record<string, RegExp> = {
-                    strong_endorsement: /best|top|#1|number one|highly|must.have|leader|go.to|favorite|excellent|exceptional|outstanding|superior|dominat/,
-                    positive_endorsement: /recommend|reliable|trusted|popular|innovative|quality|durable|great|good|solid|impressive|versatile/,
-                    conditional: /however|but|although|while|despite|if you|depends|limited|lacks|expensive|trade.off|compared|may not|caveat|downside/,
-                    negative_comparison: /behind|trails|avoid|worse|inferior|issue|problem|decline|overpriced|outdated|disappoint|poor|bad|lack|missing/,
-                    neutral_mention: /one of|among|also|option|alternative|offers|provides|features|known for/,
+                  const fallbacks: Record<string, string> = {
+                    strong_endorsement: 'Strongly endorsed in the response',
+                    positive_endorsement: 'Positively mentioned in the response',
+                    conditional: 'Mentioned with noted conditions',
+                    negative_comparison: 'Compared unfavorably to alternatives',
+                    neutral_mention: 'Mentioned without strong opinion',
                   };
-                  const kw = kwMap[sentiment];
-                  if (!kw) return '';
-                  return snippet(pickBest(kw));
+                  return fallbacks[sentiment] || '';
                 };
 
                 const getSentimentBadge = () => {

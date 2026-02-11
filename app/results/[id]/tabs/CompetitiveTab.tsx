@@ -696,7 +696,8 @@ export default function CompetitiveTab({
             {/* Brand Analysis Carousel */}
             {allBrandsAnalysisData.length > 0 && (() => {
               const totalCards = allBrandsAnalysisData.length;
-              const canNavigate = totalCards > 3;
+              const canNavigate = totalCards > 2;
+              const maxIndex = Math.max(0, totalCards - 2);
 
               const getCarouselProviderLabel = (provider: string) => {
                 switch (provider) {
@@ -726,18 +727,18 @@ export default function CompetitiveTab({
                     {/* Left Arrow */}
                     {canNavigate && (
                       <button
-                        onClick={() => setBrandCarouselIndex(prev => prev > 0 ? prev - 1 : totalCards - 3)}
+                        onClick={() => setBrandCarouselIndex(prev => prev > 0 ? prev - 1 : maxIndex)}
                         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
                     )}
 
-                    {/* Carousel Cards - Show 3 at a time */}
+                    {/* Carousel Cards */}
                     <div className="overflow-hidden w-full px-12">
                       <div
                         className="flex transition-transform duration-300 ease-in-out gap-6"
-                        style={{ transform: `translateX(-${brandCarouselIndex * (36 + 1.5)}%)` }}
+                        style={{ transform: `translateX(calc(-${brandCarouselIndex} * (50% + 0.75rem)))` }}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
                           const allProviders = [...brandData.providerScores].sort((a, b) => {
@@ -749,7 +750,7 @@ export default function CompetitiveTab({
                           const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 3);
 
                           return (
-                            <div key={brandData.brand} className="w-[36%] flex-shrink-0 min-w-[320px]">
+                            <div key={brandData.brand} className="w-[calc(50%-0.75rem)] flex-shrink-0 min-w-[320px]">
                               <div className={`bg-white rounded-xl border-2 h-full ${
                                 brandData.isSearchedBrand
                                   ? 'border-teal-400 ring-1 ring-teal-100 shadow-lg'
@@ -826,14 +827,14 @@ export default function CompetitiveTab({
                                   <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1">Overall Visibility</p>
                                   <p className="text-[10px] text-gray-400 mb-2">Based on mention rate across all questions</p>
                                   <div className="inline-flex items-center justify-center relative">
-                                    <svg width="96" height="96" viewBox="0 0 96 96" className="transform -rotate-90">
-                                      <circle cx="48" cy="48" r="40" fill="none" stroke="#f3f4f6" strokeWidth="6" />
+                                    <svg width="120" height="120" viewBox="0 0 120 120" className="transform -rotate-90">
+                                      <circle cx="60" cy="60" r="52" fill="none" stroke="#f3f4f6" strokeWidth="6" />
                                       <circle
-                                        cx="48" cy="48" r="40" fill="none"
+                                        cx="60" cy="60" r="52" fill="none"
                                         strokeWidth="6"
                                         strokeLinecap="round"
                                         stroke={Math.round(brandData.visibilityScore) >= 80 ? '#10b981' : Math.round(brandData.visibilityScore) >= 40 ? '#f59e0b' : '#f87171'}
-                                        strokeDasharray={`${(Math.round(brandData.visibilityScore) / 100) * 251.3} 251.3`}
+                                        strokeDasharray={`${(Math.round(brandData.visibilityScore) / 100) * 326.7} 326.7`}
                                       />
                                     </svg>
                                     <div className="absolute inset-0 flex items-center justify-center">
@@ -874,7 +875,7 @@ export default function CompetitiveTab({
                     {/* Right Arrow */}
                     {canNavigate && (
                       <button
-                        onClick={() => setBrandCarouselIndex(prev => prev < totalCards - 3 ? prev + 1 : 0)}
+                        onClick={() => setBrandCarouselIndex(prev => prev < maxIndex ? prev + 1 : 0)}
                         className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 text-gray-400"
                       >
                         <ChevronRight className="w-5 h-5" />
@@ -885,7 +886,7 @@ export default function CompetitiveTab({
                   {/* Carousel Dots */}
                   {canNavigate && (
                     <div className="flex justify-center gap-2 mt-6">
-                      {Array.from({ length: Math.max(1, totalCards - 2) }).map((_, idx) => (
+                      {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
                         <button
                           key={idx}
                           onClick={() => setBrandCarouselIndex(idx)}
