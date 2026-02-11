@@ -165,44 +165,36 @@ export const OverviewTab = ({
     });
   }, [globallyFilteredResults, providerFilter, runStatus]);
 
-  // Helper to calculate position for a result
+  // Helper to calculate position for a result based on first appearance in response text
   const getResultPosition = (result: Result): number | null => {
     if (!result.response_text || result.error || !runStatus) return null;
     const selectedBrand = runStatus.search_type === 'category'
       ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
       : runStatus.brand;
     const brandLower = (selectedBrand || '').toLowerCase();
+    const textLower = result.response_text.toLowerCase();
+
+    // Find the searched brand's position in the actual text
+    const brandTextPos = textLower.indexOf(brandLower);
+    if (brandTextPos === -1) return null;
+
+    // Get all known brands to compare against
     const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
       ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
       : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
-    // First try exact match
-    let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
-
-    // If not found, try partial match
-    if (foundIndex === -1) {
-      foundIndex = allBrands.findIndex(b =>
-        b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
-      );
-    }
-
-    // If still not found but brand_mentioned is true, find position by text search
-    if (foundIndex === -1 && result.brand_mentioned && result.response_text) {
-      const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
-      if (brandPos >= 0) {
-        let brandsBeforeCount = 0;
-        for (const b of allBrands) {
-          const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
-          if (bPos >= 0 && bPos < brandPos) {
-            brandsBeforeCount++;
-          }
-        }
-        return brandsBeforeCount + 1;
+    // Count how many OTHER brands appear before the searched brand in the text
+    let brandsBeforeCount = 0;
+    for (const b of allBrands) {
+      const bLower = b.toLowerCase();
+      if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+      const bPos = textLower.indexOf(bLower);
+      if (bPos >= 0 && bPos < brandTextPos) {
+        brandsBeforeCount++;
       }
-      return allBrands.length + 1;
     }
 
-    return foundIndex >= 0 ? foundIndex + 1 : null;
+    return brandsBeforeCount + 1;
   };
 
   // Sort filtered results
@@ -1210,46 +1202,36 @@ export const OverviewTab = ({
             <table className="w-full table-fixed">
               <tbody>
               {sortedResults.map((result: Result, resultIdx: number) => {
-                // Calculate position for this result
+                // Calculate position for this result based on first text appearance
                 let position: number | null = null;
                 if (result.response_text && !result.error) {
                   const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
                   const brandLower = (selectedBrand || '').toLowerCase();
+                  const textLower = result.response_text.toLowerCase();
 
                   const isMentioned = isCategory
                     ? result.competitors_mentioned?.includes(selectedBrand || '')
                     : result.brand_mentioned;
 
                   if (isMentioned && brandLower) {
-                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                    const brandTextPos = textLower.indexOf(brandLower);
+                    if (brandTextPos >= 0) {
+                      const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                        ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                        : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
-                    let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
-                    if (foundIndex === -1) {
-                      foundIndex = allBrands.findIndex(b =>
-                        b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
-                      );
-                    }
-
-                    let rank = foundIndex + 1;
-                    if (foundIndex === -1) {
-                      const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
-                      if (brandPos >= 0) {
-                        let brandsBeforeCount = 0;
-                        for (const b of allBrands) {
-                          const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
-                          if (bPos >= 0 && bPos < brandPos) {
-                            brandsBeforeCount++;
-                          }
+                      let brandsBeforeCount = 0;
+                      for (const b of allBrands) {
+                        const bLower = b.toLowerCase();
+                        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+                        const bPos = textLower.indexOf(bLower);
+                        if (bPos >= 0 && bPos < brandTextPos) {
+                          brandsBeforeCount++;
                         }
-                        rank = brandsBeforeCount + 1;
-                      } else {
-                        rank = allBrands.length + 1;
                       }
+                      const rank = brandsBeforeCount + 1;
+                      if (rank > 0) position = rank;
                     }
-
-                    if (rank > 0) position = rank;
                   }
                 }
 
@@ -1281,6 +1263,20 @@ export const OverviewTab = ({
                 };
 
                 // Sentiment badge
+                const getConditionalReason = (text: string): string => {
+                  const lower = text.toLowerCase();
+                  if (/\b(budget|price|cost|expensive|affordable|pric)\b/.test(lower)) return 'Price-dependent recommendation';
+                  if (/\b(depends on|depending on)\b/.test(lower)) return 'Depends on use case';
+                  if (/\b(beginner|advanced|experienced|skill)\b/.test(lower)) return 'Depends on experience level';
+                  if (/\b(some users|some people|not for everyone)\b/.test(lower)) return 'Not universally recommended';
+                  if (/\b(limited|lacks|missing|drawback)\b/.test(lower)) return 'Notes some limitations';
+                  if (/\b(however|but|although|while|despite)\b/.test(lower)) return 'Mentioned with caveats';
+                  if (/\b(if you|for those who|specific|certain)\b/.test(lower)) return 'Situation-specific mention';
+                  if (/\b(compared to|alternative|better than|worse than)\b/.test(lower)) return 'Competitive comparison';
+                  if (/\b(may not|might not|not always|sometimes)\b/.test(lower)) return 'Qualified recommendation';
+                  return 'Mentioned with conditions';
+                };
+
                 const getSentimentBadge = () => {
                   if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
                   const sentiment = result.brand_sentiment;
@@ -1295,6 +1291,14 @@ export const OverviewTab = ({
                     'negative_comparison': { text: 'text-red-600', label: 'Negative' },
                   };
                   const config = configs[sentiment] || { text: 'text-gray-500', label: 'Unknown' };
+                  if (sentiment === 'conditional' && result.response_text) {
+                    return (
+                      <div>
+                        <span className={`text-xs font-medium ${config.text}`}>{config.label}</span>
+                        <p className="text-[10px] text-amber-500/80 leading-tight mt-0.5">{getConditionalReason(result.response_text)}</p>
+                      </div>
+                    );
+                  }
                   return (
                     <span className={`text-xs font-medium ${config.text}`}>
                       {config.label}
@@ -1327,7 +1331,7 @@ export const OverviewTab = ({
                       </td>
                       <td className="w-[13%] py-3 px-4">
                         <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(result.provider) }} />
+                          {getProviderIcon(result.provider)}
                           {providerLabels[result.provider] || result.provider}
                         </span>
                       </td>
@@ -1363,26 +1367,33 @@ export const OverviewTab = ({
               // Generate CSV content
               const headers = ['Question', 'AI Model', 'Position', 'Brand Mentioned', 'Sentiment', 'Competitors', 'Response'];
               const rows = sortedResults.map((result: Result) => {
-                // Calculate position
+                // Calculate position based on first text appearance
                 let position: number | string = '-';
                 if (result.response_text && !result.error) {
                   const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
                   const brandLower = (selectedBrand || '').toLowerCase();
+                  const textLower = result.response_text.toLowerCase();
                   const isMentioned = isCategory
                     ? result.competitors_mentioned?.includes(selectedBrand || '')
                     : result.brand_mentioned;
 
                   if (isMentioned && brandLower) {
-                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-                    let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
-                    if (foundIndex === -1) {
-                      foundIndex = allBrands.findIndex(b =>
-                        b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
-                      );
+                    const brandTextPos = textLower.indexOf(brandLower);
+                    if (brandTextPos >= 0) {
+                      const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                        ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                        : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                      let brandsBeforeCount = 0;
+                      for (const b of allBrands) {
+                        const bLower = b.toLowerCase();
+                        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+                        const bPos = textLower.indexOf(bLower);
+                        if (bPos >= 0 && bPos < brandTextPos) {
+                          brandsBeforeCount++;
+                        }
+                      }
+                      position = brandsBeforeCount + 1;
                     }
-                    if (foundIndex >= 0) position = foundIndex + 1;
                   }
                 }
 
