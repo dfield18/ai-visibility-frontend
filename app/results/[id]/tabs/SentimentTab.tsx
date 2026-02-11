@@ -1639,7 +1639,7 @@ export const SentimentTab = () => {
                             ? 'text-amber-600 font-medium'
                             : 'text-gray-500';
                           return (
-                            <span className={`text-sm ${color}`}>#{rank}</span>
+                            <span className={`text-xs ${color}`}>#{rank}</span>
                           );
                         };
 
@@ -1684,7 +1684,7 @@ export const SentimentTab = () => {
                             onClick={() => setSelectedResult(result)}
                           >
                             <td className="py-3 px-4" title={result.prompt}>
-                              <p className="text-sm text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
+                              <p className="text-xs text-gray-900 truncate">{truncate(result.prompt, 50)}</p>
                             </td>
                             <td className="py-3 px-4">
                               <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
