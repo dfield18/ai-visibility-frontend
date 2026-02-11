@@ -279,12 +279,28 @@ export const getTextForRanking = (text: string, provider: string): string => {
   }
 
   // All providers: if a recommendation list section exists, use only that portion
-  // Look for common list headers like "Top ...", "Best ...", "Recommended ...", "Here are ..."
+  // Match common list headers and markdown headings (##/###) containing recommendation keywords
   const listHeaderPattern = /(?:^|\n)\s*(?:\*{0,2}(?:#+\s*)?(?:Top|Best|Recommended|Here (?:are|is)|Our (?:Top|Pick)|(?:\d+)\s+Best)[^\n]*)/im;
   const match = text.match(listHeaderPattern);
   if (match && match.index !== undefined && match.index > 100) {
-    // Only use from the list header onward if there's substantial preamble (>100 chars)
     return text.substring(match.index);
+  }
+
+  // Also match markdown headings (##/###) that aren't "Key Factors"/"Considerations"/etc.
+  // Find the LAST heading section that likely contains the actual recommendations
+  const headingPattern = /(?:^|\n)\s*#{2,4}\s+[^\n]*/gm;
+  let lastProductHeading: { index: number } | null = null;
+  let headingMatch;
+  while ((headingMatch = headingPattern.exec(text)) !== null) {
+    const heading = headingMatch[0].toLowerCase();
+    // Skip headings that are clearly preamble (factors, considerations, tips, etc.)
+    if (/factor|consider|tip|guide|intro|key |how to|what to|why |feature/.test(heading)) continue;
+    if (headingMatch.index > 100) {
+      lastProductHeading = { index: headingMatch.index };
+    }
+  }
+  if (lastProductHeading) {
+    return text.substring(lastProductHeading.index);
   }
 
   return text;
