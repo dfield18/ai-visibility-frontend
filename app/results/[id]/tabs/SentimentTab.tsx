@@ -292,7 +292,7 @@ export const SentimentTab = () => {
             r.brand_sentiment || '',
             `"${compSentiments}"`,
             `"${(r.all_brands_mentioned || []).join(', ')}"`,
-            `"${(r.response_text || '').replace(/"/g, '""')}"`,
+            `"${(r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/"/g, '""')}"`,
           ];
         });
 

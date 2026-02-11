@@ -531,6 +531,9 @@ export const formatResponseText = (text: string): string => {
 
   let formatted = text;
 
+  // Remove AI Overview "People Also Ask" markers
+  formatted = formatted.replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '');
+
   formatted = formatted.replace(/\r\n/g, '\n');
   formatted = formatted.replace(/\n{3,}/g, '\n\n');
   formatted = formatted.replace(/^[\u2022\u2023\u25E6\u2043\u2219●○◦•]\s*/gm, '- ');

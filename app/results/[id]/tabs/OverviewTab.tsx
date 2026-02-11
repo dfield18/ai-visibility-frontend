@@ -567,16 +567,13 @@ export const OverviewTab = ({
           </div>
           <div className="space-y-3">
             {brandQuotes.map((quote, idx) => (
-              <div key={idx} className="flex gap-3 items-start">
-                <div className="mt-1 text-gray-300 text-lg leading-none shrink-0">&ldquo;</div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-700 italic leading-relaxed">
-                    {quote.text}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    — {getProviderLabel(quote.provider)}
-                  </p>
-                </div>
+              <div key={idx}>
+                <p className="text-sm text-gray-700 italic leading-relaxed">
+                  <span className="text-gray-300 text-lg leading-none">&ldquo;</span>{quote.text}<span className="text-gray-300 text-lg leading-none">&rdquo;</span>
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  — {getProviderLabel(quote.provider)}
+                </p>
               </div>
             ))}
           </div>
@@ -799,10 +796,16 @@ export const OverviewTab = ({
 
           {/* Dot Plot Grid */}
           <div className="space-y-0">
-            {Object.entries(positionByPlatformData).map(([provider, categories], rowIdx) => (
+            {Object.entries(positionByPlatformData).map(([provider, categories], rowIdx) => {
+              const allDots = Object.values(categories).flat() as any[];
+              const providerId = allDots.length > 0 ? allDots[0].originalResult?.provider : '';
+              return (
               <div key={provider} className={`flex items-center py-3 ${rowIdx > 0 ? 'border-t border-gray-50' : ''}`}>
                 <div className="w-28 flex-shrink-0">
-                  <span className="text-sm font-medium text-gray-900">{provider}</span>
+                  <div className="flex items-center gap-1.5">
+                    {getProviderIcon(providerId)}
+                    <span className="text-sm font-medium text-gray-900">{provider}</span>
+                  </div>
                 </div>
                 <div className="flex-1 grid grid-cols-6 gap-2">
                   {POSITION_CATEGORIES.map((category) => {
@@ -851,7 +854,8 @@ export const OverviewTab = ({
                   })}
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {/* X-axis labels */}
@@ -1377,7 +1381,7 @@ export const OverviewTab = ({
                   result.error ? 'Error' : result.brand_mentioned ? 'Yes' : 'No',
                   sentimentLabel,
                   `"${(result.competitors_mentioned || []).join(', ')}"`,
-                  `"${(result.response_text || '').replace(/"/g, '""')}"`
+                  `"${(result.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/"/g, '""')}"`
                 ].join(',');
               });
 

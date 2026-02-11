@@ -738,10 +738,25 @@ export default function ResultsPage() {
   }, [runStatus]);
 
   // Apply global filters to results
+  // Fix brand_mentioned for results where the backend missed a mention
+  // (e.g., AI Overviews responses where the brand appears in supplemental sections)
+  const correctedResults = useMemo(() => {
+    if (!runStatus) return [];
+    const brandLower = runStatus.brand.toLowerCase();
+    return runStatus.results.map((result: Result) => {
+      if (!result.brand_mentioned && result.response_text && !result.error) {
+        if (result.response_text.toLowerCase().includes(brandLower)) {
+          return { ...result, brand_mentioned: true };
+        }
+      }
+      return result;
+    });
+  }, [runStatus]);
+
   const globallyFilteredResults = useMemo(() => {
     if (!runStatus) return [];
 
-    return runStatus.results.filter((result: Result) => {
+    return correctedResults.filter((result: Result) => {
       // LLM filter
       if (globalLlmFilter !== 'all' && result.provider !== globalLlmFilter) return false;
 
@@ -3442,7 +3457,7 @@ export default function ResultsPage() {
           r.tokens || '',
           r.cost || '',
           `"${(r.sources || []).map(s => s.url).join(', ')}"`,
-          `"${(r.response_text || '').replace(/"/g, '""')}"`,
+          `"${(r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/"/g, '""')}"`,
         ];
       });
 
@@ -3558,7 +3573,7 @@ export default function ResultsPage() {
           r.brand_sentiment || '',
           `"${competitorSentiments}"`,
           `"${(r.all_brands_mentioned || []).join(', ')}"`,
-          `"${(r.response_text || '').replace(/"/g, '""')}"`,
+          `"${(r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/"/g, '""')}"`,
         ];
       });
 
