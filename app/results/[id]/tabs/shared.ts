@@ -266,18 +266,28 @@ export const getSentimentDotColor = (sentiment: string | null): string => {
   }
 };
 
-// Strip question headers and search result titles from AI Overview responses for ranking
+// Strip preamble/advice sections so ranking uses only the recommendation list portion
 export const getTextForRanking = (text: string, provider: string): string => {
-  if (provider !== 'ai_overviews') return text;
-  // Keep answer text, strip question headers and search results section
-  // 1. Remove the [Top Search Results] section and everything after ---
-  const separatorIdx = text.indexOf('---');
-  let cleaned = separatorIdx >= 0 ? text.substring(0, separatorIdx) : text;
-  const searchResultsIdx = cleaned.indexOf('[Top Search Results]');
-  if (searchResultsIdx >= 0) cleaned = cleaned.substring(0, searchResultsIdx);
-  // 2. Remove bold question header lines (e.g. "**What shoes fit wide feet?**")
-  cleaned = cleaned.replace(/\*\*[^*]*\?[^*]*\*\*/g, '');
-  return cleaned;
+  // AI Overviews: strip question headers and [Top Search Results] section
+  if (provider === 'ai_overviews') {
+    const separatorIdx = text.indexOf('---');
+    let cleaned = separatorIdx >= 0 ? text.substring(0, separatorIdx) : text;
+    const searchResultsIdx = cleaned.indexOf('[Top Search Results]');
+    if (searchResultsIdx >= 0) cleaned = cleaned.substring(0, searchResultsIdx);
+    cleaned = cleaned.replace(/\*\*[^*]*\?[^*]*\*\*/g, '');
+    return cleaned;
+  }
+
+  // All providers: if a recommendation list section exists, use only that portion
+  // Look for common list headers like "Top ...", "Best ...", "Recommended ...", "Here are ..."
+  const listHeaderPattern = /(?:^|\n)\s*(?:\*{0,2}(?:#+\s*)?(?:Top|Best|Recommended|Here (?:are|is)|Our (?:Top|Pick)|(?:\d+)\s+Best)[^\n]*)/im;
+  const match = text.match(listHeaderPattern);
+  if (match && match.index !== undefined && match.index > 100) {
+    // Only use from the list header onward if there's substantial preamble (>100 chars)
+    return text.substring(match.index);
+  }
+
+  return text;
 };
 
 export const getResultPosition = (result: Result, runStatus: RunStatusResponse): number | null => {

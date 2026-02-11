@@ -586,12 +586,14 @@ export const OverviewTab = ({
           <div className="space-y-2.5">
             {brandQuotes.slice(0, 2).map((quote, idx) => {
               const shortPrompt = quote.prompt.length > 35 ? quote.prompt.substring(0, 33) + '...' : quote.prompt;
-              // Strip citation markers like [1], [2] and bare domain references like "goal.com"
+              // Strip citation markers, bare domains, and redundant leading "Brand: " prefix
+              const brandName = runStatus?.brand || '';
               const cleanedText = quote.text
                 .replace(/\[\d+\]/g, '')
                 .replace(/(?:^|\s)[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?\s*/g, ' ')
                 .replace(/\s{2,}/g, ' ')
-                .trim();
+                .trim()
+                .replace(new RegExp('^' + brandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[:–—-]\\s*', 'i'), '');
               return (
                 <div key={idx}>
                   <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{cleanedText}&rdquo;</p>
