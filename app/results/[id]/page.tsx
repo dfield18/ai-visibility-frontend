@@ -4135,7 +4135,7 @@ export default function ResultsPage() {
   const brandQuotes = brandQuotesMap[runStatus?.brand ?? ''] ?? [];
 
   // Position categories for the dot plot chart
-  const POSITION_CATEGORIES = ['Top', '2-3', '4-5', '6-10', '>10', 'N/A'];
+  const POSITION_CATEGORIES = ['Top', '2-3', '4-5', '6-10', '>10', 'Not Mentioned'];
 
   // Compute data for position by platform dot plot
   const positionByPlatformData = useMemo(() => {
@@ -4156,7 +4156,7 @@ export default function ResultsPage() {
       // Determine position category
       let category: string;
       if (!dp.isMentioned || dp.rank === 0) {
-        category = 'N/A';
+        category = 'Not Mentioned';
       } else if (dp.rank === 1) {
         category = 'Top';
       } else if (dp.rank >= 2 && dp.rank <= 3) {
@@ -4933,7 +4933,7 @@ export default function ResultsPage() {
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(provider) }} />
+                        <span className="shrink-0">{getProviderIcon(provider)}</span>
                         <span className="font-medium text-gray-900 text-sm">{getProviderLabel(provider)}</span>
                       </div>
                       <button
@@ -8587,7 +8587,7 @@ export default function ResultsPage() {
                     return (
                       <div key={source.domain} className="bg-[#FAFAF8] rounded-lg">
                         <div
-                          className={`flex items-center gap-2 p-2.5 cursor-pointer hover:bg-gray-100 transition-colors duration-100 ${isExpanded ? 'rounded-t-lg' : 'rounded-lg'}`}
+                          className={`flex items-center gap-2 p-2.5 cursor-pointer hover:bg-gray-100 ${isExpanded ? 'rounded-t-lg' : 'rounded-lg'}`}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -9302,7 +9302,7 @@ export default function ResultsPage() {
                     };
 
                     return (
-                      <tr key={row.domain} className="border-b border-gray-100 hover:bg-gray-50/40 transition-colors">
+                      <tr key={row.domain} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-4 px-4">
                           <span className="text-sm text-gray-900 font-medium">{row.domain}</span>
                         </td>
