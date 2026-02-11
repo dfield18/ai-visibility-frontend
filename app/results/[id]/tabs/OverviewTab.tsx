@@ -584,11 +584,10 @@ export const OverviewTab = ({
           </div>
           <div className="space-y-2.5">
             {brandQuotes.slice(0, 2).map((quote, idx) => {
-              const blurb = quote.summary || quote.text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '').split(/[.!?]/)[0].split(' ').slice(0, 12).join(' ');
               const shortPrompt = quote.prompt.length > 35 ? quote.prompt.substring(0, 33) + '...' : quote.prompt;
               return (
                 <div key={idx}>
-                  <p className="text-sm text-gray-700 leading-relaxed">{blurb}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{quote.text}&rdquo;</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     — {getProviderLabel(quote.provider)} · {shortPrompt}
                   </p>
