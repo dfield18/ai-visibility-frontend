@@ -3012,12 +3012,11 @@ export default function ResultsPage() {
         if (isMentioned) {
           const textLower = result.response_text.toLowerCase();
           const brandTextPos = textLower.indexOf(brandLower);
+          const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+            ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+            : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
           if (brandTextPos >= 0) {
-            const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-              ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-              : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
             // Count how many other brands appear before the searched brand in the text
             let brandsBeforeCount = 0;
             for (const b of allBrands) {
@@ -3030,8 +3029,8 @@ export default function ResultsPage() {
             }
             rank = brandsBeforeCount + 1;
           } else {
-            // Brand is mentioned but we can't find its position - place it after all known brands
-            rank = 1;
+            // Brand is mentioned but we can't find its exact position in text
+            rank = allBrands.length > 0 ? allBrands.length + 1 : 1;
           }
         }
       }
@@ -3255,11 +3254,11 @@ export default function ResultsPage() {
     }
     const overallVisibility = results.length > 0 ? (mentionedCount / results.length) * 100 : 0;
 
-    // Average rank and top position count
+    // Average rank and top position count — only for results where brand is actually mentioned
     const ranks: number[] = [];
     let topPositionCount = 0;
     for (const result of results) {
-      if (!result.response_text) continue;
+      if (!result.response_text || !result.brand_mentioned) continue;
 
       const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
         ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
@@ -3283,7 +3282,9 @@ export default function ResultsPage() {
           const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
           let brandsBeforeCount = 0;
           for (const b of allBrands) {
-            const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+            const bLower = b.toLowerCase();
+            if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+            const bPos = result.response_text.toLowerCase().indexOf(bLower);
             if (bPos >= 0 && bPos < brandPos) {
               brandsBeforeCount++;
             }
@@ -4653,6 +4654,10 @@ export default function ResultsPage() {
             sourcesInsights,
             sentimentInsights,
             hasAnySources,
+            llmBreakdownBrandFilter,
+            setLlmBreakdownBrandFilter,
+            promptBreakdownLlmFilter,
+            setPromptBreakdownLlmFilter,
           }}
           ui={{
             activeTab,

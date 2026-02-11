@@ -70,6 +70,10 @@ export const OverviewTab = ({
     isCategory,
     availableProviders,
     globallyFilteredResults,
+    llmBreakdownBrandFilter,
+    setLlmBreakdownBrandFilter,
+    promptBreakdownLlmFilter,
+    setPromptBreakdownLlmFilter,
   } = useResults();
 
   const {
@@ -81,9 +85,7 @@ export const OverviewTab = ({
   // Internalized state
   // ---------------------------------------------------------------------------
   const [expandedLLMCards, setExpandedLLMCards] = useState<Set<string>>(new Set());
-  const [llmBreakdownBrandFilter, setLlmBreakdownBrandFilter] = useState<string>('');
-  const [promptBreakdownLlmFilter, setPromptBreakdownLlmFilter] = useState<string>('all');
-  const [tableSortColumn, setTableSortColumn] = useState<'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('prompt');
+  const [tableSortColumn, setTableSortColumn] = useState<'default' | 'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('default');
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // ---------------------------------------------------------------------------
@@ -197,7 +199,18 @@ export const OverviewTab = ({
     return brandsBeforeCount + 1;
   };
 
-  // Sort filtered results
+  // Provider popularity order for sorting (ChatGPT first)
+  const PROVIDER_SORT_ORDER: Record<string, number> = {
+    'openai': 1,
+    'ai_overviews': 2,
+    'gemini': 3,
+    'perplexity': 4,
+    'anthropic': 5,
+    'grok': 6,
+    'llama': 7,
+  };
+
+  // Sort filtered results — default: rank, then sentiment, then provider popularity
   const sortedResults = useMemo(() => {
     const sorted = [...filteredResults];
 
@@ -209,7 +222,7 @@ export const OverviewTab = ({
           comparison = a.prompt.localeCompare(b.prompt);
           break;
         case 'llm':
-          comparison = a.provider.localeCompare(b.provider);
+          comparison = (PROVIDER_SORT_ORDER[a.provider] ?? 99) - (PROVIDER_SORT_ORDER[b.provider] ?? 99);
           break;
         case 'position': {
           const posA = getResultPosition(a) ?? 999;
@@ -234,6 +247,18 @@ export const OverviewTab = ({
           const compB = b.competitors_mentioned?.length || 0;
           comparison = compB - compA; // More competitors first
           break;
+        }
+        default: {
+          // Default sort: rank → sentiment → provider popularity
+          const posA = getResultPosition(a) ?? 999;
+          const posB = getResultPosition(b) ?? 999;
+          if (posA !== posB) return posA - posB;
+
+          const sentA = sentimentOrder[a.brand_sentiment || 'not_mentioned'] || 6;
+          const sentB = sentimentOrder[b.brand_sentiment || 'not_mentioned'] || 6;
+          if (sentA !== sentB) return sentA - sentB;
+
+          return (PROVIDER_SORT_ORDER[a.provider] ?? 99) - (PROVIDER_SORT_ORDER[b.provider] ?? 99);
         }
       }
 
@@ -557,17 +582,19 @@ export const OverviewTab = ({
               What AI Says About {runStatus?.brand}
             </h2>
           </div>
-          <div className="space-y-3">
-            {brandQuotes.map((quote, idx) => (
-              <div key={idx}>
-                <p className="text-sm text-gray-700 italic leading-relaxed">
-                  <span className="text-gray-300 text-lg leading-none">&ldquo;</span>{quote.text}<span className="text-gray-300 text-lg leading-none">&rdquo;</span>
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  — {getProviderLabel(quote.provider)}
-                </p>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {brandQuotes.slice(0, 2).map((quote, idx) => {
+              const blurb = quote.summary || quote.text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '').split(/[.!?]/)[0].split(' ').slice(0, 12).join(' ');
+              const shortPrompt = quote.prompt.length > 35 ? quote.prompt.substring(0, 33) + '...' : quote.prompt;
+              return (
+                <div key={idx} className="bg-gray-50 border border-gray-100 rounded-lg px-4 py-3">
+                  <p className="text-sm text-gray-700 font-medium leading-snug">{blurb}</p>
+                  <p className="text-[10px] text-gray-400 mt-1.5">
+                    {getProviderLabel(quote.provider)} · {shortPrompt}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1066,7 +1093,7 @@ export const OverviewTab = ({
           <div>
             <h2 className="text-lg font-semibold text-gray-900">All Results</h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error).length} results
+              Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error || (r.provider === 'ai_overviews' && r.error)).length} results
             </p>
           </div>
           <select
@@ -1261,51 +1288,76 @@ export const OverviewTab = ({
                   return <span className="text-xs text-gray-400">No</span>;
                 };
 
-                // Sentiment badge with reason
+                // Sentiment badge with reason — extracts context from the sentence containing the brand
                 const getSentimentReason = (sentiment: string, text: string, brand: string): string => {
-                  const lower = text.toLowerCase();
                   const brandLower = brand.toLowerCase();
+                  // Find the sentence containing the brand name
+                  const sentences = text.split(/(?<=[.!?])\s+/);
+                  const brandSentences = sentences.filter(s => s.toLowerCase().includes(brandLower));
+                  const context = brandSentences.join(' ').toLowerCase();
+                  // If no brand sentences found, use full text
+                  const searchText = context || text.toLowerCase();
+
                   if (sentiment === 'strong_endorsement') {
-                    if (/\b(top pick|top choice|best overall|#1|number one)\b/.test(lower)) return 'Ranked as top choice';
-                    if (/\b(highly recommend|strongly recommend)\b/.test(lower)) return 'Highly recommended';
-                    if (/\b(stands out|leads the|industry leader|market leader)\b/.test(lower)) return 'Positioned as industry leader';
-                    if (/\b(best|excellent|exceptional|outstanding|superior)\b/.test(lower)) return 'Praised as best in class';
-                    if (/\b(go-to|favorite|preferred|ideal)\b/.test(lower)) return 'Named as preferred option';
-                    return 'Clearly recommended';
+                    if (/\b(top pick|top choice|best overall|#\s?1|number one|first choice)\b/.test(searchText)) return `Called a top pick or #1 choice`;
+                    if (/\bhighly recommend/.test(searchText)) return `Highly recommended by name`;
+                    if (/\b(strongly recommend|must.have|essential)\b/.test(searchText)) return `Described as a must-have`;
+                    if (/\b(industry leader|market leader|leads the)\b/.test(searchText)) return `Called an industry or market leader`;
+                    if (/\b(stands out|sets .* apart|unmatched)\b/.test(searchText)) return `Said to stand out from competitors`;
+                    if (/\b(best.in.class|gold standard|benchmark)\b/.test(searchText)) return `Called best-in-class or gold standard`;
+                    if (/\b(go.to|favorite|preferred)\b/.test(searchText)) return `Named as the go-to or preferred option`;
+                    if (/\b(excellent|exceptional|outstanding|superb|stellar)\b/.test(searchText)) return `Described with strong praise (excellent, exceptional)`;
+                    if (/\b(dominat|unrivaled|unbeatable)\b/.test(searchText)) return `Positioned as dominant in its category`;
+                    if (/\bbest\b/.test(searchText)) return `Called "best" in context`;
+                    if (/\b(superior|excels|ahead of)\b/.test(searchText)) return `Said to be superior to alternatives`;
+                    return `Endorsed as a top recommendation`;
                   }
                   if (sentiment === 'positive_endorsement') {
-                    if (/\b(reliable|dependable|trusted|well-known)\b/.test(lower)) return 'Noted as reliable and trusted';
-                    if (/\b(popular|widely used|well-regarded)\b/.test(lower)) return 'Recognized as popular choice';
-                    if (/\b(good|great|solid|strong)\b/.test(lower)) return 'Described positively';
-                    if (/\b(recommend|worth|impressive)\b/.test(lower)) return 'Generally recommended';
-                    if (/\b(innovative|leading|advanced)\b/.test(lower)) return 'Highlighted for innovation';
-                    return 'Mentioned favorably';
+                    if (/\b(reliable|dependable)\b/.test(searchText)) return `Described as reliable or dependable`;
+                    if (/\b(well.known|well.established|reputable|trusted)\b/.test(searchText)) return `Recognized as a trusted, reputable brand`;
+                    if (/\b(popular|widely used|widely adopted)\b/.test(searchText)) return `Noted as popular and widely used`;
+                    if (/\b(innovative|cutting.edge|advanced technology)\b/.test(searchText)) return `Highlighted for innovation or technology`;
+                    if (/\b(high.quality|well.made|premium|durable)\b/.test(searchText)) return `Praised for quality or durability`;
+                    if (/\b(great value|good value|affordable)\b/.test(searchText)) return `Noted for good value or affordability`;
+                    if (/\b(recommend|worth considering|worth a look)\b/.test(searchText)) return `Recommended or said to be worth considering`;
+                    if (/\b(impressive|strong performance|performs well)\b/.test(searchText)) return `Praised for strong performance`;
+                    if (/\b(good|great|solid)\b/.test(searchText)) return `Described as a good or solid option`;
+                    if (/\b(versatile|flexible|user.friendly|easy to use)\b/.test(searchText)) return `Noted for ease of use or versatility`;
+                    return `Mentioned in a positive light`;
                   }
                   if (sentiment === 'conditional') {
-                    if (/\b(budget|price|cost|expensive|affordable|pric)\b/.test(lower)) return 'Price-dependent recommendation';
-                    if (/\b(depends on|depending on)\b/.test(lower)) return 'Depends on use case';
-                    if (/\b(beginner|advanced|experienced|skill)\b/.test(lower)) return 'Depends on experience level';
-                    if (/\b(some users|some people|not for everyone)\b/.test(lower)) return 'Not universally recommended';
-                    if (/\b(limited|lacks|missing|drawback)\b/.test(lower)) return 'Notes some limitations';
-                    if (/\b(however|but|although|while|despite)\b/.test(lower)) return 'Mentioned with caveats';
-                    if (/\b(if you|for those who|specific|certain)\b/.test(lower)) return 'Situation-specific mention';
-                    if (/\b(compared to|alternative|better than|worse than)\b/.test(lower)) return 'Competitive comparison';
-                    if (/\b(may not|might not|not always|sometimes)\b/.test(lower)) return 'Qualified recommendation';
-                    return 'Mentioned with conditions';
+                    if (/\b(budget|price|cost|expensive|pric)\b/.test(searchText)) return `Recommendation depends on price or budget`;
+                    if (/\b(depends on|depending on) (your |what |how )/.test(searchText)) return `Suitability depends on specific needs`;
+                    if (/\b(beginner|advanced|experienced|skill level)\b/.test(searchText)) return `Fit depends on user experience level`;
+                    if (/\b(not for everyone|some users|some people|niche)\b/.test(searchText)) return `Noted as good for some users, not all`;
+                    if (/\b(limited|lacks|missing|doesn.t have)\b/.test(searchText)) return `Praised but noted for missing features`;
+                    if (/\b(however|but|although|while|despite|caveat)\b/.test(searchText)) return `Positive mention followed by caveats`;
+                    if (/\b(if you|for those who|for people who)\b/.test(searchText)) return `Recommended only for certain use cases`;
+                    if (/\b(trade.off|compromise|downside)\b/.test(searchText)) return `Mentioned with trade-offs or downsides`;
+                    if (/\b(compared to|alternative|better than|worse than)\b/.test(searchText)) return `Mixed when compared to alternatives`;
+                    if (/\b(may not|might not|not always|sometimes)\b/.test(searchText)) return `Said to not always meet expectations`;
+                    return `Endorsed with qualifications or conditions`;
                   }
                   if (sentiment === 'negative_comparison') {
-                    if (/\b(behind|trails|lags|falling)\b/.test(lower)) return 'Positioned behind competitors';
-                    if (/\b(avoid|stay away|not recommend)\b/.test(lower)) return 'Advised against';
-                    if (/\b(worse|inferior|weaker|poor)\b/.test(lower)) return 'Compared unfavorably';
-                    if (/\b(issue|problem|complaint|concern)\b/.test(lower)) return 'Issues or concerns noted';
-                    if (/\b(decline|struggling|losing)\b/.test(lower)) return 'Noted as declining';
-                    return 'Mentioned unfavorably';
+                    if (/\b(behind|trails|lags|falling behind)\b/.test(searchText)) return `Said to lag behind or trail competitors`;
+                    if (/\b(avoid|stay away|not recommend|wouldn.t recommend)\b/.test(searchText)) return `Explicitly not recommended or warned against`;
+                    if (/\b(worse|inferior|weaker) than\b/.test(searchText)) return `Directly compared as worse than rivals`;
+                    if (/\b(issue|problem|complaint|frustrat)\b/.test(searchText)) return `Cited for specific problems or complaints`;
+                    if (/\b(decline|struggling|losing|lost)\b/.test(searchText)) return `Described as declining or losing ground`;
+                    if (/\b(overpriced|too expensive|not worth)\b/.test(searchText)) return `Called overpriced or not worth the cost`;
+                    if (/\b(outdated|behind the times|hasn.t kept up)\b/.test(searchText)) return `Described as outdated vs. competitors`;
+                    if (/\b(disappoint|underwhelm|fall.short)\b/.test(searchText)) return `Said to disappoint or fall short`;
+                    if (/\b(poor|bad|terrible|worst)\b/.test(searchText)) return `Described negatively (poor, bad)`;
+                    if (/\b(lack|missing|absent|no )\b/.test(searchText)) return `Criticized for lacking key features`;
+                    return `Framed negatively vs. competitors`;
                   }
                   if (sentiment === 'neutral_mention') {
-                    if (/\b(list|among|one of|alongside|include)\b/.test(lower)) return 'Listed among options';
-                    if (/\b(available|offers|provides|features)\b/.test(lower)) return 'Described factually';
-                    if (/\b(compare|comparison|versus|vs)\b/.test(lower)) return 'Included in comparison';
-                    return 'Mentioned without opinion';
+                    if (/\b(one of (many|several|the)|among (the|several|many))\b/.test(searchText)) return `Listed as one of several options`;
+                    if (/\b(also|available|option|alternative)\b/.test(searchText)) return `Mentioned as an available option`;
+                    if (/\b(compare|comparison|versus|vs)\b/.test(searchText)) return `Included in a factual comparison`;
+                    if (/\b(offers|provides|features|includes)\b/.test(searchText)) return `Features described without opinion`;
+                    if (/\b(known for|specializes)\b/.test(searchText)) return `Described for what it's known for`;
+                    return `Referenced without positive or negative framing`;
                   }
                   return '';
                 };
@@ -1366,7 +1418,7 @@ export const OverviewTab = ({
                       <td className="w-[13%] py-3 px-4">
                         <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
                           {getProviderIcon(result.provider)}
-                          {providerLabels[result.provider] || result.provider}
+                          {getProviderLabel(result.provider)}
                         </span>
                       </td>
                       <td className="w-[7%] py-3 px-4">

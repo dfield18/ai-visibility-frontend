@@ -36,6 +36,10 @@ export interface ResultsContextValue {
   sourcesInsights: string[];
   sentimentInsights: string[];
   hasAnySources: boolean;
+  llmBreakdownBrandFilter: string;
+  setLlmBreakdownBrandFilter: (val: string) => void;
+  promptBreakdownLlmFilter: string;
+  setPromptBreakdownLlmFilter: (val: string) => void;
 }
 
 const ResultsContext = createContext<ResultsContextValue | null>(null);
