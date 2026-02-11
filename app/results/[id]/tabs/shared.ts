@@ -274,6 +274,8 @@ export const getTextForRanking = (text: string, provider: string): string => {
     let cleaned = separatorIdx >= 0 ? text.substring(0, separatorIdx) : text;
     const searchResultsIdx = cleaned.indexOf('[Top Search Results]');
     if (searchResultsIdx >= 0) cleaned = cleaned.substring(0, searchResultsIdx);
+    // Remove bold question headers (e.g. "**What shoes are best?**") — brands in questions
+    // are not recommendations, so excluding them from ranking is correct
     cleaned = cleaned.replace(/\*\*[^*]*\?[^*]*\*\*/g, '');
     return cleaned;
   }
@@ -293,8 +295,8 @@ export const getTextForRanking = (text: string, provider: string): string => {
   let headingMatch;
   while ((headingMatch = headingPattern.exec(text)) !== null) {
     const heading = headingMatch[0].toLowerCase();
-    // Skip headings that are clearly preamble (factors, considerations, tips, etc.)
-    if (/factor|consider|tip|guide|intro|key |how to|what to|why |feature/.test(heading)) continue;
+    // Skip headings that are clearly preamble or post-recommendation sections
+    if (/factor|consider|tip|guide|intro|key |how to|what to|why |feature|conclusion|summary|source|reference|disclaim|note|faq|related/.test(heading)) continue;
     if (headingMatch.index > 100) {
       lastProductHeading = { index: headingMatch.index };
     }

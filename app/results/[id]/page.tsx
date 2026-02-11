@@ -3014,7 +3014,7 @@ export default function ResultsPage() {
             rank = brandsBeforeCount + 1;
           } else {
             // Brand is mentioned but we can't find its exact position in text
-            rank = allBrands.length > 0 ? allBrands.length + 1 : 1;
+            rank = allBrands.length + 1;
           }
         }
       }
@@ -3365,12 +3365,11 @@ export default function ResultsPage() {
           const brandLower = runStatus.brand.toLowerCase();
           const textLower = getTextForRanking(r.response_text, r.provider).toLowerCase();
           const brandTextPos = textLower.indexOf(brandLower);
+          const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+            ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+            : [runStatus.brand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
           if (brandTextPos >= 0) {
-            const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
-              ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-              : [runStatus.brand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
             let brandsBeforeCount = 0;
             for (const b of allBrands) {
               const bLower = b.toLowerCase();
@@ -3382,7 +3381,7 @@ export default function ResultsPage() {
             }
             rank = String(brandsBeforeCount + 1);
           } else {
-            rank = '1';
+            rank = String(allBrands.length + 1);
           }
         }
 
