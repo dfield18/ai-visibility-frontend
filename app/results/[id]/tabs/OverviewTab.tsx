@@ -1339,7 +1339,7 @@ export const OverviewTab = ({
           <button
             onClick={() => {
               // Generate CSV content
-              const headers = ['Question', 'AI Model', 'Position', 'Brand Mentioned', 'Sentiment', 'Competitors'];
+              const headers = ['Question', 'AI Model', 'Position', 'Brand Mentioned', 'Sentiment', 'Competitors', 'Response'];
               const rows = sortedResults.map((result: Result) => {
                 // Calculate position
                 let position: number | string = '-';
@@ -1376,7 +1376,8 @@ export const OverviewTab = ({
                   position,
                   result.error ? 'Error' : result.brand_mentioned ? 'Yes' : 'No',
                   sentimentLabel,
-                  `"${(result.competitors_mentioned || []).join(', ')}"`
+                  `"${(result.competitors_mentioned || []).join(', ')}"`,
+                  `"${(result.response_text || '').replace(/"/g, '""')}"`
                 ].join(',');
               });
 
