@@ -31,7 +31,8 @@ import {
   FileText,
   Building2,
 } from 'lucide-react';
-import { Result, Source, RunStatusResponse } from '@/lib/types';
+import { Result, Source } from '@/lib/types';
+import { useResults, useResultsUI } from './ResultsContext';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -326,22 +327,8 @@ interface AllBrandsAnalysisEntry {
 }
 
 export interface CompetitiveTabProps {
-  runStatus: RunStatusResponse | null;
-  globallyFilteredResults: Result[];
-  trackedBrands: Set<string>;
-  availableProviders: string[];
-  availablePrompts: string[];
-  availableBrands: string[];
-  brandBreakdownStats: any[];
-  copied: boolean;
-  handleCopyLink: () => void;
-  selectedResultHighlight: { brand: string; domain?: string } | null;
   setSelectedResultHighlight: (val: { brand: string; domain?: string } | null) => void;
-  heatmapResultsList: { results: Result[]; domain: string; brand: string } | null;
   setHeatmapResultsList: (val: { results: Result[]; domain: string; brand: string } | null) => void;
-  allBrandsAnalysisData: AllBrandsAnalysisEntry[];
-  brandQuotesMap: Record<string, BrandQuote[]>;
-  setSelectedResult: (val: Result | null) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -349,19 +336,13 @@ export interface CompetitiveTabProps {
 // ---------------------------------------------------------------------------
 
 export default function CompetitiveTab({
-  runStatus,
-  globallyFilteredResults,
-  availableProviders,
-  availablePrompts,
-  brandBreakdownStats,
-  copied,
-  handleCopyLink,
   setSelectedResultHighlight,
   setHeatmapResultsList,
-  allBrandsAnalysisData,
-  brandQuotesMap,
-  setSelectedResult,
 }: CompetitiveTabProps) {
+
+  // ---- Context ----
+  const { runStatus, globallyFilteredResults, availableProviders, availablePrompts, brandBreakdownStats, allBrandsAnalysisData, brandQuotesMap } = useResults();
+  const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
 
   // ---- Internalized state ----
   const [brandBreakdownLlmFilter, setBrandBreakdownLlmFilter] = useState<string>('all');

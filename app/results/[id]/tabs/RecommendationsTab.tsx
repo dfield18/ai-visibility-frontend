@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   Sparkles,
   Globe,
@@ -16,42 +16,175 @@ import { useSiteAudits } from '@/hooks/useApi';
 import { truncate, getSessionId } from '@/lib/utils';
 import {
   type Result,
-  type RunStatusResponse,
-  type AISummaryResponse,
-  type TabType,
   getProviderLabel,
 } from './shared';
+import { useResults, useResultsUI } from './ResultsContext';
 
-export interface RecommendationsTabProps {
-  runStatus: RunStatusResponse | null;
-  aiSummary: AISummaryResponse | undefined;
-  isSummaryLoading: boolean;
-  globallyFilteredResults: Result[];
-  promptBreakdownStats: any[];
-  brandBreakdownStats: any[];
-  llmBreakdownStats: Record<string, any>;
-  setActiveTab: (tab: TabType) => void;
-  copied: boolean;
-  handleCopyLink: () => void;
-  handleExportRecommendationsPDF: (recommendations: any[]) => void;
-  handleExportRecommendationsCSV: (recommendations: any[]) => void;
-}
+export function RecommendationsTab() {
+  const { runStatus, aiSummary, isSummaryLoading, globallyFilteredResults, promptBreakdownStats, brandBreakdownStats, llmBreakdownStats } = useResults();
+  const { setActiveTab, copied, handleCopyLink } = useResultsUI();
 
-export function RecommendationsTab(props: RecommendationsTabProps) {
-  const {
-    runStatus,
-    aiSummary,
-    isSummaryLoading,
-    globallyFilteredResults,
-    promptBreakdownStats,
-    brandBreakdownStats,
-    llmBreakdownStats,
-    setActiveTab,
-    copied,
-    handleCopyLink,
-    handleExportRecommendationsPDF,
-    handleExportRecommendationsCSV,
-  } = props;
+  const handleExportRecommendationsPDF = useCallback((recommendations: Array<{
+    title: string;
+    description: string;
+    impact: string;
+    effort: string;
+    tactics: string[];
+  }>) => {
+    if (!runStatus || recommendations.length === 0) return;
+
+    const getQuadrantName = (impact: string, effort: string) => {
+      if (impact === 'high' && effort === 'low') return 'Quick Win';
+      if (impact === 'high' && effort === 'high') return 'Major Project';
+      if (impact === 'low' && effort === 'low') return 'Low Priority';
+      if (impact === 'low' && effort === 'high') return 'Avoid';
+      return 'Consider';
+    };
+
+    // Build PDF directly with jsPDF (no html2canvas dependency)
+    import('jspdf').then((jsPDFModule) => {
+      const jsPDF = jsPDFModule.default;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      const contentWidth = pageWidth - margin * 2;
+      let y = margin;
+
+      const checkPageBreak = (needed: number) => {
+        if (y + needed > pageHeight - margin) {
+          doc.addPage();
+          y = margin;
+        }
+      };
+
+      // Title
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(17, 24, 39);
+      doc.text('AI Visibility Recommendations', margin, y);
+      y += 8;
+
+      // Subtitle
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(107, 114, 128);
+      doc.text(`${runStatus.brand} — Generated ${new Date().toLocaleDateString()}`, margin, y);
+      y += 12;
+
+      // Recommendations
+      recommendations.forEach((rec, idx) => {
+        checkPageBreak(40);
+
+        // Rec title
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(17, 24, 39);
+        const titleLines = doc.splitTextToSize(`${idx + 1}. ${rec.title}`, contentWidth);
+        doc.text(titleLines, margin, y);
+        y += titleLines.length * 6 + 2;
+
+        // Description
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(75, 85, 99);
+        const descLines = doc.splitTextToSize(rec.description, contentWidth);
+        checkPageBreak(descLines.length * 5);
+        doc.text(descLines, margin, y);
+        y += descLines.length * 5 + 3;
+
+        // Meta badges
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        const quadrant = getQuadrantName(rec.impact, rec.effort);
+        doc.setTextColor(107, 114, 128);
+        doc.text(`Impact: ${rec.impact}  •  Effort: ${rec.effort}  •  ${quadrant}`, margin, y);
+        y += 6;
+
+        // Tactics
+        if (rec.tactics.length > 0) {
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(107, 114, 128);
+          doc.text('Tactics:', margin, y);
+          y += 5;
+
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(75, 85, 99);
+          rec.tactics.forEach((t) => {
+            checkPageBreak(6);
+            const tacticLines = doc.splitTextToSize(`•  ${t}`, contentWidth - 5);
+            doc.text(tacticLines, margin + 3, y);
+            y += tacticLines.length * 4.5 + 1;
+          });
+        }
+
+        // Separator line
+        y += 3;
+        checkPageBreak(4);
+        doc.setDrawColor(229, 231, 235);
+        doc.setLineWidth(0.3);
+        doc.line(margin, y, pageWidth - margin, y);
+        y += 8;
+      });
+
+      // Footer
+      checkPageBreak(10);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(156, 163, 175);
+      doc.text('Generated by AI Visibility Tracker', margin, y);
+
+      doc.save(`recommendations-${runStatus.brand}-${new Date().toISOString().split('T')[0]}.pdf`);
+    });
+  }, [runStatus]);
+
+  const handleExportRecommendationsCSV = useCallback((recommendations: Array<{
+    title: string;
+    description: string;
+    impact: string;
+    effort: string;
+    tactics: string[];
+  }>) => {
+    if (!runStatus || recommendations.length === 0) return;
+
+    const headers = [
+      'Recommendation',
+      'Description',
+      'Impact',
+      'Effort',
+      'Category',
+      'Tactics',
+    ];
+
+    const rows = recommendations.map(rec => {
+      const quadrantName =
+        rec.impact === 'high' && rec.effort === 'low' ? 'Quick Win' :
+        rec.impact === 'high' && rec.effort === 'high' ? 'Major Project' :
+        rec.impact === 'low' && rec.effort === 'low' ? 'Low Priority' :
+        rec.impact === 'low' && rec.effort === 'high' ? 'Avoid' : 'Consider';
+
+      return [
+        `"${rec.title.replace(/"/g, '""')}"`,
+        `"${rec.description.replace(/"/g, '""')}"`,
+        rec.impact,
+        rec.effort,
+        quadrantName,
+        `"${rec.tactics.join('; ').replace(/"/g, '""')}"`,
+      ];
+    });
+
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `recommendations-${runStatus.brand}-${runStatus.run_id.slice(0, 8)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [runStatus]);
 
   // Fetch site audits for this session
   const sessionId = getSessionId();
@@ -115,7 +248,7 @@ export function RecommendationsTab(props: RecommendationsTabProps) {
       const competitorStats = brandBreakdownStats
         .filter(b => !b.isSearchedBrand)
         .map(b => {
-          const promptStat = b.promptsWithStats.find(ps => ps.prompt === prompt.prompt);
+          const promptStat = b.promptsWithStats.find((ps: any) => ps.prompt === prompt.prompt);
           return { brand: b.brand, rate: promptStat?.rate || 0 };
         })
         .filter(c => c.rate > 0);
@@ -295,7 +428,7 @@ export function RecommendationsTab(props: RecommendationsTabProps) {
         const competitorVisibility = brandBreakdownStats
           .filter(b => !b.isSearchedBrand)
           .reduce((sum, b) => {
-            const promptStat = b.promptsWithStats.find(ps => ps.prompt === prompt.prompt);
+            const promptStat = b.promptsWithStats.find((ps: any) => ps.prompt === prompt.prompt);
             return sum + (promptStat?.rate || 0);
           }, 0) / Math.max(brandBreakdownStats.filter(b => !b.isSearchedBrand).length, 1);
 

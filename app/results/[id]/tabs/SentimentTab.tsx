@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   MessageSquare,
   Lightbulb,
@@ -20,62 +20,27 @@ import {
 import { truncate } from '@/lib/utils';
 import {
   Result,
-  RunStatusResponse,
   PROVIDER_ORDER,
   getProviderLabel,
   getProviderBrandColor,
   getDomain,
 } from './shared';
+import { useResults, useResultsUI } from './ResultsContext';
 
-export interface SentimentTabProps {
-  runStatus: RunStatusResponse | null;
-  globallyFilteredResults: Result[];
-  trackedBrands: Set<string>;
-  availableProviders: string[];
-  hoveredSentimentBadge: { provider: string; sentiment: string } | null;
-  setHoveredSentimentBadge: (val: { provider: string; sentiment: string } | null) => void;
-  setSelectedResult: (result: Result | null) => void;
-  responseSentimentFilter: string;
-  setResponseSentimentFilter: (val: string) => void;
-  responseLlmFilter: string;
-  setResponseLlmFilter: (val: string) => void;
-  sentimentProviderBrandFilter: string;
-  setSentimentProviderBrandFilter: (val: string) => void;
-  sentimentProviderCitationFilter: string;
-  setSentimentProviderCitationFilter: (val: string) => void;
-  sentimentByPromptBrandFilter: string;
-  setSentimentByPromptBrandFilter: (val: string) => void;
-  sentimentByPromptSourceFilter: string;
-  setSentimentByPromptSourceFilter: (val: string) => void;
-  expandedResponseRows: Set<string>;
-  setExpandedResponseRows: (val: Set<string>) => void;
-  copied: boolean;
-  handleCopyLink: () => void;
-}
+// No props needed - all data comes from context
 
-export const SentimentTab = ({
-  runStatus,
-  globallyFilteredResults,
-  trackedBrands,
-  availableProviders,
-  hoveredSentimentBadge,
-  setHoveredSentimentBadge,
-  setSelectedResult,
-  responseSentimentFilter,
-  setResponseSentimentFilter,
-  responseLlmFilter,
-  setResponseLlmFilter,
-  sentimentProviderBrandFilter,
-  setSentimentProviderBrandFilter,
-  sentimentProviderCitationFilter,
-  setSentimentProviderCitationFilter,
-  sentimentByPromptBrandFilter,
-  setSentimentByPromptBrandFilter,
-  sentimentByPromptSourceFilter,
-  setSentimentByPromptSourceFilter,
-  copied,
-  handleCopyLink,
-}: SentimentTabProps) => {
+export const SentimentTab = () => {
+  const { runStatus, globallyFilteredResults, trackedBrands, availableProviders } = useResults();
+  const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
+
+  const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
+  const [responseSentimentFilter, setResponseSentimentFilter] = useState<string>('all');
+  const [responseLlmFilter, setResponseLlmFilter] = useState<string>('all');
+  const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
+  const [sentimentProviderCitationFilter, setSentimentProviderCitationFilter] = useState<string>('all');
+  const [sentimentByPromptBrandFilter, setSentimentByPromptBrandFilter] = useState<string>('');
+  const [sentimentByPromptSourceFilter, setSentimentByPromptSourceFilter] = useState<string>('all');
+  const [expandedResponseRows, setExpandedResponseRows] = useState<Set<string>>(new Set());
     // Provider short labels for the details table
     const providerLabels: Record<string, string> = {
       openai: 'OpenAI',

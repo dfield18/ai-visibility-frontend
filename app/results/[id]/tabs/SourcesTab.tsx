@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ScatterChart, Scatter,
   XAxis, YAxis, CartesianGrid,
@@ -42,70 +42,45 @@ import {
   getDomain,
   PROVIDER_ORDER,
 } from './shared';
+import { useResults, useResultsUI } from './ResultsContext';
 
-export interface SourcesTabProps {
-  runStatus: RunStatusResponse | null;
-  globallyFilteredResults: Result[];
-  trackedBrands: Set<string>;
-  topCitedSources: any[];
-  aiCategorizations: Record<string, string>;
-  categorizationLoading: boolean;
-  setCategorizationLoading: (val: boolean) => void;
-  setAiCategorizations: (val: React.SetStateAction<Record<string, string>>) => void;
-  keyInfluencers: any[];
-  expandedInfluencers: Set<string>;
-  setExpandedInfluencers: (val: Set<string>) => void;
-  domainSortColumn: 'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment';
-  domainSortDirection: 'asc' | 'desc';
-  setDomainSortColumn: (val: 'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment') => void;
-  setDomainSortDirection: (val: 'asc' | 'desc' | ((prev: 'asc' | 'desc') => 'asc' | 'desc')) => void;
-  availableProviders: string[];
-  availableBrands: string[];
-  sourcesInsights: string[];
-  sourcesProviderFilter: string;
-  setSourcesProviderFilter: (val: string) => void;
-  sourcesBrandFilter: string;
-  setSourcesBrandFilter: (val: string) => void;
-  expandedSources: Set<string>;
-  setExpandedSources: (val: Set<string>) => void;
-  sourcesListRef: any;
-  pendingScrollRestore: React.MutableRefObject<{ container: number; window: number } | null>;
-  handleCopyLink: () => void;
-  copied: boolean;
-  hasAnySources: boolean;
-}
+export const SourcesTab = () => {
+  const {
+    runStatus,
+    globallyFilteredResults,
+    trackedBrands,
+    topCitedSources,
+    keyInfluencers,
+    availableProviders,
+    availableBrands,
+    sourcesInsights,
+    hasAnySources,
+  } = useResults();
+  const { copied, handleCopyLink } = useResultsUI();
 
-export const SourcesTab = ({
-  runStatus,
-  globallyFilteredResults,
-  trackedBrands,
-  topCitedSources,
-  aiCategorizations,
-  categorizationLoading,
-  setCategorizationLoading,
-  setAiCategorizations,
-  keyInfluencers,
-  expandedInfluencers,
-  setExpandedInfluencers,
-  domainSortColumn,
-  domainSortDirection,
-  setDomainSortColumn,
-  setDomainSortDirection,
-  availableProviders,
-  availableBrands,
-  sourcesInsights,
-  sourcesProviderFilter,
-  setSourcesProviderFilter,
-  sourcesBrandFilter,
-  setSourcesBrandFilter,
-  expandedSources,
-  setExpandedSources,
-  sourcesListRef,
-  pendingScrollRestore,
-  handleCopyLink,
-  copied,
-  hasAnySources,
-}: SourcesTabProps) => {
+  const [domainSortColumn, setDomainSortColumn] = useState<'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment'>('usedPercent');
+  const [domainSortDirection, setDomainSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
+  const [expandedInfluencers, setExpandedInfluencers] = useState<Set<string>>(new Set());
+  const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
+  const [sourcesBrandFilter, setSourcesBrandFilter] = useState<string>('all');
+  const [aiCategorizations, setAiCategorizations] = useState<Record<string, string>>({});
+  const [categorizationLoading, setCategorizationLoading] = useState(false);
+  const sourcesListRef = useRef<HTMLDivElement>(null);
+  const pendingScrollRestore = useRef<{ container: number; window: number } | null>(null);
+
+  // Restore scroll position after expandedSources changes
+  useLayoutEffect(() => {
+    if (pendingScrollRestore.current) {
+      const { container, window: windowY } = pendingScrollRestore.current;
+      if (sourcesListRef.current) {
+        sourcesListRef.current.scrollTop = container;
+      }
+      window.scrollTo(window.scrollX, windowY);
+      pendingScrollRestore.current = null;
+    }
+  }, [expandedSources]);
+
     // Helper to extract domain from URL
     const extractDomain = (url: string): string => {
       try {
@@ -1116,7 +1091,7 @@ export const SourcesTab = ({
             {keyInfluencers.filter(source => expandedInfluencers.has(source.domain)).map((source) => (
               <div key={`expanded-${source.domain}`} className="mt-3 p-3 bg-white rounded-lg border border-gray-900/30 space-y-1.5">
                 <p className="text-xs font-medium text-gray-500 mb-2">{source.domain} — {source.urlDetails.length} {source.urlDetails.length === 1 ? 'page' : 'pages'} cited:</p>
-                {source.urlDetails.map((urlDetail, idx) => {
+                {source.urlDetails.map((urlDetail: any, idx: number) => {
                   const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
                   const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
                   return (
@@ -1241,7 +1216,7 @@ export const SourcesTab = ({
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <div className="flex gap-0.5">
-                              {source.providers.slice(0, 3).map((provider) => (
+                              {source.providers.slice(0, 3).map((provider: string) => (
                                 <span key={provider} className="text-[10px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
                                   {getProviderShortLabel(provider)}
                                 </span>
@@ -1264,7 +1239,7 @@ export const SourcesTab = ({
                               {source.urlDetails.length > 1 ? `${source.urlDetails.length} unique pages:` : `${source.count} citation from this page:`}
                             </p>
                             <div className="space-y-1.5">
-                              {source.urlDetails.map((urlDetail, idx) => {
+                              {source.urlDetails.map((urlDetail: any, idx: number) => {
                                 const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
                                 const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
                                 return (
@@ -1283,7 +1258,7 @@ export const SourcesTab = ({
                                     </a>
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
                                       <div className="flex gap-0.5">
-                                        {urlDetail.providers.slice(0, 3).map((provider) => (
+                                        {urlDetail.providers.slice(0, 3).map((provider: string) => (
                                           <span key={provider} className="text-[9px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
                                             {getProviderShortLabel(provider)}
                                           </span>
@@ -1750,7 +1725,7 @@ export const SourcesTab = ({
                           {citation.urls.length} unique {citation.urls.length === 1 ? 'page' : 'pages'} cited:
                         </p>
                         <div className="space-y-1.5">
-                          {citation.urls.map((urlDetail, idx) => {
+                          {citation.urls.map((urlDetail: any, idx: number) => {
                             const { subtitle } = formatSourceDisplay(urlDetail.url, urlDetail.title);
                             const displayTitle = subtitle || getReadableTitleFromUrl(urlDetail.url);
                             return (

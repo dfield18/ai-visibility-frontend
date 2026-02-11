@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -38,122 +38,508 @@ import {
   getProviderShortLabel,
   capitalizeFirst,
 } from './shared';
+import { useResults, useResultsUI } from './ResultsContext';
 
 export interface ReferenceTabProps {
-  runStatus: RunStatusResponse | null;
-  isCategory: boolean;
-  brandMentionRate: number;
   totalCost: number;
   promptCost: number;
   analysisCost: number;
   frontendInsightsCost: number;
-  scatterPlotData: any[];
   chartTab: 'allAnswers' | 'performanceRange' | 'shareOfVoice';
   setChartTab: (tab: 'allAnswers' | 'performanceRange' | 'shareOfVoice') => void;
   showSentimentColors: boolean;
   setShowSentimentColors: (val: boolean) => void;
-  rangeChartData: any[];
-  rangeViewDots: any[];
-  scatterProviderOrder: string[];
-  providerLabels: Record<string, string>;
-  aiSummary: AISummaryResponse | undefined;
-  isSummaryLoading: boolean;
   aiSummaryExpanded: boolean;
   setAiSummaryExpanded: (val: boolean) => void;
-  aiOverviewUnavailableCount: number;
-  filter: string;
-  setFilter: (val: string) => void;
   providerFilter: string;
   setProviderFilter: (val: string) => void;
-  filteredResults: Result[];
-  globallyFilteredResults: Result[];
-  expandedResults: Set<string>;
-  toggleExpanded: (id: string) => void;
-  selectedResult: Result | null;
-  setSelectedResult: (result: Result | null) => void;
-  handleExportCSV: () => void;
-  handleCopyLink: () => void;
-  copied: boolean;
-  sourceGapAnalysis: any[];
-  sourceGapProviderFilter: string;
-  setSourceGapProviderFilter: (val: string) => void;
-  sourceGapPromptFilter: string;
-  setSourceGapPromptFilter: (val: string) => void;
-  sourceSentimentGapAnalysis: any[];
-  sourceSentimentGapProviderFilter: string;
-  setSourceSentimentGapProviderFilter: (val: string) => void;
-  sourceSentimentGapPromptFilter: string;
-  setSourceSentimentGapPromptFilter: (val: string) => void;
-  sentimentComparisonBrand: string;
-  setSentimentComparisonBrand: (val: string) => void;
-  expandedGapSources: Set<string>;
-  setExpandedGapSources: (val: Set<string>) => void;
-  expandedSentimentGapSources: Set<string>;
-  setExpandedSentimentGapSources: (val: Set<string>) => void;
-  setSnippetDetailModal: (val: { brand: string; responseText: string; provider: string; prompt: string } | null) => void;
-  availablePrompts: string[];
-  availableProviders: string[];
-  availableBrands: string[];
-  trackedBrands: Set<string>;
 }
 
 export const ReferenceTab = ({
-  runStatus,
-  isCategory,
-  brandMentionRate,
   totalCost,
   promptCost,
   analysisCost,
   frontendInsightsCost,
-  scatterPlotData,
   chartTab,
   setChartTab,
   showSentimentColors,
   setShowSentimentColors,
-  rangeChartData,
-  rangeViewDots,
-  scatterProviderOrder,
-  providerLabels,
-  aiSummary,
-  isSummaryLoading,
   aiSummaryExpanded,
   setAiSummaryExpanded,
-  aiOverviewUnavailableCount,
-  filter,
-  setFilter,
   providerFilter,
   setProviderFilter,
-  filteredResults,
-  globallyFilteredResults,
-  expandedResults,
-  toggleExpanded,
-  selectedResult,
-  setSelectedResult,
-  handleExportCSV,
-  handleCopyLink,
-  copied,
-  sourceGapAnalysis,
-  sourceGapProviderFilter,
-  setSourceGapProviderFilter,
-  sourceGapPromptFilter,
-  setSourceGapPromptFilter,
-  sourceSentimentGapAnalysis,
-  sourceSentimentGapProviderFilter,
-  setSourceSentimentGapProviderFilter,
-  sourceSentimentGapPromptFilter,
-  setSourceSentimentGapPromptFilter,
-  sentimentComparisonBrand,
-  setSentimentComparisonBrand,
-  expandedGapSources,
-  setExpandedGapSources,
-  expandedSentimentGapSources,
-  setExpandedSentimentGapSources,
-  setSnippetDetailModal,
-  availablePrompts,
-  availableProviders,
-  availableBrands,
-  trackedBrands,
-}: ReferenceTabProps) => (
+}: ReferenceTabProps) => {
+  // --- Context ---
+  const {
+    runStatus,
+    isCategory,
+    brandMentionRate,
+    scatterPlotData,
+    rangeChartData,
+    rangeViewDots,
+    scatterProviderOrder,
+    aiSummary,
+    isSummaryLoading,
+    globallyFilteredResults,
+    availablePrompts,
+    availableProviders,
+    availableBrands,
+    trackedBrands,
+  } = useResults();
+
+  const {
+    selectedResult,
+    setSelectedResult,
+    handleExportCSV,
+    handleCopyLink,
+    copied,
+    setSnippetDetailModal,
+  } = useResultsUI();
+
+  // --- Internalized state ---
+  const [filter, setFilter] = useState<string>('all');
+  const [expandedResults, setExpandedResults] = useState<Set<string>>(new Set());
+  const [sourceGapProviderFilter, setSourceGapProviderFilter] = useState<string>('all');
+  const [sourceGapPromptFilter, setSourceGapPromptFilter] = useState<string>('all');
+  const [sourceSentimentGapProviderFilter, setSourceSentimentGapProviderFilter] = useState<string>('all');
+  const [sourceSentimentGapPromptFilter, setSourceSentimentGapPromptFilter] = useState<string>('all');
+  const [sentimentComparisonBrand, setSentimentComparisonBrand] = useState<string>('');
+  const [expandedGapSources, setExpandedGapSources] = useState<Set<string>>(new Set());
+  const [expandedSentimentGapSources, setExpandedSentimentGapSources] = useState<Set<string>>(new Set());
+
+  // --- Internalized handlers ---
+  const toggleExpanded = (id: string) => {
+    const newExpanded = new Set(expandedResults);
+    if (newExpanded.has(id)) { newExpanded.delete(id); }
+    else { newExpanded.add(id); }
+    setExpandedResults(newExpanded);
+  };
+
+  // --- Internalized constants ---
+  const providerLabels: Record<string, string> = {
+    openai: 'OpenAI', anthropic: 'Claude', gemini: 'Gemini',
+    perplexity: 'Perplexity', ai_overviews: 'Google AI Overviews',
+    grok: 'Grok', llama: 'Llama',
+  };
+
+  // --- Computed values ---
+  const filteredResults = useMemo(() => {
+    if (!runStatus) return [];
+    return globallyFilteredResults.filter((result: Result) => {
+      const isAiOverviewError = result.provider === 'ai_overviews' && result.error;
+      if (result.error && !isAiOverviewError) return false;
+      if (!result.error) {
+        if (filter === 'mentioned' && !result.brand_mentioned) return false;
+        if (filter === 'not_mentioned' && result.brand_mentioned) return false;
+      }
+      if (providerFilter !== 'all' && result.provider !== providerFilter) return false;
+      return true;
+    });
+  }, [globallyFilteredResults, filter, providerFilter, runStatus]);
+
+  const aiOverviewUnavailableCount = useMemo(() => {
+    if (!runStatus) return 0;
+    return globallyFilteredResults.filter(
+      (r: Result) => r.provider === 'ai_overviews' && r.error
+    ).length;
+  }, [globallyFilteredResults, runStatus]);
+
+  // --- Source Gap Analysis ---
+  const sourceGapAnalysis = useMemo(() => {
+    if (!runStatus) return [];
+
+    const searchedBrand = runStatus.brand;
+
+    // Get results with sources, optionally filtered by provider and prompt
+    const resultsWithSources = globallyFilteredResults.filter(
+      (r: Result) => !r.error && r.sources && r.sources.length > 0 &&
+        (sourceGapProviderFilter === 'all' || r.provider === sourceGapProviderFilter) &&
+        (sourceGapPromptFilter === 'all' || r.prompt === sourceGapPromptFilter)
+    );
+
+    if (resultsWithSources.length === 0) return [];
+
+    // Helper function to extract snippet around a brand mention
+    const extractSnippet = (text: string, brandName: string, contextChars: number = 80): string | null => {
+      const lowerText = text.toLowerCase();
+      const lowerBrand = brandName.toLowerCase();
+      const index = lowerText.indexOf(lowerBrand);
+      if (index === -1) return null;
+
+      const start = Math.max(0, index - contextChars);
+      const end = Math.min(text.length, index + brandName.length + contextChars);
+
+      let snippet = text.substring(start, end);
+      if (start > 0) snippet = '...' + snippet;
+      if (end < text.length) snippet = snippet + '...';
+
+      return snippet;
+    };
+
+    // Track per-source stats
+    const sourceStats: Record<string, {
+      domain: string;
+      totalCitations: number;
+      brandCitations: number;
+      competitorCitations: Record<string, number>;
+      urls: Map<string, { url: string; title: string; count: number }>;
+      snippets: Array<{ brand: string; snippet: string; isBrand: boolean; provider: string; prompt: string; responseText: string; resultId: string }>;
+    }> = {};
+
+    // Process each result
+    resultsWithSources.forEach((r: Result) => {
+      if (!r.sources) return;
+
+      // Get unique domains in this response and track URLs
+      const domainsInResponse = new Set<string>();
+      const urlsInResponse: { domain: string; url: string; title: string }[] = [];
+
+      r.sources.forEach((source: Source) => {
+        if (!source.url) return;
+        try {
+          const hostname = new URL(source.url).hostname.replace(/^www\./, '');
+          domainsInResponse.add(hostname);
+          urlsInResponse.push({ domain: hostname, url: source.url, title: source.title || '' });
+        } catch {
+          // Skip invalid URLs
+        }
+      });
+
+      // For each domain, track brand and competitor mentions
+      domainsInResponse.forEach(domain => {
+        if (!sourceStats[domain]) {
+          sourceStats[domain] = {
+            domain,
+            totalCitations: 0,
+            brandCitations: 0,
+            competitorCitations: {},
+            urls: new Map(),
+            snippets: [],
+          };
+        }
+
+        sourceStats[domain].totalCitations += 1;
+
+        // Track URLs for this domain
+        urlsInResponse
+          .filter(u => u.domain === domain)
+          .forEach(u => {
+            const existing = sourceStats[domain].urls.get(u.url);
+            if (existing) {
+              existing.count += 1;
+            } else {
+              sourceStats[domain].urls.set(u.url, { url: u.url, title: u.title, count: 1 });
+            }
+          });
+
+        // Check if searched brand is mentioned and extract snippet
+        if (r.brand_mentioned && r.response_text) {
+          sourceStats[domain].brandCitations += 1;
+          const snippet = extractSnippet(r.response_text, searchedBrand);
+          if (snippet) {
+            sourceStats[domain].snippets.push({
+              brand: searchedBrand,
+              snippet,
+              isBrand: true,
+              provider: r.provider,
+              prompt: r.prompt,
+              responseText: r.response_text,
+              resultId: r.id,
+            });
+          }
+        }
+
+        // Check competitors mentioned and extract snippets
+        if (r.competitors_mentioned && r.response_text) {
+          const responseText = r.response_text;
+          r.competitors_mentioned.forEach(competitor => {
+            if (!sourceStats[domain].competitorCitations[competitor]) {
+              sourceStats[domain].competitorCitations[competitor] = 0;
+            }
+            sourceStats[domain].competitorCitations[competitor] += 1;
+
+            const snippet = extractSnippet(responseText, competitor);
+            if (snippet) {
+              sourceStats[domain].snippets.push({
+                brand: competitor,
+                snippet,
+                isBrand: false,
+                provider: r.provider,
+                prompt: r.prompt,
+                responseText,
+                resultId: r.id,
+              });
+            }
+          });
+        }
+      });
+    });
+
+    // Convert to array with calculated metrics
+    return Object.values(sourceStats)
+      .filter(stat => stat.totalCitations >= 2)
+      .map(stat => {
+        const brandRate = (stat.brandCitations / stat.totalCitations) * 100;
+
+        // Find top competitor for this source
+        let topCompetitor = '';
+        let topCompetitorCount = 0;
+        Object.entries(stat.competitorCitations).forEach(([competitor, count]) => {
+          if (count > topCompetitorCount) {
+            topCompetitor = competitor;
+            topCompetitorCount = count;
+          }
+        });
+
+        const topCompetitorRate = stat.totalCitations > 0
+          ? (topCompetitorCount / stat.totalCitations) * 100
+          : 0;
+
+        const gap = topCompetitorRate - brandRate;
+
+        const opportunityScore = gap > 0
+          ? (gap / 100) * Math.log10(stat.totalCitations + 1) * 100
+          : 0;
+
+        const urlDetails = Array.from(stat.urls.values())
+          .sort((a, b) => b.count - a.count);
+
+        return {
+          domain: stat.domain,
+          totalCitations: stat.totalCitations,
+          brandRate,
+          topCompetitor,
+          topCompetitorRate,
+          gap,
+          opportunityScore,
+          urls: urlDetails,
+          snippets: stat.snippets,
+        };
+      })
+      .filter(stat => stat.gap > 0)
+      .sort((a, b) => b.opportunityScore - a.opportunityScore);
+  }, [runStatus, globallyFilteredResults, sourceGapProviderFilter, sourceGapPromptFilter]);
+
+  // --- Source Sentiment Gap Analysis ---
+  const sourceSentimentGapAnalysis = useMemo(() => {
+    if (!runStatus) return [];
+
+    const comparisonBrand = sentimentComparisonBrand || runStatus.brand;
+    const searchedBrand = runStatus.brand;
+
+    const sentimentScoreMap: Record<string, number> = {
+      'strong_endorsement': 5,
+      'positive_endorsement': 4,
+      'neutral_mention': 3,
+      'conditional': 2,
+      'negative_comparison': 1,
+      'not_mentioned': 0,
+    };
+
+    const sentimentLabelMap: Record<number, string> = {
+      5: 'Strong',
+      4: 'Positive',
+      3: 'Neutral',
+      2: 'Conditional',
+      1: 'Negative',
+      0: 'Not Mentioned',
+    };
+
+    const getMagnitudeLabel = (absDelta: number): string => {
+      if (absDelta === 0) return 'No advantage';
+      if (absDelta === 1) return 'Slight';
+      if (absDelta === 2) return 'Moderate';
+      return 'Strong';
+    };
+
+    const extractSnippet = (text: string, brandName: string, contextChars: number = 80): string | null => {
+      const lowerText = text.toLowerCase();
+      const lowerBrand = brandName.toLowerCase();
+      const index = lowerText.indexOf(lowerBrand);
+      if (index === -1) return null;
+
+      const start = Math.max(0, index - contextChars);
+      const end = Math.min(text.length, index + brandName.length + contextChars);
+
+      let snippet = text.substring(start, end);
+      if (start > 0) snippet = '...' + snippet;
+      if (end < text.length) snippet = snippet + '...';
+
+      return snippet;
+    };
+
+    const resultsWithSources = globallyFilteredResults.filter(
+      (r: Result) => !r.error && r.sources && r.sources.length > 0 &&
+        (sourceSentimentGapProviderFilter === 'all' || r.provider === sourceSentimentGapProviderFilter) &&
+        (sourceSentimentGapPromptFilter === 'all' || r.prompt === sourceSentimentGapPromptFilter)
+    );
+
+    if (resultsWithSources.length === 0) return [];
+
+    const sourceStats: Record<string, {
+      domain: string;
+      allBrandSentiments: Record<string, number[]>;
+      snippets: Array<{ brand: string; snippet: string; sentiment: string; sentimentScore: number; isBrand: boolean; provider: string; prompt: string; responseText: string; resultId: string }>;
+      providers: Set<string>;
+    }> = {};
+
+    resultsWithSources.forEach((r: Result) => {
+      if (!r.sources) return;
+
+      const domainsInResponse = new Set<string>();
+      r.sources.forEach((source: Source) => {
+        if (!source.url) return;
+        try {
+          const hostname = new URL(source.url).hostname.replace(/^www\./, '');
+          domainsInResponse.add(hostname);
+        } catch {
+          // Skip invalid URLs
+        }
+      });
+
+      domainsInResponse.forEach(domain => {
+        if (!sourceStats[domain]) {
+          sourceStats[domain] = {
+            domain,
+            allBrandSentiments: {},
+            snippets: [],
+            providers: new Set(),
+          };
+        }
+        sourceStats[domain].providers.add(r.provider);
+
+        if (r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned') {
+          const score = sentimentScoreMap[r.brand_sentiment] || 0;
+          if (!sourceStats[domain].allBrandSentiments[searchedBrand]) {
+            sourceStats[domain].allBrandSentiments[searchedBrand] = [];
+          }
+          sourceStats[domain].allBrandSentiments[searchedBrand].push(score);
+
+          if (r.response_text) {
+            const snippet = extractSnippet(r.response_text, searchedBrand);
+            if (snippet) {
+              sourceStats[domain].snippets.push({
+                brand: searchedBrand,
+                snippet,
+                sentiment: r.brand_sentiment,
+                sentimentScore: score,
+                isBrand: true,
+                provider: r.provider,
+                prompt: r.prompt,
+                responseText: r.response_text,
+                resultId: r.id,
+              });
+            }
+          }
+        }
+
+        if (r.competitors_mentioned && r.competitor_sentiments) {
+          const responseText = r.response_text;
+          r.competitors_mentioned.forEach(competitor => {
+            const sentiment = r.competitor_sentiments?.[competitor];
+            if (sentiment && sentiment !== 'not_mentioned') {
+              const score = sentimentScoreMap[sentiment] || 0;
+              if (!sourceStats[domain].allBrandSentiments[competitor]) {
+                sourceStats[domain].allBrandSentiments[competitor] = [];
+              }
+              sourceStats[domain].allBrandSentiments[competitor].push(score);
+
+              if (responseText) {
+                const snippet = extractSnippet(responseText, competitor);
+                if (snippet) {
+                  sourceStats[domain].snippets.push({
+                    brand: competitor,
+                    snippet,
+                    sentiment,
+                    sentimentScore: score,
+                    isBrand: false,
+                    provider: r.provider,
+                    prompt: r.prompt,
+                    responseText,
+                    resultId: r.id,
+                  });
+                }
+              }
+            }
+          });
+        }
+      });
+    });
+
+    return Object.values(sourceStats)
+      .filter(stat => {
+        const brandScores = stat.allBrandSentiments[comparisonBrand];
+        return brandScores && brandScores.length >= 1;
+      })
+      .map(stat => {
+        const brandScores = stat.allBrandSentiments[comparisonBrand] || [];
+        const avgBrandScore = brandScores.length > 0
+          ? brandScores.reduce((a, b) => a + b, 0) / brandScores.length
+          : 0;
+        const brandSentimentIndex = Math.round(avgBrandScore);
+
+        let topCompetitor = '';
+        let topCompetitorIndex = 0;
+        let topCompetitorAvgScore = 0;
+        Object.entries(stat.allBrandSentiments).forEach(([brand, scores]) => {
+          if (brand !== comparisonBrand && scores.length > 0) {
+            const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+            if (avg > topCompetitorAvgScore) {
+              topCompetitor = brand;
+              topCompetitorAvgScore = avg;
+              topCompetitorIndex = Math.round(avg);
+            }
+          }
+        });
+
+        const delta = topCompetitorIndex - brandSentimentIndex;
+        const absDelta = Math.abs(delta);
+
+        const direction: 'competitor' | 'brand' | 'tie' =
+          delta > 0 ? 'competitor' : delta < 0 ? 'brand' : 'tie';
+
+        const magnitudeLabel = getMagnitudeLabel(absDelta);
+
+        let labelText: string;
+        if (direction === 'competitor') {
+          labelText = `${magnitudeLabel} competitor advantage`;
+        } else if (direction === 'brand') {
+          labelText = `${magnitudeLabel} ${comparisonBrand} advantage`;
+        } else {
+          labelText = 'Even';
+        }
+
+        const brandLabel = sentimentLabelMap[brandSentimentIndex] || 'Unknown';
+        const competitorLabel = sentimentLabelMap[topCompetitorIndex] || 'Unknown';
+        const shiftSummary = `${comparisonBrand}: ${brandLabel} → ${topCompetitor || 'Competitor'}: ${competitorLabel}`;
+
+        const clampedDelta = Math.min(Math.max(absDelta, 0), 3);
+        const signedValue = direction === 'competitor' ? clampedDelta : direction === 'brand' ? -clampedDelta : 0;
+
+        return {
+          domain: stat.domain,
+          totalMentions: Object.values(stat.allBrandSentiments).flat().length,
+          brandSentimentIndex,
+          brandSentimentLabel: brandLabel,
+          topCompetitor,
+          topCompetitorIndex,
+          competitorSentimentLabel: competitorLabel,
+          delta,
+          direction,
+          magnitudeLabel,
+          labelText,
+          shiftSummary,
+          signedValue,
+          snippets: stat.snippets,
+          providers: Array.from(stat.providers),
+          comparisonBrand,
+        };
+      })
+      .filter(stat => stat.delta !== 0)
+      .sort((a, b) => b.signedValue - a.signedValue);
+  }, [runStatus, globallyFilteredResults, sourceSentimentGapProviderFilter, sourceSentimentGapPromptFilter, sentimentComparisonBrand]);
+
+  return (
     <div className="space-y-6">
       {/* Summary Cards */}
       <div id="reference-summary" className={`grid grid-cols-1 ${isCategory ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4`}>
@@ -2012,4 +2398,5 @@ export const ReferenceTab = ({
       </div>
     </div>
   );
+};
 

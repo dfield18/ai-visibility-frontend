@@ -86,6 +86,7 @@ import { SentimentTab } from './tabs/SentimentTab';
 import { SourcesTab } from './tabs/SourcesTab';
 import { RecommendationsTab } from './tabs/RecommendationsTab';
 import { ReferenceTab } from './tabs/ReferenceTab';
+import { ResultsProvider } from './tabs/ResultsContext';
 
 type FilterType = 'all' | 'mentioned' | 'not_mentioned';
 type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit';
@@ -4638,218 +4639,95 @@ export default function ResultsPage() {
         <div className="flex gap-6">
           <SectionGuide activeTab={activeTab} />
           <div className="flex-1 min-w-0">
+        <ResultsProvider
+          data={{
+            runStatus: runStatus ?? null,
+            globallyFilteredResults,
+            availableProviders,
+            availableBrands,
+            availablePrompts,
+            trackedBrands,
+            isCategory,
+            brandMentionRate,
+            aiSummary,
+            isSummaryLoading,
+            brandBreakdownStats,
+            llmBreakdownStats,
+            llmBreakdownBrands,
+            promptBreakdownStats,
+            shareOfVoiceData,
+            allBrandsAnalysisData,
+            brandQuotesMap,
+            overviewMetrics,
+            scatterPlotData,
+            rangeChartData,
+            rangeViewDots,
+            scatterProviderOrder,
+            topCitedSources,
+            keyInfluencers,
+            sourcesInsights,
+            sentimentInsights,
+            hasAnySources,
+          }}
+          ui={{
+            activeTab,
+            setActiveTab,
+            copied,
+            handleCopyLink,
+            handleExportCSV,
+            selectedResult,
+            setSelectedResult,
+            setSnippetDetailModal,
+          }}
+        >
         {activeTab === 'overview' && (
           <OverviewTab
-            runStatus={runStatus ?? null}
-            overviewMetrics={overviewMetrics}
-            aiSummary={aiSummary}
-            isSummaryLoading={isSummaryLoading}
             aiSummaryExpanded={aiSummaryExpanded}
             setAiSummaryExpanded={setAiSummaryExpanded}
-            llmBreakdownStats={llmBreakdownStats}
-            llmBreakdownBrands={llmBreakdownBrands}
-            llmBreakdownBrandFilter={llmBreakdownBrandFilter}
-            setLlmBreakdownBrandFilter={setLlmBreakdownBrandFilter}
-            llmBreakdownTakeaway={llmBreakdownTakeaway}
-            expandedLLMCards={expandedLLMCards}
-            setExpandedLLMCards={setExpandedLLMCards}
-            positionByPlatformData={positionByPlatformData}
-            scatterPlotData={scatterPlotData}
-            brandBreakdownStats={brandBreakdownStats}
-            shareOfVoiceData={shareOfVoiceData}
-            allBrandsAnalysisData={allBrandsAnalysisData}
-            brandQuotesMap={brandQuotesMap}
-            providerScrollIndex={providerScrollIndex}
-            setProviderScrollIndex={setProviderScrollIndex}
-            brandCarouselIndex={brandCarouselIndex}
-            setBrandCarouselIndex={setBrandCarouselIndex}
-            chartTab={chartTab}
-            setChartTab={setChartTab}
             showSentimentColors={showSentimentColors}
             setShowSentimentColors={setShowSentimentColors}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            copied={copied}
-            handleCopyLink={handleCopyLink}
-            handleExportCSV={handleExportCSV}
-            isCategory={isCategory}
-            availableProviders={availableProviders}
-            globallyFilteredResults={globallyFilteredResults}
-            selectedResult={selectedResult}
-            setSelectedResult={setSelectedResult}
-            brandBlurbs={brandBlurbs}
-            brandQuotes={brandQuotes}
-            promptBreakdownStats={promptBreakdownStats}
-            promptBreakdownLlmFilter={promptBreakdownLlmFilter}
-            setPromptBreakdownLlmFilter={setPromptBreakdownLlmFilter}
-            filteredResults={filteredResults}
-            sortedResults={sortedResults}
+            chartTab={chartTab}
+            setChartTab={setChartTab}
             providerFilter={providerFilter}
             setProviderFilter={setProviderFilter}
-            providerLabels={providerLabels}
-            tableSortColumn={tableSortColumn}
-            tableSortDirection={tableSortDirection}
-            handleTableSort={handleTableSort}
+            brandBlurbs={brandBlurbs}
             setCopied={setCopied}
           />
         )}
         {activeTab === 'reference' && (
           <ReferenceTab
-            runStatus={runStatus ?? null}
-            isCategory={isCategory}
-            brandMentionRate={brandMentionRate}
             totalCost={totalCost}
             promptCost={promptCost}
             analysisCost={analysisCost}
             frontendInsightsCost={frontendInsightsCost}
-            scatterPlotData={scatterPlotData}
             chartTab={chartTab}
             setChartTab={setChartTab}
             showSentimentColors={showSentimentColors}
             setShowSentimentColors={setShowSentimentColors}
-            rangeChartData={rangeChartData}
-            rangeViewDots={rangeViewDots}
-            scatterProviderOrder={scatterProviderOrder}
-            providerLabels={providerLabels}
-            aiSummary={aiSummary}
-            isSummaryLoading={isSummaryLoading}
             aiSummaryExpanded={aiSummaryExpanded}
             setAiSummaryExpanded={setAiSummaryExpanded}
-            aiOverviewUnavailableCount={aiOverviewUnavailableCount}
-            filter={filter}
-            setFilter={setFilter as (val: string) => void}
             providerFilter={providerFilter}
             setProviderFilter={setProviderFilter}
-            filteredResults={filteredResults}
-            globallyFilteredResults={globallyFilteredResults}
-            expandedResults={expandedResults}
-            toggleExpanded={toggleExpanded}
-            selectedResult={selectedResult}
-            setSelectedResult={setSelectedResult}
-            handleExportCSV={handleExportCSV}
-            handleCopyLink={handleCopyLink}
-            copied={copied}
-            sourceGapAnalysis={sourceGapAnalysis}
-            sourceGapProviderFilter={sourceGapProviderFilter}
-            setSourceGapProviderFilter={setSourceGapProviderFilter}
-            sourceGapPromptFilter={sourceGapPromptFilter}
-            setSourceGapPromptFilter={setSourceGapPromptFilter}
-            sourceSentimentGapAnalysis={sourceSentimentGapAnalysis}
-            sourceSentimentGapProviderFilter={sourceSentimentGapProviderFilter}
-            setSourceSentimentGapProviderFilter={setSourceSentimentGapProviderFilter}
-            sourceSentimentGapPromptFilter={sourceSentimentGapPromptFilter}
-            setSourceSentimentGapPromptFilter={setSourceSentimentGapPromptFilter}
-            sentimentComparisonBrand={sentimentComparisonBrand}
-            setSentimentComparisonBrand={setSentimentComparisonBrand}
-            expandedGapSources={expandedGapSources}
-            setExpandedGapSources={setExpandedGapSources}
-            expandedSentimentGapSources={expandedSentimentGapSources}
-            setExpandedSentimentGapSources={setExpandedSentimentGapSources}
-            setSnippetDetailModal={setSnippetDetailModal}
-            availablePrompts={availablePrompts}
-            availableProviders={availableProviders}
-            availableBrands={availableBrands}
-            trackedBrands={trackedBrands}
           />
         )}
         {activeTab === 'competitive' && (
           <CompetitiveTab
-            runStatus={runStatus ?? null}
-            globallyFilteredResults={globallyFilteredResults}
-            trackedBrands={trackedBrands}
-            availableProviders={availableProviders}
-            availablePrompts={availablePrompts}
-            availableBrands={availableBrands}
-            brandBreakdownStats={brandBreakdownStats}
-            copied={copied}
-            handleCopyLink={handleCopyLink}
-            selectedResultHighlight={selectedResultHighlight}
             setSelectedResultHighlight={setSelectedResultHighlight}
-            heatmapResultsList={heatmapResultsList}
             setHeatmapResultsList={setHeatmapResultsList}
-            allBrandsAnalysisData={allBrandsAnalysisData}
-            brandQuotesMap={brandQuotesMap}
-            setSelectedResult={setSelectedResult}
           />
         )}
         {activeTab === 'sentiment' && (
-          <SentimentTab
-            runStatus={runStatus ?? null}
-            globallyFilteredResults={globallyFilteredResults}
-            trackedBrands={trackedBrands}
-            availableProviders={availableProviders}
-            hoveredSentimentBadge={hoveredSentimentBadge}
-            setHoveredSentimentBadge={setHoveredSentimentBadge}
-            setSelectedResult={setSelectedResult}
-            responseSentimentFilter={responseSentimentFilter}
-            setResponseSentimentFilter={setResponseSentimentFilter}
-            responseLlmFilter={responseLlmFilter}
-            setResponseLlmFilter={setResponseLlmFilter}
-            sentimentProviderBrandFilter={sentimentProviderBrandFilter}
-            setSentimentProviderBrandFilter={setSentimentProviderBrandFilter}
-            sentimentProviderCitationFilter={sentimentProviderCitationFilter}
-            setSentimentProviderCitationFilter={setSentimentProviderCitationFilter}
-            sentimentByPromptBrandFilter={sentimentByPromptBrandFilter}
-            setSentimentByPromptBrandFilter={setSentimentByPromptBrandFilter}
-            sentimentByPromptSourceFilter={sentimentByPromptSourceFilter}
-            setSentimentByPromptSourceFilter={setSentimentByPromptSourceFilter}
-            expandedResponseRows={expandedResponseRows}
-            setExpandedResponseRows={setExpandedResponseRows}
-            copied={copied}
-            handleCopyLink={handleCopyLink}
-          />
+          <SentimentTab />
         )}
         {activeTab === 'sources' && (
-          <SourcesTab
-            runStatus={runStatus ?? null}
-            globallyFilteredResults={globallyFilteredResults}
-            trackedBrands={trackedBrands}
-            topCitedSources={topCitedSources}
-            aiCategorizations={aiCategorizations}
-            categorizationLoading={categorizationLoading}
-            setCategorizationLoading={setCategorizationLoading}
-            setAiCategorizations={setAiCategorizations}
-            keyInfluencers={keyInfluencers}
-            expandedInfluencers={expandedInfluencers}
-            setExpandedInfluencers={setExpandedInfluencers}
-            domainSortColumn={domainSortColumn}
-            domainSortDirection={domainSortDirection}
-            setDomainSortColumn={setDomainSortColumn}
-            setDomainSortDirection={setDomainSortDirection}
-            availableProviders={availableProviders}
-            availableBrands={availableBrands}
-            sourcesInsights={sourcesInsights}
-            sourcesProviderFilter={sourcesProviderFilter}
-            setSourcesProviderFilter={setSourcesProviderFilter}
-            sourcesBrandFilter={sourcesBrandFilter}
-            setSourcesBrandFilter={setSourcesBrandFilter}
-            expandedSources={expandedSources}
-            setExpandedSources={setExpandedSources}
-            sourcesListRef={sourcesListRef}
-            pendingScrollRestore={pendingScrollRestore}
-            handleCopyLink={handleCopyLink}
-            copied={copied}
-            hasAnySources={hasAnySources}
-          />
+          <SourcesTab />
         )}
         {activeTab === 'recommendations' && (
-          <RecommendationsTab
-            runStatus={runStatus ?? null}
-            aiSummary={aiSummary}
-            isSummaryLoading={isSummaryLoading}
-            globallyFilteredResults={globallyFilteredResults}
-            promptBreakdownStats={promptBreakdownStats}
-            brandBreakdownStats={brandBreakdownStats}
-            llmBreakdownStats={llmBreakdownStats}
-            setActiveTab={setActiveTab}
-            copied={copied}
-            handleCopyLink={handleCopyLink}
-            handleExportRecommendationsPDF={handleExportRecommendationsPDF}
-            handleExportRecommendationsCSV={handleExportRecommendationsCSV}
-          />
+          <RecommendationsTab />
         )}
         {activeTab === 'reports' && <ReportsTab runStatus={runStatus ?? null} />}
         {activeTab === 'site-audit' && <SiteAuditTab brand={runStatus?.brand || ''} />}
+        </ResultsProvider>
           </div>{/* End flex-1 content */}
         </div>{/* End flex container */}
       </div>

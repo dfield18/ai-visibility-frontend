@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -15,8 +15,7 @@ import {
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatPercent, truncate } from '@/lib/utils';
-import type { BrandQuote } from '@/hooks/useApi';
-import type { Result, RunStatusResponse, AISummaryResponse, TabType } from './shared';
+import type { Result } from './shared';
 import {
   getProviderLabel,
   getProviderBrandColor,
@@ -31,98 +30,228 @@ import {
   POSITION_CATEGORIES,
   sentimentOrder,
 } from './shared';
+import { useResults, useResultsUI } from './ResultsContext';
 
 export interface OverviewTabProps {
-  runStatus: RunStatusResponse | null;
-  overviewMetrics: any;
-  aiSummary: AISummaryResponse | undefined;
-  isSummaryLoading: boolean;
   aiSummaryExpanded: boolean;
   setAiSummaryExpanded: (val: boolean) => void;
-  llmBreakdownStats: Record<string, any>;
-  llmBreakdownBrands: string[];
-  llmBreakdownBrandFilter: string;
-  setLlmBreakdownBrandFilter: (val: string) => void;
-  llmBreakdownTakeaway: string | null;
-  expandedLLMCards: Set<string>;
-  setExpandedLLMCards: (val: Set<string>) => void;
-  positionByPlatformData: any;
-  scatterPlotData: any[];
-  brandBreakdownStats: any[];
-  shareOfVoiceData: any[];
-  allBrandsAnalysisData: any[];
-  brandQuotesMap: Record<string, BrandQuote[]>;
-  providerScrollIndex: Record<string, number>;
-  setProviderScrollIndex: (val: Record<string, number>) => void;
-  brandCarouselIndex: number;
-  setBrandCarouselIndex: (val: number) => void;
-  chartTab: 'allAnswers' | 'performanceRange' | 'shareOfVoice';
-  setChartTab: (tab: 'allAnswers' | 'performanceRange' | 'shareOfVoice') => void;
   showSentimentColors: boolean;
   setShowSentimentColors: (val: boolean) => void;
-  activeTab: string;
-  setActiveTab: (tab: TabType) => void;
-  copied: boolean;
-  handleCopyLink: () => void;
-  handleExportCSV: () => void;
-  isCategory: boolean;
-  availableProviders: string[];
-  globallyFilteredResults: Result[];
-  selectedResult: Result | null;
-  setSelectedResult: (result: Result | null) => void;
-  brandBlurbs: Record<string, string>;
-  // Additional closure variables from the parent
-  brandQuotes: BrandQuote[];
-  promptBreakdownStats: any[];
-  promptBreakdownLlmFilter: string;
-  setPromptBreakdownLlmFilter: (val: string) => void;
-  filteredResults: Result[];
-  sortedResults: Result[];
+  chartTab: 'allAnswers' | 'performanceRange' | 'shareOfVoice';
+  setChartTab: (tab: 'allAnswers' | 'performanceRange' | 'shareOfVoice') => void;
   providerFilter: string;
   setProviderFilter: (val: string) => void;
-  providerLabels: Record<string, string>;
-  tableSortColumn: 'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors';
-  tableSortDirection: 'asc' | 'desc';
-  handleTableSort: (column: 'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors') => void;
+  brandBlurbs: Record<string, string>;
   setCopied: (val: boolean) => void;
 }
 
 export const OverviewTab = ({
-  runStatus,
-  overviewMetrics,
-  aiSummary,
-  isSummaryLoading,
   aiSummaryExpanded,
   setAiSummaryExpanded,
-  llmBreakdownStats,
-  llmBreakdownBrands,
-  llmBreakdownBrandFilter,
-  setLlmBreakdownBrandFilter,
-  llmBreakdownTakeaway,
-  expandedLLMCards,
-  setExpandedLLMCards,
-  positionByPlatformData,
   showSentimentColors,
   setShowSentimentColors,
-  isCategory,
-  availableProviders,
-  globallyFilteredResults,
-  setSelectedResult,
-  brandQuotes,
-  promptBreakdownStats,
-  promptBreakdownLlmFilter,
-  setPromptBreakdownLlmFilter,
-  filteredResults,
-  sortedResults,
   providerFilter,
   setProviderFilter,
-  providerLabels,
-  tableSortColumn,
-  tableSortDirection,
-  handleTableSort,
-  copied,
   setCopied,
 }: OverviewTabProps) => {
+  // ---------------------------------------------------------------------------
+  // Context
+  // ---------------------------------------------------------------------------
+  const {
+    runStatus,
+    overviewMetrics,
+    aiSummary,
+    isSummaryLoading,
+    llmBreakdownStats,
+    llmBreakdownBrands,
+    promptBreakdownStats,
+    scatterPlotData,
+    brandQuotesMap,
+    isCategory,
+    availableProviders,
+    globallyFilteredResults,
+  } = useResults();
+
+  const {
+    copied,
+    setSelectedResult,
+  } = useResultsUI();
+
+  // ---------------------------------------------------------------------------
+  // Internalized state
+  // ---------------------------------------------------------------------------
+  const [expandedLLMCards, setExpandedLLMCards] = useState<Set<string>>(new Set());
+  const [llmBreakdownBrandFilter, setLlmBreakdownBrandFilter] = useState<string>('');
+  const [promptBreakdownLlmFilter, setPromptBreakdownLlmFilter] = useState<string>('all');
+  const [tableSortColumn, setTableSortColumn] = useState<'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('prompt');
+  const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // ---------------------------------------------------------------------------
+  // Moved computations
+  // ---------------------------------------------------------------------------
+
+  const providerLabels: Record<string, string> = {
+    openai: 'OpenAI', anthropic: 'Claude', gemini: 'Gemini',
+    perplexity: 'Perplexity', ai_overviews: 'Google AI Overviews',
+    grok: 'Grok', llama: 'Llama',
+  };
+
+  const handleTableSort = (column: typeof tableSortColumn) => {
+    if (tableSortColumn === column) {
+      setTableSortDirection(tableSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setTableSortColumn(column);
+      setTableSortDirection('asc');
+    }
+  };
+
+  const brandQuotes = brandQuotesMap[runStatus?.brand ?? ''] ?? [];
+
+  const llmBreakdownTakeaway = useMemo(() => {
+    const entries = Object.entries(llmBreakdownStats);
+    if (entries.length === 0) return null;
+    const selectedBrand = llmBreakdownBrandFilter || llmBreakdownBrands[0] || runStatus?.brand || 'your brand';
+    const sorted = [...entries].sort((a, b) => b[1].rate - a[1].rate);
+    const best = sorted[0];
+    const worst = sorted[sorted.length - 1];
+    const allSimilar = sorted.length > 1 && (best[1].rate - worst[1].rate) < 0.10;
+    if (allSimilar) {
+      const avgRate = entries.reduce((sum, [, stats]) => sum + stats.rate, 0) / entries.length;
+      return `${selectedBrand} is mentioned consistently across all Models at around ${Math.round(avgRate * 100)}%.`;
+    }
+    if (sorted.length === 1) {
+      return `${getProviderLabel(best[0])} mentions ${selectedBrand} ${Math.round(best[1].rate * 100)}% of the time.`;
+    }
+    const zeroMentions = sorted.filter(([, stats]) => stats.rate === 0);
+    if (zeroMentions.length > 0 && zeroMentions.length < sorted.length) {
+      const zeroNames = zeroMentions.map(([p]) => getProviderLabel(p)).join(' and ');
+      return `${getProviderLabel(best[0])} mentions ${selectedBrand} most often (${Math.round(best[1].rate * 100)}%), while ${zeroNames} ${zeroMentions.length === 1 ? 'does' : 'do'} not mention it at all.`;
+    }
+    const diff = Math.round((best[1].rate - worst[1].rate) * 100);
+    if (diff >= 20) {
+      return `${getProviderLabel(best[0])} mentions ${selectedBrand} most often (${Math.round(best[1].rate * 100)}%), ${diff} percentage points higher than ${getProviderLabel(worst[0])} (${Math.round(worst[1].rate * 100)}%).`;
+    }
+    return `${getProviderLabel(best[0])} leads with ${Math.round(best[1].rate * 100)}% mentions of ${selectedBrand}, compared to ${Math.round(worst[1].rate * 100)}% from ${getProviderLabel(worst[0])}.`;
+  }, [llmBreakdownStats, llmBreakdownBrandFilter, llmBreakdownBrands, runStatus]);
+
+  const positionByPlatformData = useMemo(() => {
+    if (!scatterPlotData.length) return [];
+    const grouped: Record<string, Record<string, { sentiment: string | null; prompt: string; rank: number; label: string; originalResult: Result }[]>> = {};
+    scatterPlotData.forEach((dp) => {
+      const provider = dp.label;
+      if (!grouped[provider]) {
+        grouped[provider] = {};
+        POSITION_CATEGORIES.forEach(cat => { grouped[provider][cat] = []; });
+      }
+      let category: string;
+      if (!dp.isMentioned || dp.rank === 0) { category = 'Not Mentioned'; }
+      else if (dp.rank === 1) { category = 'Top'; }
+      else if (dp.rank >= 2 && dp.rank <= 3) { category = '2-3'; }
+      else if (dp.rank >= 4 && dp.rank <= 5) { category = '4-5'; }
+      else if (dp.rank >= 6 && dp.rank <= 10) { category = '6-10'; }
+      else { category = '>10'; }
+      grouped[provider][category].push({ sentiment: dp.sentiment, prompt: dp.prompt, rank: dp.rank, label: dp.label, originalResult: dp.originalResult });
+    });
+    return grouped;
+  }, [scatterPlotData]);
+
+  const filteredResults = useMemo(() => {
+    if (!runStatus) return [];
+    return globallyFilteredResults.filter((result: Result) => {
+      const isAiOverviewError = result.provider === 'ai_overviews' && result.error;
+      if (result.error && !isAiOverviewError) return false;
+      if (providerFilter !== 'all' && result.provider !== providerFilter) return false;
+      return true;
+    });
+  }, [globallyFilteredResults, providerFilter, runStatus]);
+
+  // Helper to calculate position for a result
+  const getResultPosition = (result: Result): number | null => {
+    if (!result.response_text || result.error || !runStatus) return null;
+    const selectedBrand = runStatus.search_type === 'category'
+      ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
+      : runStatus.brand;
+    const brandLower = (selectedBrand || '').toLowerCase();
+    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+      : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+
+    // First try exact match
+    let foundIndex = allBrands.findIndex(b => b.toLowerCase() === brandLower);
+
+    // If not found, try partial match
+    if (foundIndex === -1) {
+      foundIndex = allBrands.findIndex(b =>
+        b.toLowerCase().includes(brandLower) || brandLower.includes(b.toLowerCase())
+      );
+    }
+
+    // If still not found but brand_mentioned is true, find position by text search
+    if (foundIndex === -1 && result.brand_mentioned && result.response_text) {
+      const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+      if (brandPos >= 0) {
+        let brandsBeforeCount = 0;
+        for (const b of allBrands) {
+          const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+          if (bPos >= 0 && bPos < brandPos) {
+            brandsBeforeCount++;
+          }
+        }
+        return brandsBeforeCount + 1;
+      }
+      return allBrands.length + 1;
+    }
+
+    return foundIndex >= 0 ? foundIndex + 1 : null;
+  };
+
+  // Sort filtered results
+  const sortedResults = useMemo(() => {
+    const sorted = [...filteredResults];
+
+    sorted.sort((a, b) => {
+      let comparison = 0;
+
+      switch (tableSortColumn) {
+        case 'prompt':
+          comparison = a.prompt.localeCompare(b.prompt);
+          break;
+        case 'llm':
+          comparison = a.provider.localeCompare(b.provider);
+          break;
+        case 'position': {
+          const posA = getResultPosition(a) ?? 999;
+          const posB = getResultPosition(b) ?? 999;
+          comparison = posA - posB;
+          break;
+        }
+        case 'mentioned': {
+          const mentionedA = a.brand_mentioned ? 1 : 0;
+          const mentionedB = b.brand_mentioned ? 1 : 0;
+          comparison = mentionedB - mentionedA; // Yes first
+          break;
+        }
+        case 'sentiment': {
+          const sentA = sentimentOrder[a.brand_sentiment || 'not_mentioned'] || 6;
+          const sentB = sentimentOrder[b.brand_sentiment || 'not_mentioned'] || 6;
+          comparison = sentA - sentB;
+          break;
+        }
+        case 'competitors': {
+          const compA = a.competitors_mentioned?.length || 0;
+          const compB = b.competitors_mentioned?.length || 0;
+          comparison = compB - compA; // More competitors first
+          break;
+        }
+      }
+
+      return tableSortDirection === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredResults, tableSortColumn, tableSortDirection, runStatus]);
+
   return (
     <div className="space-y-6">
       {/* Metrics Cards */}
