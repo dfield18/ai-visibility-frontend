@@ -24,6 +24,7 @@ import {
   getProviderLabel,
   getProviderBrandColor,
   getDomain,
+  getTextForRanking,
 } from './shared';
 import { useResults, useResultsUI } from './ResultsContext';
 
@@ -268,11 +269,12 @@ export const SentimentTab = () => {
               );
             }
             if (foundIndex === -1) {
-              const brandPos = r.response_text.toLowerCase().indexOf(brandLower);
+              const rankingText = getTextForRanking(r.response_text, r.provider).toLowerCase();
+              const brandPos = rankingText.indexOf(brandLower);
               if (brandPos >= 0) {
                 let brandsBeforeCount = 0;
                 for (const b of allBrands) {
-                  const bPos = r.response_text.toLowerCase().indexOf(b.toLowerCase());
+                  const bPos = rankingText.indexOf(b.toLowerCase());
                   if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
                 }
                 rank = brandsBeforeCount + 1;
@@ -612,11 +614,12 @@ export const SentimentTab = () => {
 
                     // If still not found, use text search fallback
                     if (foundIndex === -1) {
-                      const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+                      const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+                      const brandPos = rankingText.indexOf(brandLower);
                       if (brandPos >= 0) {
                         let brandsBeforeCount = 0;
                         for (const b of allBrands) {
-                          const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                          const bPos = rankingText.indexOf(b.toLowerCase());
                           if (bPos >= 0 && bPos < brandPos) {
                             brandsBeforeCount++;
                           }
@@ -1610,11 +1613,12 @@ export const SentimentTab = () => {
                             );
                           }
                           if (foundIndex === -1) {
-                            const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+                            const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+                            const brandPos = rankingText.indexOf(brandLower);
                             if (brandPos >= 0) {
                               let brandsBeforeCount = 0;
                               for (const b of allBrands) {
-                                const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                                const bPos = rankingText.indexOf(b.toLowerCase());
                                 if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
                               }
                               rank = brandsBeforeCount + 1;

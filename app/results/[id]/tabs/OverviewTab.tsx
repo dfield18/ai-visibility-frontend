@@ -29,6 +29,7 @@ import {
   PROVIDER_ORDER,
   POSITION_CATEGORIES,
   sentimentOrder,
+  getTextForRanking,
 } from './shared';
 import { useResults, useResultsUI } from './ResultsContext';
 
@@ -174,7 +175,7 @@ export const OverviewTab = ({
       ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
       : runStatus.brand;
     const brandLower = (selectedBrand || '').toLowerCase();
-    const textLower = result.response_text.toLowerCase();
+    const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
 
     // Find the searched brand's position in the actual text
     const brandTextPos = textLower.indexOf(brandLower);
@@ -585,11 +586,17 @@ export const OverviewTab = ({
           <div className="space-y-2.5">
             {brandQuotes.slice(0, 2).map((quote, idx) => {
               const shortPrompt = quote.prompt.length > 35 ? quote.prompt.substring(0, 33) + '...' : quote.prompt;
+              // Strip citation markers like [1], [2] and bare domain references like "goal.com"
+              const cleanedText = quote.text
+                .replace(/\[\d+\]/g, '')
+                .replace(/(?:^|\s)[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?\s*/g, ' ')
+                .replace(/\s{2,}/g, ' ')
+                .trim();
               return (
                 <div key={idx}>
-                  <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{quote.text}&rdquo;</p>
+                  <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{cleanedText}&rdquo;</p>
                   <p className="text-xs text-gray-400 mt-0.5">
-                    — {getProviderLabel(quote.provider)} · {shortPrompt}
+                    — {{ openai: 'ChatGPT', anthropic: 'Claude', perplexity: 'Perplexity', gemini: 'Gemini', ai_overviews: 'Google AI', grok: 'Grok', llama: 'Llama' }[quote.provider] || quote.provider} · {shortPrompt}
                   </p>
                 </div>
               );
@@ -1029,11 +1036,12 @@ export const OverviewTab = ({
                             // If still not found, find position by text search
                             let rank = foundIndex + 1;
                             if (foundIndex === -1) {
-                              const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+                              const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+                              const brandPos = rankingText.indexOf(brandLower);
                               if (brandPos >= 0) {
                                 let brandsBeforeCount = 0;
                                 for (const b of allBrands) {
-                                  const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                                  const bPos = rankingText.indexOf(b.toLowerCase());
                                   if (bPos >= 0 && bPos < brandPos) {
                                     brandsBeforeCount++;
                                   }
@@ -1232,7 +1240,7 @@ export const OverviewTab = ({
                 if (result.response_text && !result.error) {
                   const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
                   const brandLower = (selectedBrand || '').toLowerCase();
-                  const textLower = result.response_text.toLowerCase();
+                  const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
 
                   const isMentioned = isCategory
                     ? result.competitors_mentioned?.includes(selectedBrand || '')
@@ -1457,7 +1465,7 @@ export const OverviewTab = ({
                 if (result.response_text && !result.error) {
                   const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
                   const brandLower = (selectedBrand || '').toLowerCase();
-                  const textLower = result.response_text.toLowerCase();
+                  const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
                   const isMentioned = isCategory
                     ? result.competitors_mentioned?.includes(selectedBrand || '')
                     : result.brand_mentioned;

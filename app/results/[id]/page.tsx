@@ -87,6 +87,7 @@ import { SourcesTab } from './tabs/SourcesTab';
 import { RecommendationsTab } from './tabs/RecommendationsTab';
 import { ReferenceTab } from './tabs/ReferenceTab';
 import { ResultsProvider } from './tabs/ResultsContext';
+import { getTextForRanking } from './tabs/shared';
 
 type FilterType = 'all' | 'mentioned' | 'not_mentioned';
 type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit';
@@ -832,11 +833,12 @@ export default function ResultsPage() {
 
     // If still not found but brand_mentioned is true, find position by text search
     if (foundIndex === -1 && result.brand_mentioned && result.response_text) {
-      const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+      const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+      const brandPos = rankingText.indexOf(brandLower);
       if (brandPos >= 0) {
         let brandsBeforeCount = 0;
         for (const b of allBrands) {
-          const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+          const bPos = rankingText.indexOf(b.toLowerCase());
           if (bPos >= 0 && bPos < brandPos) {
             brandsBeforeCount++;
           }
@@ -1291,11 +1293,12 @@ export default function ResultsPage() {
           // If still not found, find position by text search
           let rank = foundIndex + 1;
           if (foundIndex === -1) {
-            const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+            const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+            const brandPos = rankingText.indexOf(brandLower);
             if (brandPos >= 0) {
               let brandsBeforeCount = 0;
               for (const b of allBrands) {
-                const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+                const bPos = rankingText.indexOf(b.toLowerCase());
                 if (bPos >= 0 && bPos < brandPos) {
                   brandsBeforeCount++;
                 }
@@ -3010,7 +3013,7 @@ export default function ResultsPage() {
           : result.brand_mentioned;
 
         if (isMentioned) {
-          const textLower = result.response_text.toLowerCase();
+          const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
           const brandTextPos = textLower.indexOf(brandLower);
           const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
             ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
@@ -3278,18 +3281,21 @@ export default function ResultsPage() {
 
         // If still not found but brand appears in text, find position by text search
         let rank = foundIndex + 1;
-        if (foundIndex === -1 && result.response_text.toLowerCase().includes(brandLower)) {
-          const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
-          let brandsBeforeCount = 0;
-          for (const b of allBrands) {
-            const bLower = b.toLowerCase();
-            if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-            const bPos = result.response_text.toLowerCase().indexOf(bLower);
-            if (bPos >= 0 && bPos < brandPos) {
-              brandsBeforeCount++;
+        if (foundIndex === -1) {
+          const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+          const brandPos = rankingText.indexOf(brandLower);
+          if (brandPos >= 0) {
+            let brandsBeforeCount = 0;
+            for (const b of allBrands) {
+              const bLower = b.toLowerCase();
+              if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+              const bPos = rankingText.indexOf(bLower);
+              if (bPos >= 0 && bPos < brandPos) {
+                brandsBeforeCount++;
+              }
             }
+            rank = brandsBeforeCount + 1;
           }
-          rank = brandsBeforeCount + 1;
         }
 
         if (rank > 0) {
@@ -3393,7 +3399,7 @@ export default function ResultsPage() {
         let rank = '';
         if (r.response_text && r.brand_mentioned) {
           const brandLower = runStatus.brand.toLowerCase();
-          const textLower = r.response_text.toLowerCase();
+          const textLower = getTextForRanking(r.response_text, r.provider).toLowerCase();
           const brandTextPos = textLower.indexOf(brandLower);
 
           if (brandTextPos >= 0) {
@@ -3520,11 +3526,12 @@ export default function ResultsPage() {
             );
           }
           if (foundIndex === -1) {
-            const brandPos = r.response_text.toLowerCase().indexOf(brandLower);
+            const rankingText = getTextForRanking(r.response_text, r.provider).toLowerCase();
+            const brandPos = rankingText.indexOf(brandLower);
             if (brandPos >= 0) {
               let brandsBeforeCount = 0;
               for (const b of allBrands) {
-                const bPos = r.response_text.toLowerCase().indexOf(b.toLowerCase());
+                const bPos = rankingText.indexOf(b.toLowerCase());
                 if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
               }
               rank = brandsBeforeCount + 1;

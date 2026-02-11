@@ -266,6 +266,19 @@ export const getSentimentDotColor = (sentiment: string | null): string => {
   }
 };
 
+// Strip question headers and search result titles from AI Overview responses for ranking
+export const getTextForRanking = (text: string, provider: string): string => {
+  if (provider !== 'ai_overviews') return text;
+  // Remove everything before the --- separator (question headers)
+  const separatorIdx = text.indexOf('---');
+  let cleaned = separatorIdx >= 0 ? text.substring(separatorIdx + 3) : text;
+  // Remove [Top Search Results] header
+  cleaned = cleaned.replace(/\*?\*?\[Top Search Results\]\*?\*?/g, '');
+  // Remove search result title lines (bold text followed by colon at start of snippet)
+  cleaned = cleaned.replace(/\*\*[^*]+\*\*\s*:/g, ':');
+  return cleaned;
+};
+
 export const getResultPosition = (result: Result, runStatus: RunStatusResponse): number | null => {
   if (!result.response_text || result.error || !runStatus) return null;
   const selectedBrand = runStatus.search_type === 'category'
@@ -286,11 +299,14 @@ export const getResultPosition = (result: Result, runStatus: RunStatusResponse):
   }
 
   if (foundIndex === -1 && result.brand_mentioned && result.response_text) {
-    const brandPos = result.response_text.toLowerCase().indexOf(brandLower);
+    const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+    const brandPos = rankingText.indexOf(brandLower);
     if (brandPos >= 0) {
       let brandsBeforeCount = 0;
       for (const b of allBrands) {
-        const bPos = result.response_text.toLowerCase().indexOf(b.toLowerCase());
+        const bLower = b.toLowerCase();
+        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+        const bPos = rankingText.indexOf(bLower);
         if (bPos >= 0 && bPos < brandPos) {
           brandsBeforeCount++;
         }
