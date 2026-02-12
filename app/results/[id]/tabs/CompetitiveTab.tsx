@@ -38,7 +38,7 @@ import { useResults, useResultsUI } from './ResultsContext';
 // Constants
 // ---------------------------------------------------------------------------
 
-const PROVIDER_ORDER = ['openai', 'gemini', 'anthropic', 'perplexity', 'grok', 'llama', 'ai_overviews'];
+const PROVIDER_ORDER = ['openai', 'ai_overviews', 'gemini', 'perplexity', 'anthropic', 'grok', 'llama'];
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Social Media': '#111827',
