@@ -15,6 +15,10 @@ import {
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatPercent, truncate } from '@/lib/utils';
+import type { SectionAccess } from '@/lib/billing';
+import { PaywallOverlay } from '@/components/PaywallOverlay';
+import { PlaceholderChart } from '@/components/PlaceholderChart';
+import { PlaceholderTable } from '@/components/PlaceholderTable';
 import type { Result } from './shared';
 import {
   getProviderLabel,
@@ -44,6 +48,7 @@ export interface OverviewTabProps {
   setProviderFilter: (val: string) => void;
   brandBlurbs: Record<string, string>;
   setCopied: (val: boolean) => void;
+  accessLevel?: SectionAccess;
 }
 
 export const OverviewTab = ({
@@ -54,6 +59,7 @@ export const OverviewTab = ({
   providerFilter,
   setProviderFilter,
   setCopied,
+  accessLevel = 'visible',
 }: OverviewTabProps) => {
   // ---------------------------------------------------------------------------
   // Context
@@ -577,6 +583,16 @@ export const OverviewTab = ({
         )}
       </div>
 
+      {/* Remaining sections — paywalled for partial access */}
+      <PaywallOverlay locked={accessLevel === 'partial'} message="Upgrade to Pro to see brand quotes, prompt breakdowns, platform analysis, and full results.">
+      {accessLevel === 'partial' ? (
+        <div className="space-y-6">
+          <PlaceholderChart type="bar" height={200} />
+          <PlaceholderTable rows={4} columns={5} />
+          <PlaceholderChart type="scatter" height={200} />
+        </div>
+      ) : (
+      <>
       {/* What AI Says About [Brand] */}
       {brandQuotes.length > 0 && (
         <div id="overview-brand-quotes" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -1539,6 +1555,9 @@ export const OverviewTab = ({
           </button>
         </div>
       </div>
+      </>
+      )}
+      </PaywallOverlay>
     </div>
   );
 };

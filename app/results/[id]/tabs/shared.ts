@@ -21,7 +21,7 @@ export type { AISummaryResponse, SiteAuditResult } from '@/lib/types';
 export type { BrandQuote } from '@/hooks/useApi';
 
 export type FilterType = 'all' | 'mentioned' | 'not_mentioned';
-export type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit';
+export type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit' | 'chatgpt-ads';
 
 export type InterpretationTone = 'success' | 'neutral' | 'warn';
 

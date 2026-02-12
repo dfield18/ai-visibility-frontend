@@ -3,6 +3,8 @@
 import React, { createContext, useContext } from 'react';
 import type { Result, RunStatusResponse, AISummaryResponse, TabType } from './shared';
 import type { BrandQuote } from '@/hooks/useApi';
+import type { SearchType } from '@/lib/types';
+import type { SearchTypeConfig } from '@/lib/searchTypeConfig';
 
 // ---------------------------------------------------------------------------
 // ResultsContext — stable / read-mostly data (run data, computed aggregations)
@@ -16,6 +18,8 @@ export interface ResultsContextValue {
   availablePrompts: string[];
   trackedBrands: Set<string>;
   isCategory: boolean;
+  searchType: SearchType;
+  searchTypeConfig: SearchTypeConfig;
   brandMentionRate: number;
   aiSummary: AISummaryResponse | undefined;
   isSummaryLoading: boolean;

@@ -2,8 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-type SearchType = 'brand' | 'category' | 'local';
+import type { SearchType } from '@/lib/types';
 
 interface LocationCoords {
   lat: number;

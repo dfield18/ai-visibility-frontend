@@ -19,6 +19,7 @@ import {
   Globe,
   MapPin,
   ArrowRight,
+  Lock,
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useStore } from '@/hooks/useStore';
@@ -31,6 +32,9 @@ import {
   formatCurrency,
   formatDuration,
 } from '@/lib/utils';
+import { getSearchTypeConfig } from '@/lib/searchTypeConfig';
+import { useBillingStatus } from '@/hooks/useBilling';
+import { FREEMIUM_CONFIG, isProviderFree } from '@/lib/billing';
 
 const PROVIDER_INFO: Record<string, { name: string; description: string; cost: string }> = {
   openai: {
@@ -108,17 +112,18 @@ export default function ConfigurePage() {
     setCountry,
   } = useStore();
 
-  // Labels based on search type
+  // Billing status for provider locking and report counting
+  const { data: billing } = useBillingStatus();
+  const isPaidUser = billing?.hasSubscription ?? false;
+
+  // Labels from config registry
+  const searchConfig = getSearchTypeConfig(searchType);
   const isCategory = searchType === 'category';
   const isLocal = searchType === 'local';
-  const brandsLabel = isLocal ? 'Businesses to Track' : isCategory ? 'Brands to Track' : 'Competitors to Track';
-  const brandsDescription = isLocal
-    ? "Select which local businesses you want to monitor in AI responses"
-    : isCategory
-    ? "Select which brands you want to monitor in AI responses"
-    : "Select competitors to see how they compare to your brand";
-  const brandsLoadingText = isLocal ? 'Finding local businesses...' : isCategory ? 'Finding relevant brands...' : 'Finding your competitors...';
-  const addBrandPlaceholder = isLocal ? 'Add a business...' : isCategory ? 'Add a brand...' : 'Add a competitor...';
+  const brandsLabel = searchConfig.competitorsLabel;
+  const brandsDescription = searchConfig.competitorsDescription;
+  const brandsLoadingText = searchConfig.competitorsLoadingText;
+  const addBrandPlaceholder = searchConfig.addCompetitorPlaceholder;
 
   const [newPrompt, setNewPrompt] = useState('');
   const [newCompetitor, setNewCompetitor] = useState('');
@@ -227,7 +232,7 @@ export default function ConfigurePage() {
   const estimatedTime = estimateDuration(totalCalls);
 
   const handleAddPrompt = () => {
-    if (newPrompt.trim() && prompts.length < 10) {
+    if (newPrompt.trim() && prompts.length < 20) {
       addPrompt(newPrompt.trim());
       setNewPrompt('');
     }
@@ -260,6 +265,12 @@ export default function ConfigurePage() {
     }
     if (providers.length === 0) {
       setError('Please select at least one AI platform');
+      return;
+    }
+
+    // Check free tier report limit
+    if (!isPaidUser && billing && billing.reportsUsed >= FREEMIUM_CONFIG.freeReportsPerUser) {
+      router.push('/pricing?reason=limit');
       return;
     }
 
@@ -663,7 +674,7 @@ export default function ConfigurePage() {
                   )}
 
                   {/* Add question */}
-                  {prompts.length < 10 && (
+                  {prompts.length < 20 && (
                     <div className="border-t border-gray-100 mt-3 pt-3">
                       {addingPrompt ? (
                         <div className="flex gap-2">
@@ -839,32 +850,45 @@ export default function ConfigurePage() {
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(PROVIDER_INFO).map(([key, info]) => {
                     const isSelected = providers.includes(key);
+                    const isLocked = !isPaidUser && !isProviderFree(key);
                     return (
                       <button
                         key={key}
                         type="button"
-                        onClick={() => toggleProvider(key)}
+                        onClick={() => !isLocked && toggleProvider(key)}
+                        disabled={isLocked}
                         className={`flex items-start gap-2.5 px-3 py-3 rounded-xl text-left transition-all ${
-                          isSelected
+                          isLocked
+                            ? 'bg-gray-50 border border-gray-200 opacity-40 cursor-not-allowed'
+                            : isSelected
                             ? 'bg-white ring-1 ring-gray-200'
                             : 'bg-gray-50 border border-gray-200 opacity-60'
                         }`}
                       >
                         <div
                           className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
-                            isSelected
+                            isLocked
+                              ? 'bg-gray-200'
+                              : isSelected
                               ? 'bg-teal-600'
                               : 'border-2 border-gray-300'
                           }`}
                         >
-                          {isSelected && (
+                          {isLocked ? (
+                            <Lock className="w-2.5 h-2.5 text-gray-400" />
+                          ) : isSelected ? (
                             <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                          )}
+                          ) : null}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900">
-                            {info.name}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-medium text-gray-900">
+                              {info.name}
+                            </p>
+                            {isLocked && (
+                              <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">PRO</span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 mt-0.5">{info.description}</p>
                         </div>
                       </button>

@@ -86,22 +86,40 @@ import { SentimentTab } from './tabs/SentimentTab';
 import { SourcesTab } from './tabs/SourcesTab';
 import { RecommendationsTab } from './tabs/RecommendationsTab';
 import { ReferenceTab } from './tabs/ReferenceTab';
+import { ChatGPTAdsTab } from './tabs/ChatGPTAdsTab';
 import { ResultsProvider } from './tabs/ResultsContext';
 import { getTextForRanking } from './tabs/shared';
+import { getSearchTypeConfig, type TabId } from '@/lib/searchTypeConfig';
+import { PaywallOverlay } from '@/components/PaywallOverlay';
+import { PlaceholderChart } from '@/components/PlaceholderChart';
+import { PlaceholderTable } from '@/components/PlaceholderTable';
+import { useSectionAccess } from '@/hooks/useBilling';
 
 type FilterType = 'all' | 'mentioned' | 'not_mentioned';
-type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit';
+type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit' | 'chatgpt-ads';
 
-const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
-  { id: 'overview', label: 'Visibility', icon: <LayoutGrid className="w-4 h-4" /> },
-  { id: 'competitive', label: 'Competitive Landscape', icon: <TrendingUp className="w-4 h-4" /> },
-  { id: 'sentiment', label: 'Sentiment & Tone', icon: <MessageSquare className="w-4 h-4" /> },
-  { id: 'sources', label: 'Sources', icon: <Globe className="w-4 h-4" /> },
-  { id: 'recommendations', label: 'Recommendations', icon: <Lightbulb className="w-4 h-4" /> },
-  { id: 'site-audit', label: 'Site Audit', icon: <Search className="w-4 h-4" /> },
-  { id: 'reports', label: 'Automated Reports', icon: <FileBarChart className="w-4 h-4" /> },
-  { id: 'reference', label: 'Raw Data', icon: <FileText className="w-4 h-4" /> },
-];
+const TAB_ICONS: Record<string, React.ReactNode> = {
+  'overview': <LayoutGrid className="w-4 h-4" />,
+  'competitive': <TrendingUp className="w-4 h-4" />,
+  'sentiment': <MessageSquare className="w-4 h-4" />,
+  'sources': <Globe className="w-4 h-4" />,
+  'recommendations': <Lightbulb className="w-4 h-4" />,
+  'site-audit': <Search className="w-4 h-4" />,
+  'reports': <FileBarChart className="w-4 h-4" />,
+  'chatgpt-ads': <Megaphone className="w-4 h-4" />,
+  'reference': <FileText className="w-4 h-4" />,
+};
+
+function buildTabs(searchType: string): { id: TabType; label: string; icon: React.ReactNode }[] {
+  const config = getSearchTypeConfig(searchType as any);
+  return config.tabs
+    .filter(t => t.enabled)
+    .map(t => ({
+      id: t.id as TabType,
+      label: t.label,
+      icon: TAB_ICONS[t.id] || <FileText className="w-4 h-4" />,
+    }));
+}
 
 // Section definitions for each tab (used by the sidebar guide)
 const TAB_SECTIONS: Partial<Record<TabType, { id: string; label: string }[]>> = {
@@ -557,13 +575,17 @@ export default function ResultsPage() {
   const searchParams = useSearchParams();
   const runId = params.id as string;
 
+  // Section access for paywall enforcement
+  const sectionAccess = useSectionAccess();
+
   // Canonical provider display order (by popularity)
   const PROVIDER_ORDER = ['openai', 'gemini', 'anthropic', 'perplexity', 'grok', 'llama', 'ai_overviews'];
 
   // Tab state - persisted in URL
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tab = searchParams.get('tab') as TabType;
-    return TABS.some(t => t.id === tab) ? tab : 'overview';
+    const defaultTabs = buildTabs('brand');
+    return defaultTabs.some(t => t.id === tab) ? tab : 'overview';
   });
 
   // Global filters - persisted in URL
@@ -611,6 +633,10 @@ export default function ResultsPage() {
   const [showModifyModal, setShowModifyModal] = useState(false);
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
+
+  // Dynamic tabs based on search type (must be after runStatus declaration)
+  const TABS = useMemo(() => buildTabs(runStatus?.search_type || 'brand'), [runStatus?.search_type]);
+
   const { data: aiSummary, isLoading: isSummaryLoading } = useAISummary(
     runId,
     runStatus?.status === 'complete'
@@ -4617,6 +4643,8 @@ export default function ResultsPage() {
             availablePrompts,
             trackedBrands,
             isCategory,
+            searchType: (runStatus?.search_type || 'brand') as any,
+            searchTypeConfig: getSearchTypeConfig((runStatus?.search_type || 'brand') as any),
             brandMentionRate,
             aiSummary,
             isSummaryLoading,
@@ -4665,41 +4693,85 @@ export default function ResultsPage() {
             setProviderFilter={setProviderFilter}
             brandBlurbs={brandBlurbs}
             setCopied={setCopied}
+            accessLevel={sectionAccess['overview']}
           />
         )}
         {activeTab === 'reference' && (
-          <ReferenceTab
-            totalCost={totalCost}
-            promptCost={promptCost}
-            analysisCost={analysisCost}
-            frontendInsightsCost={frontendInsightsCost}
-            chartTab={chartTab}
-            setChartTab={setChartTab}
-            showSentimentColors={showSentimentColors}
-            setShowSentimentColors={setShowSentimentColors}
-            aiSummaryExpanded={aiSummaryExpanded}
-            setAiSummaryExpanded={setAiSummaryExpanded}
-            providerFilter={providerFilter}
-            setProviderFilter={setProviderFilter}
-          />
+          <PaywallOverlay locked={sectionAccess['reference'] === 'locked'}>
+            {sectionAccess['reference'] === 'locked' ? (
+              <PlaceholderTable rows={5} columns={6} />
+            ) : (
+              <ReferenceTab
+                totalCost={totalCost}
+                promptCost={promptCost}
+                analysisCost={analysisCost}
+                frontendInsightsCost={frontendInsightsCost}
+                chartTab={chartTab}
+                setChartTab={setChartTab}
+                showSentimentColors={showSentimentColors}
+                setShowSentimentColors={setShowSentimentColors}
+                aiSummaryExpanded={aiSummaryExpanded}
+                setAiSummaryExpanded={setAiSummaryExpanded}
+                providerFilter={providerFilter}
+                setProviderFilter={setProviderFilter}
+              />
+            )}
+          </PaywallOverlay>
         )}
         {activeTab === 'competitive' && (
-          <CompetitiveTab
-            setSelectedResultHighlight={setSelectedResultHighlight}
-            setHeatmapResultsList={setHeatmapResultsList}
-          />
+          <PaywallOverlay locked={sectionAccess['competitive'] === 'locked'}>
+            {sectionAccess['competitive'] === 'locked' ? (
+              <PlaceholderChart type="heatmap" height={300} />
+            ) : (
+              <CompetitiveTab
+                setSelectedResultHighlight={setSelectedResultHighlight}
+                setHeatmapResultsList={setHeatmapResultsList}
+              />
+            )}
+          </PaywallOverlay>
         )}
         {activeTab === 'sentiment' && (
-          <SentimentTab />
+          <PaywallOverlay locked={sectionAccess['sentiment'] === 'locked'}>
+            {sectionAccess['sentiment'] === 'locked' ? (
+              <PlaceholderChart type="bar" height={300} />
+            ) : (
+              <SentimentTab />
+            )}
+          </PaywallOverlay>
         )}
         {activeTab === 'sources' && (
-          <SourcesTab />
+          <PaywallOverlay locked={sectionAccess['sources'] === 'locked'}>
+            {sectionAccess['sources'] === 'locked' ? (
+              <PlaceholderTable rows={4} columns={3} />
+            ) : (
+              <SourcesTab />
+            )}
+          </PaywallOverlay>
         )}
         {activeTab === 'recommendations' && (
-          <RecommendationsTab />
+          <PaywallOverlay locked={sectionAccess['recommendations'] === 'locked'}>
+            {sectionAccess['recommendations'] === 'locked' ? (
+              <PlaceholderChart type="bar" height={250} />
+            ) : (
+              <RecommendationsTab />
+            )}
+          </PaywallOverlay>
         )}
-        {activeTab === 'reports' && <ReportsTab runStatus={runStatus ?? null} />}
+        {activeTab === 'reports' && (
+          <PaywallOverlay locked={sectionAccess['reports'] === 'locked'}>
+            {sectionAccess['reports'] === 'locked' ? (
+              <PlaceholderTable rows={3} columns={4} />
+            ) : (
+              <ReportsTab runStatus={runStatus ?? null} />
+            )}
+          </PaywallOverlay>
+        )}
         {activeTab === 'site-audit' && <SiteAuditTab brand={runStatus?.brand || ''} />}
+        {activeTab === 'chatgpt-ads' && (
+          <PaywallOverlay locked={sectionAccess['chatgpt-ads'] === 'locked'}>
+            <ChatGPTAdsTab />
+          </PaywallOverlay>
+        )}
         </ResultsProvider>
           </div>{/* End flex-1 content */}
         </div>{/* End flex container */}

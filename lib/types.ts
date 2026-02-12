@@ -1,4 +1,4 @@
-export type SearchType = 'brand' | 'category' | 'local';
+export type SearchType = 'brand' | 'category' | 'local' | 'issue' | 'public_figure';
 
 export interface SuggestRequest {
   brand: string;

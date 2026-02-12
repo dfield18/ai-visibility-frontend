@@ -3,12 +3,22 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { Loader2, X, Building2, PenLine, MapPin, ArrowRight } from "lucide-react";
+import { Loader2, X, Building2, PenLine, MapPin, ArrowRight, Tag, Flag, User } from "lucide-react";
 import { useStore } from "@/hooks/useStore";
 import { LocationInput } from "@/components/LocationInput";
+import type { SearchType } from "@/lib/types";
+import { SEARCH_TYPE_CONFIGS } from "@/lib/searchTypeConfig";
+import { FreeTierBanner } from "@/components/FreeTierBanner";
 
-// Version identifier for debugging deployments
-const HOMEPAGE_VERSION = "3.1.0-views-headline";
+const HOMEPAGE_VERSION = "4.0.0-category-selector";
+
+// Category selector buttons (excludes 'local' which is a sub-type of category)
+const CATEGORY_OPTIONS: { key: SearchType; label: string; icon: React.ReactNode }[] = [
+  { key: 'brand', label: 'Brand', icon: <Building2 className="w-4 h-4" /> },
+  { key: 'category', label: 'Industry', icon: <Tag className="w-4 h-4" /> },
+  { key: 'issue', label: 'Issue', icon: <Flag className="w-4 h-4" /> },
+  { key: 'public_figure', label: 'Public Figure', icon: <User className="w-4 h-4" /> },
+];
 
 interface BrandSuggestion {
   name: string;
@@ -16,74 +26,90 @@ interface BrandSuggestion {
 }
 
 export default function Home() {
-  // Debug logging on mount
   useEffect(() => {
     console.log("===========================================");
-    console.log("🏠 AI Visibility Homepage Loaded");
-    console.log(`📦 Version: ${HOMEPAGE_VERSION}`);
-    console.log(`🕐 Loaded at: ${new Date().toISOString()}`);
-    console.log("🎨 Design: Screenshot design with blue 'views' headline, Analyze button");
+    console.log("AI Visibility Homepage Loaded");
+    console.log(`Version: ${HOMEPAGE_VERSION}`);
+    console.log(`Loaded at: ${new Date().toISOString()}`);
     console.log("===========================================");
   }, []);
 
+  const [selectedCategory, setSelectedCategory] = useState<SearchType>('brand');
   const [brandInput, setBrandInput] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<BrandSuggestion[] | null>(null);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [pendingBrandName, setPendingBrandName] = useState("");
+  const [showLocalToggle, setShowLocalToggle] = useState(false);
   const router = useRouter();
   const { setBrand, setSearchType, setLocation, setLocationCoords, resetConfig } = useStore();
+
+  const config = SEARCH_TYPE_CONFIGS[selectedCategory];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!brandInput.trim()) return;
-
-    console.log(`🔍 Submitting brand search: "${brandInput}"`);
 
     setIsValidating(true);
     setError(null);
     setSuggestions(null);
 
     try {
+      // For issue and public_figure, skip validation and go directly
+      if (selectedCategory === 'issue' || selectedCategory === 'public_figure') {
+        setBrand(brandInput.trim());
+        setSearchType(selectedCategory);
+        resetConfig();
+        router.push("/configure");
+        return;
+      }
+
+      // For local sub-type of category
+      if (showLocalToggle && selectedCategory === 'category') {
+        setPendingBrandName(brandInput.trim());
+        setShowLocationPrompt(true);
+        setIsValidating(false);
+        return;
+      }
+
       const response = await fetch("/api/validate-brand", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           brand: brandInput.trim(),
+          search_type: selectedCategory,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to validate brand");
+        throw new Error(data.error || "Failed to validate");
       }
 
       if (!data.valid) {
-        setError("Please enter a valid brand name");
+        setError("Please enter a valid name");
         setIsValidating(false);
         return;
       }
 
-      // Check if there are multiple suggestions
       if (data.suggestions && data.suggestions.length > 1) {
         setSuggestions(data.suggestions);
         setIsValidating(false);
         return;
       }
 
-      // Use the corrected brand name or first suggestion
       const brandName = data.correctedName ||
         (data.suggestions && data.suggestions[0]?.name) ||
         brandInput.trim();
 
-      const searchType = data.type || 'brand';
-      console.log(`✅ Validated: "${brandName}" (type: ${searchType})`);
+      // Use the selected category, not auto-inferred type
+      const resolvedType = selectedCategory === 'category' && data.type === 'local'
+        ? 'local'
+        : selectedCategory;
 
-      // For local search type, show location prompt first
-      if (searchType === 'local') {
-        console.log("📍 Local search detected, showing location prompt");
+      if (resolvedType === 'local') {
         setPendingBrandName(brandName);
         setShowLocationPrompt(true);
         setIsValidating(false);
@@ -91,7 +117,7 @@ export default function Home() {
       }
 
       setBrand(brandName);
-      setSearchType(searchType);
+      setSearchType(resolvedType);
       resetConfig();
       router.push("/configure");
     } catch (err) {
@@ -106,7 +132,7 @@ export default function Home() {
 
   const handleSelectBrand = (brandName: string) => {
     setBrand(brandName);
-    setSearchType('brand');
+    setSearchType(selectedCategory);
     resetConfig();
     setSuggestions(null);
     router.push("/configure");
@@ -157,7 +183,7 @@ export default function Home() {
             <a href="#features" className="text-gray-500 hover:text-gray-900 text-sm">
               Features
             </a>
-            <a href="#pricing" className="text-gray-500 hover:text-gray-900 text-sm">
+            <a href="/pricing" className="text-gray-500 hover:text-gray-900 text-sm">
               Pricing
             </a>
             <a href="#about" className="text-gray-500 hover:text-gray-900 text-sm">
@@ -194,6 +220,9 @@ export default function Home() {
 
       {/* Hero Section */}
       <main className="flex-1 max-w-7xl mx-auto px-8 pt-[12vh] pb-16 w-full">
+        <div className="mb-6">
+          <FreeTierBanner />
+        </div>
         <div className="grid lg:grid-cols-2 gap-16 items-start">
           {/* Left Column */}
           <div>
@@ -205,16 +234,55 @@ export default function Home() {
             </h1>
 
             {/* Subheadline */}
-            <p className="text-lg text-gray-500 mb-10 max-w-md">
+            <p className="text-lg text-gray-500 mb-8 max-w-md">
               Discover how ChatGPT, Claude, and Gemini recommend your brand vs competitors. Get actionable insights to improve your AI visibility.
             </p>
+
+            {/* Category Selector */}
+            <div className="flex items-center gap-2 mb-4 max-w-md">
+              {CATEGORY_OPTIONS.map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(opt.key);
+                    setShowLocalToggle(false);
+                    if (error) setError(null);
+                  }}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-lg border transition-all ${
+                    selectedCategory === opt.key
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {opt.icon}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Local toggle for Industry */}
+            {selectedCategory === 'category' && (
+              <div className="flex items-center gap-2 mb-4 max-w-md">
+                <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showLocalToggle}
+                    onChange={(e) => setShowLocalToggle(e.target.checked)}
+                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                  />
+                  <MapPin className="w-3.5 h-3.5" />
+                  Search local businesses in a specific area
+                </label>
+              </div>
+            )}
 
             {/* Search Form */}
             <form onSubmit={handleSubmit} className="mb-6 max-w-md">
               <div className={`flex items-center bg-white border rounded-lg overflow-hidden transition-shadow ${error ? 'border-red-300' : 'border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100'}`}>
                 <input
                   type="text"
-                  placeholder="brand, industry or comparison"
+                  placeholder={config.placeholder}
                   value={brandInput}
                   onChange={(e) => {
                     setBrandInput(e.target.value);
@@ -250,27 +318,16 @@ export default function Home() {
             {/* TRY Examples */}
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm text-gray-400">TRY:</span>
-              <button
-                type="button"
-                onClick={() => handleExampleClick("Nike")}
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
-              >
-                Nike <span className="text-gray-400">(Brand)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExampleClick("Sneakers")}
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
-              >
-                Sneakers <span className="text-gray-400">(Industry)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExampleClick("Nike vs Reebok")}
-                className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
-              >
-                Nike vs Reebok <span className="text-gray-400">(Compare)</span>
-              </button>
+              {config.examples.map((ex) => (
+                <button
+                  key={ex.name}
+                  type="button"
+                  onClick={() => handleExampleClick(ex.name)}
+                  className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                >
+                  {ex.name} <span className="text-gray-400">({ex.label})</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -368,10 +425,10 @@ export default function Home() {
             </button>
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Which brand did you mean?
+                Which did you mean?
               </h2>
               <p className="text-sm text-gray-500">
-                We found multiple brands matching &quot;{brandInput}&quot;
+                We found multiple matches for &quot;{brandInput}&quot;
               </p>
             </div>
             <div className="space-y-3">
@@ -402,7 +459,7 @@ export default function Home() {
                       <div>
                         <p className="font-medium text-gray-900">{suggestion.name}</p>
                         <p className="text-sm text-gray-500">
-                          {isUseAsEntered ? 'Different business - use my exact input' : suggestion.description}
+                          {isUseAsEntered ? 'Use my exact input' : suggestion.description}
                         </p>
                       </div>
                     </div>

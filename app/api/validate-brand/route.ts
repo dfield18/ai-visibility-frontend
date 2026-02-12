@@ -7,12 +7,27 @@ const openai = new OpenAI({
 
 export async function POST(request: NextRequest) {
   try {
-    const { brand, industry } = await request.json();
+    const { brand, industry, search_type } = await request.json();
 
     if (!brand || typeof brand !== 'string') {
       return NextResponse.json(
         { error: 'Brand name is required' },
         { status: 400 }
+      );
+    }
+
+    // If frontend explicitly provides a search type, use it directly
+    // (skip auto-inference for issue and public_figure)
+    if (search_type === 'issue') {
+      return NextResponse.json(
+        { valid: true, type: 'issue', correctedName: brand.trim(), suggestions: null },
+        { status: 200 }
+      );
+    }
+    if (search_type === 'public_figure') {
+      return NextResponse.json(
+        { valid: true, type: 'public_figure', correctedName: brand.trim(), suggestions: null },
+        { status: 200 }
       );
     }
 
