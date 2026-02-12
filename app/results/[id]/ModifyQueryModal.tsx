@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { X, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { X, Plus, Trash2, AlertTriangle, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { RunStatusResponse, ExtendRunRequest } from '@/lib/types';
 import { useExtendRun } from '@/hooks/useApi';
@@ -38,17 +38,19 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
   };
 
   // State for new additions
-  const [newPrompts, setNewPrompts] = useState<string[]>(['']);
-  const [newCompetitors, setNewCompetitors] = useState<string[]>(['']);
+  const [newPrompts, setNewPrompts] = useState<string[]>([]);
+  const [newCompetitors, setNewCompetitors] = useState<string[]>([]);
   const [selectedNewProviders, setSelectedNewProviders] = useState<string[]>([]);
+  const [showExistingPrompts, setShowExistingPrompts] = useState(false);
+  const [showExistingCompetitors, setShowExistingCompetitors] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
-  // Get available providers that aren't already in the run
-  const availableProviders = useMemo(() => {
-    const existing = new Set(existingConfig.providers);
-    return ALL_PROVIDERS.filter(p => !existing.has(p));
-  }, [existingConfig.providers]);
+  // Get existing provider set
+  const existingProviderSet = useMemo(
+    () => new Set(existingConfig.providers),
+    [existingConfig.providers]
+  );
 
   // Calculate new combinations
   const newCombinations = useMemo(() => {
@@ -69,8 +71,8 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
     }
 
     // Existing prompts with new providers
-    for (const prompt of existingConfig.prompts) {
-      for (const provider of selectedNewProviders) {
+    for (const _prompt of existingConfig.prompts) {
+      for (const _provider of selectedNewProviders) {
         count += temperatures.length * repeats;
       }
     }
@@ -99,9 +101,7 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
   };
 
   const removePromptField = (index: number) => {
-    if (newPrompts.length > 1) {
-      setNewPrompts(newPrompts.filter((_, i) => i !== index));
-    }
+    setNewPrompts(newPrompts.filter((_, i) => i !== index));
   };
 
   // Handle competitor input changes
@@ -116,13 +116,12 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
   };
 
   const removeCompetitorField = (index: number) => {
-    if (newCompetitors.length > 1) {
-      setNewCompetitors(newCompetitors.filter((_, i) => i !== index));
-    }
+    setNewCompetitors(newCompetitors.filter((_, i) => i !== index));
   };
 
   // Handle provider toggle
   const toggleProvider = (provider: string) => {
+    if (existingProviderSet.has(provider)) return; // Can't toggle existing providers
     setSelectedNewProviders(prev =>
       prev.includes(provider)
         ? prev.filter(p => p !== provider)
@@ -136,7 +135,7 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
 
     // Validate we have something to add
     if (newCombinations.count === 0) {
-      setError('No new combinations to run. Add new prompts or providers.');
+      setError('No new combinations to run. Add new prompts, competitors, or providers.');
       return;
     }
 
@@ -173,7 +172,7 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Modify Query</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Add new prompts, competitors, or AI providers to this analysis
+              Existing results are kept. Only new combinations will be run.
             </p>
           </div>
           <button
@@ -185,36 +184,52 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Existing Configuration Summary */}
-          <div className="bg-gray-50 rounded-lg p-4 text-sm">
-            <h3 className="font-medium text-gray-900 mb-2">Current Analysis</h3>
-            <div className="space-y-1 text-gray-600">
-              <p><span className="font-medium">Brand:</span> {runStatus.brand}</p>
-              <p><span className="font-medium">Prompts:</span> {existingConfig.prompts.length}</p>
-              <p><span className="font-medium">Competitors:</span> {existingConfig.competitors.length}</p>
-              <p>
-                <span className="font-medium">Providers:</span>{' '}
-                {existingConfig.providers.map(p => PROVIDER_LABELS[p] || p).join(', ')}
-              </p>
-            </div>
+          {/* Brand */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium text-gray-900">Brand:</span>
+            <span className="text-gray-700">{runStatus.brand}</span>
           </div>
 
-          {/* Add New Prompts */}
+          {/* Prompts Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Add New Prompts
-            </label>
-            <div className="space-y-2">
-              {newPrompts.map((prompt, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={prompt}
-                    onChange={(e) => handlePromptChange(index, e.target.value)}
-                    placeholder="Enter a new prompt..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                  />
-                  {newPrompts.length > 1 && (
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-900">
+                Prompts
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowExistingPrompts(!showExistingPrompts)}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+              >
+                {existingConfig.prompts.length} existing
+                {showExistingPrompts ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            </div>
+
+            {/* Existing prompts (collapsible) */}
+            {showExistingPrompts && (
+              <div className="mb-3 space-y-1.5">
+                {existingConfig.prompts.map((prompt: string, index: number) => (
+                  <div key={`existing-${index}`} className="flex items-start gap-2 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span className="line-clamp-2">{prompt}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* New prompt inputs */}
+            {newPrompts.length > 0 && (
+              <div className="space-y-2 mb-2">
+                {newPrompts.map((prompt, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={prompt}
+                      onChange={(e) => handlePromptChange(index, e.target.value)}
+                      placeholder="Enter a new prompt..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                    />
                     <button
                       type="button"
                       onClick={() => removePromptField(index)}
@@ -222,36 +237,60 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addPromptField}
-                className="flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                Add another prompt
-              </button>
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={addPromptField}
+              className="flex items-center gap-1 text-sm text-gray-900 hover:text-gray-700 font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Add new prompt
+            </button>
           </div>
 
-          {/* Add New Competitors */}
+          {/* Competitors Section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Add New Competitors
-            </label>
-            <div className="space-y-2">
-              {newCompetitors.map((competitor, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={competitor}
-                    onChange={(e) => handleCompetitorChange(index, e.target.value)}
-                    placeholder="Enter a competitor name..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent"
-                  />
-                  {newCompetitors.length > 1 && (
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-900">
+                Competitors
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowExistingCompetitors(!showExistingCompetitors)}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
+              >
+                {existingConfig.competitors.length} existing
+                {showExistingCompetitors ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            </div>
+
+            {/* Existing competitors (collapsible) */}
+            {showExistingCompetitors && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {existingConfig.competitors.map((comp: string, index: number) => (
+                  <span key={`existing-${index}`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 rounded-full text-sm text-gray-600">
+                    <Check className="w-3 h-3 text-green-500" />
+                    {comp}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* New competitor inputs */}
+            {newCompetitors.length > 0 && (
+              <div className="space-y-2 mb-2">
+                {newCompetitors.map((competitor, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={competitor}
+                      onChange={(e) => handleCompetitorChange(index, e.target.value)}
+                      placeholder="Enter a competitor name..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                    />
                     <button
                       type="button"
                       onClick={() => removeCompetitorField(index)}
@@ -259,49 +298,59 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addCompetitorField}
-                className="flex items-center gap-1 text-sm text-[#4A7C59] hover:text-[#3d6649] font-medium"
-              >
-                <Plus className="w-4 h-4" />
-                Add another competitor
-              </button>
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={addCompetitorField}
+              className="flex items-center gap-1 text-sm text-gray-900 hover:text-gray-700 font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Add new competitor
+            </button>
           </div>
 
-          {/* Add New Providers */}
-          {availableProviders.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Add New AI Providers
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {availableProviders.map((provider) => (
+          {/* Providers Section - show all, existing are pre-selected */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              AI Providers
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {ALL_PROVIDERS.map((provider) => {
+                const isExisting = existingProviderSet.has(provider);
+                const isNewSelected = selectedNewProviders.includes(provider);
+                const isActive = isExisting || isNewSelected;
+
+                return (
                   <button
                     key={provider}
                     type="button"
                     onClick={() => toggleProvider(provider)}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${
-                      selectedNewProviders.includes(provider)
-                        ? 'bg-[#4A7C59] text-white border-[#4A7C59]'
+                    className={`px-3 py-2 text-sm font-medium rounded-lg border transition-colors flex items-center gap-1.5 ${
+                      isActive
+                        ? isExisting
+                          ? 'bg-gray-900 text-white border-gray-900 cursor-default'
+                          : 'bg-gray-900 text-white border-gray-900'
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     }`}
                   >
+                    {isExisting && <Check className="w-3.5 h-3.5" />}
                     {PROVIDER_LABELS[provider] || provider}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
-          )}
+            <p className="text-xs text-gray-400 mt-1.5">
+              Existing providers are locked. Click others to add them.
+            </p>
+          </div>
 
           {/* Preview */}
           {newCombinations.count > 0 && (
-            <div className="bg-[#4A7C59]/10 rounded-lg p-4">
-              <h3 className="font-medium text-[#4A7C59] mb-2">Preview</h3>
+            <div className="bg-gray-900/5 rounded-lg p-4">
+              <h3 className="font-medium text-gray-900 mb-2">New Queries Preview</h3>
               <div className="space-y-1 text-sm text-gray-700">
                 <p>
                   <span className="font-medium">{newCombinations.count}</span> new API calls will be made
@@ -328,6 +377,12 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
             </div>
           )}
 
+          {newCombinations.count === 0 && (newPrompts.length > 0 || newCompetitors.length > 0 || selectedNewProviders.length > 0) && (
+            <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-500 text-center">
+              Fill in the new items above to see a preview of queries to run.
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
@@ -350,17 +405,17 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
             type="button"
             onClick={handleSubmit}
             disabled={newCombinations.count === 0 || extendRunMutation.isPending}
-            className="px-4 py-2 text-sm font-medium text-white bg-[#4A7C59] rounded-lg hover:bg-[#3d6649] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {extendRunMutation.isPending ? (
               <>
                 <Spinner size="sm" />
                 Running...
               </>
+            ) : newCombinations.count > 0 ? (
+              <>Run {newCombinations.count} New Queries</>
             ) : (
-              <>
-                Run {newCombinations.count} New Queries
-              </>
+              <>Add Something New to Run</>
             )}
           </button>
         </div>

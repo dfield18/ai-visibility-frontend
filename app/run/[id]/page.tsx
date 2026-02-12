@@ -207,14 +207,17 @@ export default function RunPage() {
   const cancelMutation = useCancelRun();
 
   // Auto-redirect to results when complete
+  // For child runs (extensions), redirect to parent run's results page
+  // since it aggregates all child results
   useEffect(() => {
     if (runStatus?.status === 'complete') {
+      const targetId = runStatus.extension_info?.parent_run_id || runId;
       const timer = setTimeout(() => {
-        router.push(`/results/${runId}`);
+        router.push(`/results/${targetId}`);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [runStatus?.status, runId, router]);
+  }, [runStatus?.status, runStatus?.extension_info?.parent_run_id, runId, router]);
 
   const handleCancel = async () => {
     try {
@@ -341,7 +344,7 @@ export default function RunPage() {
               <StopCircle className="w-8 h-8 text-gray-500 mx-auto mb-2" />
               <p className="text-gray-700 mb-3">Analysis was cancelled</p>
               <button
-                onClick={() => router.push(`/results/${runId}`)}
+                onClick={() => router.push(`/results/${runStatus.extension_info?.parent_run_id || runId}`)}
                 className="px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
               >
                 View Partial Results
@@ -403,7 +406,7 @@ export default function RunPage() {
         {runStatus.status === 'complete' && (
           <div className="text-center">
             <button
-              onClick={() => router.push(`/results/${runId}`)}
+              onClick={() => router.push(`/results/${runStatus.extension_info?.parent_run_id || runId}`)}
               className="px-6 py-3 bg-gray-900 text-white font-medium rounded-xl hover:bg-gray-800 transition-colors"
             >
               View Full Results
