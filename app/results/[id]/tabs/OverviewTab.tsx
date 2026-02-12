@@ -452,7 +452,7 @@ export const OverviewTab = ({
                 </span>
               </div>
               {/* Description - pushed to bottom */}
-              <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often {runStatus?.brand || 'your brand'} is the #1 result</p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often {runStatus?.brand || 'your brand'} is the #1 result when mentioned</p>
             </div>
           );
         })()}
@@ -600,7 +600,7 @@ export const OverviewTab = ({
               return (
                 <div key={idx}>
                   <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{cleanedText}&rdquo;</p>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">— {providerLabel} · {quote.prompt}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 truncate flex items-center gap-1.5">— {providerLabel} <span className="inline-block w-1 h-1 rounded-full bg-gray-400 flex-shrink-0" /> {quote.prompt}</p>
                 </div>
               );
             })}

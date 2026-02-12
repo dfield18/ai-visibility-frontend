@@ -541,7 +541,7 @@ export default function ConfigurePage() {
                         }
                       }}
                       className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
-                        selectedPrompts.size === prompts.length ? 'bg-emerald-500' : 'bg-gray-300'
+                        selectedPrompts.size === prompts.length ? 'bg-blue-500' : 'bg-gray-300'
                       }`}
                     >
                       <span
