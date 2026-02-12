@@ -99,6 +99,7 @@ export default function ConfigurePage() {
     addCompetitor,
     removeCompetitor,
     providers,
+    setProviders,
     toggleProvider,
     temperatures,
     setTemperatures,
@@ -115,6 +116,16 @@ export default function ConfigurePage() {
   // Billing status for provider locking and report counting
   const { data: billing } = useBillingStatus();
   const isPaidUser = billing?.hasSubscription ?? false;
+
+  // Auto-deselect locked providers for free users
+  useEffect(() => {
+    if (billing && !isPaidUser) {
+      const allowedProviders = providers.filter(p => isProviderFree(p));
+      if (allowedProviders.length !== providers.length) {
+        setProviders(allowedProviders.length > 0 ? allowedProviders : FREEMIUM_CONFIG.freeProviders);
+      }
+    }
+  }, [billing, isPaidUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Labels from config registry
   const searchConfig = getSearchTypeConfig(searchType);

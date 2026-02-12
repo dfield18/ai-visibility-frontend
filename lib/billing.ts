@@ -5,7 +5,7 @@ export const FREEMIUM_CONFIG = {
   maxPromptsPerRun: 20,
 
   // Free tier provider restrictions
-  freeProviders: ['openai', 'gemini'],
+  freeProviders: ['llama', 'grok', 'gemini'],
 
   // Which sections are visible for free reports
   freeSections: {
