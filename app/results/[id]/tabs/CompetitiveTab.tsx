@@ -1866,13 +1866,15 @@ export default function CompetitiveTab({
                                     <span className="text-gray-300">{'\u2013'}</span>
                                   ) : heatmapShowSentiment ? (
                                     <div
-                                      className="h-7 rounded-md mx-auto hover:opacity-80 transition-opacity"
+                                      className="h-7 rounded-md mx-auto hover:opacity-80 transition-opacity flex items-center justify-center"
                                       style={{
                                         backgroundColor: barColor,
                                         width: '80%',
                                         maxWidth: '80px',
                                       }}
-                                    />
+                                    >
+                                      <span className="text-white text-[10px] font-medium leading-none">{getSentimentLabelFromScore(avgSentiment)}</span>
+                                    </div>
                                   ) : (
                                     <div
                                       className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity"

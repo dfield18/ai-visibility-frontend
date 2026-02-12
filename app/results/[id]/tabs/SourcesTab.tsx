@@ -2,8 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip, ScatterChart, Scatter,
-  XAxis, YAxis, CartesianGrid,
+  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
 } from 'recharts';
 import {
   AtSign,
@@ -1425,47 +1424,31 @@ export const SourcesTab = () => {
 
         {/* Source Influence Map */}
         {sourcePositioningData.length > 0 && (() => {
-          // Filter to only sources with position data
-          const dataWithPosition = sourcePositioningData.filter(d => d.avgPosition !== null && d.avgPosition > 0);
+          // Sort by citation count descending, take top 15
+          const sortedData = [...sourcePositioningData]
+            .sort((a, b) => b.citationCount - a.citationCount)
+            .slice(0, 15);
 
-          if (dataWithPosition.length === 0) {
-            return null; // No data to display
-          }
+          if (sortedData.length === 0) return null;
 
-          // Calculate dynamic axis ranges
-          const maxProviders = Math.max(...dataWithPosition.map(d => d.providerCount), 1);
-          const maxPosition = Math.max(...dataWithPosition.map(d => d.avgPosition || 1), 5);
+          const maxCitations = Math.max(...sortedData.map(d => d.citationCount), 1);
 
-          // Group points by proximity for label positioning
-          const getClusterKey = (providerCount: number, avgPosition: number) => {
-            const providerBucket = providerCount;
-            const positionBucket = Math.round((avgPosition || 0) * 2) / 2;
-            return `${providerBucket}-${positionBucket}`;
+          const getSentimentColor = (sentiment: number) => {
+            if (sentiment >= 4.5) return '#047857'; // Strong - emerald-700
+            if (sentiment >= 3.5) return '#10b981'; // Positive - emerald-500
+            if (sentiment >= 2.5) return '#9ca3af'; // Neutral - gray
+            if (sentiment >= 1.5) return '#f59e0b'; // Conditional - amber
+            return '#ef4444'; // Negative - red
           };
 
-          const positionGroups: Record<string, typeof dataWithPosition> = {};
-          dataWithPosition.forEach(point => {
-            const key = getClusterKey(point.providerCount, point.avgPosition || 0);
-            if (!positionGroups[key]) {
-              positionGroups[key] = [];
-            }
-            positionGroups[key].push(point);
-          });
-
-          Object.values(positionGroups).forEach(group => {
-            group.sort((a, b) => (a.avgPosition || 0) - (b.avgPosition || 0));
-          });
-
-          const processedData = dataWithPosition.map(point => {
-            const key = getClusterKey(point.providerCount, point.avgPosition || 0);
-            const group = positionGroups[key];
-            const indexInGroup = group.findIndex(p => p.domain === point.domain);
-            return {
-              ...point,
-              groupSize: group.length,
-              indexInGroup,
-            };
-          });
+          const getSentimentLabel = (sentiment: number) => {
+            if (sentiment >= 4.5) return 'Strong';
+            if (sentiment >= 3.5) return 'Positive';
+            if (sentiment >= 2.5) return 'Neutral';
+            if (sentiment >= 1.5) return 'Conditional';
+            if (sentiment >= 0.5) return 'Negative';
+            return 'N/A';
+          };
 
           return (
             <div id="sources-helpful" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -1486,188 +1469,76 @@ export const SourcesTab = () => {
                   ))}
                 </select>
               </div>
-              {/* Sentiment Legend - above chart */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
+              {/* Sentiment Legend */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-5">
                 <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
-                  <span className="text-xs text-gray-500">Strong</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
-                  <span className="text-xs text-gray-500">Positive</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
-                  <span className="text-xs text-gray-500">Neutral</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
-                  <span className="text-xs text-gray-500">Conditional</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                  <span className="text-xs text-gray-500">Negative</span>
-                </div>
+                {[
+                  { color: '#047857', label: 'Strong' },
+                  { color: '#10b981', label: 'Positive' },
+                  { color: '#9ca3af', label: 'Neutral' },
+                  { color: '#f59e0b', label: 'Conditional' },
+                  { color: '#ef4444', label: 'Negative' },
+                ].map(({ color, label }) => (
+                  <div key={label} className="flex items-center gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
+                    <span className="text-xs text-gray-500">{label}</span>
+                  </div>
+                ))}
               </div>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      type="number"
-                      dataKey="providerCount"
-                      name="Provider Diversity"
-                      domain={[0.5, Math.max(maxProviders, 4) + 0.5]}
-                      ticks={[1, 2, 3, 4].filter(t => t <= Math.max(maxProviders, 4))}
-                      tickFormatter={(value) => `${value} model${value !== 1 ? 's' : ''}`}
-                      tick={{ fill: '#6b7280', fontSize: 12 }}
-                      label={{ value: 'Number of AI Models Citing This Source', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
-                    />
-                    <YAxis
-                      type="number"
-                      dataKey="avgPosition"
-                      name="Avg. Brand Position"
-                      domain={[0.5, Math.ceil(maxPosition) + 0.5]}
-                      reversed={true}
-                      ticks={Array.from({ length: Math.ceil(maxPosition) }, (_, i) => i + 1)}
-                      tickFormatter={(value) => `#${value}`}
-                      tick={{ fill: '#6b7280', fontSize: 12 }}
-                      label={{
-                        content: (props: any) => {
-                          const { viewBox } = props;
-                          if (!viewBox) return null;
-                          return (
-                            <text x={viewBox.x + 5} y={viewBox.y - 8} fill="#374151" fontSize={11} fontWeight={500}>
-                              <tspan x={viewBox.x + 5} dy="0">Avg</tspan>
-                              <tspan x={viewBox.x + 5} dy="12">Position</tspan>
-                            </text>
-                          );
-                        }
-                      }}
-                    />
-                    <Tooltip
-                      cursor={false}
-                      isAnimationActive={false}
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length > 0) {
-                          const data = payload[0].payload;
-                          const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
-                          return (
-                            <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm max-w-[280px]">
-                              <p className="font-medium text-gray-900 mb-2">{data.domain}</p>
-                              <div className="space-y-1 text-gray-600">
-                                <p>Avg. Position: <span className="font-medium">#{data.avgPosition?.toFixed(1)}</span></p>
-                                <p>AI Models: <span className="font-medium">{data.providerCount}</span></p>
-                                <p>Citations: <span className="font-medium">{data.citationCount}</span></p>
-                                <p>Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentiment)] || 'N/A'}</span></p>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Scatter
-                      data={processedData}
-                      shape={(props: any) => {
-                        const { cx, cy, payload, index } = props;
-                        const groupSize = payload.groupSize || 1;
-                        const indexInGroup = payload.indexInGroup || 0;
-
-                        // Circle size based on citation count for visual hierarchy
-                        const circleRadius = Math.min(Math.max(6, 4 + payload.citationCount * 0.5), 14);
-
-                        // Color based on sentiment (1-5 scale)
-                        const sentiment = payload.avgSentiment;
-                        const getColor = () => {
-                          if (sentiment >= 4.5) return '#047857'; // Strong - emerald-700
-                          if (sentiment >= 3.5) return '#10b981'; // Positive - emerald-500
-                          if (sentiment >= 2.5) return '#9ca3af'; // Neutral - gray
-                          if (sentiment >= 1.5) return '#f59e0b'; // Conditional - amber
-                          return '#ef4444'; // Negative - red
-                        };
-                        const getStroke = () => {
-                          if (sentiment >= 4.5) return '#065f46';
-                          if (sentiment >= 3.5) return '#059669';
-                          if (sentiment >= 2.5) return '#6b7280';
-                          if (sentiment >= 1.5) return '#d97706';
-                          return '#dc2626';
-                        };
-
-                        // Offset for overlapping points - spread horizontally
-                        const spacing = circleRadius * 2 + 4;
-                        const totalWidth = (groupSize - 1) * spacing;
-                        const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
-
-                        // Truncate domain for display
-                        const displayDomain = payload.domain.length > 15
-                          ? payload.domain.substring(0, 13) + '...'
-                          : payload.domain;
-
-                        // Calculate label position to avoid overlaps
-                        // Use alternating positions: top, bottom, top-right, top-left based on index and group
-                        const labelOffsetY = circleRadius + 12;
-                        const labelOffsetX = 0;
-
-                        // Alternate label positions based on index to reduce overlap
-                        const positionIndex = (index || 0) + indexInGroup;
-                        const positions = [
-                          { dy: -labelOffsetY, dx: 0, anchor: 'middle' },      // top
-                          { dy: labelOffsetY + 8, dx: 0, anchor: 'middle' },   // bottom
-                          { dy: -labelOffsetY + 4, dx: 20, anchor: 'start' },  // top-right
-                          { dy: -labelOffsetY + 4, dx: -20, anchor: 'end' },   // top-left
-                          { dy: 4, dx: circleRadius + 8, anchor: 'start' },    // right
-                          { dy: 4, dx: -(circleRadius + 8), anchor: 'end' },   // left
-                        ];
-
-                        // Use position based on group index and overall index for variety
-                        const posIdx = groupSize > 1 ? (indexInGroup % 4) + 1 : (positionIndex % 6);
-                        const labelPos = positions[posIdx] || positions[0];
-
-                        return (
-                          <g>
-                            <circle
-                              cx={cx + xOffset}
-                              cy={cy}
-                              r={circleRadius}
-                              fill={getColor()}
-                              stroke={getStroke()}
-                              strokeWidth={1.5}
-                              opacity={0.9}
-                              style={{ cursor: 'pointer' }}
-                            />
-                            {/* Leader line for offset labels */}
-                            {(Math.abs(labelPos.dx) > 10 || labelPos.dy > 0) && (
-                              <line
-                                x1={cx + xOffset}
-                                y1={cy}
-                                x2={cx + xOffset + labelPos.dx * 0.6}
-                                y2={cy + labelPos.dy * 0.5}
-                                stroke="#9ca3af"
-                                strokeWidth={0.5}
-                                strokeDasharray="2,2"
-                              />
-                            )}
-                            <text
-                              x={cx + xOffset + labelPos.dx}
-                              y={cy + labelPos.dy}
-                              textAnchor={labelPos.anchor as 'middle' | 'start' | 'end'}
-                              fill="#374151"
-                              fontSize={9}
-                              fontWeight={500}
-                              style={{ pointerEvents: 'none' }}
-                            >
-                              {displayDomain}
-                            </text>
-                          </g>
-                        );
-                      }}
-                    />
-                  </ScatterChart>
-                </ResponsiveContainer>
+              {/* Horizontal bar chart */}
+              <div className="space-y-2">
+                {sortedData.map((d) => {
+                  const barWidth = (d.citationCount / maxCitations) * 100;
+                  const color = getSentimentColor(d.avgSentiment);
+                  return (
+                    <div key={d.domain} className="group flex items-center gap-3" title={`${d.domain} — ${d.citationCount} citations, ${d.providerCount} model${d.providerCount !== 1 ? 's' : ''}, Avg Position: ${d.avgPosition ? '#' + d.avgPosition.toFixed(1) : 'N/A'}, Sentiment: ${getSentimentLabel(d.avgSentiment)}`}>
+                      {/* Domain label */}
+                      <div className="w-[160px] shrink-0 text-right">
+                        <a
+                          href={`https://${d.domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-gray-700 hover:text-gray-900 hover:underline truncate block"
+                          title={d.domain}
+                        >
+                          {d.domain}
+                        </a>
+                      </div>
+                      {/* Bar */}
+                      <div className="flex-1 flex items-center gap-2">
+                        <div className="flex-1 h-8 bg-gray-50 rounded-md overflow-hidden relative">
+                          <div
+                            className="h-full rounded-md flex items-center transition-all duration-300"
+                            style={{
+                              width: `${Math.max(barWidth, 4)}%`,
+                              backgroundColor: color,
+                            }}
+                          >
+                            <span className="text-white text-xs font-medium pl-2.5 whitespace-nowrap">
+                              {d.citationCount} citation{d.citationCount !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Model count pill */}
+                        <div className="shrink-0 w-[72px] text-center">
+                          <span className="inline-block px-2 py-0.5 bg-gray-100 rounded text-[11px] text-gray-600 font-medium">
+                            {d.providerCount} model{d.providerCount !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        {/* Position badge */}
+                        <div className="shrink-0 w-[40px] text-center">
+                          {d.avgPosition ? (
+                            <span className="text-xs font-semibold text-gray-700">#{d.avgPosition.toFixed(0)}</span>
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <p className="mt-3 text-center text-xs text-gray-400 italic">Dot size indicates citation frequency • Hover for details</p>
+              <p className="mt-4 text-center text-xs text-gray-400 italic">Bar color indicates average sentiment • Position badge shows avg brand rank when this source is cited</p>
             </div>
           );
         })()}
@@ -1733,8 +1604,8 @@ export const SourcesTab = () => {
                           <span className="text-xs px-1.5 py-0.5 bg-gray-900 text-white rounded">searched</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex gap-1">
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex gap-1 w-[160px] justify-end flex-wrap">
                           {citation.providers.map((provider) => (
                             <span key={provider} className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">
                               <span className="flex-shrink-0">{getProviderIcon(provider)}</span>
@@ -1742,7 +1613,7 @@ export const SourcesTab = () => {
                             </span>
                           ))}
                         </div>
-                        <span className="text-sm text-gray-500 w-24 text-right">
+                        <span className="text-sm text-gray-500 w-[110px] text-right shrink-0">
                           {citation.count} {citation.count === 1 ? 'citation' : 'citations'}
                           <span className="text-xs text-gray-400 ml-1">({citation.rate.toFixed(0)}%)</span>
                         </span>
@@ -1986,7 +1857,7 @@ export const SourcesTab = () => {
                                   <span className="text-gray-400 ml-0.5 cursor-pointer hover:text-gray-600 text-sm">
                                     +{row.providers.length - 2}
                                   </span>
-                                  <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-20 shadow-lg">
+                                  <span className="absolute right-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-20 shadow-lg">
                                     {row.providers.slice(2).map((p: string) => getProviderLabel(p)).join(', ')}
                                   </span>
                                 </span>
@@ -2005,7 +1876,7 @@ export const SourcesTab = () => {
                                   <span className="text-gray-400 ml-1 cursor-pointer hover:text-gray-600">
                                     +{row.brands.length - 2}
                                   </span>
-                                  <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-20 shadow-lg">
+                                  <span className="absolute right-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-20 shadow-lg">
                                     {row.brands.slice(2).join(', ')}
                                   </span>
                                 </span>
