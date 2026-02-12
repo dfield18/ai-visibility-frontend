@@ -2701,6 +2701,27 @@ export default function ResultsPage() {
   const sourcesInsights = useMemo(() => {
     if (!runStatus) return [];
 
+    const formatDomainName = (domain: string) => {
+      const names: Record<string, string> = {
+        'youtube.com': 'YouTube',
+        'youtu.be': 'YouTube',
+        'reddit.com': 'Reddit',
+        'wikipedia.org': 'Wikipedia',
+        'en.wikipedia.org': 'Wikipedia',
+        'linkedin.com': 'LinkedIn',
+        'twitter.com': 'X (Twitter)',
+        'x.com': 'X',
+        'github.com': 'GitHub',
+        'amazon.com': 'Amazon',
+        'yelp.com': 'Yelp',
+        'facebook.com': 'Facebook',
+        'instagram.com': 'Instagram',
+        'tiktok.com': 'TikTok',
+        'pinterest.com': 'Pinterest',
+      };
+      return names[domain] || domain;
+    };
+
     const insights: string[] = [];
     const searchedBrand = runStatus.brand;
 
@@ -2714,7 +2735,7 @@ export default function ResultsPage() {
     // 1. Top cited source insight
     if (topCitedSources.length > 0) {
       const topSource = topCitedSources[0];
-      insights.push(`${topSource.domain} is the most frequently cited source (${topSource.count} citations across ${topSource.providers.length} ${topSource.providers.length === 1 ? 'model' : 'models'})`);
+      insights.push(`${formatDomainName(topSource.domain)} is the most frequently cited source (${topSource.count} citations across ${topSource.providers.length} ${topSource.providers.length === 1 ? 'model' : 'models'})`);
     }
 
     // 2. Key influencer insight (sources cited by multiple providers)
