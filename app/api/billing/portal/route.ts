@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-02-24.acacia',
-});
+function getStripeClient() {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error('STRIPE_SECRET_KEY not configured');
+  return new Stripe(key, { apiVersion: '2025-02-24.acacia' });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,13 +22,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const stripe = getStripeClient();
+
     const { returnUrl } = await request.json();
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-    // Find customer by metadata
-    const customers = await stripe.customers.list({
-      limit: 1,
-    });
 
     // Look up customer by clerk_user_id in metadata
     const allCustomers = await stripe.customers.search({
