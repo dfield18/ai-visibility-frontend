@@ -5,14 +5,10 @@ const isProtectedRoute = createRouteMatcher([
   '/configure(.*)',
   '/run(.*)',
   '/results(.*)',
-]);
-
-// Define routes that are always public
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
   '/api/validate-brand',
+  '/api/filter-quotes',
+  '/api/brand-blurbs',
+  '/api/brand-website',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

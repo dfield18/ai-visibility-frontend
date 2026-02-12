@@ -170,9 +170,11 @@ export function useFilteredQuotes(
   candidates: Record<string, BrandQuote[]>,
   enabled = true
 ) {
-  const candidateKey = Object.entries(candidates)
-    .map(([brand, quotes]) => `${brand}:${quotes.length}`)
-    .join(',');
+  const candidateKey = JSON.stringify(
+    Object.entries(candidates)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([brand, quotes]) => [brand, quotes.map(q => q.text)])
+  );
 
   return useQuery<{ quotes: Record<string, BrandQuote[]>; cost?: number }>({
     queryKey: ['filtered-quotes', candidateKey],
@@ -196,7 +198,7 @@ export function useFilteredQuotes(
  */
 export function useBrandBlurbs(brands: string[], context: string, enabled = true) {
   return useQuery<{ blurbs: Record<string, string>; cost?: number }>({
-    queryKey: ['brand-blurbs', brands.join(',')],
+    queryKey: ['brand-blurbs', brands.join(','), context],
     queryFn: async () => {
       const res = await fetch('/api/brand-blurbs', {
         method: 'POST',
