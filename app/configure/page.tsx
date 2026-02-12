@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useStore } from '@/hooks/useStore';
-import { useSuggestions, useStartRun } from '@/hooks/useApi';
+import { useSuggestions, useStartRun, useAuthSync } from '@/hooks/useApi';
 import {
   getSessionId,
   calculateEstimatedCost,
@@ -112,6 +112,9 @@ export default function ConfigurePage() {
     country,
     setCountry,
   } = useStore();
+
+  // Sync Clerk auth token to API client for backend billing checks
+  useAuthSync();
 
   // Billing status for provider locking and report counting
   const { data: billing } = useBillingStatus();

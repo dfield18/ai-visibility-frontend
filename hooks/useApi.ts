@@ -1,8 +1,29 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@clerk/nextjs';
 import { api } from '@/lib/api';
 import { RunConfig, RunResponse, RunStatusResponse, CancelResponse, AISummaryResponse, ExtendRunRequest, ExtendRunResponse, SiteAuditRequest, SiteAuditResponse, SiteAuditResult, SearchType, SuggestResponse } from '@/lib/types';
+
+/**
+ * Hook to sync Clerk auth token to the API client.
+ * Call this in any page that makes authenticated API calls.
+ */
+export function useAuthSync() {
+  const { getToken, isSignedIn } = useAuth();
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      api.setAuthToken(null);
+      return;
+    }
+
+    getToken().then((token) => {
+      api.setAuthToken(token);
+    });
+  }, [isSignedIn, getToken]);
+}
 
 /**
  * Hook to fetch suggestions for a brand, category, or local business.
