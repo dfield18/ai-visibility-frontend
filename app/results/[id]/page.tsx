@@ -4690,7 +4690,10 @@ export default function ResultsPage() {
           <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{getProviderLabel(snippetDetailModal.provider)}</h2>
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <span className="flex-shrink-0">{getProviderIcon(snippetDetailModal.provider)}</span>
+                  {getProviderLabel(snippetDetailModal.provider)}
+                </h2>
                 <p className="text-sm text-gray-500">Full Response</p>
               </div>
               <button
@@ -4765,7 +4768,10 @@ export default function ResultsPage() {
           <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{getProviderLabel(selectedResult.provider)}</h2>
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <span className="flex-shrink-0">{getProviderIcon(selectedResult.provider)}</span>
+                  {getProviderLabel(selectedResult.provider)}
+                </h2>
                 <p className="text-sm text-gray-500">
                   {selectedResultHighlight && (
                     <span className="ml-2 text-gray-900">
@@ -5074,6 +5080,7 @@ export default function ResultsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-gray-400">#{idx + 1}</span>
+                      <span className="flex-shrink-0">{getProviderIcon(result.provider)}</span>
                       <span className="text-sm font-medium text-gray-900">{getProviderLabel(result.provider)}</span>
                     </div>
                     <div className="flex items-center gap-2">

@@ -23,6 +23,7 @@ import {
   PROVIDER_ORDER,
   getProviderLabel,
   getProviderBrandColor,
+  getProviderIcon,
   getDomain,
   getTextForRanking,
 } from './shared';
@@ -1289,7 +1290,7 @@ export const SentimentTab = () => {
                     <tr key={row.provider} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: providerColor }} />
+                          <span className="flex-shrink-0">{getProviderIcon(row.provider)}</span>
                           <span className="text-sm font-medium text-gray-900">{row.label}</span>
                         </div>
                       </td>
@@ -1660,7 +1661,7 @@ export const SentimentTab = () => {
                             </td>
                             <td className="py-3 px-4">
                               <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getProviderBrandColor(result.provider) }} />
+                                <span className="flex-shrink-0">{getProviderIcon(result.provider)}</span>
                                 {providerLabels[result.provider] || result.provider}
                               </span>
                             </td>

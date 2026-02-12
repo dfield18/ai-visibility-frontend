@@ -25,6 +25,7 @@ import { formatCurrency, formatPercent, truncate } from '@/lib/utils';
 import type { Result, RunStatusResponse, AISummaryResponse, Source } from './shared';
 import {
   getProviderLabel,
+  getProviderIcon,
   getMentionRateColor,
   extractSummaryText,
   formatResponseText,
@@ -1456,7 +1457,10 @@ export const ReferenceTab = ({
                       <p className="text-xs text-gray-500">Temp: {result.temperature}</p>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-sm text-gray-700">{getProviderLabel(result.provider)}</span>
+                      <span className="inline-flex items-center gap-1.5 text-sm text-gray-700">
+                        <span className="flex-shrink-0">{getProviderIcon(result.provider)}</span>
+                        {getProviderLabel(result.provider)}
+                      </span>
                     </td>
                     {!isCategory && (
                       <td className="py-3 px-4">
@@ -2225,7 +2229,8 @@ export const ReferenceTab = ({
                         <td className="text-center py-3 px-3">
                           <div className="flex flex-wrap justify-center gap-1">
                             {row.providers.map((provider: string) => (
-                              <span key={provider} className="inline-flex items-center px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                              <span key={provider} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded">
+                                <span className="flex-shrink-0">{getProviderIcon(provider)}</span>
                                 {getProviderLabel(provider).split(' ')[0]}
                               </span>
                             ))}

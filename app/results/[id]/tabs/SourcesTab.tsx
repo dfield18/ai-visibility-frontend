@@ -33,6 +33,7 @@ import type { Result, RunStatusResponse, Source } from './shared';
 import {
   getProviderLabel,
   getProviderShortLabel,
+  getProviderIcon,
   getResultPosition,
   getSentimentScore,
   getSentimentLabel,
@@ -1242,7 +1243,8 @@ export const SourcesTab = () => {
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <div className="flex gap-0.5">
                               {source.providers.slice(0, 3).map((provider: string) => (
-                                <span key={provider} className="text-[10px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
+                                <span key={provider} className="inline-flex items-center gap-0.5 text-[10px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
+                                  <span className="flex-shrink-0">{getProviderIcon(provider)}</span>
                                   {getProviderShortLabel(provider)}
                                 </span>
                               ))}
@@ -1284,7 +1286,8 @@ export const SourcesTab = () => {
                                     <div className="flex items-center gap-1.5 flex-shrink-0">
                                       <div className="flex gap-0.5">
                                         {urlDetail.providers.slice(0, 3).map((provider: string) => (
-                                          <span key={provider} className="text-[9px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
+                                          <span key={provider} className="inline-flex items-center gap-0.5 text-[9px] px-1 py-0.5 bg-gray-200 text-gray-600 rounded" title={getProviderLabel(provider)}>
+                                            <span className="flex-shrink-0">{getProviderIcon(provider)}</span>
                                             {getProviderShortLabel(provider)}
                                           </span>
                                         ))}
@@ -1733,7 +1736,8 @@ export const SourcesTab = () => {
                       <div className="flex items-center gap-3">
                         <div className="flex gap-1">
                           {citation.providers.map((provider) => (
-                            <span key={provider} className="text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">
+                            <span key={provider} className="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded">
+                              <span className="flex-shrink-0">{getProviderIcon(provider)}</span>
                               {getProviderShortLabel(provider)}
                             </span>
                           ))}
@@ -1970,19 +1974,24 @@ export const SourcesTab = () => {
                         </td>
                         <td className="py-4 px-4">
                           {row.providers.length > 0 ? (
-                            <span className="text-sm text-gray-700">
-                              {row.providers.slice(0, 2).map(p => getProviderLabel(p)).join(', ')}
+                            <div className="flex flex-wrap items-center gap-1">
+                              {row.providers.slice(0, 2).map((p: string) => (
+                                <span key={p} className="inline-flex items-center gap-1 text-sm text-gray-700">
+                                  <span className="flex-shrink-0">{getProviderIcon(p)}</span>
+                                  {getProviderLabel(p)}
+                                </span>
+                              ))}
                               {row.providers.length > 2 && (
                                 <span className="relative group">
-                                  <span className="text-gray-400 ml-1 cursor-pointer hover:text-gray-600">
+                                  <span className="text-gray-400 ml-0.5 cursor-pointer hover:text-gray-600 text-sm">
                                     +{row.providers.length - 2}
                                   </span>
                                   <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap z-20 shadow-lg">
-                                    {row.providers.slice(2).map(p => getProviderLabel(p)).join(', ')}
+                                    {row.providers.slice(2).map((p: string) => getProviderLabel(p)).join(', ')}
                                   </span>
                                 </span>
                               )}
-                            </span>
+                            </div>
                           ) : (
                             <span className="text-sm text-gray-400">-</span>
                           )}
