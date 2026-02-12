@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 import {
   MessageSquare,
   Lightbulb,
@@ -36,6 +36,7 @@ export const SentimentTab = () => {
   const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
 
   const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [responseSentimentFilter, setResponseSentimentFilter] = useState<string>('all');
   const [responseLlmFilter, setResponseLlmFilter] = useState<string>('all');
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
@@ -502,15 +503,23 @@ export const SentimentTab = () => {
       const matchingResults = isHovered ? getResultsForProviderSentiment(provider, sentiment) : [];
 
       const handleMouseEnter = useCallback(() => {
-        // Only update if the value is actually different to prevent re-renders
+        // Cancel any pending close
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = null;
+        }
         if (hoveredSentimentBadge?.provider === provider && hoveredSentimentBadge?.sentiment === sentiment) {
-          return; // Already hovered on this badge
+          return;
         }
         setHoveredSentimentBadge({ provider, sentiment });
       }, [provider, sentiment]);
 
       const handleMouseLeave = useCallback(() => {
-        setHoveredSentimentBadge(null);
+        // Delay closing so the popup stays visible during scroll
+        hoverTimeoutRef.current = setTimeout(() => {
+          setHoveredSentimentBadge(null);
+          hoverTimeoutRef.current = null;
+        }, 300);
       }, []);
 
       // Get results for click handling
@@ -574,6 +583,13 @@ export const SentimentTab = () => {
                   : 'top-full mt-2 left-1/2 -translate-x-1/2'
               }`}
               style={{ maxHeight: '280px' }}
+              onMouseEnter={() => {
+                if (hoverTimeoutRef.current) {
+                  clearTimeout(hoverTimeoutRef.current);
+                  hoverTimeoutRef.current = null;
+                }
+              }}
+              onMouseLeave={handleMouseLeave}
               onWheel={(e) => e.stopPropagation()}
             >
                 <p className="text-xs font-medium text-gray-500 mb-2 pb-2 border-b border-gray-100">

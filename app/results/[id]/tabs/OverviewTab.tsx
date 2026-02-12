@@ -1468,11 +1468,12 @@ export const OverviewTab = ({
                     : result.brand_mentioned;
 
                   if (isMentioned && brandLower) {
+                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+
                     const brandTextPos = textLower.indexOf(brandLower);
                     if (brandTextPos >= 0) {
-                      const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                        ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                        : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
                       let brandsBeforeCount = 0;
                       for (const b of allBrands) {
                         const bLower = b.toLowerCase();
@@ -1483,6 +1484,9 @@ export const OverviewTab = ({
                         }
                       }
                       position = brandsBeforeCount + 1;
+                    } else {
+                      // Brand not found in cleaned text but marked as mentioned
+                      position = allBrands.length + 1;
                     }
                   }
                 }

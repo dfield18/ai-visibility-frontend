@@ -696,8 +696,8 @@ export default function CompetitiveTab({
             {/* Brand Analysis Carousel */}
             {allBrandsAnalysisData.length > 0 && (() => {
               const totalCards = allBrandsAnalysisData.length;
-              const canNavigate = totalCards > 2;
-              const maxIndex = Math.max(0, totalCards - 2);
+              const canNavigate = totalCards > 3;
+              const maxIndex = Math.max(0, totalCards - 3);
 
               const getCarouselProviderLabel = (provider: string) => {
                 switch (provider) {
@@ -737,8 +737,8 @@ export default function CompetitiveTab({
                     {/* Carousel Cards */}
                     <div className="overflow-hidden w-full px-12">
                       <div
-                        className="flex transition-transform duration-300 ease-in-out gap-6"
-                        style={{ transform: `translateX(calc(-${brandCarouselIndex} * (50% + 0.75rem)))` }}
+                        className="flex transition-transform duration-300 ease-in-out gap-4"
+                        style={{ transform: `translateX(calc(-${brandCarouselIndex} * (33.333% + 0.333rem)))` }}
                       >
                         {allBrandsAnalysisData.map((brandData) => {
                           const allProviders = [...brandData.providerScores].sort((a, b) => {
@@ -750,7 +750,7 @@ export default function CompetitiveTab({
                           const quotes = (brandQuotesMap[brandData.brand] ?? []).slice(0, 3);
 
                           return (
-                            <div key={brandData.brand} className="w-[calc(50%-0.75rem)] flex-shrink-0 min-w-[320px]">
+                            <div key={brandData.brand} className="w-[calc(33.333%-0.667rem)] flex-shrink-0 min-w-[260px]">
                               <div className={`bg-white rounded-xl border-2 h-full ${
                                 brandData.isSearchedBrand
                                   ? 'border-teal-400 ring-1 ring-teal-100 shadow-lg'
@@ -855,7 +855,7 @@ export default function CompetitiveTab({
                                         const shortPrompt = q.prompt.length > 30 ? q.prompt.substring(0, 28) + '...' : q.prompt;
                                         return (
                                           <div key={qi} className="bg-white border border-gray-100 rounded-lg px-2 py-1">
-                                            <p className="text-xs text-gray-700 font-medium">{blurb}</p>
+                                            <p className="text-xs text-gray-700 italic">&ldquo;{blurb}&rdquo;</p>
                                             <p className="text-[9px] text-gray-400 mt-0.5">
                                               {getCarouselProviderLabel(q.provider)} · {shortPrompt}
                                             </p>
