@@ -581,9 +581,12 @@ export default function CompetitiveTab({
             seenDomainBrandPairs.add(pairKey);
             sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
             if (!sourceBrandSentiments[domain][brand]) sourceBrandSentiments[domain][brand] = { total: 0, sum: 0 };
-            if (sentiment && sentimentScores[sentiment] !== undefined) {
+            // Prefer per-source sentiment when available, fall back to response-level
+            const perSourceSentiment = result.source_brand_sentiments?.[domain]?.[brand];
+            const effectiveSentiment = perSourceSentiment || sentiment;
+            if (effectiveSentiment && sentimentScores[effectiveSentiment] !== undefined) {
               sourceBrandSentiments[domain][brand].total += 1;
-              sourceBrandSentiments[domain][brand].sum += sentimentScores[sentiment];
+              sourceBrandSentiments[domain][brand].sum += sentimentScores[effectiveSentiment];
             }
           }
         });

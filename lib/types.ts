@@ -92,6 +92,7 @@ export interface Result {
   brand_sentiment: BrandSentiment | null;
   competitor_sentiments: Record<string, BrandSentiment> | null;
   all_brands_mentioned: string[] | null;
+  source_brand_sentiments: Record<string, Record<string, BrandSentiment>> | null;
   created_at: string;
 }
 
