@@ -3386,7 +3386,8 @@ export default function ResultsPage() {
     const avgBrandsPerQuery = resultsWithBrands > 0 ? totalBrandsAcrossResults / resultsWithBrands : 0;
 
     // Competitive Fragmentation Score (for industry reports)
-    // Measures how evenly AI brand mentions are distributed
+    // Measures how evenly AI brand mentions are distributed.
+    // Calibrated so typical AI category responses center around 5-6 on a 1-10 scale.
     let fragmentationScore = 5; // default mid-range
     const brandMentionCounts: Record<string, number> = {};
     for (const result of results) {
@@ -3402,19 +3403,23 @@ export default function ResultsPage() {
       const totalMentionCount = Object.values(brandMentionCounts).reduce((a, b) => a + b, 0);
       const shares = mentionBrands.map(b => brandMentionCounts[b] / totalMentionCount);
 
-      // HHI = sum of squared shares
-      const hhi = shares.reduce((sum, s) => sum + s * s, 0);
-      const minHhi = 1 / N;
-      const normalizedHhi = (hhi - minHhi) / (1 - minHhi);
-      let fragmentation = 1 - normalizedHhi;
+      // Gini coefficient: measures inequality (0 = perfectly equal, 1 = max inequality)
+      let diffSum = 0;
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          diffSum += Math.abs(shares[i] - shares[j]);
+        }
+      }
+      const giniIndex = diffSum / (2 * N); // ranges 0 to ~(1 - 1/N)
+      const maxGini = 1 - 1 / N;
+      const normalizedGini = maxGini > 0 ? giniIndex / maxGini : 0; // 0 = equal, 1 = concentrated
 
-      // Long tail adjustment: sum of shares outside top 3
-      const sortedShares = [...shares].sort((a, b) => b - a);
-      const longTailShare = sortedShares.slice(3).reduce((sum, s) => sum + s, 0);
-      let fragmentationAdjusted = fragmentation * (1 + longTailShare);
-      fragmentationAdjusted = Math.max(0, Math.min(1, fragmentationAdjusted));
+      // Convert to spread score: 1 (concentrated) to 10 (spread out)
+      // Use square root to expand the middle range and compress extremes
+      const spread = 1 - normalizedGini; // 0 = concentrated, 1 = equal
+      const calibrated = Math.pow(spread, 1.1); // exponent > 1 compresses upper end slightly
 
-      fragmentationScore = Math.round(1 + 9 * fragmentationAdjusted);
+      fragmentationScore = Math.max(1, Math.min(10, Math.round(1 + 9 * calibrated)));
     } else if (N === 1) {
       fragmentationScore = 1;
     }
