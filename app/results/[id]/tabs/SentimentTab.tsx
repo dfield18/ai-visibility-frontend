@@ -157,14 +157,26 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       const positiveRate = total > 0 ? (positiveCount / total) * 100 : 0;
 
       // 1. Overall sentiment insight
-      if (positiveRate >= 70) {
-        insights.push(`${searchedBrand} receives highly positive framing — ${positiveRate.toFixed(0)}% of mentions are endorsements`);
-      } else if (positiveRate >= 50) {
-        insights.push(`${searchedBrand} has generally positive sentiment with ${positiveRate.toFixed(0)}% endorsement rate`);
-      } else if (positiveRate >= 30) {
-        insights.push(`${searchedBrand} has mixed sentiment — only ${positiveRate.toFixed(0)}% of mentions are positive endorsements`);
+      if (isIndustryReport) {
+        if (positiveRate >= 70) {
+          insights.push(`Brands in ${searchedBrand} receive highly positive framing — ${positiveRate.toFixed(0)}% of mentions are endorsements`);
+        } else if (positiveRate >= 50) {
+          insights.push(`Brands in ${searchedBrand} have generally positive sentiment with a ${positiveRate.toFixed(0)}% endorsement rate`);
+        } else if (positiveRate >= 30) {
+          insights.push(`Brands in ${searchedBrand} have mixed sentiment — only ${positiveRate.toFixed(0)}% of mentions are positive endorsements`);
+        } else {
+          insights.push(`Brands in ${searchedBrand} have challenging sentiment positioning — ${positiveRate.toFixed(0)}% positive endorsements`);
+        }
       } else {
-        insights.push(`${searchedBrand} has challenging sentiment positioning — ${positiveRate.toFixed(0)}% positive endorsements`);
+        if (positiveRate >= 70) {
+          insights.push(`${searchedBrand} receives highly positive framing — ${positiveRate.toFixed(0)}% of mentions are endorsements`);
+        } else if (positiveRate >= 50) {
+          insights.push(`${searchedBrand} has generally positive sentiment with ${positiveRate.toFixed(0)}% endorsement rate`);
+        } else if (positiveRate >= 30) {
+          insights.push(`${searchedBrand} has mixed sentiment — only ${positiveRate.toFixed(0)}% of mentions are positive endorsements`);
+        } else {
+          insights.push(`${searchedBrand} has challenging sentiment positioning — ${positiveRate.toFixed(0)}% positive endorsements`);
+        }
       }
 
       // 2. Strongest sentiment category
@@ -232,37 +244,39 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         }
       }
 
-      // 5. Competitor comparison (if available)
-      const competitorSentiments: Record<string, { positive: number; total: number }> = {};
-      globallyFilteredResults
-        .filter((r: Result) => !r.error && r.competitor_sentiments)
-        .forEach((r: Result) => {
-          if (r.competitor_sentiments) {
-            Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
-              if (!competitorSentiments[comp]) {
-                competitorSentiments[comp] = { positive: 0, total: 0 };
-              }
-              competitorSentiments[comp].total++;
-              if (sentiment === 'strong_endorsement' || sentiment === 'positive_endorsement') {
-                competitorSentiments[comp].positive++;
-              }
-            });
-          }
-        });
+      // 5. Competitor comparison (if available) — skip for industry reports
+      if (!isIndustryReport) {
+        const competitorSentiments: Record<string, { positive: number; total: number }> = {};
+        globallyFilteredResults
+          .filter((r: Result) => !r.error && r.competitor_sentiments)
+          .forEach((r: Result) => {
+            if (r.competitor_sentiments) {
+              Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
+                if (!competitorSentiments[comp]) {
+                  competitorSentiments[comp] = { positive: 0, total: 0 };
+                }
+                competitorSentiments[comp].total++;
+                if (sentiment === 'strong_endorsement' || sentiment === 'positive_endorsement') {
+                  competitorSentiments[comp].positive++;
+                }
+              });
+            }
+          });
 
-      const competitorsWithBetterSentiment = Object.entries(competitorSentiments)
-        .filter(([, data]) => data.total >= 2)
-        .filter(([, data]) => {
-          const compRate = (data.positive / data.total) * 100;
-          return compRate > positiveRate + 10;
-        });
+        const competitorsWithBetterSentiment = Object.entries(competitorSentiments)
+          .filter(([, data]) => data.total >= 2)
+          .filter(([, data]) => {
+            const compRate = (data.positive / data.total) * 100;
+            return compRate > positiveRate + 10;
+          });
 
-      if (competitorsWithBetterSentiment.length > 0) {
-        const topComp = competitorsWithBetterSentiment[0];
-        const compRate = (topComp[1].positive / topComp[1].total) * 100;
-        insights.push(`${topComp[0]} has stronger sentiment (${compRate.toFixed(0)}% positive) than ${searchedBrand} (${positiveRate.toFixed(0)}%)`);
-      } else if (Object.keys(competitorSentiments).length > 0) {
-        insights.push(`${searchedBrand} has equal or better sentiment than tracked competitors`);
+        if (competitorsWithBetterSentiment.length > 0) {
+          const topComp = competitorsWithBetterSentiment[0];
+          const compRate = (topComp[1].positive / topComp[1].total) * 100;
+          insights.push(`${topComp[0]} has stronger sentiment (${compRate.toFixed(0)}% positive) than ${searchedBrand} (${positiveRate.toFixed(0)}%)`);
+        } else if (Object.keys(competitorSentiments).length > 0) {
+          insights.push(`${searchedBrand} has equal or better sentiment than tracked competitors`);
+        }
       }
 
       return insights.slice(0, 5);
