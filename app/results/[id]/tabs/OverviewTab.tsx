@@ -1220,7 +1220,7 @@ export const OverviewTab = ({
             </h2>
           </div>
           <div className="space-y-2.5">
-            {brandQuotes.slice(0, 2).map((quote, idx) => {
+            {brandQuotes.slice(0, isIssue ? 3 : 2).map((quote, idx) => {
               // Strip citation markers, bare domains, and redundant leading "Brand: " prefix
               const brandName = runStatus?.brand || '';
               const cleanedText = quote.text

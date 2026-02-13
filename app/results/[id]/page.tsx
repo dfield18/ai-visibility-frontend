@@ -4289,10 +4289,11 @@ export default function ResultsPage() {
     candidateQuotesMap,
     hasCandidates && runStatus?.status === 'complete'
   );
-  // Use GPT-filtered quotes when available, fall back to candidates (first 2)
+  // Use GPT-filtered quotes when available, fall back to candidates (first 2, or 3 for issues)
+  const fallbackQuoteLimit = runStatus?.search_type === 'issue' ? 3 : 2;
   const brandQuotesMap: Record<string, BrandQuote[]> = filteredQuotesData?.quotes
     ?? Object.fromEntries(
-      Object.entries(candidateQuotesMap).map(([brand, quotes]) => [brand, quotes.slice(0, 2)])
+      Object.entries(candidateQuotesMap).map(([brand, quotes]) => [brand, quotes.slice(0, fallbackQuoteLimit)])
     );
 
   // Frontend insights costs (brand blurbs + quote filtering via gpt-4o-mini)
