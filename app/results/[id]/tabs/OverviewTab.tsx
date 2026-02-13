@@ -283,23 +283,27 @@ export const OverviewTab = ({
     <div className="space-y-6">
       {/* Metrics Cards */}
       <div id="overview-metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* AI Visibility Card */}
+        {/* AI Visibility / Leader Visibility Card */}
         {(() => {
           const visibilityTone = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tone;
+          const leaderName = overviewMetrics?.selectedBrand || runStatus?.brand || 'your brand';
           return (
             <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">AI Visibility</p>
+                <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">{isCategory ? 'Leader Visibility' : 'AI Visibility'}</p>
                 <div className="relative group">
                   <button
                     className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                    aria-label="Learn more about AI Visibility"
+                    aria-label={`Learn more about ${isCategory ? 'Leader Visibility' : 'AI Visibility'}`}
                     tabIndex={0}
                   >
                     <HelpCircle className="w-4 h-4 text-gray-400" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                    Mentioned in {overviewMetrics?.mentionedCount || 0} of {overviewMetrics?.totalResponses || 0} AI answers (across selected models/prompts).
+                    {isCategory
+                      ? `${leaderName} is mentioned in ${overviewMetrics?.mentionedCount || 0} of ${overviewMetrics?.totalResponses || 0} AI answers about ${runStatus?.brand || 'this category'}.`
+                      : `Mentioned in ${overviewMetrics?.mentionedCount || 0} of ${overviewMetrics?.totalResponses || 0} AI answers (across selected models/prompts).`
+                    }
                   </div>
                 </div>
               </div>
@@ -338,14 +342,58 @@ export const OverviewTab = ({
                 </span>
               </div>
               {/* Description - pushed to bottom */}
-              <p className="text-xs text-gray-500 leading-relaxed mt-auto">% of relevant AI responses that mention {runStatus?.brand || 'your brand'}</p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">
+                {isCategory
+                  ? `% of AI responses that mention ${leaderName}`
+                  : `% of relevant AI responses that mention ${runStatus?.brand || 'your brand'}`
+                }
+              </p>
             </div>
           );
         })()}
 
-        {/* Share of Voice Card */}
+        {/* Share of Voice / Market Leader Card */}
         {(() => {
           const sovTone = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tone;
+
+          if (isCategory) {
+            // Market Leader variant for industry reports
+            const leaderName = overviewMetrics?.selectedBrand || 'N/A';
+            const mentionRate = overviewMetrics?.shareOfVoice ?? 0;
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.shareOfVoice}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Leader</p>
+                  <div className="relative group">
+                    <button
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Learn more about Market Leader"
+                      tabIndex={0}
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      {leaderName} is mentioned most often across AI responses, accounting for {mentionRate.toFixed(1)}% of all brand mentions ({overviewMetrics?.selectedBrandMentions || 0} of {overviewMetrics?.totalBrandMentions || 0}).
+                    </div>
+                  </div>
+                </div>
+                {/* Brand name as hero element */}
+                <div className="h-[100px] flex flex-col justify-center">
+                  <p className="text-2xl font-bold text-gray-900 leading-tight truncate" title={leaderName}>{leaderName}</p>
+                  <p className="text-sm text-gray-500 mt-1">{mentionRate.toFixed(1)}% of all mentions</p>
+                </div>
+                {/* Badge */}
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full cursor-help ${getToneStyles(sovTone)}`} title={getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tooltip}>
+                    {getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).label}
+                  </span>
+                </div>
+                {/* Description */}
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">The most recommended brand in the {runStatus?.brand || 'industry'} category</p>
+              </div>
+            );
+          }
+
           return (
             <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.shareOfVoice}`}>
               <div className="flex items-center justify-between mb-4">
@@ -419,7 +467,10 @@ export const OverviewTab = ({
                     <HelpCircle className="w-4 h-4 text-gray-400" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                    Ranked #1 in {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.responsesWhereMentioned || 0} AI answers where {overviewMetrics?.selectedBrand || 'your brand'} appears.
+                    {isCategory
+                      ? `${overviewMetrics?.selectedBrand || 'The market leader'} is the #1 recommendation in ${overviewMetrics?.topPositionCount || 0} of ${overviewMetrics?.responsesWhereMentioned || 0} AI answers.`
+                      : `Ranked #1 in ${overviewMetrics?.topPositionCount || 0} of ${overviewMetrics?.responsesWhereMentioned || 0} AI answers where ${overviewMetrics?.selectedBrand || 'your brand'} appears.`
+                    }
                   </div>
                 </div>
               </div>
@@ -458,7 +509,12 @@ export const OverviewTab = ({
                 </span>
               </div>
               {/* Description - pushed to bottom */}
-              <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often {runStatus?.brand || 'your brand'} is the #1 result when mentioned</p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">
+                {isCategory
+                  ? `How often ${overviewMetrics?.selectedBrand || 'the market leader'} is the #1 recommendation`
+                  : `How often ${runStatus?.brand || 'your brand'} is the #1 result when mentioned`
+                }
+              </p>
             </div>
           );
         })()}
@@ -480,7 +536,10 @@ export const OverviewTab = ({
                     <HelpCircle className="w-4 h-4 text-gray-400" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                    Average rank when {overviewMetrics?.selectedBrand || 'your brand'} is shown: {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on {overviewMetrics?.ranksCount || 0} responses.
+                    {isCategory
+                      ? `${overviewMetrics?.selectedBrand || 'The market leader'} appears at an average rank of ${overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on ${overviewMetrics?.ranksCount || 0} responses.`
+                      : `Average rank when ${overviewMetrics?.selectedBrand || 'your brand'} is shown: ${overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on ${overviewMetrics?.ranksCount || 0} responses.`
+                    }
                   </div>
                 </div>
               </div>
@@ -531,7 +590,12 @@ export const OverviewTab = ({
                 </span>
               </div>
               {/* Description - pushed to bottom */}
-              <p className="text-xs text-gray-500 leading-relaxed mt-auto">{runStatus?.brand || 'Your brand'}'s average ranking when mentioned</p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">
+                {isCategory
+                  ? `${overviewMetrics?.selectedBrand || 'Market leader'}'s average ranking when mentioned`
+                  : `${runStatus?.brand || 'Your brand'}'s average ranking when mentioned`
+                }
+              </p>
             </div>
           );
         })()}
@@ -630,7 +694,12 @@ export const OverviewTab = ({
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900">Results by Question</h2>
-              <p className="text-sm text-gray-500 mt-1">How {runStatus?.brand} performs across each question asked to AI</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {isCategory
+                  ? `How the market leader performs across each question about ${runStatus?.brand}`
+                  : `How ${runStatus?.brand} performs across each question asked to AI`
+                }
+              </p>
             </div>
             <select
               value={promptBreakdownLlmFilter}
@@ -650,11 +719,14 @@ export const OverviewTab = ({
                   <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="whitespace-nowrap">AI Visibility</span>
+                      <span className="whitespace-nowrap">{isCategory ? 'Leader Visibility' : 'AI Visibility'}</span>
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          % of AI responses that mention {runStatus?.brand || 'your brand'} for this question
+                          {isCategory
+                            ? `% of AI responses that mention the market leader for this question`
+                            : `% of AI responses that mention ${runStatus?.brand || 'your brand'} for this question`
+                          }
                         </div>
                       </div>
                     </div>
@@ -662,11 +734,14 @@ export const OverviewTab = ({
                   </th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="whitespace-nowrap">Share of Voice</span>
+                      <span className="whitespace-nowrap">{isCategory ? 'Leader Share' : 'Share of Voice'}</span>
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          {runStatus?.brand || 'Your brand'}'s share of all brand mentions for this question
+                          {isCategory
+                            ? `Market leader's share of all brand mentions for this question`
+                            : `${runStatus?.brand || 'Your brand'}'s share of all brand mentions for this question`
+                          }
                         </div>
                       </div>
                     </div>
@@ -678,7 +753,10 @@ export const OverviewTab = ({
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          How often {runStatus?.brand || 'your brand'} is the #1 recommended result for this question
+                          {isCategory
+                            ? `How often the market leader is the #1 recommendation for this question`
+                            : `How often ${runStatus?.brand || 'your brand'} is the #1 recommended result for this question`
+                          }
                         </div>
                       </div>
                     </div>
@@ -690,7 +768,10 @@ export const OverviewTab = ({
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          Average ranking position when {runStatus?.brand || 'your brand'} appears (lower is better)
+                          {isCategory
+                            ? `Average ranking position of the market leader for this question (lower is better)`
+                            : `Average ranking position when ${runStatus?.brand || 'your brand'} appears (lower is better)`
+                          }
                         </div>
                       </div>
                     </div>
@@ -702,7 +783,10 @@ export const OverviewTab = ({
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          How positively AI describes {runStatus?.brand || 'your brand'} when mentioned (from "Negative" to "Strong")
+                          {isCategory
+                            ? `How positively AI describes the market leader when mentioned (from "Negative" to "Strong")`
+                            : `How positively AI describes ${runStatus?.brand || 'your brand'} when mentioned (from "Negative" to "Strong")`
+                          }
                         </div>
                       </div>
                     </div>
@@ -782,21 +866,29 @@ export const OverviewTab = ({
           <div className="flex items-start justify-between mb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-gray-900">AI Brand Position by Platform</h2>
+                <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Brand Landscape by Platform' : 'AI Brand Position by Platform'}</h2>
                 <div className="relative group">
                   <button
                     className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                    aria-label="Learn more about AI Brand Position"
+                    aria-label={`Learn more about ${isCategory ? 'Brand Landscape' : 'AI Brand Position'}`}
                     tabIndex={0}
                   >
                     <HelpCircle className="w-4 h-4 text-gray-400" />
                   </button>
                   <div className="absolute left-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                    Shows where your brand appears in AI responses across different platforms{showSentimentColors ? ', colored by sentiment' : ''}.
+                    {isCategory
+                      ? `Shows how brands in the ${runStatus?.brand || 'category'} space are positioned across different AI platforms${showSentimentColors ? ', colored by sentiment' : ''}.`
+                      : `Shows where your brand appears in AI responses across different platforms${showSentimentColors ? ', colored by sentiment' : ''}.`
+                    }
                   </div>
                 </div>
               </div>
-              <p className="text-sm text-gray-500 mt-1">How often {runStatus?.brand} ranks in each position across AI platforms</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {isCategory
+                  ? `How AI platforms rank brands in the ${runStatus?.brand || 'category'} space`
+                  : `How often ${runStatus?.brand} ranks in each position across AI platforms`
+                }
+              </p>
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
               <span className="text-xs text-gray-500">Show sentiment</span>
@@ -834,7 +926,12 @@ export const OverviewTab = ({
                 ))}
               </>
             ) : (
-              <span className="text-xs text-gray-500">Each dot represents one AI response. Toggle sentiment to color by recommendation.</span>
+              <span className="text-xs text-gray-500">
+                {isCategory
+                  ? 'Each dot represents one AI response. Toggle sentiment to color by brand recommendation.'
+                  : 'Each dot represents one AI response. Toggle sentiment to color by recommendation.'
+                }
+              </span>
             )}
           </div>
 
@@ -941,7 +1038,14 @@ export const OverviewTab = ({
       {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
         <div id="overview-by-platform" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Results by AI Platform</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                {isCategory ? 'Brand Visibility by Platform' : 'Results by AI Platform'}
+              </h2>
+              {isCategory && (
+                <p className="text-sm text-gray-500 mt-1">How each AI platform recommends brands in the {runStatus?.brand} space</p>
+              )}
+            </div>
             <select
               value={llmBreakdownBrandFilter || llmBreakdownBrands[0] || ''}
               onChange={(e) => setLlmBreakdownBrandFilter(e.target.value)}
@@ -949,7 +1053,7 @@ export const OverviewTab = ({
             >
               {llmBreakdownBrands.map((brand, index) => (
                 <option key={brand} value={brand}>
-                  {brand}{index === 0 && !isCategory && runStatus?.brand === brand ? ' (searched)' : ''}
+                  {brand}{index === 0 && isCategory ? ' (market leader)' : ''}{index === 0 && !isCategory && runStatus?.brand === brand ? ' (searched)' : ''}
                 </option>
               ))}
             </select>

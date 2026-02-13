@@ -341,7 +341,7 @@ export default function CompetitiveTab({
 }: CompetitiveTabProps) {
 
   // ---- Context ----
-  const { runStatus, globallyFilteredResults, availableProviders, availablePrompts, brandBreakdownStats, allBrandsAnalysisData, brandQuotesMap } = useResults();
+  const { runStatus, globallyFilteredResults, availableProviders, availablePrompts, brandBreakdownStats, allBrandsAnalysisData, brandQuotesMap, isCategory } = useResults();
   const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
 
   // ---- Internalized state ----
@@ -486,71 +486,128 @@ export default function CompetitiveTab({
   const competitiveInsights = useMemo(() => {
     if (!runStatus || brandBreakdownStats.length === 0) return [];
     const insights: string[] = [];
-    const searchedBrand = runStatus.brand;
-    const searchedBrandStats = brandBreakdownStats.find((s: any) => s.isSearchedBrand);
-    const competitors = brandBreakdownStats.filter((s: any) => !s.isSearchedBrand);
-    if (!searchedBrandStats) return [];
-    const visibilityRank = brandBreakdownStats.findIndex((s: any) => s.isSearchedBrand) + 1;
-    if (visibilityRank === 1) {
-      insights.push(`${searchedBrand} leads in AI visibility with ${searchedBrandStats.visibilityScore.toFixed(0)}% mention rate`);
-    } else if (visibilityRank <= 3) {
-      const leader = brandBreakdownStats[0];
-      insights.push(`${searchedBrand} ranks #${visibilityRank} in visibility (${searchedBrandStats.visibilityScore.toFixed(0)}%), behind ${leader.brand} (${leader.visibilityScore.toFixed(0)}%)`);
-    } else {
-      insights.push(`${searchedBrand} has low visibility at ${searchedBrandStats.visibilityScore.toFixed(0)}%, ranking #${visibilityRank} of ${brandBreakdownStats.length} brands`);
-    }
-    if (searchedBrandStats.avgSentimentScore !== null) {
-      const betterSentimentCompetitors = competitors.filter((c: any) => c.avgSentimentScore !== null && c.avgSentimentScore > searchedBrandStats.avgSentimentScore!);
-      if (betterSentimentCompetitors.length === 0) {
-        insights.push(`${searchedBrand} has the most positive sentiment among all tracked brands`);
-      } else if (betterSentimentCompetitors.length <= 2) {
-        insights.push(`${betterSentimentCompetitors.map((c: any) => c.brand).join(' and ')} ${betterSentimentCompetitors.length === 1 ? 'has' : 'have'} better sentiment than ${searchedBrand}`);
+
+    const formatModelName = (provider: string): string => {
+      switch (provider) {
+        case 'openai': return 'GPT-4o';
+        case 'anthropic': return 'Claude';
+        case 'perplexity': return 'Perplexity';
+        case 'ai_overviews': return 'Google AI Overviews';
+        case 'gemini': return 'Gemini';
+        case 'google': return 'Gemini';
+        case 'grok': return 'Grok';
+        case 'llama': return 'Llama';
+        default: return provider;
       }
-    }
-    if (searchedBrandStats.firstPositionRate > 0) {
-      const topPositionLeader = [...brandBreakdownStats].sort((a: any, b: any) => b.firstPositionRate - a.firstPositionRate)[0];
-      if (topPositionLeader.isSearchedBrand) {
-        insights.push(`${searchedBrand} wins the #1 position ${searchedBrandStats.firstPositionRate.toFixed(0)}% of the time - more than any competitor`);
-      } else {
-        insights.push(`${topPositionLeader.brand} leads in #1 positions (${topPositionLeader.firstPositionRate.toFixed(0)}%) vs ${searchedBrand} (${searchedBrandStats.firstPositionRate.toFixed(0)}%)`);
-      }
-    }
-    if (modelPreferenceData.length > 0) {
-      const formatModelName = (provider: string): string => {
-        switch (provider) {
-          case 'openai': return 'GPT-4o';
-          case 'anthropic': return 'Claude';
-          case 'perplexity': return 'Perplexity';
-          case 'ai_overviews': return 'Google AI Overviews';
-          case 'gemini': return 'Gemini';
-          case 'google': return 'Gemini';
-          case 'grok': return 'Grok';
-          case 'llama': return 'Llama';
-          default: return provider;
+    };
+
+    if (isCategory) {
+      // Industry-framed insights
+      const sorted = [...brandBreakdownStats].sort((a: any, b: any) => b.visibilityScore - a.visibilityScore);
+      const leader = sorted[0];
+      const runner = sorted.length > 1 ? sorted[1] : null;
+
+      if (leader) {
+        const gap = runner ? (leader.visibilityScore - runner.visibilityScore).toFixed(0) : null;
+        if (gap && Number(gap) > 15) {
+          insights.push(`${leader.brand} dominates AI recommendations with ${leader.visibilityScore.toFixed(0)}% visibility, ${gap} points ahead of ${runner!.brand}`);
+        } else if (runner) {
+          insights.push(`${leader.brand} (${leader.visibilityScore.toFixed(0)}%) and ${runner.brand} (${runner.visibilityScore.toFixed(0)}%) are close competitors for the top spot`);
+        } else {
+          insights.push(`${leader.brand} leads AI recommendations with ${leader.visibilityScore.toFixed(0)}% visibility`);
         }
-      };
-      let bestModel = '';
-      let bestRate = 0;
-      let worstModel = '';
-      let worstRate = 100;
-      modelPreferenceData.forEach((data: any) => {
-        const rate = (data as Record<string, string | number>)[searchedBrand] as number || 0;
-        if (rate > bestRate) { bestRate = rate; bestModel = data.provider; }
-        if (rate < worstRate) { worstRate = rate; worstModel = data.provider; }
-      });
-      if (bestModel && worstModel && bestModel !== worstModel && (bestRate - worstRate) > 10) {
-        insights.push(`${searchedBrand} performs best on ${formatModelName(bestModel)} (${bestRate.toFixed(0)}%) and worst on ${formatModelName(worstModel)} (${worstRate.toFixed(0)}%)`);
+      }
+
+      // Sentiment leader
+      const sentimentSorted = [...brandBreakdownStats].filter((s: any) => s.avgSentimentScore !== null).sort((a: any, b: any) => b.avgSentimentScore - a.avgSentimentScore);
+      if (sentimentSorted.length > 0 && sentimentSorted[0].brand !== leader?.brand) {
+        insights.push(`${sentimentSorted[0].brand} has the best sentiment despite not leading in mentions — a potential underdog`);
+      }
+
+      // #1 position leader
+      const topPositionLeader = [...brandBreakdownStats].sort((a: any, b: any) => b.firstPositionRate - a.firstPositionRate)[0];
+      if (topPositionLeader && topPositionLeader.firstPositionRate > 0) {
+        insights.push(`${topPositionLeader.brand} captures the #1 recommendation spot ${topPositionLeader.firstPositionRate.toFixed(0)}% of the time`);
+      }
+
+      // Model preference divergence
+      if (modelPreferenceData.length >= 2 && sorted.length >= 2) {
+        const leaderBrand = leader.brand;
+        let bestModel = '';
+        let bestRate = 0;
+        let worstModel = '';
+        let worstRate = 100;
+        modelPreferenceData.forEach((data: any) => {
+          const rate = (data as Record<string, string | number>)[leaderBrand] as number || 0;
+          if (rate > bestRate) { bestRate = rate; bestModel = data.provider; }
+          if (rate < worstRate) { worstRate = rate; worstModel = data.provider; }
+        });
+        if (bestModel && worstModel && bestModel !== worstModel && (bestRate - worstRate) > 15) {
+          insights.push(`AI platforms disagree: ${formatModelName(bestModel)} favors ${leaderBrand} (${bestRate.toFixed(0)}%) while ${formatModelName(worstModel)} shows it least (${worstRate.toFixed(0)}%)`);
+        }
+      }
+
+      // Co-occurrence
+      if (brandCooccurrence.length > 0) {
+        const top = brandCooccurrence[0];
+        insights.push(`${top.brand1} and ${top.brand2} are most often recommended together (${top.count} times)`);
+      }
+    } else {
+      // Brand-framed insights (original)
+      const searchedBrand = runStatus.brand;
+      const searchedBrandStats = brandBreakdownStats.find((s: any) => s.isSearchedBrand);
+      const competitors = brandBreakdownStats.filter((s: any) => !s.isSearchedBrand);
+      if (!searchedBrandStats) return [];
+      const visibilityRank = brandBreakdownStats.findIndex((s: any) => s.isSearchedBrand) + 1;
+      if (visibilityRank === 1) {
+        insights.push(`${searchedBrand} leads in AI visibility with ${searchedBrandStats.visibilityScore.toFixed(0)}% mention rate`);
+      } else if (visibilityRank <= 3) {
+        const leader = brandBreakdownStats[0];
+        insights.push(`${searchedBrand} ranks #${visibilityRank} in visibility (${searchedBrandStats.visibilityScore.toFixed(0)}%), behind ${leader.brand} (${leader.visibilityScore.toFixed(0)}%)`);
+      } else {
+        insights.push(`${searchedBrand} has low visibility at ${searchedBrandStats.visibilityScore.toFixed(0)}%, ranking #${visibilityRank} of ${brandBreakdownStats.length} brands`);
+      }
+      if (searchedBrandStats.avgSentimentScore !== null) {
+        const betterSentimentCompetitors = competitors.filter((c: any) => c.avgSentimentScore !== null && c.avgSentimentScore > searchedBrandStats.avgSentimentScore!);
+        if (betterSentimentCompetitors.length === 0) {
+          insights.push(`${searchedBrand} has the most positive sentiment among all tracked brands`);
+        } else if (betterSentimentCompetitors.length <= 2) {
+          insights.push(`${betterSentimentCompetitors.map((c: any) => c.brand).join(' and ')} ${betterSentimentCompetitors.length === 1 ? 'has' : 'have'} better sentiment than ${searchedBrand}`);
+        }
+      }
+      if (searchedBrandStats.firstPositionRate > 0) {
+        const topPositionLeader = [...brandBreakdownStats].sort((a: any, b: any) => b.firstPositionRate - a.firstPositionRate)[0];
+        if (topPositionLeader.isSearchedBrand) {
+          insights.push(`${searchedBrand} wins the #1 position ${searchedBrandStats.firstPositionRate.toFixed(0)}% of the time - more than any competitor`);
+        } else {
+          insights.push(`${topPositionLeader.brand} leads in #1 positions (${topPositionLeader.firstPositionRate.toFixed(0)}%) vs ${searchedBrand} (${searchedBrandStats.firstPositionRate.toFixed(0)}%)`);
+        }
+      }
+      if (modelPreferenceData.length > 0) {
+        let bestModel = '';
+        let bestRate = 0;
+        let worstModel = '';
+        let worstRate = 100;
+        modelPreferenceData.forEach((data: any) => {
+          const rate = (data as Record<string, string | number>)[searchedBrand] as number || 0;
+          if (rate > bestRate) { bestRate = rate; bestModel = data.provider; }
+          if (rate < worstRate) { worstRate = rate; worstModel = data.provider; }
+        });
+        if (bestModel && worstModel && bestModel !== worstModel && (bestRate - worstRate) > 10) {
+          insights.push(`${searchedBrand} performs best on ${formatModelName(bestModel)} (${bestRate.toFixed(0)}%) and worst on ${formatModelName(worstModel)} (${worstRate.toFixed(0)}%)`);
+        }
+      }
+      if (brandCooccurrence.length > 0) {
+        const topCooccurrence = brandCooccurrence.find((c: any) => c.brand1 === searchedBrand || c.brand2 === searchedBrand);
+        if (topCooccurrence) {
+          const otherBrand = topCooccurrence.brand1 === searchedBrand ? topCooccurrence.brand2 : topCooccurrence.brand1;
+          insights.push(`${searchedBrand} is most often mentioned alongside ${otherBrand} (${topCooccurrence.count} times)`);
+        }
       }
     }
-    if (brandCooccurrence.length > 0) {
-      const topCooccurrence = brandCooccurrence.find((c: any) => c.brand1 === searchedBrand || c.brand2 === searchedBrand);
-      if (topCooccurrence) {
-        const otherBrand = topCooccurrence.brand1 === searchedBrand ? topCooccurrence.brand2 : topCooccurrence.brand1;
-        insights.push(`${searchedBrand} is most often mentioned alongside ${otherBrand} (${topCooccurrence.count} times)`);
-      }
-    }
+
     return insights.slice(0, 5);
-  }, [runStatus, brandBreakdownStats, modelPreferenceData, brandCooccurrence]);
+  }, [runStatus, brandBreakdownStats, modelPreferenceData, brandCooccurrence, isCategory]);
 
   // Brand-Source Heatmap
   const brandSourceHeatmap = useMemo(() => {
@@ -908,7 +965,7 @@ export default function CompetitiveTab({
               <div id="competitive-insights" className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Lightbulb className="w-5 h-5 text-amber-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">Key Competitive Insights</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Key Industry Insights' : 'Key Competitive Insights'}</h2>
                 </div>
                 <ul className="space-y-3">
                   {competitiveInsights.map((insight, idx) => (
@@ -928,8 +985,13 @@ export default function CompetitiveTab({
               <div id="competitive-breakdown" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Brand Breakdown</h2>
-                    <p className="text-sm text-gray-500 mt-1">Performance comparison across all brands</p>
+                    <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Market Share Breakdown' : 'Brand Breakdown'}</h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {isCategory
+                        ? `How brands in the ${runStatus?.brand || 'category'} space compare in AI recommendations`
+                        : 'Performance comparison across all brands'
+                      }
+                    </p>
                   </div>
                   <div className="flex items-center gap-3">
                     <select
@@ -1201,9 +1263,12 @@ export default function CompetitiveTab({
               <div id="competitive-positioning" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Brand Positioning</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Market Positioning' : 'Brand Positioning'}</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      How often AI mentions each brand vs. how favorably it describes them. Top-right = best position.
+                      {isCategory
+                        ? `How brands in the ${runStatus?.brand || 'category'} space are positioned by AI — mentions vs. sentiment. Top-right = strongest position.`
+                        : 'How often AI mentions each brand vs. how favorably it describes them. Top-right = best position.'
+                      }
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -1388,7 +1453,10 @@ export default function CompetitiveTab({
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Prompt Performance Matrix</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      How often each brand appears in answers to each question
+                      {isCategory
+                        ? `How often each brand is recommended for each question about ${runStatus?.brand || 'this category'}`
+                        : 'How often each brand appears in answers to each question'
+                      }
                     </p>
                   </div>
                   <select
@@ -1475,7 +1543,10 @@ export default function CompetitiveTab({
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Brands Mentioned Together</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Which brands AI tends to recommend alongside each other
+                      {isCategory
+                        ? `Which brands in the ${runStatus?.brand || 'category'} space AI tends to recommend together`
+                        : 'Which brands AI tends to recommend alongside each other'
+                      }
                     </p>
                   </div>
                   <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
