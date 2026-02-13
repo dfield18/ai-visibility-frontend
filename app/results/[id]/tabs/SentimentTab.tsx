@@ -48,6 +48,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
   const [responseLlmFilter, setResponseLlmFilter] = useState<string>('all');
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
   const [sentimentProviderCitationFilter, setSentimentProviderCitationFilter] = useState<string>('all');
+  const [sentimentProviderModelFilter, setSentimentProviderModelFilter] = useState<string>('all');
   const [sentimentByPromptBrandFilter, setSentimentByPromptBrandFilter] = useState<string>('');
   const [sentimentByPromptSourceFilter, setSentimentByPromptSourceFilter] = useState<string>('all');
   const [expandedResponseRows, setExpandedResponseRows] = useState<Set<string>>(new Set());
@@ -453,8 +454,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       globallyFilteredResults
         .filter((r: Result) => {
           if (r.error) return false;
+          // For issues: filter by AI model if not "all"
+          if (isIssue && sentimentProviderModelFilter !== 'all') {
+            if (r.provider !== sentimentProviderModelFilter) return false;
+          }
           // Filter by citation source domain if not "all"
-          if (sentimentProviderCitationFilter !== 'all') {
+          if (!isIssue && sentimentProviderCitationFilter !== 'all') {
             if (!r.sources || r.sources.length === 0) return false;
             const hasCitationFromDomain = r.sources.some(
               (source) => source.url && extractDomain(source.url) === sentimentProviderCitationFilter
@@ -511,7 +516,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         const bIdx = PROVIDER_ORDER.indexOf(b.provider);
         return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
       });
-    }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderCitationFilter]);
+    }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderCitationFilter, sentimentProviderModelFilter, isIssue]);
 
     // Helper to get results for a specific provider and sentiment
     const getResultsForProviderSentiment = (provider: string, sentiment: string): Result[] => {
@@ -521,8 +526,11 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         if (r.error) return false;
         if (r.provider !== provider) return false;
 
-        // Apply citation filter if set
-        if (sentimentProviderCitationFilter !== 'all') {
+        // Apply model filter for issues, citation filter otherwise
+        if (isIssue && sentimentProviderModelFilter !== 'all') {
+          if (r.provider !== sentimentProviderModelFilter) return false;
+        }
+        if (!isIssue && sentimentProviderCitationFilter !== 'all') {
           if (!r.sources || r.sources.length === 0) return false;
           const hasCitationFromDomain = r.sources.some(
             (source) => source.url && extractDomain(source.url) === sentimentProviderCitationFilter
@@ -1335,16 +1343,29 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <select
-                value={sentimentProviderCitationFilter}
-                onChange={(e) => setSentimentProviderCitationFilter(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-              >
-                <option value="all">All Sources</option>
-                {citationSourceOptions.map((domain) => (
-                  <option key={domain} value={domain}>{domain}</option>
-                ))}
-              </select>
+              {isIssue ? (
+                <select
+                  value={sentimentProviderModelFilter}
+                  onChange={(e) => setSentimentProviderModelFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                >
+                  <option value="all">All Models</option>
+                  {availableProviders.map((provider) => (
+                    <option key={provider} value={provider}>{providerLabels[provider] || provider}</option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={sentimentProviderCitationFilter}
+                  onChange={(e) => setSentimentProviderCitationFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                >
+                  <option value="all">All Sources</option>
+                  {citationSourceOptions.map((domain) => (
+                    <option key={domain} value={domain}>{domain}</option>
+                  ))}
+                </select>
+              )}
               <select
                 value={sentimentProviderBrandFilter || (isIndustryReport ? '__all__' : runStatus?.brand || '')}
                 onChange={(e) => setSentimentProviderBrandFilter(e.target.value)}
