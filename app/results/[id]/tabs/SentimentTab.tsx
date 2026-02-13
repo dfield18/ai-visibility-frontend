@@ -789,7 +789,11 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         {/* Brand Sentiment Overview */}
         {showSection('sentiment-distribution') && <div id="sentiment-distribution" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">How AI Describes {runStatus?.brand}</h3>
-          <p className="text-sm text-gray-500 mb-6">Sentiment classification of how AI models mention your brand</p>
+          <p className="text-sm text-gray-500 mb-6">
+            {isIndustryReport
+              ? 'Average sentiment across all brands within this industry'
+              : 'Sentiment classification of how AI models mention your brand'}
+          </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr,320px] gap-6 items-start">
             {/* Sentiment Distribution */}
@@ -843,18 +847,33 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                 const mentionRate = total > 0 ? ((total - notMentionedCount) / total) * 100 : 0;
 
                 let insight = '';
-                if (strongRate >= 50) {
-                  insight = `${runStatus?.brand} receives strong endorsements in ${strongRate.toFixed(0)}% of AI responses, indicating excellent brand positioning in AI recommendations.`;
-                } else if (positiveRate >= 70) {
-                  insight = `${runStatus?.brand} is mentioned positively or neutrally in ${positiveRate.toFixed(0)}% of responses where it appears, suggesting solid brand perception.`;
-                } else if (conditionalCount > strongCount) {
-                  insight = `AI models often mention ${runStatus?.brand} with caveats or conditions. Consider strengthening your unique value proposition to earn stronger endorsements.`;
-                } else if (negativeCount > 0 && negativeCount >= strongCount) {
-                  insight = `${runStatus?.brand} appears in negative comparisons ${negativeCount} time${negativeCount !== 1 ? 's' : ''}. Review competitor positioning and brand messaging.`;
-                } else if (notMentionedCount > total * 0.5) {
-                  insight = `${runStatus?.brand} is not mentioned in ${((notMentionedCount / total) * 100).toFixed(0)}% of responses. Focus on increasing AI visibility through content optimization.`;
+                if (isIndustryReport) {
+                  // Industry-specific insights about brands within the category
+                  if (strongRate >= 50) {
+                    insight = `Brands in ${runStatus?.brand} receive strong endorsements in ${strongRate.toFixed(0)}% of AI responses, indicating positive industry sentiment overall.`;
+                  } else if (positiveRate >= 70) {
+                    insight = `Brands in ${runStatus?.brand} are described positively or neutrally in ${positiveRate.toFixed(0)}% of AI responses.`;
+                  } else if (conditionalCount > strongCount) {
+                    insight = `AI models often describe brands in ${runStatus?.brand} with caveats or conditions, suggesting a competitive or nuanced market.`;
+                  } else if (negativeCount > 0 && negativeCount >= strongCount) {
+                    insight = `Brands in ${runStatus?.brand} appear in negative comparisons ${negativeCount} time${negativeCount !== 1 ? 's' : ''}, indicating competitive tension in AI recommendations.`;
+                  } else {
+                    insight = `Brands in ${runStatus?.brand} have mixed sentiment across AI responses. Average positive sentiment rate is ${strongRate.toFixed(0)}%.`;
+                  }
                 } else {
-                  insight = `${runStatus?.brand} has mixed sentiment across AI responses. Positive sentiment rate is ${strongRate.toFixed(0)}% with ${mentionRate.toFixed(0)}% overall mention rate.`;
+                  if (strongRate >= 50) {
+                    insight = `${runStatus?.brand} receives strong endorsements in ${strongRate.toFixed(0)}% of AI responses, indicating excellent brand positioning in AI recommendations.`;
+                  } else if (positiveRate >= 70) {
+                    insight = `${runStatus?.brand} is mentioned positively or neutrally in ${positiveRate.toFixed(0)}% of responses where it appears, suggesting solid brand perception.`;
+                  } else if (conditionalCount > strongCount) {
+                    insight = `AI models often mention ${runStatus?.brand} with caveats or conditions. Consider strengthening your unique value proposition to earn stronger endorsements.`;
+                  } else if (negativeCount > 0 && negativeCount >= strongCount) {
+                    insight = `${runStatus?.brand} appears in negative comparisons ${negativeCount} time${negativeCount !== 1 ? 's' : ''}. Review competitor positioning and brand messaging.`;
+                  } else if (notMentionedCount > total * 0.5) {
+                    insight = `${runStatus?.brand} is not mentioned in ${((notMentionedCount / total) * 100).toFixed(0)}% of responses. Focus on increasing AI visibility through content optimization.`;
+                  } else {
+                    insight = `${runStatus?.brand} has mixed sentiment across AI responses. Positive sentiment rate is ${strongRate.toFixed(0)}% with ${mentionRate.toFixed(0)}% overall mention rate.`;
+                  }
                 }
 
                 return <p className="text-sm text-gray-600">{insight}</p>;
