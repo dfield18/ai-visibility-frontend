@@ -113,9 +113,15 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
 
 function buildTabs(searchType: string): { id: TabType; label: string; icon: React.ReactNode }[] {
   const config = getSearchTypeConfig(searchType as any);
-  return config.tabs
-    .filter(t => t.enabled)
-    .map(t => ({
+  let tabs = config.tabs.filter(t => t.enabled);
+  // For issues, move the sentiment (Framing & Tone) tab to the far right
+  if (searchType === 'issue') {
+    const sentimentTab = tabs.find(t => t.id === 'sentiment');
+    if (sentimentTab) {
+      tabs = [...tabs.filter(t => t.id !== 'sentiment'), sentimentTab];
+    }
+  }
+  return tabs.map(t => ({
       id: t.id as TabType,
       label: t.label,
       icon: TAB_ICONS[t.id] || <FileText className="w-4 h-4" />,
