@@ -480,8 +480,82 @@ export const OverviewTab = ({
           );
         })()}
 
-        {/* Top Result Rate Card */}
+        {/* Top Result Rate / Competitive Fragmentation Score Card */}
         {(() => {
+          if (isCategory) {
+            // Competitive Fragmentation Score for industry reports
+            const score = overviewMetrics?.fragmentationScore ?? 5;
+            const brandCount = overviewMetrics?.fragmentationBrandCount ?? 0;
+            const getFragLabel = (s: number) => {
+              if (s <= 2) return 'Highly Concentrated';
+              if (s <= 4) return 'Concentrated';
+              if (s <= 6) return 'Moderately Competitive';
+              if (s <= 8) return 'Competitive';
+              return 'Highly Fragmented';
+            };
+            const getFragTone = (s: number): 'success' | 'neutral' | 'warn' => {
+              if (s <= 2) return 'warn';
+              if (s <= 4) return 'warn';
+              if (s <= 6) return 'neutral';
+              return 'success';
+            };
+            // Color for the score number
+            const getScoreColor = (s: number) => {
+              if (s <= 2) return '#f97316';
+              if (s <= 4) return '#eab308';
+              if (s <= 6) return '#6b7280';
+              if (s <= 8) return '#111827';
+              return '#111827';
+            };
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.top1Rate}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Fragmentation</p>
+                  <div className="relative group">
+                    <button
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Learn more about Competitive Fragmentation Score"
+                      tabIndex={0}
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      Measures how evenly AI brand mentions are distributed across {brandCount} brands in the {runStatus?.brand || 'category'} space. Score from 1 (one brand dominates) to 10 (mentions spread equally).
+                    </div>
+                  </div>
+                </div>
+                {/* Score display */}
+                <div className="h-[100px] flex flex-col justify-center">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: getScoreColor(score) }}>{score}</span>
+                    <span className="text-lg text-gray-400 font-medium">/ 10</span>
+                  </div>
+                  {/* Scale bar */}
+                  <div className="mt-3 w-full">
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${score * 10}%`, backgroundColor: getScoreColor(score) }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-gray-400">Concentrated</span>
+                      <span className="text-[10px] text-gray-400">Fragmented</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Badge */}
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(getFragTone(score))}`}>
+                    {getFragLabel(score)}
+                  </span>
+                </div>
+                {/* Description */}
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">How evenly AI distributes brand mentions across {brandCount} brands</p>
+              </div>
+            );
+          }
+
           const topRateTone = getKPIInterpretation('top1Rate', overviewMetrics?.top1Rate ?? null).tone;
           return (
             <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.top1Rate}`}>
@@ -496,10 +570,7 @@ export const OverviewTab = ({
                     <HelpCircle className="w-4 h-4 text-gray-400" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                    {isCategory
-                      ? `${overviewMetrics?.selectedBrand || 'The market leader'} is the #1 recommendation in ${overviewMetrics?.topPositionCount || 0} of ${overviewMetrics?.responsesWhereMentioned || 0} AI answers.`
-                      : `Ranked #1 in ${overviewMetrics?.topPositionCount || 0} of ${overviewMetrics?.responsesWhereMentioned || 0} AI answers where ${overviewMetrics?.selectedBrand || 'your brand'} appears.`
-                    }
+                    Ranked #1 in {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.responsesWhereMentioned || 0} AI answers where {overviewMetrics?.selectedBrand || 'your brand'} appears.
                   </div>
                 </div>
               </div>
@@ -538,12 +609,7 @@ export const OverviewTab = ({
                 </span>
               </div>
               {/* Description - pushed to bottom */}
-              <p className="text-xs text-gray-500 leading-relaxed mt-auto">
-                {isCategory
-                  ? `How often ${overviewMetrics?.selectedBrand || 'the market leader'} is the #1 recommendation`
-                  : `How often ${runStatus?.brand || 'your brand'} is the #1 result when mentioned`
-                }
-              </p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">How often {runStatus?.brand || 'your brand'} is the #1 result when mentioned</p>
             </div>
           );
         })()}

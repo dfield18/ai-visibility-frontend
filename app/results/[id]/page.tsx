@@ -3368,6 +3368,40 @@ export default function ResultsPage() {
     }
     const avgBrandsPerQuery = resultsWithBrands > 0 ? totalBrandsAcrossResults / resultsWithBrands : 0;
 
+    // Competitive Fragmentation Score (for industry reports)
+    // Measures how evenly AI brand mentions are distributed
+    let fragmentationScore = 5; // default mid-range
+    const brandMentionCounts: Record<string, number> = {};
+    for (const result of results) {
+      if (result.competitors_mentioned) {
+        for (const comp of result.competitors_mentioned) {
+          brandMentionCounts[comp] = (brandMentionCounts[comp] || 0) + 1;
+        }
+      }
+    }
+    const mentionBrands = Object.keys(brandMentionCounts);
+    const N = mentionBrands.length;
+    if (N >= 2) {
+      const totalMentionCount = Object.values(brandMentionCounts).reduce((a, b) => a + b, 0);
+      const shares = mentionBrands.map(b => brandMentionCounts[b] / totalMentionCount);
+
+      // HHI = sum of squared shares
+      const hhi = shares.reduce((sum, s) => sum + s * s, 0);
+      const minHhi = 1 / N;
+      const normalizedHhi = (hhi - minHhi) / (1 - minHhi);
+      let fragmentation = 1 - normalizedHhi;
+
+      // Long tail adjustment: sum of shares outside top 3
+      const sortedShares = [...shares].sort((a, b) => b - a);
+      const longTailShare = sortedShares.slice(3).reduce((sum, s) => sum + s, 0);
+      let fragmentationAdjusted = fragmentation * (1 + longTailShare);
+      fragmentationAdjusted = Math.max(0, Math.min(1, fragmentationAdjusted));
+
+      fragmentationScore = Math.round(1 + 9 * fragmentationAdjusted);
+    } else if (N === 1) {
+      fragmentationScore = 1;
+    }
+
     return {
       overallVisibility,
       shareOfVoice,
@@ -3386,6 +3420,8 @@ export default function ResultsPage() {
       ranksCount: ranks.length,
       avgBrandsPerQuery,
       resultsWithBrands,
+      fragmentationScore,
+      fragmentationBrandCount: N,
     };
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
 
