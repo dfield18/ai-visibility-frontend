@@ -3437,6 +3437,7 @@ export default function ResultsPage() {
     let framingDistribution: Record<string, number> = {};
     let platformConsensus = 5;
     let relatedIssuesCount = 0;
+    let topRelatedIssues: string[] = [];
     let framingByProvider: Record<string, Record<string, number>> = {};
 
     if (runStatus.search_type === 'issue') {
@@ -3493,16 +3494,20 @@ export default function ResultsPage() {
         platformConsensus = Math.max(1, Math.min(10, Math.round((maxAgreement / providerCount) * 10)));
       }
 
-      // Related issues count from competitors_mentioned
-      const relatedIssues = new Set<string>();
+      // Related issues from competitors_mentioned, ranked by mention frequency
+      const relatedIssueCounts: Record<string, number> = {};
       for (const result of results) {
         if (result.competitors_mentioned) {
           for (const comp of result.competitors_mentioned) {
-            relatedIssues.add(comp);
+            relatedIssueCounts[comp] = (relatedIssueCounts[comp] || 0) + 1;
           }
         }
       }
-      relatedIssuesCount = relatedIssues.size;
+      relatedIssuesCount = Object.keys(relatedIssueCounts).length;
+      topRelatedIssues = Object.entries(relatedIssueCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([name]) => name);
     }
 
     return {
@@ -3530,6 +3535,7 @@ export default function ResultsPage() {
       framingDistribution,
       platformConsensus,
       relatedIssuesCount,
+      topRelatedIssues,
       framingByProvider,
     };
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);

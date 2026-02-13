@@ -883,8 +883,9 @@ export const OverviewTab = ({
         {/* Avg. Position / Total Brands / Related Issues Card */}
         {(() => {
           if (isIssue) {
-            // Related Issues — large number showing unique related issues mentioned
+            // Related Issues — show top 3 most mentioned related issues
             const relatedCount = overviewMetrics?.relatedIssuesCount || 0;
+            const topIssues: string[] = overviewMetrics?.topRelatedIssues || [];
             const relatedTone: 'success' | 'neutral' | 'warn' = relatedCount >= 5 ? 'success' : relatedCount >= 2 ? 'neutral' : 'warn';
             return (
               <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
@@ -903,17 +904,25 @@ export const OverviewTab = ({
                     </div>
                   </div>
                 </div>
-                <div className="h-[100px] flex items-center justify-center">
-                  <span className="text-5xl font-bold tracking-tight tabular-nums text-gray-900">
-                    {relatedCount}
-                  </span>
+                <div className="h-[100px] flex flex-col justify-center">
+                  {topIssues.length > 0 ? (
+                    <ul className="space-y-1.5">
+                      {topIssues.map((issue) => (
+                        <li key={issue} className="text-sm font-medium text-gray-900 truncate" title={issue}>
+                          {issue}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-400">No related issues found</p>
+                  )}
                 </div>
                 <div className="h-[28px] flex items-start mt-3">
                   <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(relatedTone)}`}>
-                    {relatedCount >= 5 ? 'Broad context' : relatedCount >= 2 ? 'Some context' : 'Narrow focus'}
+                    {relatedCount > 3 ? `+${relatedCount - 3} more` : relatedCount >= 2 ? 'Some context' : relatedCount === 1 ? 'Narrow focus' : 'No related issues'}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed mt-auto">Unique related issues mentioned across all AI responses</p>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">{relatedCount} related issue{relatedCount !== 1 ? 's' : ''} mentioned across AI responses</p>
               </div>
             );
           }
