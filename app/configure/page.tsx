@@ -117,18 +117,19 @@ export default function ConfigurePage() {
   useAuthSync();
 
   // Billing status for provider locking and report counting
-  const { data: billing } = useBillingStatus();
+  const { data: billing, isPlaceholderData: isBillingPlaceholder } = useBillingStatus();
   const isPaidUser = billing?.hasSubscription ?? false;
 
-  // Auto-deselect locked providers for free users
+  // Auto-deselect locked providers for free users (skip while using placeholder data)
   useEffect(() => {
+    if (isBillingPlaceholder) return;
     if (billing && !isPaidUser) {
       const allowedProviders = providers.filter(p => isProviderFree(p));
       if (allowedProviders.length !== providers.length) {
         setProviders(allowedProviders.length > 0 ? allowedProviders : FREEMIUM_CONFIG.freeProviders);
       }
     }
-  }, [billing, isPaidUser]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [billing, isPaidUser, isBillingPlaceholder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Labels from config registry
   const searchConfig = getSearchTypeConfig(searchType);
@@ -282,8 +283,8 @@ export default function ConfigurePage() {
       return;
     }
 
-    // Check free tier report limit
-    if (!isPaidUser && billing && billing.reportsUsed >= FREEMIUM_CONFIG.freeReportsPerUser) {
+    // Check free tier report limit (only enforce when billing data has loaded)
+    if (!isBillingPlaceholder && !isPaidUser && billing && billing.reportsUsed >= FREEMIUM_CONFIG.freeReportsPerUser) {
       router.push('/pricing?reason=limit');
       return;
     }
@@ -864,7 +865,7 @@ export default function ConfigurePage() {
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(PROVIDER_INFO).map(([key, info]) => {
                     const isSelected = providers.includes(key);
-                    const isLocked = !isPaidUser && !isProviderFree(key);
+                    const isLocked = !isBillingPlaceholder && !isPaidUser && !isProviderFree(key);
                     return (
                       <button
                         key={key}
