@@ -1731,17 +1731,19 @@ export const SourcesTab = () => {
                         const count = sourceBrandHeatmapData.matrix[domain]?.[brand] || 0;
                         const intensity = heatmapMaxValue > 0 ? count / heatmapMaxValue : 0;
                         return (
-                          <td key={brand} className="text-center py-2.5 px-3">
+                          <td key={brand} className="text-center py-2.5 px-2">
                             {count > 0 ? (
-                              <span
-                                className="inline-flex items-center justify-center w-10 h-7 rounded text-xs font-semibold"
+                              <div
+                                className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity"
                                 style={{
-                                  backgroundColor: `rgba(17, 24, 39, ${0.06 + intensity * 0.25})`,
-                                  color: intensity > 0.5 ? '#111827' : '#4b5563',
+                                  backgroundColor: '#5ba3c0',
+                                  opacity: 0.3 + intensity * 0.7,
+                                  width: '80%',
+                                  maxWidth: '80px',
                                 }}
                               >
-                                {count}
-                              </span>
+                                <span className="text-white text-xs font-medium">{count}</span>
+                              </div>
                             ) : (
                               <span className="text-xs text-gray-300">—</span>
                             )}
