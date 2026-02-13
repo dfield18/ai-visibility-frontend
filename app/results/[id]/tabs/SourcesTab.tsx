@@ -249,15 +249,15 @@ export const SourcesTab = () => {
     const sourcePositioningBrandOptions = useMemo(() => {
       if (!runStatus) return [];
       const options: { value: string; label: string }[] = [
-        { value: 'all', label: 'All Brands' }
+        { value: 'all', label: isIssue ? 'All Issues' : 'All Brands' }
       ];
 
-      // Add searched brand (skip for category — it's the industry name, not a brand)
+      // Add searched brand/issue (skip for category — it's the industry name, not a brand)
       if (runStatus.brand && !isCategory) {
         options.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)` });
       }
 
-      // Add competitors
+      // Add competitors / related issues
       const competitors = new Set<string>();
       globallyFilteredResults.forEach((r: Result) => {
         r.competitors_mentioned?.forEach(comp => competitors.add(comp));
@@ -267,7 +267,7 @@ export const SourcesTab = () => {
       });
 
       return options;
-    }, [runStatus, globallyFilteredResults]);
+    }, [runStatus, globallyFilteredResults, isIssue]);
 
     // Calculate brand website citations with URL details
     const brandWebsiteCitations = useMemo(() => {
@@ -1025,9 +1025,9 @@ export const SourcesTab = () => {
         'Used (%)',
         'Avg. Citation',
         'Type',
-        'Sentiment',
+        isIssue ? 'Framing' : 'Sentiment',
         'Models',
-        'Brands',
+        isIssue ? 'Issues' : 'Brands',
       ];
 
       const rows = domainTableData.map(row => [
@@ -1035,7 +1035,9 @@ export const SourcesTab = () => {
         row.usedPercent.toFixed(1),
         row.avgCitation.toFixed(2),
         row.category,
-        row.avgSentiment !== null ? getSentimentLabel(row.avgSentiment) : '',
+        row.avgSentiment !== null ? (isIssue
+          ? (row.avgSentiment >= 4.5 ? 'Supportive' : row.avgSentiment >= 3.5 ? 'Leaning Supportive' : row.avgSentiment >= 2.5 ? 'Balanced' : row.avgSentiment >= 1.5 ? 'Mixed' : 'Critical')
+          : getSentimentLabel(row.avgSentiment)) : '',
         row.providers.map(p => getProviderLabel(p)).join('; '),
         row.brands.join('; '),
       ]);
@@ -1197,7 +1199,9 @@ export const SourcesTab = () => {
               <h2 className="text-lg font-semibold text-gray-900">Key Influencers</h2>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              Sources cited by multiple AI platforms — these have a big impact on what AI recommends.
+              {isIssue
+                ? 'Sources cited by multiple AI platforms — these shape how AI frames this issue.'
+                : 'Sources cited by multiple AI platforms — these have a big impact on what AI recommends.'}
             </p>
             <div className="flex flex-wrap gap-2">
               {keyInfluencers.map((source) => {
@@ -1295,7 +1299,7 @@ export const SourcesTab = () => {
                     onChange={(e) => setSourcesBrandFilter(e.target.value)}
                     className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
-                    <option value="all">All Brands</option>
+                    <option value="all">{isIssue ? 'All Issues' : 'All Brands'}</option>
                     {!isCategory && runStatus?.brand && availableBrands.includes(runStatus.brand) && (
                       <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
                     )}
@@ -1559,6 +1563,14 @@ export const SourcesTab = () => {
           };
 
           const getSentimentLabel = (sentiment: number) => {
+            if (isIssue) {
+              if (sentiment >= 4.5) return 'Supportive';
+              if (sentiment >= 3.5) return 'Leaning Supportive';
+              if (sentiment >= 2.5) return 'Balanced';
+              if (sentiment >= 1.5) return 'Mixed';
+              if (sentiment >= 0.5) return 'Critical';
+              return 'N/A';
+            }
             if (sentiment >= 4.5) return 'Strong';
             if (sentiment >= 3.5) return 'Positive';
             if (sentiment >= 2.5) return 'Neutral';
@@ -1571,9 +1583,11 @@ export const SourcesTab = () => {
             <div id="sources-helpful" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Sources That Shape AI Recommendations' : 'Sources That Help Your Brand'}</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{isIssue ? 'Sources That Shape Issue Coverage' : isCategory ? 'Sources That Shape AI Recommendations' : 'Sources That Help Your Brand'}</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Websites linked to higher visibility and better sentiment in AI responses
+                    {isIssue
+                      ? 'Websites frequently cited when AI discusses this issue, colored by average framing'
+                      : 'Websites linked to higher visibility and better sentiment in AI responses'}
                   </p>
                 </div>
                 <select
@@ -1588,14 +1602,20 @@ export const SourcesTab = () => {
               </div>
               {/* Sentiment Legend */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-5">
-                <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
-                {[
+                <span className="text-xs text-gray-600 font-medium">{isIssue ? 'Framing:' : 'Sentiment:'}</span>
+                {(isIssue ? [
+                  { color: '#047857', label: 'Supportive' },
+                  { color: '#10b981', label: 'Leaning Supportive' },
+                  { color: '#9ca3af', label: 'Balanced' },
+                  { color: '#f59e0b', label: 'Mixed' },
+                  { color: '#ef4444', label: 'Critical' },
+                ] : [
                   { color: '#047857', label: 'Strong' },
                   { color: '#10b981', label: 'Positive' },
                   { color: '#9ca3af', label: 'Neutral' },
                   { color: '#f59e0b', label: 'Conditional' },
                   { color: '#ef4444', label: 'Negative' },
-                ].map(({ color, label }) => (
+                ]).map(({ color, label }) => (
                   <div key={label} className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
                     <span className="text-xs text-gray-500">{label}</span>
@@ -1608,7 +1628,7 @@ export const SourcesTab = () => {
                   const barWidth = (d.citationCount / maxCitations) * 100;
                   const color = getSentimentColor(d.avgSentiment);
                   return (
-                    <div key={d.domain} className="group flex items-center gap-3" title={`${d.domain} — ${d.citationCount} citations, ${d.providerCount} model${d.providerCount !== 1 ? 's' : ''}, Avg Position: ${d.avgPosition ? '#' + d.avgPosition.toFixed(1) : 'N/A'}, Sentiment: ${getSentimentLabel(d.avgSentiment)}`}>
+                    <div key={d.domain} className="group flex items-center gap-3" title={`${d.domain} — ${d.citationCount} citations, ${d.providerCount} model${d.providerCount !== 1 ? 's' : ''}, Avg Position: ${d.avgPosition ? '#' + d.avgPosition.toFixed(1) : 'N/A'}, ${isIssue ? 'Framing' : 'Sentiment'}: ${getSentimentLabel(d.avgSentiment)}`}>
                       {/* Domain label */}
                       <div className="w-[160px] shrink-0 text-right">
                         <a
@@ -1655,7 +1675,7 @@ export const SourcesTab = () => {
                   );
                 })}
               </div>
-              <p className="mt-4 text-center text-xs text-gray-400 italic">Bar color indicates average sentiment • Position badge shows avg brand rank when this source is cited</p>
+              <p className="mt-4 text-center text-xs text-gray-400 italic">{isIssue ? 'Bar color indicates average framing • Position badge shows avg rank when this source is cited' : 'Bar color indicates average sentiment • Position badge shows avg brand rank when this source is cited'}</p>
             </div>
           );
         })()}
@@ -2018,14 +2038,14 @@ export const SourcesTab = () => {
                       onClick={() => handleDomainSort('avgSentiment')}
                     >
                       <span className="flex items-center justify-center gap-1">
-                        Sentiment
+                        {isIssue ? 'Framing' : 'Sentiment'}
                         {domainSortColumn === 'avgSentiment' && (
                           <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </span>
                     </th>
                     <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>Models</th>
-                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>Brands</th>
+                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>{isIssue ? 'Issues' : 'Brands'}</th>
                     {isCategory && (
                       <th className="w-[22%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompts</th>
                     )}
@@ -2052,7 +2072,13 @@ export const SourcesTab = () => {
                       if (row.avgSentiment === null) {
                         return <span className="text-sm text-gray-400">-</span>;
                       }
-                      const configs: Record<string, { bg: string; text: string; border: string; label: string }> = {
+                      const configs: Record<string, { bg: string; text: string; border: string; label: string }> = isIssue ? {
+                        'strong': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Supportive' },
+                        'positive': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Leaning Supportive' },
+                        'neutral': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Balanced' },
+                        'conditional': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', label: 'Mixed' },
+                        'negative': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Critical' },
+                      } : {
                         'strong': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Strong' },
                         'positive': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', label: 'Positive' },
                         'neutral': { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200', label: 'Neutral' },
