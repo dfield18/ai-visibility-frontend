@@ -295,7 +295,7 @@ export const OverviewTab = ({
             const avgBrands = overviewMetrics?.avgBrandsPerQuery ?? 0;
             const depthTone: 'success' | 'neutral' | 'warn' = avgBrands >= 5 ? 'success' : avgBrands >= 3 ? 'neutral' : 'warn';
             return (
-              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
+              <div style={{ order: 2 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Competitive Depth</p>
                   <div className="relative group">
@@ -395,7 +395,7 @@ export const OverviewTab = ({
             const leaderName = overviewMetrics?.selectedBrand || 'N/A';
             const mentionRate = overviewMetrics?.shareOfVoice ?? 0;
             return (
-              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.shareOfVoice}`}>
+              <div style={{ order: 4 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.shareOfVoice}`}>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Leader</p>
                   <div className="relative group">
@@ -513,7 +513,7 @@ export const OverviewTab = ({
               return '#111827';
             };
             return (
-              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.top1Rate}`}>
+              <div style={{ order: 3 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.top1Rate}`}>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Fragmentation</p>
                   <div className="relative group">
@@ -625,7 +625,7 @@ export const OverviewTab = ({
             const totalBrands = overviewMetrics?.fragmentationBrandCount || 0;
             const brandsTone: 'success' | 'neutral' | 'warn' = totalBrands >= 8 ? 'success' : totalBrands >= 4 ? 'neutral' : 'warn';
             return (
-              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
+              <div style={{ order: 1 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Total Brands</p>
                   <div className="relative group">
@@ -1395,11 +1395,14 @@ export const OverviewTab = ({
                   onClick={() => handleTableSort('position')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Rank
+                    {isCategory ? '# Brands' : 'Rank'}
                     <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
                       <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
                       <span className="absolute left-0 top-full mt-1 w-52 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
-                        Where your brand appears in the AI response (#1 = mentioned first)
+                        {isCategory
+                          ? 'Number of brands mentioned in this AI response'
+                          : 'Where your brand appears in the AI response (#1 = mentioned first)'
+                        }
                       </span>
                     </span>
                     {tableSortColumn === 'position' && (
@@ -1426,6 +1429,25 @@ export const OverviewTab = ({
                     </span>
                   </th>
                 )}
+                {isCategory ? (
+                <th
+                  className="w-[14%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
+                  onClick={() => handleTableSort('sentiment')}
+                >
+                  <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    First Brand
+                    <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
+                      <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
+                      <span className="absolute left-0 top-full mt-1 w-56 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
+                        The first brand mentioned in the AI response
+                      </span>
+                    </span>
+                    {tableSortColumn === 'sentiment' && (
+                      <span className="text-gray-900">{tableSortDirection === 'asc' ? '\u2191' : '\u2193'}</span>
+                    )}
+                  </span>
+                </th>
+                ) : (
                 <th
                   className="w-[14%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('sentiment')}
@@ -1443,16 +1465,17 @@ export const OverviewTab = ({
                     )}
                   </span>
                 </th>
+                )}
                 <th
                   className="w-[20%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                   onClick={() => handleTableSort('competitors')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {isCategory ? 'Brands' : 'Competitors'}
+                    {isCategory ? 'All Brands' : 'Competitors'}
                     <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
                       <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
                       <span className="absolute left-0 top-full mt-1 w-52 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
-                        Other brands mentioned in the same AI response
+                        {isCategory ? 'All brands mentioned in this AI response' : 'Other brands mentioned in the same AI response'}
                       </span>
                     </span>
                     {tableSortColumn === 'competitors' && (
@@ -1675,7 +1698,10 @@ export const OverviewTab = ({
                         </span>
                       </td>
                       <td className="w-[7%] py-3 px-4">
-                        {getPositionBadge()}
+                        {isCategory
+                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : (result.competitors_mentioned?.length || 0)}</span>
+                          : getPositionBadge()
+                        }
                       </td>
                       {!isCategory && (
                         <td className="w-[12%] py-3 px-4">
@@ -1683,7 +1709,10 @@ export const OverviewTab = ({
                         </td>
                       )}
                       <td className="w-[14%] py-3 px-4">
-                        {getSentimentBadge()}
+                        {isCategory
+                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : (result.competitors_mentioned?.[0] || '\u2014')}</span>
+                          : getSentimentBadge()
+                        }
                       </td>
                       <td className="w-[20%] py-3 px-4">
                         {getCompetitorsList()}
