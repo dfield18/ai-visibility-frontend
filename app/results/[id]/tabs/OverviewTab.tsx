@@ -2218,11 +2218,11 @@ export const OverviewTab = ({
                   onClick={() => handleTableSort('competitors')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {isCategory ? 'All Brands' : 'Competitors'}
+                    {isIssue ? 'Related Issues' : isCategory ? 'All Brands' : 'Competitors'}
                     <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
                       <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
                       <span className="absolute left-0 top-full mt-1 w-52 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
-                        {isCategory ? 'All brands mentioned in this AI response' : 'Other brands mentioned in the same AI response'}
+                        {isIssue ? 'Related issues mentioned in this AI response' : isCategory ? 'All brands mentioned in this AI response' : 'Other brands mentioned in the same AI response'}
                       </span>
                     </span>
                     {tableSortColumn === 'competitors' && (
