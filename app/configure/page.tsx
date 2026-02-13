@@ -833,7 +833,7 @@ export default function ConfigurePage() {
                           className="text-sm text-gray-500 hover:bg-gray-50 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 border-dashed transition-colors"
                         >
                           <Plus className="w-4 h-4" />
-                          Add {isCategory ? 'another brand' : 'another competitor'}
+                          Add {isCategory ? 'another brand' : searchType === 'public_figure' ? 'another public figure' : searchType === 'issue' ? 'another issue' : 'another competitor'}
                         </button>
                       )}
                     </div>
