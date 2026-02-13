@@ -105,6 +105,8 @@ export const OverviewTab = ({
   const [tableBrandFilter, setTableBrandFilter] = useState<string>('all');
   const [positionChartBrandFilter, setPositionChartBrandFilter] = useState<string>('__all__');
   const [framingPromptFilter, setFramingPromptFilter] = useState<string>('all');
+  const [framingEvidenceExpanded, setFramingEvidenceExpanded] = useState<Set<string>>(new Set(['Supportive', 'Balanced']));
+  const [framingEvidenceShowAll, setFramingEvidenceShowAll] = useState<Set<string>>(new Set());
 
   // Framing by provider filtered by prompt (issue search type)
   const FRAMING_MAP: Record<string, string> = {
@@ -129,6 +131,60 @@ export const OverviewTab = ({
     }
     return providerFramings;
   }, [isIssue, globallyFilteredResults, framingPromptFilter, overviewMetrics]);
+
+  // Framing evidence: group results by framing bucket with key excerpts
+  type FramingEvidenceItem = { provider: string; prompt: string; excerpt: string; framing: string };
+  const framingEvidenceGroups = useMemo(() => {
+    if (!isIssue || !runStatus) return { Supportive: [], Balanced: [], Critical: [] } as Record<string, FramingEvidenceItem[]>;
+    const results = globallyFilteredResults.filter((r: Result) => !r.error && r.response_text);
+    const issueName = (runStatus.brand || '').toLowerCase();
+    const groups: Record<string, FramingEvidenceItem[]> = { Supportive: [], Balanced: [], Critical: [] };
+
+    for (const result of results) {
+      const raw = result.brand_sentiment || 'neutral_mention';
+      const label = FRAMING_MAP[raw] || 'Balanced';
+      // Collapse to 3 groups
+      const bucket = (label === 'Supportive' || label === 'Leaning Supportive') ? 'Supportive'
+        : label === 'Balanced' ? 'Balanced'
+        : 'Critical';
+
+      // Extract key excerpt: find the most substantive sentence mentioning the issue
+      const text = result.response_text!;
+      const sentences = text.replace(/\n+/g, ' ').split(/(?<=[.!?])\s+/);
+      let bestSentence = '';
+      let bestScore = -1;
+      for (const s of sentences) {
+        const trimmed = s.trim();
+        if (trimmed.length < 30 || trimmed.length > 400) continue;
+        // Skip markdown artifacts, URLs, list markers
+        if (/^\s*[-*#|>]/.test(trimmed) || /https?:\/\//.test(trimmed) || /\|/.test(trimmed)) continue;
+        const mentionsIssue = issueName && trimmed.toLowerCase().includes(issueName);
+        // Score: prefer sentences that mention the issue and are mid-length (more substantive)
+        const lengthScore = Math.min(trimmed.length, 250) / 250;
+        const score = (mentionsIssue ? 2 : 0) + lengthScore;
+        if (score > bestScore) {
+          bestScore = score;
+          bestSentence = trimmed;
+        }
+      }
+
+      if (!bestSentence && sentences.length > 0) {
+        // Fallback: take first clean sentence over 30 chars
+        bestSentence = sentences.find(s => s.trim().length >= 30 && !/^\s*[-*#|>]/.test(s.trim()))?.trim() || sentences[0].trim();
+      }
+
+      if (bestSentence) {
+        groups[bucket].push({
+          provider: result.provider,
+          prompt: result.prompt,
+          excerpt: bestSentence,
+          framing: label,
+        });
+      }
+    }
+
+    return groups;
+  }, [isIssue, runStatus, globallyFilteredResults]);
 
   // ---------------------------------------------------------------------------
   // Moved computations
@@ -1207,6 +1263,79 @@ export const OverviewTab = ({
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#10b981' }} /> Supportive</span>
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#9ca3af' }} /> Balanced</span>
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#f87171' }} /> Critical</span>
+          </div>
+        </div>
+      )}
+
+      {/* Framing Evidence (issue search type) */}
+      {showSection('framing-evidence') && isIssue && (Object.values(framingEvidenceGroups).some(g => g.length > 0)) && (
+        <div id="overview-framing-evidence" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-1">
+            <HelpCircle className="w-5 h-5 text-gray-700" />
+            <h2 className="text-lg font-semibold text-gray-900">Framing Evidence</h2>
+          </div>
+          <p className="text-sm text-gray-500 mb-5">Why each AI response was classified as supportive, balanced, or critical</p>
+          <div className="space-y-3">
+            {([
+              { key: 'Supportive', color: '#10b981', dotClass: 'bg-emerald-500' },
+              { key: 'Balanced', color: '#9ca3af', dotClass: 'bg-gray-400' },
+              { key: 'Critical', color: '#f87171', dotClass: 'bg-red-400' },
+            ] as const).map(({ key, color, dotClass }) => {
+              const items = framingEvidenceGroups[key] || [];
+              if (items.length === 0) return null;
+              const isExpanded = framingEvidenceExpanded.has(key);
+              const showAll = framingEvidenceShowAll.has(key);
+              const visibleItems = showAll ? items : items.slice(0, 3);
+              return (
+                <div key={key} className="border border-gray-100 rounded-lg overflow-hidden">
+                  {/* Accordion header */}
+                  <button
+                    onClick={() => {
+                      const next = new Set(framingEvidenceExpanded);
+                      if (next.has(key)) next.delete(key); else next.add(key);
+                      setFramingEvidenceExpanded(next);
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotClass}`} />
+                      <span className="text-sm font-semibold text-gray-900">{key}</span>
+                      <span className="text-xs text-gray-400 font-normal">{items.length} response{items.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                  </button>
+                  {/* Accordion content */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-100">
+                      <div className="divide-y divide-gray-50">
+                        {visibleItems.map((item, idx) => (
+                          <div key={idx} className="px-4 py-3">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <span className="text-xs font-medium text-gray-500">{getProviderLabel(item.provider)}</span>
+                              <span className="inline-block w-1 h-1 rounded-full bg-gray-300 flex-shrink-0" />
+                              <span className="text-xs text-gray-400 truncate" title={item.prompt}>{truncate(item.prompt, 60)}</span>
+                            </div>
+                            <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{item.excerpt}&rdquo;</p>
+                          </div>
+                        ))}
+                      </div>
+                      {items.length > 3 && (
+                        <button
+                          onClick={() => {
+                            const next = new Set(framingEvidenceShowAll);
+                            if (next.has(key)) next.delete(key); else next.add(key);
+                            setFramingEvidenceShowAll(next);
+                          }}
+                          className="w-full px-4 py-2.5 text-xs font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors border-t border-gray-100 text-center"
+                        >
+                          {showAll ? 'Show fewer' : `Show all ${items.length} responses`}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
