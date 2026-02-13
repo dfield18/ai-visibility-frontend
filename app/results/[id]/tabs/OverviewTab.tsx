@@ -101,6 +101,7 @@ export const OverviewTab = ({
   const [tableSortColumn, setTableSortColumn] = useState<'default' | 'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('default');
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
   const [tableBrandFilter, setTableBrandFilter] = useState<string>('all');
+  const [positionChartBrandFilter, setPositionChartBrandFilter] = useState<string>('__all__');
 
   // ---------------------------------------------------------------------------
   // Moved computations
@@ -150,7 +151,103 @@ export const OverviewTab = ({
     return `${getProviderLabel(best[0])} leads with ${Math.round(best[1].rate * 100)}% mentions of ${selectedBrand}, compared to ${Math.round(worst[1].rate * 100)}% from ${getProviderLabel(worst[0])}.`;
   }, [llmBreakdownStats, llmBreakdownBrandFilter, llmBreakdownBrands, runStatus]);
 
+  // Brand options for position chart dropdown (industry reports only)
+  const positionChartBrandOptions = useMemo(() => {
+    if (!isCategory) return [];
+    const options: { value: string; label: string }[] = [
+      { value: '__all__', label: 'All Brands (average position)' },
+    ];
+    const brands = new Set<string>();
+    globallyFilteredResults.forEach((r: Result) => {
+      if (!r.error && r.competitors_mentioned) {
+        r.competitors_mentioned.forEach(comp => brands.add(comp));
+      }
+    });
+    Array.from(brands).sort().forEach(b => {
+      options.push({ value: b, label: b });
+    });
+    return options;
+  }, [isCategory, globallyFilteredResults]);
+
+  // Helper: compute rank for a specific brand within a result
+  const computeBrandRank = (result: Result, brand: string): number => {
+    if (!result.response_text) return 0;
+    const isMentioned = result.competitors_mentioned?.includes(brand);
+    if (!isMentioned) return 0;
+    const brandLower = brand.toLowerCase();
+    const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
+    const brandTextPos = textLower.indexOf(brandLower);
+    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+      : [...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+    if (brandTextPos >= 0) {
+      let brandsBeforeCount = 0;
+      for (const b of allBrands) {
+        const bLower = b.toLowerCase();
+        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+        const bPos = textLower.indexOf(bLower);
+        if (bPos >= 0 && bPos < brandTextPos) brandsBeforeCount++;
+      }
+      return brandsBeforeCount + 1;
+    }
+    return allBrands.length + 1;
+  };
+
   const positionByPlatformData = useMemo(() => {
+    // For industry reports with brand filter, compute locally from results
+    if (isCategory && runStatus) {
+      const results = globallyFilteredResults.filter((r: Result) => !r.error);
+      if (results.length === 0) return [];
+
+      const grouped: Record<string, Record<string, { sentiment: string | null; prompt: string; rank: number; label: string; originalResult: Result }[]>> = {};
+      const effectiveBrand = positionChartBrandFilter || '__all__';
+
+      // Get all tracked brands for averaging
+      const allTrackedBrands = new Set<string>();
+      results.forEach(r => {
+        r.competitors_mentioned?.forEach(c => allTrackedBrands.add(c));
+      });
+      const trackedBrandsList = Array.from(allTrackedBrands);
+
+      results.forEach(result => {
+        const provider = providerLabels[result.provider] || result.provider;
+        if (!grouped[provider]) {
+          grouped[provider] = {};
+          POSITION_CATEGORIES.forEach(cat => { grouped[provider][cat] = []; });
+        }
+
+        let rank: number;
+        if (effectiveBrand === '__all__') {
+          // Average rank across all mentioned brands
+          const brandRanks = trackedBrandsList
+            .map(b => computeBrandRank(result, b))
+            .filter(r => r > 0);
+          rank = brandRanks.length > 0 ? Math.round(brandRanks.reduce((a, b) => a + b, 0) / brandRanks.length) : 0;
+        } else {
+          rank = computeBrandRank(result, effectiveBrand);
+        }
+
+        let category: string;
+        if (rank === 0) { category = 'Not Mentioned'; }
+        else if (rank === 1) { category = 'Top'; }
+        else if (rank >= 2 && rank <= 3) { category = '2-3'; }
+        else if (rank >= 4 && rank <= 5) { category = '4-5'; }
+        else if (rank >= 6 && rank <= 10) { category = '6-10'; }
+        else { category = '>10'; }
+
+        grouped[provider][category].push({
+          sentiment: result.brand_sentiment || null,
+          prompt: truncate(result.prompt, 30),
+          rank,
+          label: provider,
+          originalResult: result,
+        });
+      });
+
+      return grouped;
+    }
+
+    // Default behavior for non-industry reports
     if (!scatterPlotData.length) return [];
     const grouped: Record<string, Record<string, { sentiment: string | null; prompt: string; rank: number; label: string; originalResult: Result }[]>> = {};
     scatterPlotData.forEach((dp) => {
@@ -169,7 +266,7 @@ export const OverviewTab = ({
       grouped[provider][category].push({ sentiment: dp.sentiment, prompt: dp.prompt, rank: dp.rank, label: dp.label, originalResult: dp.originalResult });
     });
     return grouped;
-  }, [scatterPlotData]);
+  }, [scatterPlotData, isCategory, runStatus, globallyFilteredResults, positionChartBrandFilter]);
 
   const filteredResults = useMemo(() => {
     if (!runStatus) return [];
@@ -1020,26 +1117,43 @@ export const OverviewTab = ({
               </div>
               <p className="text-sm text-gray-500 mt-1">
                 {isCategory
-                  ? `How AI platforms rank brands in the ${runStatus?.brand || 'category'} space`
+                  ? positionChartBrandFilter === '__all__'
+                    ? `Average position score across all brands by platform and prompt`
+                    : `How AI platforms rank ${positionChartBrandFilter} by platform and prompt`
                   : `How often ${runStatus?.brand} ranks in each position across AI platforms`
                 }
               </p>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-xs text-gray-500">Show sentiment</span>
-              <button
-                onClick={() => setShowSentimentColors(!showSentimentColors)}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                  showSentimentColors ? 'bg-gray-900' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
-                    showSentimentColors ? 'translate-x-5' : 'translate-x-1'
+            <div className="flex items-center gap-3">
+              {isCategory && positionChartBrandOptions.length > 0 && (
+                <select
+                  value={positionChartBrandFilter}
+                  onChange={(e) => setPositionChartBrandFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                >
+                  {positionChartBrandOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-xs text-gray-500">Show sentiment</span>
+                <button
+                  onClick={() => setShowSentimentColors(!showSentimentColors)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    showSentimentColors ? 'bg-gray-900' : 'bg-gray-300'
                   }`}
-                />
-              </button>
-            </label>
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                      showSentimentColors ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </label>
+            </div>
           </div>
 
           {/* Legend - show platform colors or sentiment colors */}
@@ -1063,7 +1177,9 @@ export const OverviewTab = ({
             ) : (
               <span className="text-xs text-gray-500">
                 {isCategory
-                  ? 'Each dot represents one AI response. Toggle sentiment to color by brand recommendation.'
+                  ? positionChartBrandFilter === '__all__'
+                    ? 'Each dot represents one AI response. Position is the average rank across all brands mentioned. Filter by brand to see individual positions.'
+                    : `Each dot represents one AI response showing ${positionChartBrandFilter}'s position. Toggle sentiment to color by recommendation.`
                   : 'Each dot represents one AI response. Toggle sentiment to color by recommendation.'
                 }
               </span>
