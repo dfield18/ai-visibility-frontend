@@ -1294,9 +1294,9 @@ export const OverviewTab = ({
         <div id="overview-framing-evidence" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-2 mb-1">
             <HelpCircle className="w-5 h-5 text-gray-700" />
-            <h2 className="text-lg font-semibold text-gray-900">Framing Evidence</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Key Perspectives on {runStatus?.brand || 'This Issue'}</h2>
           </div>
-          <p className="text-sm text-gray-500 mb-5">Why each AI response was classified as supportive, balanced, or critical</p>
+          <p className="text-sm text-gray-500 mb-5">How AI platforms frame this issue — grouped by supportive, balanced, and critical perspectives</p>
           <div className="space-y-3">
             {([
               { key: 'Supportive', color: '#10b981', dotClass: 'bg-emerald-500' },
@@ -1358,8 +1358,8 @@ export const OverviewTab = ({
         </div>
       )}
 
-      {/* What AI Says About [Brand] / Key Perspectives on [Issue] */}
-      {showSection('brand-quotes') && brandQuotes.length > 0 && (
+      {/* What AI Says About [Brand] — hidden for issues (replaced by framing-evidence) */}
+      {showSection('brand-quotes') && !isIssue && brandQuotes.length > 0 && (
         <div id="overview-brand-quotes" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare className="w-5 h-5 text-gray-700" />

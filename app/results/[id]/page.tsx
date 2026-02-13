@@ -4935,7 +4935,7 @@ export default function ResultsPage() {
               brandBlurbs={brandBlurbs}
               setCopied={setCopied}
               accessLevel={sectionAccess['overview']}
-              visibleSections={['metrics', 'ai-summary', 'framing-comparison', 'framing-evidence', 'brand-quotes', 'prompt-breakdown', 'all-results']}
+              visibleSections={['metrics', 'ai-summary', 'framing-comparison', 'framing-evidence', 'prompt-breakdown', 'all-results']}
             />
           ) : (
             <OverviewTab
