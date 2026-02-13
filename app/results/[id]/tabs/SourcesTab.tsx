@@ -56,6 +56,7 @@ export const SourcesTab = () => {
     sourcesInsights,
     hasAnySources,
     isCategory,
+    isIssue,
   } = useResults();
   const { copied, handleCopyLink, setSelectedResult, setSelectedResultHighlight } = useResultsUI();
 
@@ -1786,7 +1787,7 @@ export const SourcesTab = () => {
         )}
 
         {/* Brand Website Citations */}
-        <div id="sources-brand-website" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        {!isIssue && <div id="sources-brand-website" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Website Citations</h3>
@@ -1933,7 +1934,7 @@ export const SourcesTab = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Domain Breakdown Table */}
         {domainTableData.length > 0 && (
