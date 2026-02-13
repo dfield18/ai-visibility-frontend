@@ -412,7 +412,7 @@ export const OverviewTab = ({
                   </div>
                 </div>
                 {/* Large number display */}
-                <div className="h-[100px] flex flex-col justify-center">
+                <div className="h-[100px] flex flex-col justify-center items-center text-center">
                   <p className="text-4xl font-bold text-gray-900 tracking-tight tabular-nums">{avgBrands.toFixed(1)}</p>
                   <p className="text-sm text-gray-500 mt-1">brands per response</p>
                 </div>
@@ -633,7 +633,7 @@ export const OverviewTab = ({
                   </div>
                 </div>
                 {/* Score display */}
-                <div className="h-[100px] flex flex-col justify-center">
+                <div className="h-[100px] flex flex-col justify-center items-center">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: getScoreColor(score) }}>{score}</span>
                     <span className="text-lg text-gray-400 font-medium">/ 10</span>
