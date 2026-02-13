@@ -349,7 +349,7 @@ export default function CompetitiveTab({
   const showSection = (id: string) => !visibleSections || visibleSections.includes(id);
 
   // ---- Context ----
-  const { runStatus, globallyFilteredResults, availableProviders, availablePrompts, brandBreakdownStats, allBrandsAnalysisData, brandQuotesMap, isCategory } = useResults();
+  const { runStatus, globallyFilteredResults, availableProviders, availablePrompts, brandBreakdownStats, allBrandsAnalysisData, brandQuotesMap, isCategory, isIssue } = useResults();
   const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
 
   // ---- Internalized state ----
@@ -561,6 +561,56 @@ export default function CompetitiveTab({
         const top = brandCooccurrence[0];
         insights.push(`${top.brand1} and ${top.brand2} are most often recommended together (${top.count} times)`);
       }
+    } else if (isIssue) {
+      // Issue-framed insights
+      const mainIssue = runStatus.brand;
+      const mainIssueStats = brandBreakdownStats.find((s: any) => s.isSearchedBrand);
+      const relatedIssues = brandBreakdownStats.filter((s: any) => !s.isSearchedBrand);
+      const sorted = [...brandBreakdownStats].sort((a: any, b: any) => b.visibilityScore - a.visibilityScore);
+
+      if (mainIssueStats) {
+        insights.push(`${mainIssue} is addressed in ${mainIssueStats.visibilityScore.toFixed(0)}% of AI responses`);
+      }
+
+      // Most covered related issue
+      if (relatedIssues.length > 0) {
+        const topRelated = sorted.find((s: any) => !s.isSearchedBrand);
+        if (topRelated) {
+          insights.push(`${topRelated.brand} is the most frequently mentioned related issue (${topRelated.visibilityScore.toFixed(0)}% coverage)`);
+        }
+      }
+
+      // Framing insight
+      const framingSorted = [...brandBreakdownStats].filter((s: any) => s.avgSentimentScore !== null).sort((a: any, b: any) => b.avgSentimentScore - a.avgSentimentScore);
+      if (framingSorted.length >= 2) {
+        const mostSupportive = framingSorted[0];
+        const mostCritical = framingSorted[framingSorted.length - 1];
+        if (mostSupportive.brand !== mostCritical.brand) {
+          insights.push(`${mostSupportive.brand} receives the most supportive framing while ${mostCritical.brand} is framed most critically`);
+        }
+      }
+
+      // Model divergence
+      if (modelPreferenceData.length >= 2 && mainIssueStats) {
+        let bestModel = '';
+        let bestRate = 0;
+        let worstModel = '';
+        let worstRate = 100;
+        modelPreferenceData.forEach((data: any) => {
+          const rate = (data as Record<string, string | number>)[mainIssue] as number || 0;
+          if (rate > bestRate) { bestRate = rate; bestModel = data.provider; }
+          if (rate < worstRate) { worstRate = rate; worstModel = data.provider; }
+        });
+        if (bestModel && worstModel && bestModel !== worstModel && (bestRate - worstRate) > 10) {
+          insights.push(`${formatModelName(bestModel)} addresses ${mainIssue} most often (${bestRate.toFixed(0)}%) while ${formatModelName(worstModel)} covers it least (${worstRate.toFixed(0)}%)`);
+        }
+      }
+
+      // Co-occurrence
+      if (brandCooccurrence.length > 0) {
+        const top = brandCooccurrence[0];
+        insights.push(`${top.brand1} and ${top.brand2} are most often discussed together (${top.count} times)`);
+      }
     } else {
       // Brand-framed insights (original)
       const searchedBrand = runStatus.brand;
@@ -616,7 +666,7 @@ export default function CompetitiveTab({
     }
 
     return insights.slice(0, 5);
-  }, [runStatus, brandBreakdownStats, modelPreferenceData, brandCooccurrence, isCategory]);
+  }, [runStatus, brandBreakdownStats, modelPreferenceData, brandCooccurrence, isCategory, isIssue]);
 
   // Brand-Source Heatmap
   const brandSourceHeatmap = useMemo(() => {
@@ -790,7 +840,7 @@ export default function CompetitiveTab({
                   {/* Section Header */}
                   <div className="mb-4">
                     <h2 className="text-lg font-semibold text-gray-900">Visibility Reports</h2>
-                    <p className="text-sm text-gray-500 mt-1">How often and how favorably each brand appears across AI platforms, based on all questions tested.</p>
+                    <p className="text-sm text-gray-500 mt-1">{isIssue ? 'How often and how thoroughly AI platforms address each issue, based on all questions tested.' : 'How often and how favorably each brand appears across AI platforms, based on all questions tested.'}</p>
                   </div>
                   {/* Carousel with Side Navigation */}
                   <div className="relative flex items-center">
@@ -829,7 +879,7 @@ export default function CompetitiveTab({
                                 {/* Card Header */}
                                 <div className="px-4 pt-3 pb-2 border-b border-gray-100">
                                   <p className="text-[9px] text-gray-400 uppercase tracking-widest mb-0.5">
-                                    {brandData.isSearchedBrand ? 'Your Brand' : 'Competitor'}
+                                    {isIssue ? (brandData.isSearchedBrand ? 'Main Issue' : 'Related Issue') : brandData.isSearchedBrand ? 'Your Brand' : 'Competitor'}
                                   </p>
                                   <p className="text-base font-bold text-gray-900">{brandData.brand}</p>
 
@@ -974,7 +1024,7 @@ export default function CompetitiveTab({
               <div id="competitive-insights" className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Lightbulb className="w-5 h-5 text-amber-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Key Industry Insights' : 'Key Competitive Insights'}</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Key Industry Insights' : isIssue ? 'Key Issue Insights' : 'Key Competitive Insights'}</h2>
                 </div>
                 <ul className="space-y-3">
                   {competitiveInsights.map((insight, idx) => (
@@ -994,10 +1044,12 @@ export default function CompetitiveTab({
               <div id="competitive-breakdown" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Market Share Breakdown' : 'Brand Breakdown'}</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Market Share Breakdown' : isIssue ? 'Related Issues Breakdown' : 'Brand Breakdown'}</h2>
                     <p className="text-sm text-gray-500 mt-1">
                       {isCategory
                         ? `How brands in the ${runStatus?.brand || 'category'} space compare in AI recommendations`
+                        : isIssue
+                        ? 'How related issues compare in AI coverage and framing'
                         : 'Performance comparison across all brands'
                       }
                     </p>
@@ -1031,26 +1083,26 @@ export default function CompetitiveTab({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Brand</th>
+                        <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">{isIssue ? 'Issue' : 'Brand'}</th>
                         <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                          <div className="whitespace-nowrap">AI Visibility</div>
-                          <div className="text-xs text-gray-400 font-normal">How often brand appears</div>
+                          <div className="whitespace-nowrap">{isIssue ? 'Coverage' : 'AI Visibility'}</div>
+                          <div className="text-xs text-gray-400 font-normal">{isIssue ? 'How often issue is addressed' : 'How often brand appears'}</div>
                         </th>
                         <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                           <div className="whitespace-nowrap">Share of Voice</div>
-                          <div className="text-xs text-gray-400 font-normal">Brand's share of mentions</div>
+                          <div className="text-xs text-gray-400 font-normal">{isIssue ? "Issue's share of mentions" : "Brand's share of mentions"}</div>
                         </th>
                         <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                          <div className="whitespace-nowrap">Top Result Rate</div>
-                          <div className="text-xs text-gray-400 font-normal">How often brand is #1</div>
+                          <div className="whitespace-nowrap">{isIssue ? 'Top Focus Rate' : 'Top Result Rate'}</div>
+                          <div className="text-xs text-gray-400 font-normal">{isIssue ? 'How often issue is primary focus' : 'How often brand is #1'}</div>
                         </th>
                         <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                           <div className="whitespace-nowrap">Avg. Position</div>
                           <div className="text-xs text-gray-400 font-normal">Avg. ranking when mentioned</div>
                         </th>
                         <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
-                          <div className="whitespace-nowrap">Avg. Sentiment</div>
-                          <div className="text-xs text-gray-400 font-normal">How AI presents brand</div>
+                          <div className="whitespace-nowrap">{isIssue ? 'Avg. Framing' : 'Avg. Sentiment'}</div>
+                          <div className="text-xs text-gray-400 font-normal">{isIssue ? 'How AI frames the issue' : 'How AI presents brand'}</div>
                         </th>
                       </tr>
                     </thead>
@@ -1058,11 +1110,19 @@ export default function CompetitiveTab({
                       {brandBreakdownStats.map((stat, index) => {
                         const getSentimentLabel = (score: number | null): string => {
                           if (score === null) return '-';
-                          if (score >= 4.5) return 'Strong';
-                          if (score >= 3.5) return 'Positive';
-                          if (score >= 2.5) return 'Neutral';
-                          if (score >= 1.5) return 'Conditional';
-                          if (score >= 0.5) return 'Negative';
+                          if (isIssue) {
+                            if (score >= 4.5) return 'Supportive';
+                            if (score >= 3.5) return 'Leaning Supportive';
+                            if (score >= 2.5) return 'Balanced';
+                            if (score >= 1.5) return 'Mixed';
+                            if (score >= 0.5) return 'Critical';
+                          } else {
+                            if (score >= 4.5) return 'Strong';
+                            if (score >= 3.5) return 'Positive';
+                            if (score >= 2.5) return 'Neutral';
+                            if (score >= 1.5) return 'Conditional';
+                            if (score >= 0.5) return 'Negative';
+                          }
                           return '-';
                         };
 
@@ -1175,7 +1235,7 @@ export default function CompetitiveTab({
                                 <td colSpan={6} className="py-2 px-3 pl-10">
                                   <div className="bg-white border border-gray-200 rounded-lg p-3">
                                     <p className="text-xs font-medium text-gray-500 mb-2">
-                                      Prompts mentioning {stat.brand} ({stat.promptsWithStats.length})
+                                      Prompts {isIssue ? 'addressing' : 'mentioning'} {stat.brand} ({stat.promptsWithStats.length})
                                     </p>
                                     <div className="space-y-2 max-h-64 overflow-y-auto">
                                       {stat.promptsWithStats.map((promptStat: any, promptIdx: number) => (
@@ -1272,10 +1332,12 @@ export default function CompetitiveTab({
               <div id="competitive-positioning" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Market Positioning' : 'Brand Positioning'}</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Market Positioning' : isIssue ? 'Issue Positioning' : 'Brand Positioning'}</h2>
                     <p className="text-sm text-gray-500 mt-1">
                       {isCategory
                         ? `How brands in the ${runStatus?.brand || 'category'} space are positioned by AI — mentions vs. sentiment. Top-right = strongest position.`
+                        : isIssue
+                        ? 'How often AI addresses each issue vs. how it frames them. Top-right = most covered with supportive framing.'
                         : 'How often AI mentions each brand vs. how favorably it describes them. Top-right = best position.'
                       }
                     </p>
@@ -1305,28 +1367,28 @@ export default function CompetitiveTab({
                     </select>
                   </div>
                 </div>
-                {/* Sentiment Legend */}
+                {/* Sentiment/Framing Legend */}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
-                  <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
+                  <span className="text-xs text-gray-600 font-medium">{isIssue ? 'Framing:' : 'Sentiment:'}</span>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
-                    <span className="text-xs text-gray-500">Strong</span>
+                    <span className="text-xs text-gray-500">{isIssue ? 'Supportive' : 'Strong'}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
-                    <span className="text-xs text-gray-500">Positive</span>
+                    <span className="text-xs text-gray-500">{isIssue ? 'Leaning Supportive' : 'Positive'}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
-                    <span className="text-xs text-gray-500">Neutral</span>
+                    <span className="text-xs text-gray-500">{isIssue ? 'Balanced' : 'Neutral'}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
-                    <span className="text-xs text-gray-500">Conditional</span>
+                    <span className="text-xs text-gray-500">{isIssue ? 'Mixed' : 'Conditional'}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                    <span className="text-xs text-gray-500">Negative</span>
+                    <span className="text-xs text-gray-500">{isIssue ? 'Critical' : 'Negative'}</span>
                   </div>
                 </div>
                 <div className="h-[400px]">
@@ -1336,12 +1398,15 @@ export default function CompetitiveTab({
                       <XAxis
                         type="number"
                         dataKey="sentiment"
-                        name="Avg. Sentiment"
+                        name={isIssue ? 'Avg. Framing' : 'Avg. Sentiment'}
                         domain={[xMin, xMax]}
                         ticks={xTicks}
-                        tickFormatter={(value) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][value] || ''}
+                        tickFormatter={isIssue
+                          ? ((value: number) => ['', 'Critical', 'Mixed', 'Balanced', 'Leaning Supportive', 'Supportive'][value] || '')
+                          : ((value: number) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][value] || '')
+                        }
                         tick={{ fill: '#6b7280', fontSize: 12 }}
-                        label={{ value: 'Average Sentiment', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
+                        label={{ value: isIssue ? 'Average Framing' : 'Average Sentiment', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
                       />
                       <YAxis
                         type="number"
@@ -1357,14 +1422,16 @@ export default function CompetitiveTab({
                         content={({ active, payload }) => {
                           if (active && payload && payload.length > 0) {
                             const data = payload[0].payload;
-                            const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
+                            const sentimentLabels = isIssue
+                              ? ['', 'Critical', 'Mixed', 'Balanced', 'Leaning Supportive', 'Supportive']
+                              : ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
                             return (
                               <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm max-w-[300px]">
-                                <p className="font-medium text-gray-900 mb-2">{data.brand}{data.isSearchedBrand ? ' (searched)' : ''}</p>
+                                <p className="font-medium text-gray-900 mb-2">{data.brand}{data.isSearchedBrand ? (isIssue ? ' (main issue)' : ' (searched)') : ''}</p>
                                 <div className="space-y-1 text-gray-600">
-                                  <p>Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.sentiment)] || 'N/A'}</span></p>
+                                  <p>{isIssue ? 'Framing' : 'Sentiment'}: <span className="font-medium">{sentimentLabels[Math.round(data.sentiment)] || 'N/A'}</span></p>
                                   <p>Mentions: <span className="font-medium">{data.mentions}</span></p>
-                                  <p>Visibility: <span className="font-medium">{data.visibility.toFixed(0)}%</span></p>
+                                  <p>{isIssue ? 'Coverage' : 'Visibility'}: <span className="font-medium">{data.visibility.toFixed(0)}%</span></p>
                                 </div>
                               </div>
                             );
@@ -1450,7 +1517,7 @@ export default function CompetitiveTab({
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
-                <p className="text-xs text-gray-400 italic text-center mt-2">Hover over dots for details • Searched brand has thicker border</p>
+                <p className="text-xs text-gray-400 italic text-center mt-2">Hover over dots for details {'\u2022'} {isIssue ? 'Main issue' : 'Searched brand'} has thicker border</p>
               </div>
               );
             })()}
@@ -1464,6 +1531,8 @@ export default function CompetitiveTab({
                     <p className="text-sm text-gray-500 mt-1">
                       {isCategory
                         ? `How often each brand is recommended for each question about ${runStatus?.brand || 'this category'}`
+                        : isIssue
+                        ? 'How often each issue is addressed in answers to each question'
                         : 'How often each brand appears in answers to each question'
                       }
                     </p>
@@ -1483,7 +1552,7 @@ export default function CompetitiveTab({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-2 text-sm font-medium text-gray-600 sticky left-0 bg-white min-w-[120px]">Brand</th>
+                        <th className="text-left py-3 px-2 text-sm font-medium text-gray-600 sticky left-0 bg-white min-w-[120px]">{isIssue ? 'Issue' : 'Brand'}</th>
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
@@ -1550,10 +1619,12 @@ export default function CompetitiveTab({
               <div id="competitive-cooccurrence" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Brands Mentioned Together</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">{isIssue ? 'Issues Mentioned Together' : 'Brands Mentioned Together'}</h2>
                     <p className="text-sm text-gray-500 mt-1">
                       {isCategory
                         ? `Which brands in the ${runStatus?.brand || 'category'} space AI tends to recommend together`
+                        : isIssue
+                        ? 'Which issues AI tends to address together in the same response'
                         : 'Which brands AI tends to recommend alongside each other'
                       }
                     </p>
@@ -1629,7 +1700,7 @@ export default function CompetitiveTab({
                     })}
                   </div>
                   <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
-                    <span>Bar shade shows how often brands appear together:</span>
+                    <span>Bar shade shows how often {isIssue ? 'issues' : 'brands'} appear together:</span>
                     <div className="flex items-center gap-1">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#d1d5db' }}></div>
                       <span>Less often</span>
@@ -1773,9 +1844,9 @@ export default function CompetitiveTab({
               <div id="competitive-publishers" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Which Publishers Mention Which Brands</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{isIssue ? 'Which Publishers Cover Which Issues' : 'Which Publishers Mention Which Brands'}</h3>
                     <p className="text-sm text-gray-500">
-                      {heatmapShowSentiment ? 'How positively each publisher describes each brand' : 'See citation patterns across publishers and brands'}
+                      {heatmapShowSentiment ? (isIssue ? 'How each publisher frames each issue' : 'How positively each publisher describes each brand') : (isIssue ? 'See citation patterns across publishers and issues' : 'See citation patterns across publishers and brands')}
                       <span className="ml-2 text-gray-400">Click any cell to view responses</span>
                     </p>
                   </div>
@@ -1799,7 +1870,7 @@ export default function CompetitiveTab({
                             : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                       >
-                        Sentiment
+                        {isIssue ? 'Framing' : 'Sentiment'}
                       </button>
                     </div>
                     <select
@@ -1819,37 +1890,37 @@ export default function CompetitiveTab({
                 <div className="mb-4 flex items-center gap-4 text-xs text-gray-500">
                   {heatmapShowSentiment ? (
                     <>
-                      <span className="text-gray-600 font-medium">Sentiment:</span>
+                      <span className="text-gray-600 font-medium">{isIssue ? 'Framing:' : 'Sentiment:'}</span>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
-                        <span>Strong</span>
+                        <span>{isIssue ? 'Supportive' : 'Strong'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
-                        <span>Positive</span>
+                        <span>{isIssue ? 'Leaning Supportive' : 'Positive'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
-                        <span>Neutral</span>
+                        <span>{isIssue ? 'Balanced' : 'Neutral'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
-                        <span>Conditional</span>
+                        <span>{isIssue ? 'Mixed' : 'Conditional'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                        <span>Negative</span>
+                        <span>{isIssue ? 'Critical' : 'Negative'}</span>
                       </div>
                     </>
                   ) : (
                     <>
                       <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(34, 197, 94, 0.6)' }} />
-                        <span>{runStatus?.brand || 'Searched brand'}</span>
+                        <span>{runStatus?.brand || (isIssue ? 'Main issue' : 'Searched brand')}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(91, 163, 192, 0.5)' }} />
-                        <span>Competitors</span>
+                        <span>{isIssue ? 'Related Issues' : 'Competitors'}</span>
                       </div>
                       <div className="flex items-center gap-2 ml-2">
                         <span>More</span>
