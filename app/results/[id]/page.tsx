@@ -173,7 +173,6 @@ const TAB_SECTIONS: Partial<Record<TabType, { id: string; label: string }[]>> = 
     { id: 'overview-metrics', label: 'Metrics Overview' },
     { id: 'overview-ai-analysis', label: 'AI Analysis' },
     { id: 'competitive-cards', label: 'Visibility Reports' },
-    { id: 'competitive-insights', label: 'Key Insights' },
     { id: 'competitive-breakdown', label: 'Market Share Breakdown' },
     { id: 'competitive-positioning', label: 'Market Positioning' },
     { id: 'competitive-heatmap', label: 'Performance Matrix' },
@@ -4818,7 +4817,7 @@ export default function ResultsPage() {
             <CompetitiveTab
               setSelectedResultHighlight={setSelectedResultHighlight}
               setHeatmapResultsList={setHeatmapResultsList}
-              visibleSections={['visibility-reports', 'insights', 'breakdown', 'positioning', 'matrix', 'cooccurrence']}
+              visibleSections={['visibility-reports', 'breakdown', 'positioning', 'matrix', 'cooccurrence']}
               forceCooccurrenceView="pairs"
             />
             {/* Brand Visibility by Platform + All Results from Overview tab */}
