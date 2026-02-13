@@ -765,8 +765,9 @@ export default function ResultsPage() {
   // Get all brands for filters (searched brand + competitors)
   const availableBrands = useMemo(() => {
     if (!runStatus) return [];
+    const isCategory = runStatus.search_type === 'category';
     const brands = new Set<string>();
-    if (runStatus.brand) {
+    if (runStatus.brand && !isCategory) {
       brands.add(runStatus.brand);
     }
     runStatus.results.forEach((r: Result) => {
@@ -1466,6 +1467,7 @@ export default function ResultsPage() {
   // Calculate brand breakdown stats for competitive landscape
   const brandBreakdownStats = useMemo(() => {
     if (!runStatus) return [];
+    const isCategory = runStatus.search_type === 'category';
 
     const results = globallyFilteredResults.filter((r: Result) => {
       if (r.error) return false;
@@ -1476,8 +1478,8 @@ export default function ResultsPage() {
 
     const searchedBrand = runStatus.brand;
 
-    // Get all brands: searched brand + competitors
-    const allBrands = new Set<string>([searchedBrand]);
+    // Get all brands: searched brand + competitors (exclude category name for industry searches)
+    const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       if (r.competitors_mentioned) {
         r.competitors_mentioned.forEach(c => allBrands.add(c));
@@ -1633,6 +1635,7 @@ export default function ResultsPage() {
   // Calculate brand positioning stats with separate filters
   const brandPositioningStats = useMemo(() => {
     if (!runStatus) return [];
+    const isCategory = runStatus.search_type === 'category';
 
     const results = globallyFilteredResults.filter((r: Result) => {
       if (r.error) return false;
@@ -1643,8 +1646,8 @@ export default function ResultsPage() {
 
     const searchedBrand = runStatus.brand;
 
-    // Get all brands: searched brand + competitors
-    const allBrands = new Set<string>([searchedBrand]);
+    // Get all brands: searched brand + competitors (exclude category name for industry searches)
+    const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       if (r.competitors_mentioned) {
         r.competitors_mentioned.forEach(c => allBrands.add(c));
@@ -1712,6 +1715,7 @@ export default function ResultsPage() {
   // Prompt Performance Matrix - brands vs prompts heatmap data
   const promptPerformanceMatrix = useMemo(() => {
     if (!runStatus) return { brands: [], prompts: [], matrix: [] };
+    const isCategory = runStatus.search_type === 'category';
 
     const results = globallyFilteredResults.filter((r: Result) => {
       if (r.error) return false;
@@ -1723,8 +1727,8 @@ export default function ResultsPage() {
     const searchedBrand = runStatus.brand;
     const prompts = Array.from(new Set(results.map(r => r.prompt)));
 
-    // Get all brands mentioned
-    const allBrands = new Set<string>([searchedBrand]);
+    // Get all brands mentioned (exclude category name for industry searches)
+    const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       if (r.competitors_mentioned) {
         r.competitors_mentioned.forEach(c => allBrands.add(c));
@@ -4794,7 +4798,7 @@ export default function ResultsPage() {
           </PaywallOverlay>
         )}
         {activeTab === 'industry-overview' && (
-          <>
+          <div className="space-y-8">
             {/* Metrics + AI Summary from Overview tab */}
             <OverviewTab
               aiSummaryExpanded={aiSummaryExpanded}
@@ -4832,7 +4836,7 @@ export default function ResultsPage() {
               accessLevel={sectionAccess['overview']}
               visibleSections={['by-platform', 'all-results']}
             />
-          </>
+          </div>
         )}
         {activeTab === 'sentiment' && (
           <PaywallOverlay locked={sectionAccess['sentiment'] === 'locked'}>
