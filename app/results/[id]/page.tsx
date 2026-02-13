@@ -4745,6 +4745,7 @@ export default function ResultsPage() {
             handleExportCSV,
             selectedResult,
             setSelectedResult,
+            setSelectedResultHighlight,
             setSnippetDetailModal,
           }}
         >

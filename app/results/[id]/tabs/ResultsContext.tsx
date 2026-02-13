@@ -66,6 +66,7 @@ export interface ResultsUIContextValue {
   handleExportCSV: () => void;
   selectedResult: Result | null;
   setSelectedResult: (result: Result | null) => void;
+  setSelectedResultHighlight: (val: { brand: string; domain?: string } | null) => void;
   setSnippetDetailModal: (val: { brand: string; responseText: string; provider: string; prompt: string } | null) => void;
 }
 

@@ -57,7 +57,7 @@ export const SourcesTab = () => {
     hasAnySources,
     isCategory,
   } = useResults();
-  const { copied, handleCopyLink } = useResultsUI();
+  const { copied, handleCopyLink, setSelectedResult, setSelectedResultHighlight } = useResultsUI();
 
   const [domainSortColumn, setDomainSortColumn] = useState<'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment'>('usedPercent');
   const [domainSortDirection, setDomainSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -994,6 +994,23 @@ export const SourcesTab = () => {
       }
     };
 
+    // Open result detail modal for a specific prompt + domain combination
+    const handlePromptClick = (prompt: string, domain: string) => {
+      const matchingResult = globallyFilteredResults.find((r: Result) =>
+        r.prompt === prompt &&
+        !r.error &&
+        r.sources?.some((s: Source) => {
+          try {
+            return new URL(s.url).hostname.replace(/^www\./, '') === domain;
+          } catch { return false; }
+        })
+      );
+      if (matchingResult) {
+        setSelectedResult(matchingResult);
+        setSelectedResultHighlight({ brand: runStatus?.brand || '', domain });
+      }
+    };
+
     // Export Domain Breakdown to CSV
     const handleExportDomainBreakdownCSV = () => {
       if (!runStatus || domainTableData.length === 0) return;
@@ -1922,9 +1939,15 @@ export const SourcesTab = () => {
                             {row.prompts.length > 0 ? (
                               <div className="space-y-1">
                                 {row.prompts.slice(0, 2).map((prompt: string, pi: number) => (
-                                  <p key={pi} className="text-xs text-gray-600 leading-snug truncate" title={prompt}>
+                                  <button
+                                    key={pi}
+                                    type="button"
+                                    onClick={() => handlePromptClick(prompt, row.domain)}
+                                    className="block w-full text-left text-xs text-blue-600 hover:text-blue-800 hover:underline leading-snug truncate cursor-pointer"
+                                    title={`Click to view full response — ${prompt}`}
+                                  >
                                     {prompt}
-                                  </p>
+                                  </button>
                                 ))}
                                 {row.prompts.length > 2 && (
                                   <span className="relative group">
@@ -1933,7 +1956,14 @@ export const SourcesTab = () => {
                                     </span>
                                     <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 z-20 shadow-lg max-w-[300px]">
                                       {row.prompts.slice(2).map((p: string, i: number) => (
-                                        <span key={i} className="block py-0.5">{p}</span>
+                                        <button
+                                          key={i}
+                                          type="button"
+                                          onClick={() => handlePromptClick(p, row.domain)}
+                                          className="block w-full text-left py-0.5 hover:underline cursor-pointer"
+                                        >
+                                          {p}
+                                        </button>
                                       ))}
                                     </span>
                                   </span>
