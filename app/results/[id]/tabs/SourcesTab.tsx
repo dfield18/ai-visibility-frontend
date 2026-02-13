@@ -55,6 +55,7 @@ export const SourcesTab = () => {
     availableBrands,
     sourcesInsights,
     hasAnySources,
+    isCategory,
   } = useResults();
   const { copied, handleCopyLink } = useResultsUI();
 
@@ -126,9 +127,11 @@ export const SourcesTab = () => {
       resultsWithSources.forEach((r: Result) => {
         // Check if this result mentions the selected brand (or any brand if all)
         const brandMentioned = selectedBrand
-          ? (r.brand_mentioned && runStatus.brand === selectedBrand) ||
-            r.competitors_mentioned?.includes(selectedBrand)
-          : r.brand_mentioned || (r.competitors_mentioned && r.competitors_mentioned.length > 0);
+          ? ((!isCategory && r.brand_mentioned && runStatus.brand === selectedBrand) ||
+            r.competitors_mentioned?.includes(selectedBrand))
+          : isCategory
+            ? (r.competitors_mentioned && r.competitors_mentioned.length > 0)
+            : (r.brand_mentioned || (r.competitors_mentioned && r.competitors_mentioned.length > 0));
 
         r.sources?.forEach((source) => {
           if (!source.url) return;
@@ -155,38 +158,35 @@ export const SourcesTab = () => {
             domainStats[domain].brandMentioned++;
 
             // Get sentiment score for the selected brand
-            let sentimentScore = 3; // Default neutral
+            const sentimentMap: Record<string, number> = {
+              'strong_endorsement': 5,
+              'positive_endorsement': 4,
+              'neutral_mention': 3,
+              'conditional': 2,
+              'negative_comparison': 1,
+            };
             if (selectedBrand) {
-              if (selectedBrand === runStatus.brand && r.brand_sentiment) {
-                const sentimentMap: Record<string, number> = {
-                  'strong_endorsement': 5,
-                  'positive_endorsement': 4,
-                  'neutral_mention': 3,
-                  'conditional': 2,
-                  'negative_comparison': 1,
-                };
+              let sentimentScore = 3;
+              if (!isCategory && selectedBrand === runStatus.brand && r.brand_sentiment) {
                 sentimentScore = sentimentMap[r.brand_sentiment] || 3;
               } else if (r.competitor_sentiments?.[selectedBrand]) {
-                const sentimentMap: Record<string, number> = {
-                  'strong_endorsement': 5,
-                  'positive_endorsement': 4,
-                  'neutral_mention': 3,
-                  'conditional': 2,
-                  'negative_comparison': 1,
-                };
                 sentimentScore = sentimentMap[r.competitor_sentiments[selectedBrand]] || 3;
               }
+              domainStats[domain].sentimentScores.push(sentimentScore);
+            } else if (isCategory) {
+              // For category "all" filter: aggregate sentiments from all competitor brands
+              if (r.competitor_sentiments) {
+                const scores = Object.values(r.competitor_sentiments)
+                  .map(s => sentimentMap[s] || 0)
+                  .filter(s => s > 0);
+                if (scores.length > 0) {
+                  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                  domainStats[domain].sentimentScores.push(avg);
+                }
+              }
             } else if (r.brand_sentiment) {
-              const sentimentMap: Record<string, number> = {
-                'strong_endorsement': 5,
-                'positive_endorsement': 4,
-                'neutral_mention': 3,
-                'conditional': 2,
-                'negative_comparison': 1,
-              };
-              sentimentScore = sentimentMap[r.brand_sentiment] || 3;
+              domainStats[domain].sentimentScores.push(sentimentMap[r.brand_sentiment] || 3);
             }
-            domainStats[domain].sentimentScores.push(sentimentScore);
 
             // Get position using the helper function
             const position = getResultPosition(r, runStatus!);
@@ -246,8 +246,8 @@ export const SourcesTab = () => {
         { value: 'all', label: 'All Brands' }
       ];
 
-      // Add searched brand
-      if (runStatus.brand) {
+      // Add searched brand (skip for category — it's the industry name, not a brand)
+      if (runStatus.brand && !isCategory) {
         options.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)` });
       }
 
@@ -269,7 +269,7 @@ export const SourcesTab = () => {
       const searchedBrandLower = runStatus?.brand?.toLowerCase() || '';
       // Filter out the searched brand from trackedBrands to avoid duplicates (trackedBrands stores lowercase)
       const competitorsOnly = Array.from(trackedBrands).filter(b => b.toLowerCase() !== searchedBrandLower);
-      const allBrandsToTrack = [runStatus?.brand || '', ...competitorsOnly].filter(Boolean);
+      const allBrandsToTrack = [...(isCategory ? [] : [runStatus?.brand || '']), ...competitorsOnly].filter(Boolean);
 
       // Structure to hold citation data per brand
       const brandCitationData: Record<string, {
@@ -355,7 +355,7 @@ export const SourcesTab = () => {
           providers: Array.from(data.providers),
           snippets: data.snippets,
           rate: totalResultsWithSources > 0 ? (data.count / totalResultsWithSources) * 100 : 0,
-          isSearchedBrand: brand === runStatus?.brand
+          isSearchedBrand: !isCategory && brand === runStatus?.brand
         }))
         .sort((a, b) => {
           // Searched brand first, then by count
@@ -1179,10 +1179,10 @@ export const SourcesTab = () => {
                     className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
                     <option value="all">All Brands</option>
-                    {runStatus?.brand && availableBrands.includes(runStatus.brand) && (
+                    {!isCategory && runStatus?.brand && availableBrands.includes(runStatus.brand) && (
                       <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
                     )}
-                    {availableBrands.filter(brand => brand !== runStatus?.brand).map((brand) => (
+                    {availableBrands.filter(brand => isCategory ? true : brand !== runStatus?.brand).map((brand) => (
                       <option key={brand} value={brand}>{brand}</option>
                     ))}
                   </select>
@@ -1557,7 +1557,7 @@ export const SourcesTab = () => {
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
                 <option value="all">All Brands</option>
-                {runStatus?.brand && (
+                {!isCategory && runStatus?.brand && (
                   <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
                 )}
                 {Array.from(trackedBrands).filter(b => b.toLowerCase() !== runStatus?.brand?.toLowerCase()).map((brand) => (

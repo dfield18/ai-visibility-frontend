@@ -1068,11 +1068,11 @@ export default function CompetitiveTab({
 
                         const getSentimentColor = (score: number | null): string => {
                           if (score === null) return 'text-gray-400';
-                          if (score >= 4.5) return 'text-gray-900';
-                          if (score >= 3.5) return 'text-gray-700';
-                          if (score >= 2.5) return 'text-gray-600';
-                          if (score >= 1.5) return 'text-amber-500';
-                          if (score >= 0.5) return 'text-red-500';
+                          if (score >= 4.5) return 'text-emerald-700';
+                          if (score >= 3.5) return 'text-green-600';
+                          if (score >= 2.5) return 'text-gray-500';
+                          if (score >= 1.5) return 'text-amber-600';
+                          if (score >= 0.5) return 'text-red-600';
                           return 'text-gray-400';
                         };
 

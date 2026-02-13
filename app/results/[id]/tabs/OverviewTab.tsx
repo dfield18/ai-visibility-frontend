@@ -524,8 +524,13 @@ export const OverviewTab = ({
                     >
                       <HelpCircle className="w-4 h-4 text-gray-400" />
                     </button>
-                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                      Measures how evenly AI brand mentions are distributed across {brandCount} brands in the {runStatus?.brand || 'category'} space. Score from 1 (one brand dominates) to 10 (mentions spread equally).
+                    <div className="absolute right-0 top-full mt-1 w-80 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg leading-relaxed">
+                      <p className="font-semibold mb-1.5">Competitive Fragmentation Score</p>
+                      <p className="mb-1.5">Measures how evenly AI brand mentions are distributed across {brandCount} brands in the {runStatus?.brand || 'category'} space.</p>
+                      <p className="mb-1.5"><span className="font-medium">Formula:</span> Based on the Herfindahl-Hirschman Index (HHI). Each brand&apos;s share of total mentions is squared and summed (HHI = &Sigma;s&sup2;). The HHI is then normalized against the minimum possible concentration (1/N) and inverted so that higher scores = more fragmented.</p>
+                      <p className="mb-1.5"><span className="font-medium">Long-tail adjustment:</span> Brands outside the top 3 boost the score, rewarding markets with many smaller players.</p>
+                      <p className="mb-1"><span className="font-medium">Scale:</span></p>
+                      <p>1-2 Highly Concentrated &bull; 3-4 Concentrated &bull; 5-6 Moderately Competitive &bull; 7-8 Competitive &bull; 9-10 Highly Fragmented</p>
                     </div>
                   </div>
                 </div>
