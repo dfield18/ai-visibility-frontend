@@ -1605,7 +1605,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                 onChange={(e) => setResponseSentimentFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
-                <option value="all">All Sentiments</option>
+                <option value="all">{isIndustryReport ? 'All Brands' : 'All Sentiments'}</option>
                 <option value="strong_endorsement">Strong</option>
                 <option value="positive_endorsement">Positive</option>
                 <option value="neutral_mention">Neutral</option>
