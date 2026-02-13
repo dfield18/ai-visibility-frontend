@@ -1435,6 +1435,71 @@ export default function ResultsPage() {
         ? sentimentResults.reduce((sum, r) => sum + (sentimentScoreMap[r.brand_sentiment || ''] || 0), 0) / sentimentResults.length
         : null;
 
+      // Issue-specific per-prompt metrics
+      const isIssueType = runStatus.search_type === 'issue';
+      const issueFramingMap: Record<string, string> = {
+        strong_endorsement: 'Supportive', positive_endorsement: 'Leaning Supportive',
+        neutral_mention: 'Balanced', conditional: 'Mixed', negative_comparison: 'Critical',
+      };
+
+      // Discussion polarity: supportive% vs critical%
+      let issueSupportiveCount = 0;
+      let issueCriticalCount = 0;
+      let issueNeutralCount = 0;
+      // Dominant framing per prompt
+      const issueFramingCounts: Record<string, number> = {};
+      // Platform consensus per prompt
+      const issueProviderDominant: Record<string, string> = {};
+      const issueProviderFramings: Record<string, Record<string, number>> = {};
+      // Related issues per prompt
+      const issueRelated = new Set<string>();
+
+      if (isIssueType) {
+        for (const r of promptResults) {
+          const raw = r.brand_sentiment || 'neutral_mention';
+          const label = issueFramingMap[raw] || 'Balanced';
+          issueFramingCounts[label] = (issueFramingCounts[label] || 0) + 1;
+          if (label === 'Supportive' || label === 'Leaning Supportive') issueSupportiveCount++;
+          else if (label === 'Balanced') issueNeutralCount++;
+          else issueCriticalCount++;
+
+          // Per-provider framing
+          if (!issueProviderFramings[r.provider]) issueProviderFramings[r.provider] = {};
+          issueProviderFramings[r.provider][label] = (issueProviderFramings[r.provider][label] || 0) + 1;
+
+          if (r.competitors_mentioned) {
+            for (const c of r.competitors_mentioned) issueRelated.add(c);
+          }
+        }
+        // Find each provider's dominant framing
+        for (const [prov, counts] of Object.entries(issueProviderFramings)) {
+          let best = ''; let bestC = 0;
+          for (const [l, c] of Object.entries(counts)) { if (c > bestC) { bestC = c; best = l; } }
+          issueProviderDominant[prov] = best;
+        }
+      }
+
+      const issuePolarTotal = issueSupportiveCount + issueCriticalCount + issueNeutralCount;
+      const issueSupportivePct = issuePolarTotal > 0 ? (issueSupportiveCount / issuePolarTotal) * 100 : 0;
+      const issueCriticalPct = issuePolarTotal > 0 ? (issueCriticalCount / issuePolarTotal) * 100 : 0;
+
+      // Dominant framing for this prompt
+      let issueDominantFraming = 'Balanced';
+      let maxFramingCount = 0;
+      for (const [label, count] of Object.entries(issueFramingCounts)) {
+        if (count > maxFramingCount) { maxFramingCount = count; issueDominantFraming = label; }
+      }
+
+      // Platform consensus for this prompt
+      let issueConsensus = 5;
+      const provCount = Object.keys(issueProviderDominant).length;
+      if (provCount > 0) {
+        const agreementCounts: Record<string, number> = {};
+        for (const f of Object.values(issueProviderDominant)) agreementCounts[f] = (agreementCounts[f] || 0) + 1;
+        const maxAgree = Math.max(...Object.values(agreementCounts));
+        issueConsensus = Math.max(1, Math.min(10, Math.round((maxAgree / provCount) * 10)));
+      }
+
       return {
         prompt,
         total,
@@ -1444,6 +1509,12 @@ export default function ResultsPage() {
         firstPositionRate,
         avgRank,
         avgSentimentScore,
+        // Issue-specific
+        issueSupportivePct,
+        issueCriticalPct,
+        issueDominantFraming,
+        issueConsensus,
+        issueRelatedCount: issueRelated.size,
       };
     });
 

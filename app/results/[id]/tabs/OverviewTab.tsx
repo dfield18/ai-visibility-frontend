@@ -1415,6 +1415,145 @@ export const OverviewTab = ({
               ))}
             </select>
           </div>
+          {isIssue ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Polarity</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          Ratio of supportive vs critical AI responses for this question
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 font-normal">supportive vs critical</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Dominant Framing</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          The most common framing of {runStatus?.brand || 'this issue'} in AI responses for this question
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 font-normal">most common</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Consensus</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          How consistently AI platforms agree on framing for this question (1-10)
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 font-normal">agreement / 10</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Related Issues</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          Number of related issues mentioned in AI responses for this question
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 font-normal">count</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Sentiment</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          Average sentiment toward {runStatus?.brand || 'this issue'} in AI responses for this question
+                        </div>
+                      </div>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {promptBreakdownStats.map((stat, index) => {
+                  const getSentimentLabel = (score: number | null): string => {
+                    if (score === null) return '-';
+                    if (score >= 4.5) return 'Strong';
+                    if (score >= 3.5) return 'Positive';
+                    if (score >= 2.5) return 'Neutral';
+                    if (score >= 1.5) return 'Conditional';
+                    if (score >= 0.5) return 'Negative';
+                    return '-';
+                  };
+                  const getSentimentColor = (score: number | null): string => {
+                    if (score === null) return 'text-gray-400';
+                    if (score >= 4.5) return 'text-gray-900';
+                    if (score >= 3.5) return 'text-gray-700';
+                    if (score >= 2.5) return 'text-gray-600';
+                    if (score >= 1.5) return 'text-amber-500';
+                    if (score >= 0.5) return 'text-red-500';
+                    return 'text-gray-400';
+                  };
+                  const sPct = stat.issueSupportivePct ?? 0;
+                  const cPct = stat.issueCriticalPct ?? 0;
+                  const framingLabel = stat.issueDominantFraming ?? 'Balanced';
+                  const consensus = stat.issueConsensus ?? 5;
+                  const related = stat.issueRelatedCount ?? 0;
+                  // Framing color
+                  const framingColor = (framingLabel === 'Supportive' || framingLabel === 'Leaning Supportive') ? 'text-emerald-600'
+                    : framingLabel === 'Balanced' ? 'text-gray-600'
+                    : 'text-red-500';
+                  // Consensus color
+                  const consensusColor = consensus >= 7 ? 'text-gray-900' : consensus >= 4 ? 'text-yellow-600' : 'text-red-500';
+
+                  return (
+                    <tr key={stat.prompt} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                      <td className="py-3 px-3 max-w-[300px]">
+                        <span className="text-gray-900 line-clamp-2" title={stat.prompt}>{stat.prompt}</span>
+                      </td>
+                      {/* Discussion Polarity — mini bar */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1.5 justify-center min-w-[100px]">
+                          <span className="text-xs font-medium text-emerald-600 w-8 text-right">{sPct.toFixed(0)}%</span>
+                          <div className="w-16 h-2 rounded-full overflow-hidden flex bg-gray-100">
+                            {sPct > 0 && <div className="h-full" style={{ width: `${sPct}%`, backgroundColor: '#10b981' }} />}
+                            {(100 - sPct - cPct) > 0 && <div className="h-full" style={{ width: `${100 - sPct - cPct}%`, backgroundColor: '#d1d5db' }} />}
+                            {cPct > 0 && <div className="h-full" style={{ width: `${cPct}%`, backgroundColor: '#f87171' }} />}
+                          </div>
+                          <span className="text-xs font-medium text-red-400 w-8 text-left">{cPct.toFixed(0)}%</span>
+                        </div>
+                      </td>
+                      {/* Dominant Framing */}
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${framingColor}`}>{framingLabel}</span>
+                      </td>
+                      {/* Platform Consensus */}
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${consensusColor}`}>{consensus}/10</span>
+                      </td>
+                      {/* Related Issues */}
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${related >= 3 ? 'text-gray-900' : related >= 1 ? 'text-gray-600' : 'text-gray-400'}`}>{related}</span>
+                      </td>
+                      {/* Sentiment */}
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${getSentimentColor(stat.avgSentimentScore)}`}>{getSentimentLabel(stat.avgSentimentScore)}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          ) : (
           <div>
             <table className="w-full text-sm">
               <thead>
@@ -1422,37 +1561,33 @@ export const OverviewTab = ({
                   <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="whitespace-nowrap">{isIssue ? 'Issue Discussed' : isCategory ? 'Avg. Brands' : 'AI Visibility'}</span>
+                      <span className="whitespace-nowrap">{isCategory ? 'Avg. Brands' : 'AI Visibility'}</span>
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          {isIssue
-                            ? `% of AI responses that discuss ${runStatus?.brand || 'this issue'} for this question`
-                            : isCategory
+                          {isCategory
                             ? `Average number of brands surfaced per AI response for this question`
                             : `% of AI responses that mention ${runStatus?.brand || 'your brand'} for this question`
                           }
                         </div>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-400 font-normal">{isIssue ? '% discussed' : '% mentioned'}</div>
+                    <div className="text-xs text-gray-400 font-normal">% mentioned</div>
                   </th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="whitespace-nowrap">{isIssue ? 'Related Issues' : isCategory ? 'Leader Share' : 'Share of Voice'}</span>
+                      <span className="whitespace-nowrap">{isCategory ? 'Leader Share' : 'Share of Voice'}</span>
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          {isIssue
-                            ? `Number of related issues mentioned in AI responses for this question`
-                            : isCategory
+                          {isCategory
                             ? `Market leader's share of all brand mentions for this question`
                             : `${runStatus?.brand || 'Your brand'}'s share of all brand mentions for this question`
                           }
                         </div>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-400 font-normal">{isIssue ? '# related issues' : '% of brand mentions'}</div>
+                    <div className="text-xs text-gray-400 font-normal">% of brand mentions</div>
                   </th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">
@@ -1564,6 +1699,7 @@ export const OverviewTab = ({
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
 
