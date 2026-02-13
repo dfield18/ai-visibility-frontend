@@ -82,6 +82,7 @@ export const OverviewTab = ({
     isCategory,
     isIssue,
     availableProviders,
+    availablePrompts,
     globallyFilteredResults,
     availableBrands,
     llmBreakdownBrandFilter,
@@ -103,6 +104,31 @@ export const OverviewTab = ({
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
   const [tableBrandFilter, setTableBrandFilter] = useState<string>('all');
   const [positionChartBrandFilter, setPositionChartBrandFilter] = useState<string>('__all__');
+  const [framingPromptFilter, setFramingPromptFilter] = useState<string>('all');
+
+  // Framing by provider filtered by prompt (issue search type)
+  const FRAMING_MAP: Record<string, string> = {
+    strong_endorsement: 'Supportive',
+    positive_endorsement: 'Leaning Supportive',
+    neutral_mention: 'Balanced',
+    conditional: 'Mixed',
+    negative_comparison: 'Critical',
+  };
+
+  const filteredFramingByProvider = useMemo(() => {
+    if (!isIssue) return overviewMetrics?.framingByProvider || {};
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    const filtered = framingPromptFilter === 'all' ? results : results.filter(r => r.prompt === framingPromptFilter);
+    const providerFramings: Record<string, Record<string, number>> = {};
+    for (const result of filtered) {
+      const provider = result.provider;
+      if (!providerFramings[provider]) providerFramings[provider] = {};
+      const raw = result.brand_sentiment || 'neutral_mention';
+      const label = FRAMING_MAP[raw] || 'Balanced';
+      providerFramings[provider][label] = (providerFramings[provider][label] || 0) + 1;
+    }
+    return providerFramings;
+  }, [isIssue, globallyFilteredResults, framingPromptFilter, overviewMetrics]);
 
   // ---------------------------------------------------------------------------
   // Moved computations
@@ -1121,13 +1147,25 @@ export const OverviewTab = ({
       {/* Platform Framing Comparison (issue search type) */}
       {showSection('framing-comparison') && isIssue && overviewMetrics?.framingByProvider && Object.keys(overviewMetrics.framingByProvider).length > 0 && (
         <div id="overview-framing-comparison" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center gap-2 mb-1">
-            <MessageSquare className="w-5 h-5 text-gray-700" />
-            <h2 className="text-lg font-semibold text-gray-900">Platform Framing Comparison</h2>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-gray-700" />
+              <h2 className="text-lg font-semibold text-gray-900">Platform Framing Comparison</h2>
+            </div>
+            <select
+              value={framingPromptFilter}
+              onChange={(e) => setFramingPromptFilter(e.target.value)}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[280px] truncate"
+            >
+              <option value="all">All Questions</option>
+              {availablePrompts.map((prompt) => (
+                <option key={prompt} value={prompt}>{truncate(prompt, 50)}</option>
+              ))}
+            </select>
           </div>
           <p className="text-sm text-gray-500 mb-5">How each AI platform frames {runStatus?.brand || 'this issue'}</p>
           <div className="space-y-3">
-            {Object.entries(overviewMetrics.framingByProvider as Record<string, Record<string, number>>).map(([provider, framingCounts]) => {
+            {Object.entries(filteredFramingByProvider as Record<string, Record<string, number>>).map(([provider, framingCounts]) => {
               const total = Object.values(framingCounts).reduce((a, b) => a + b, 0);
               if (total === 0) return null;
               // Collapse into 3 groups: Supportive, Balanced, Critical
