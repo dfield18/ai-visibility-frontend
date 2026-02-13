@@ -605,8 +605,7 @@ export function RecommendationsTab() {
 
         // Clean up markdown formatting
         title = title.replace(/[*_#]/g, '').trim();
-        description = description.replace(/[*_#]/g, '').substring(0, 150);
-        if (description.length === 150) description += '...';
+        description = description.replace(/[*_#]/g, '').trim();
 
         if (title && title.length > 5) {
           const impactResult = estimateImpact(para);
