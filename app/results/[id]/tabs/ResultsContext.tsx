@@ -19,6 +19,7 @@ export interface ResultsContextValue {
   trackedBrands: Set<string>;
   isCategory: boolean;
   isIssue: boolean;
+  isPublicFigure: boolean;
   searchType: SearchType;
   searchTypeConfig: SearchTypeConfig;
   brandMentionRate: number;

@@ -81,6 +81,7 @@ export const OverviewTab = ({
     brandQuotesMap,
     isCategory,
     isIssue,
+    isPublicFigure,
     availableProviders,
     availablePrompts,
     globallyFilteredResults,
@@ -564,6 +565,43 @@ export const OverviewTab = ({
             );
           }
 
+          if (isPublicFigure) {
+            // AI Portrayal — sentiment ring showing positive/neutral/negative split
+            const split = overviewMetrics?.sentimentSplit || { positive: 0, neutral: 0, negative: 0 };
+            const score = overviewMetrics?.portrayalScore ?? 0;
+            const portrayalLabel = score >= 40 ? 'Very Positive' : score >= 15 ? 'Mostly Positive' : score >= -15 ? 'Mixed / Neutral' : score >= -40 ? 'Mostly Negative' : 'Very Negative';
+            const portrayalTone: 'success' | 'neutral' | 'warn' = score >= 15 ? 'success' : score >= -15 ? 'neutral' : 'warn';
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">AI Portrayal</p>
+                  <div className="relative group">
+                    <button className="p-1 rounded-full hover:bg-gray-100 transition-colors" aria-label="Learn more about AI Portrayal" tabIndex={0}>
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      Overall portrayal score ({score >= 0 ? '+' : ''}{score}) based on sentiment across {overviewMetrics?.totalResponses || 0} AI responses. Positive: {split.positive}%, Neutral: {split.neutral}%, Negative: {split.negative}%.
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[100px] flex flex-col justify-center items-center">
+                  <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: score >= 15 ? '#047857' : score >= -15 ? '#6b7280' : '#dc2626' }}>
+                    {score >= 0 ? '+' : ''}{score}
+                  </span>
+                  <p className="text-sm text-gray-500 mt-1">{portrayalLabel}</p>
+                </div>
+                <div className="h-[28px] flex items-start mt-3">
+                  <div className="flex items-center gap-3 text-[11px]">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />{split.positive}% Positive</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400" />{split.neutral}% Neutral</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" />{split.negative}% Negative</span>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">How positively or negatively AI portrays {runStatus?.brand || 'this figure'}</p>
+              </div>
+            );
+          }
+
           if (isCategory) {
             // Competitive Depth Score for industry reports
             const avgBrands = overviewMetrics?.avgBrandsPerQuery ?? 0;
@@ -704,6 +742,62 @@ export const OverviewTab = ({
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed mt-auto">How AI platforms most commonly frame {runStatus?.brand || 'this issue'}</p>
+              </div>
+            );
+          }
+
+          if (isPublicFigure) {
+            // Sentiment Polarity — tug-of-war bar: positive vs negative
+            const split = overviewMetrics?.sentimentSplit || { positive: 0, neutral: 0, negative: 0 };
+            const polarityLabel = split.positive > split.negative + 20 ? 'Largely favorable'
+              : split.negative > split.positive + 20 ? 'Largely unfavorable'
+              : split.neutral >= 50 ? 'Mostly neutral'
+              : 'Polarized';
+            const polarityTone: 'success' | 'neutral' | 'warn' =
+              polarityLabel === 'Largely favorable' ? 'success'
+              : polarityLabel === 'Mostly neutral' ? 'neutral'
+              : 'warn';
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.shareOfVoice}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Sentiment Polarity</p>
+                  <div className="relative group">
+                    <button className="p-1 rounded-full hover:bg-gray-100 transition-colors" aria-label="Learn more about Sentiment Polarity" tabIndex={0}>
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      Shows how AI responses split between positive ({split.positive}%), neutral ({split.neutral}%), and negative ({split.negative}%) sentiment toward {runStatus?.brand || 'this figure'}.
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[100px] flex flex-col justify-center">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-xs font-semibold text-emerald-600">{split.positive}% Positive</span>
+                    <span className="text-xs font-semibold text-red-400">{split.negative}% Negative</span>
+                  </div>
+                  <div className="w-full h-5 rounded-full overflow-hidden flex bg-gray-100">
+                    {split.positive > 0 && (
+                      <div className="h-full transition-all" style={{ width: `${split.positive}%`, backgroundColor: '#10b981' }} />
+                    )}
+                    {split.neutral > 0 && (
+                      <div className="h-full transition-all" style={{ width: `${split.neutral}%`, backgroundColor: '#d1d5db' }} />
+                    )}
+                    {split.negative > 0 && (
+                      <div className="h-full transition-all" style={{ width: `${split.negative}%`, backgroundColor: '#f87171' }} />
+                    )}
+                  </div>
+                  {split.neutral > 0 && (
+                    <div className="text-center mt-1.5">
+                      <span className="text-[10px] text-gray-400">{split.neutral}% Neutral</span>
+                    </div>
+                  )}
+                </div>
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(polarityTone)}`}>
+                    {polarityLabel}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">How AI responses split on {runStatus?.brand || 'this figure'}</p>
               </div>
             );
           }
@@ -871,6 +965,52 @@ export const OverviewTab = ({
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed mt-auto">Do AI platforms agree on how to frame {runStatus?.brand || 'this issue'}?</p>
+              </div>
+            );
+          }
+
+          if (isPublicFigure) {
+            // Figure Prominence — this figure's mention rate vs avg competitor
+            const prominence = overviewMetrics?.figureProminence || { figureRate: 0, avgCompetitorRate: 0 };
+            const diff = prominence.figureRate - prominence.avgCompetitorRate;
+            const prominenceLabel = diff >= 30 ? 'Dominant figure' : diff >= 10 ? 'Above average' : diff >= -10 ? 'On par with peers' : 'Below average';
+            const prominenceTone: 'success' | 'neutral' | 'warn' = diff >= 10 ? 'success' : diff >= -10 ? 'neutral' : 'warn';
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.top1Rate}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Figure Prominence</p>
+                  <div className="relative group">
+                    <button className="p-1 rounded-full hover:bg-gray-100 transition-colors" aria-label="Learn more about Figure Prominence" tabIndex={0}>
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      {runStatus?.brand || 'This figure'} is mentioned in {prominence.figureRate.toFixed(1)}% of AI responses, compared to an average of {prominence.avgCompetitorRate.toFixed(1)}% for similar figures.
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[100px] flex flex-col justify-center items-center">
+                  <span className="text-4xl font-bold tracking-tight tabular-nums text-gray-900">{prominence.figureRate.toFixed(0)}%</span>
+                  <p className="text-sm text-gray-500 mt-1">vs {prominence.avgCompetitorRate.toFixed(0)}% avg for peers</p>
+                  {/* Comparison bar */}
+                  <div className="mt-3 w-full flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-gray-900 transition-all" style={{ width: `${Math.min(prominence.figureRate, 100)}%` }} />
+                    </div>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-gray-300 transition-all" style={{ width: `${Math.min(prominence.avgCompetitorRate, 100)}%` }} />
+                    </div>
+                  </div>
+                  <div className="w-full flex justify-between mt-1">
+                    <span className="text-[10px] text-gray-500 font-medium">{runStatus?.brand || 'Figure'}</span>
+                    <span className="text-[10px] text-gray-400">Avg peer</span>
+                  </div>
+                </div>
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(prominenceTone)}`}>
+                    {prominenceLabel}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">Mention rate compared to similar figures</p>
               </div>
             );
           }
@@ -1054,6 +1194,67 @@ export const OverviewTab = ({
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed mt-auto">{relatedCount} related issue{relatedCount !== 1 ? 's' : ''} mentioned across AI responses</p>
+              </div>
+            );
+          }
+
+          if (isPublicFigure) {
+            // Platform Agreement — how consistently AI platforms portray this figure
+            const score = overviewMetrics?.platformAgreement ?? 5;
+            const getAgreementLabel = (s: number) => {
+              if (s <= 2) return 'Highly divided';
+              if (s <= 4) return 'Mostly divided';
+              if (s <= 6) return 'Mixed views';
+              if (s <= 8) return 'Mostly aligned';
+              return 'Strong consensus';
+            };
+            const getAgreementTone = (s: number): 'success' | 'neutral' | 'warn' => {
+              if (s <= 3) return 'warn';
+              if (s <= 6) return 'neutral';
+              return 'success';
+            };
+            const getAgreementColor = (s: number) => {
+              if (s <= 2) return '#f97316';
+              if (s <= 4) return '#eab308';
+              if (s <= 6) return '#6b7280';
+              return '#111827';
+            };
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Platform Agreement</p>
+                  <div className="relative group">
+                    <button className="p-1 rounded-full hover:bg-gray-100 transition-colors" aria-label="Learn more about Platform Agreement" tabIndex={0}>
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg leading-relaxed">
+                      <p className="font-semibold mb-1.5">How consistently AI platforms portray this figure</p>
+                      <p className="mb-1.5">A high score means most platforms have similar sentiment. A low score means platforms disagree on how to portray {runStatus?.brand || 'this figure'}.</p>
+                      <p><span className="font-medium">Scale:</span> 1-2 Divided &bull; 3-4 Mostly divided &bull; 5-6 Mixed &bull; 7-8 Mostly aligned &bull; 9-10 Aligned</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[100px] flex flex-col justify-center items-center">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: getAgreementColor(score) }}>{score}</span>
+                    <span className="text-lg text-gray-400 font-medium">/ 10</span>
+                  </div>
+                  <div className="mt-3 w-full">
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${score * 10}%`, backgroundColor: getAgreementColor(score) }} />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-gray-400">Divided</span>
+                      <span className="text-[10px] text-gray-400">Aligned</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(getAgreementTone(score))}`}>
+                    {getAgreementLabel(score)}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">Do AI platforms agree on how to portray {runStatus?.brand || 'this figure'}?</p>
               </div>
             );
           }

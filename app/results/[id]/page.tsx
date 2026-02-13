@@ -3517,6 +3517,12 @@ export default function ResultsPage() {
     let topRelatedIssues: string[] = [];
     let framingByProvider: Record<string, Record<string, number>> = {};
 
+    // Public figure metrics
+    let portrayalScore = 0; // -100 to +100
+    let sentimentSplit = { positive: 0, neutral: 0, negative: 0 };
+    let figureProminence = { figureRate: 0, avgCompetitorRate: 0 };
+    let platformAgreement = 5; // 1-10
+
     if (runStatus.search_type === 'issue') {
       // Build framing distribution from brand_sentiment
       const framingCounts: Record<string, number> = {};
@@ -3588,6 +3594,83 @@ export default function ResultsPage() {
 
     }
 
+    if (runStatus.search_type === 'public_figure') {
+      const SENTIMENT_SCORE: Record<string, number> = {
+        strong_endorsement: 2,
+        positive_endorsement: 1,
+        neutral_mention: 0,
+        conditional: -1,
+        negative_comparison: -2,
+      };
+
+      // Portrayal score: average of sentiment scores scaled to -100..+100
+      let sentimentSum = 0;
+      let sentimentCount = 0;
+      let posCount = 0;
+      let neuCount = 0;
+      let negCount = 0;
+
+      for (const r of results) {
+        const raw = r.brand_sentiment || 'neutral_mention';
+        const score = SENTIMENT_SCORE[raw] ?? 0;
+        sentimentSum += score;
+        sentimentCount++;
+        if (raw === 'strong_endorsement' || raw === 'positive_endorsement') posCount++;
+        else if (raw === 'neutral_mention') neuCount++;
+        else negCount++;
+      }
+
+      portrayalScore = sentimentCount > 0 ? Math.round((sentimentSum / sentimentCount) * 50) : 0; // scale ±2 → ±100
+      const totalSplit = posCount + neuCount + negCount;
+      sentimentSplit = {
+        positive: totalSplit > 0 ? Math.round((posCount / totalSplit) * 100) : 0,
+        neutral: totalSplit > 0 ? Math.round((neuCount / totalSplit) * 100) : 0,
+        negative: totalSplit > 0 ? Math.round((negCount / totalSplit) * 100) : 0,
+      };
+
+      // Figure prominence: this figure's mention rate vs average competitor mention rate
+      const figureRate = overallVisibility; // already computed above
+      const competitorMentionRates: number[] = [];
+      const competitorCounts: Record<string, number> = {};
+      for (const r of results) {
+        if (r.competitors_mentioned) {
+          for (const comp of r.competitors_mentioned) {
+            competitorCounts[comp] = (competitorCounts[comp] || 0) + 1;
+          }
+        }
+      }
+      for (const count of Object.values(competitorCounts)) {
+        competitorMentionRates.push(results.length > 0 ? (count / results.length) * 100 : 0);
+      }
+      const avgCompRate = competitorMentionRates.length > 0
+        ? competitorMentionRates.reduce((a, b) => a + b, 0) / competitorMentionRates.length
+        : 0;
+      figureProminence = { figureRate, avgCompetitorRate: avgCompRate };
+
+      // Platform agreement: how consistently platforms portray sentiment
+      const providerSentiments: Record<string, number[]> = {};
+      for (const r of results) {
+        if (!providerSentiments[r.provider]) providerSentiments[r.provider] = [];
+        const raw = r.brand_sentiment || 'neutral_mention';
+        providerSentiments[r.provider].push(SENTIMENT_SCORE[raw] ?? 0);
+      }
+      // Find each provider's average sentiment, then check how close they are
+      const providerAvgs: number[] = [];
+      for (const scores of Object.values(providerSentiments)) {
+        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        providerAvgs.push(avg);
+      }
+      if (providerAvgs.length > 1) {
+        // Standard deviation of provider averages — lower = more agreement
+        const mean = providerAvgs.reduce((a, b) => a + b, 0) / providerAvgs.length;
+        const variance = providerAvgs.reduce((sum, v) => sum + (v - mean) ** 2, 0) / providerAvgs.length;
+        const stdDev = Math.sqrt(variance); // range ~0 (perfect agreement) to ~2 (max disagreement)
+        platformAgreement = Math.max(1, Math.min(10, Math.round(10 - stdDev * 4.5)));
+      } else {
+        platformAgreement = 10; // only 1 provider = perfect agreement
+      }
+    }
+
     return {
       overallVisibility,
       shareOfVoice,
@@ -3615,6 +3698,11 @@ export default function ResultsPage() {
       relatedIssuesCount,
       topRelatedIssues,
       framingByProvider,
+      // Public figure fields
+      portrayalScore,
+      sentimentSplit,
+      figureProminence,
+      platformAgreement,
     };
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
 
@@ -3980,6 +4068,7 @@ export default function ResultsPage() {
   const brandMentionRate = summary?.brand_mention_rate ?? 0;
   const isCategory = runStatus?.search_type === 'category';
   const isIssue = runStatus?.search_type === 'issue';
+  const isPublicFigure = runStatus?.search_type === 'public_figure';
 
   const getMentionRateColor = (rate: number) => {
     if (rate >= 0.7) return 'text-emerald-700';
@@ -4889,6 +4978,7 @@ export default function ResultsPage() {
             trackedBrands,
             isCategory,
             isIssue,
+            isPublicFigure,
             searchType: (runStatus?.search_type || 'brand') as any,
             searchTypeConfig: getSearchTypeConfig((runStatus?.search_type || 'brand') as any),
             brandMentionRate,
