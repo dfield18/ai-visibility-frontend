@@ -894,18 +894,24 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
 
               const style = categoryStyle[quadrantName] || categoryStyle['Consider'];
 
+              const insightNumColors = [
+                'bg-emerald-600', 'bg-blue-600', 'bg-amber-500', 'bg-purple-600',
+                'bg-rose-500', 'bg-teal-600', 'bg-indigo-500', 'bg-orange-500',
+              ];
+              const numBgColor = isCategory ? insightNumColors[idx % insightNumColors.length] : style.numBg;
+
               return (
                 <div
                   key={idx}
                   className={`rounded-xl border border-gray-100 ${isCategory ? '' : `border-l-[3px] ${style.border}`} bg-white p-5 hover:shadow-md transition-shadow`}
                 >
                   {/* Title row with number badge and pill badges */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3 min-w-0">
-                      <div className={`w-7 h-7 ${isCategory ? 'bg-gray-900' : style.numBg} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                  <div className={`flex items-start gap-4 ${isCategory ? '' : 'justify-between'}`}>
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className={`w-7 h-7 ${numBgColor} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}>
                         <span className="text-white text-xs font-bold">{idx + 1}</span>
                       </div>
-                      <div className="min-w-0">
+                      <div className="flex-1">
                         <h3 className="text-sm font-semibold text-gray-900 leading-snug">{rec.title}</h3>
                         {rec.description && (
                           <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{rec.description}</p>
@@ -939,7 +945,7 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                       {rec.tactics.map((tactic, tidx) => (
                         <div key={tidx} className="flex items-start gap-2 text-sm text-gray-600">
                           <CheckCircle2 className="w-4 h-4 text-gray-300 mt-0.5 flex-shrink-0" />
-                          <span>{tactic}</span>
+                          <span className="flex-1">{tactic}</span>
                         </div>
                       ))}
                     </div>
