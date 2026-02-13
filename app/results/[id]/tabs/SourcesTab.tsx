@@ -846,9 +846,9 @@ export const SourcesTab = () => {
       resultsWithSources.forEach((r: Result) => {
         if (!r.sources) return;
 
-        // Collect brands mentioned in this response
+        // Collect brands mentioned in this response (skip category name for industry reports)
         const brandsInResponse: string[] = [];
-        if (r.brand_mentioned && searchedBrand) {
+        if (!isCategory && r.brand_mentioned && searchedBrand) {
           brandsInResponse.push(searchedBrand);
         }
         if (r.competitors_mentioned) {
