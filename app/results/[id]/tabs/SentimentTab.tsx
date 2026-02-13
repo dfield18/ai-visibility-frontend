@@ -1683,7 +1683,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                         <th className="w-[14%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
                         <th className="w-[8%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
                         <th className="w-[16%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
-                        <th className="w-[22%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Competitors</th>
+                        <th className="w-[22%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isIndustryReport ? 'Brands' : 'Competitors'}</th>
                         <th className="w-[10%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                       </tr>
                     </thead>
