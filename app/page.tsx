@@ -249,7 +249,7 @@ export default function Home() {
                     setShowLocalToggle(false);
                     if (error) setError(null);
                   }}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-lg border transition-all ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-3.5 py-2 text-sm rounded-lg border transition-all ${
                     selectedCategory === opt.key
                       ? 'bg-gray-900 text-white border-gray-900'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
