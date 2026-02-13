@@ -392,44 +392,70 @@ export const OverviewTab = ({
         {/* AI Visibility / Competitive Depth Score / Issue Coverage Card */}
         {(() => {
           if (isIssue) {
-            // Issue Coverage — same ring as AI Visibility, relabeled
-            const visibilityTone = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tone;
+            // Discussion Polarity — tug-of-war bar showing Supportive vs Critical ratio
+            const dist: Record<string, number> = overviewMetrics?.framingDistribution || {};
+            const supportiveCount = (dist['Supportive'] || 0) + (dist['Leaning Supportive'] || 0);
+            const criticalCount = (dist['Mixed'] || 0) + (dist['Critical'] || 0);
+            const neutralCount = dist['Balanced'] || 0;
+            const polarTotal = supportiveCount + criticalCount + neutralCount;
+            const supportivePct = polarTotal > 0 ? (supportiveCount / polarTotal) * 100 : 0;
+            const criticalPct = polarTotal > 0 ? (criticalCount / polarTotal) * 100 : 0;
+            const neutralPct = polarTotal > 0 ? (neutralCount / polarTotal) * 100 : 0;
+            const polarityLabel = supportivePct > criticalPct + 15 ? 'Leans Supportive'
+              : criticalPct > supportivePct + 15 ? 'Leans Critical'
+              : Math.abs(supportivePct - criticalPct) <= 15 && neutralPct < 50 ? 'Polarized'
+              : 'Balanced';
+            const polarityTone: 'success' | 'neutral' | 'warn' =
+              polarityLabel === 'Leans Supportive' ? 'success'
+              : polarityLabel === 'Balanced' ? 'neutral'
+              : 'warn';
             return (
               <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Issue Coverage</p>
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Discussion Polarity</p>
                   <div className="relative group">
                     <button
                       className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                      aria-label="Learn more about Issue Coverage"
+                      aria-label="Learn more about Discussion Polarity"
                       tabIndex={0}
                     >
                       <HelpCircle className="w-4 h-4 text-gray-400" />
                     </button>
                     <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                      Discussed in {overviewMetrics?.mentionedCount || 0} of {overviewMetrics?.totalResponses || 0} AI responses (across selected models/prompts).
+                      Shows how AI responses split between supportive ({supportiveCount}), balanced ({neutralCount}), and critical ({criticalCount}) framing of {runStatus?.brand || 'this issue'}.
                     </div>
                   </div>
                 </div>
-                {/* Circular Progress Ring */}
-                <div className="h-[100px] flex items-start">
-                  <div className="relative w-[80px] h-[80px]">
-                    <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
-                      <circle cx="40" cy="40" r="32" stroke="hsl(var(--muted))" strokeWidth="7" fill="none" />
-                      <circle cx="40" cy="40" r="32" stroke={getArcColorByValue(overviewMetrics?.overallVisibility || 0)} strokeWidth="7" fill="none" strokeLinecap="round" strokeDasharray={`${(overviewMetrics?.overallVisibility || 0) * 2.01} 201`} />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-sm font-bold text-gray-900 tracking-tight tabular-nums">{overviewMetrics?.overallVisibility?.toFixed(1) || 0}%</span>
-                    </div>
+                {/* Tug-of-war bar */}
+                <div className="h-[100px] flex flex-col justify-center">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-xs font-semibold text-emerald-600">{supportivePct.toFixed(0)}% Supportive</span>
+                    <span className="text-xs font-semibold text-red-400">{criticalPct.toFixed(0)}% Critical</span>
                   </div>
+                  <div className="w-full h-5 rounded-full overflow-hidden flex bg-gray-100">
+                    {supportivePct > 0 && (
+                      <div className="h-full transition-all" style={{ width: `${supportivePct}%`, backgroundColor: '#10b981' }} />
+                    )}
+                    {neutralPct > 0 && (
+                      <div className="h-full transition-all" style={{ width: `${neutralPct}%`, backgroundColor: '#d1d5db' }} />
+                    )}
+                    {criticalPct > 0 && (
+                      <div className="h-full transition-all" style={{ width: `${criticalPct}%`, backgroundColor: '#f87171' }} />
+                    )}
+                  </div>
+                  {neutralPct > 0 && (
+                    <div className="text-center mt-1.5">
+                      <span className="text-[10px] text-gray-400">{neutralPct.toFixed(0)}% Balanced</span>
+                    </div>
+                  )}
                 </div>
                 {/* Badge */}
                 <div className="h-[28px] flex items-start mt-3">
-                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full cursor-help ${getToneStyles(visibilityTone)}`} title={getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tooltip}>
-                    {getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).label}
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(polarityTone)}`}>
+                    {polarityLabel}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed mt-auto">% of AI responses that discuss {runStatus?.brand || 'this issue'}</p>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">How AI responses split on {runStatus?.brand || 'this issue'}</p>
               </div>
             );
           }
