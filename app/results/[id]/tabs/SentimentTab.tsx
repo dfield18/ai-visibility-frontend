@@ -93,6 +93,35 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       return getDomain(url);
     };
 
+    // For industry (category) reports, compute sentiment as the average across
+    // individual brand sentiments instead of using the category-level sentiment.
+    const _sentScores: Record<string, number> = {
+      strong_endorsement: 5, positive_endorsement: 4, neutral_mention: 3, conditional: 2, negative_comparison: 1,
+    };
+    const _scoreToSent: Record<number, string> = { 5: 'strong_endorsement', 4: 'positive_endorsement', 3: 'neutral_mention', 2: 'conditional', 1: 'negative_comparison' };
+    const isIndustryReport = runStatus?.search_type === 'category';
+
+    const getEffectiveSentiment = (r: Result): string | null => {
+      if (isIndustryReport && r.competitor_sentiments) {
+        const scores = Object.values(r.competitor_sentiments)
+          .filter(s => s in _sentScores)
+          .map(s => _sentScores[s as keyof typeof _sentScores]);
+        if (scores.length > 0) {
+          const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+          const nearest = Object.keys(_scoreToSent).map(Number).reduce((prev, curr) => Math.abs(curr - avg) < Math.abs(prev - avg) ? curr : prev);
+          return _scoreToSent[nearest];
+        }
+        return null;
+      }
+      return r.brand_sentiment || null;
+    };
+
+    const hasEffectiveSentiment = (r: Result): boolean => {
+      if (r.error) return false;
+      if (isIndustryReport) return !!(r.competitor_sentiments && Object.keys(r.competitor_sentiments).length > 0);
+      return !!r.brand_sentiment;
+    };
+
     // Sentiment insights (moved from parent)
     const sentimentInsights = useMemo(() => {
       if (!runStatus) return [];
@@ -102,7 +131,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
       // Get sentiment data
       const resultsWithSentiment = globallyFilteredResults.filter(
-        (r: Result) => !r.error && r.brand_sentiment
+        (r: Result) => hasEffectiveSentiment(r)
       );
 
       if (resultsWithSentiment.length === 0) return [];
@@ -117,7 +146,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       };
 
       resultsWithSentiment.forEach((r: Result) => {
-        const sentiment = r.brand_sentiment || '';
+        const sentiment = getEffectiveSentiment(r) || '';
         if (sentimentCounts[sentiment] !== undefined) {
           sentimentCounts[sentiment]++;
         }
@@ -168,7 +197,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           providerSentiments[r.provider] = { positive: 0, total: 0 };
         }
         providerSentiments[r.provider].total++;
-        if (r.brand_sentiment === 'strong_endorsement' || r.brand_sentiment === 'positive_endorsement') {
+        const eSent = getEffectiveSentiment(r);
+        if (eSent === 'strong_endorsement' || eSent === 'positive_endorsement') {
           providerSentiments[r.provider].positive++;
         }
       });
@@ -254,7 +284,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       ];
 
       const rows = globallyFilteredResults
-        .filter((r: Result) => !r.error && r.brand_sentiment)
+        .filter((r: Result) => hasEffectiveSentiment(r))
         .map((r: Result) => {
           const compSentiments = r.competitor_sentiments
             ? Object.entries(r.competitor_sentiments)
@@ -292,7 +322,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             r.provider,
             r.model,
             rank > 0 ? rank : '',
-            r.brand_sentiment || '',
+            getEffectiveSentiment(r) || '',
             `"${compSentiments}"`,
             `"${(r.all_brands_mentioned || []).join(', ')}"`,
             `"${(r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""')}"`,
@@ -323,7 +353,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       globallyFilteredResults
         .filter((r: Result) => !r.error)
         .forEach((r: Result) => {
-          const sentiment = r.brand_sentiment || 'not_mentioned';
+          const sentiment = getEffectiveSentiment(r) || 'not_mentioned';
           if (sentimentCounts[sentiment] !== undefined) {
             sentimentCounts[sentiment]++;
           }
@@ -426,10 +456,9 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
           let sentiment: string;
           if (isSearchedBrand) {
-            // Use brand_sentiment for the searched brand
-            sentiment = r.brand_sentiment || 'not_mentioned';
+            sentiment = getEffectiveSentiment(r) || 'not_mentioned';
           } else {
-            // Use competitor_sentiments for competitors
+            // Use competitor_sentiments for individual competitors
             sentiment = r.competitor_sentiments?.[effectiveSentimentBrand] || 'not_mentioned';
           }
 
@@ -479,7 +508,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         // Check sentiment match
         let resultSentiment: string;
         if (isSearchedBrand) {
-          resultSentiment = r.brand_sentiment || 'not_mentioned';
+          resultSentiment = getEffectiveSentiment(r) || 'not_mentioned';
         } else {
           resultSentiment = r.competitor_sentiments?.[effectiveSentimentBrand] || 'not_mentioned';
         }
@@ -727,7 +756,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
     // Check if we have any sentiment data
     const hasSentimentData = globallyFilteredResults.some(
-      (r: Result) => !r.error && r.brand_sentiment
+      (r: Result) => hasEffectiveSentiment(r)
     );
 
     if (!hasSentimentData) {
@@ -844,7 +873,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         )}
 
         {/* Sentiment by Prompt Chart */}
-        {showSection('sentiment-by-question') && globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length > 0 && (() => {
+        {showSection('sentiment-by-question') && globallyFilteredResults.filter((r: Result) => hasEffectiveSentiment(r)).length > 0 && (() => {
           // Get effective brand filter (default to searched brand)
           const effectiveBrand = sentimentByPromptBrandFilter || runStatus?.brand || '';
 
@@ -919,7 +948,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                 // Get sentiment for the selected brand
                 let sentiment: string | null | undefined;
                 if (effectiveBrand === runStatus?.brand) {
-                  sentiment = r.brand_sentiment;
+                  sentiment = getEffectiveSentiment(r);
                 } else {
                   sentiment = r.competitor_sentiments?.[effectiveBrand];
                 }
@@ -1558,32 +1587,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           </div>
 
           {(() => {
-            // For industry reports, compute effective sentiment from competitor averages
-            const getEffectiveSentiment = (r: Result): string | null => {
-              if (runStatus?.search_type === 'category' && r.competitor_sentiments) {
-                const sentScores: Record<string, number> = {
-                  strong_endorsement: 5, positive_endorsement: 4, neutral_mention: 3, conditional: 2, negative_comparison: 1,
-                };
-                const scoreToSent: Record<number, string> = { 5: 'strong_endorsement', 4: 'positive_endorsement', 3: 'neutral_mention', 2: 'conditional', 1: 'negative_comparison' };
-                const scores = Object.values(r.competitor_sentiments)
-                  .filter(s => s in sentScores)
-                  .map(s => sentScores[s as keyof typeof sentScores]);
-                if (scores.length > 0) {
-                  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-                  const nearest = Object.keys(scoreToSent).map(Number).reduce((prev, curr) => Math.abs(curr - avg) < Math.abs(prev - avg) ? curr : prev);
-                  return scoreToSent[nearest];
-                }
-                return null;
-              }
-              return r.brand_sentiment || null;
-            };
-
             const filteredSentimentResults = globallyFilteredResults
-              .filter((r: Result) => !r.error && (runStatus?.search_type === 'category' ? r.competitor_sentiments && Object.keys(r.competitor_sentiments).length > 0 : r.brand_sentiment))
+              .filter((r: Result) => hasEffectiveSentiment(r))
               .filter((r: Result) => responseSentimentFilter === 'all' || getEffectiveSentiment(r) === responseSentimentFilter)
               .filter((r: Result) => responseLlmFilter === 'all' || r.provider === responseLlmFilter);
 
-            const totalWithSentiment = globallyFilteredResults.filter((r: Result) => !r.error && (runStatus?.search_type === 'category' ? r.competitor_sentiments && Object.keys(r.competitor_sentiments).length > 0 : r.brand_sentiment)).length;
+            const totalWithSentiment = globallyFilteredResults.filter((r: Result) => hasEffectiveSentiment(r)).length;
 
             return (
               <>
@@ -1663,31 +1672,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
                         // Sentiment badge — for industry reports, average across brand sentiments
                         const getSentimentBadge = () => {
-                          let sentiment: string | null | undefined;
-                          if (runStatus?.search_type === 'category' && result.competitor_sentiments) {
-                            const sentScores: Record<string, number> = {
-                              strong_endorsement: 5,
-                              positive_endorsement: 4,
-                              neutral_mention: 3,
-                              conditional: 2,
-                              negative_comparison: 1,
-                            };
-                            const scoreToSent: Record<number, string> = { 5: 'strong_endorsement', 4: 'positive_endorsement', 3: 'neutral_mention', 2: 'conditional', 1: 'negative_comparison' };
-                            const scores = Object.values(result.competitor_sentiments)
-                              .filter(s => s in sentScores)
-                              .map(s => sentScores[s as keyof typeof sentScores]);
-                            if (scores.length > 0) {
-                              const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-                              const nearest = Object.keys(scoreToSent)
-                                .map(Number)
-                                .reduce((prev, curr) => Math.abs(curr - avg) < Math.abs(prev - avg) ? curr : prev);
-                              sentiment = scoreToSent[nearest];
-                            } else {
-                              sentiment = null;
-                            }
-                          } else {
-                            sentiment = result.brand_sentiment;
-                          }
+                          const sentiment = getEffectiveSentiment(result);
                           if (!sentiment || sentiment === 'not_mentioned') {
                             return <span className="text-xs text-gray-400">—</span>;
                           }
