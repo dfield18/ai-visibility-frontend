@@ -3510,6 +3510,7 @@ export default function ResultsPage() {
     let relatedIssuesCount = 0;
     let topRelatedIssues: string[] = [];
     let framingByProvider: Record<string, Record<string, number>> = {};
+    let issuePositioningData: { issue: string; mentions: number; sentiment: number; isMainIssue: boolean }[] = [];
 
     if (runStatus.search_type === 'issue') {
       // Build framing distribution from brand_sentiment
@@ -3579,6 +3580,56 @@ export default function ResultsPage() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map(([name]) => name);
+
+      // Issue Positioning data — per related issue: mention count + avg sentiment score
+      const sentimentScoreMap: Record<string, number> = {
+        strong_endorsement: 5,
+        positive_endorsement: 4,
+        neutral_mention: 3,
+        conditional: 2,
+        negative_comparison: 1,
+      };
+
+      // Main issue (brand_mentioned)
+      const mainIssueMentioned = results.filter(r => r.brand_mentioned).length;
+      const mainIssueSentimentScores = results
+        .filter(r => r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned')
+        .map(r => sentimentScoreMap[r.brand_sentiment || ''] || 3);
+      const mainIssueAvgSentiment = mainIssueSentimentScores.length > 0
+        ? mainIssueSentimentScores.reduce((a, b) => a + b, 0) / mainIssueSentimentScores.length
+        : 3;
+
+      const positioningPoints: { issue: string; mentions: number; sentiment: number; isMainIssue: boolean }[] = [];
+      if (mainIssueMentioned > 0) {
+        positioningPoints.push({
+          issue: runStatus.brand,
+          mentions: mainIssueMentioned,
+          sentiment: mainIssueAvgSentiment,
+          isMainIssue: true,
+        });
+      }
+
+      // Related issues
+      for (const [issueName, count] of Object.entries(relatedIssueCounts)) {
+        const sentimentScores: number[] = [];
+        for (const r of results) {
+          if (r.competitors_mentioned?.includes(issueName) && r.competitor_sentiments?.[issueName]) {
+            const score = sentimentScoreMap[r.competitor_sentiments[issueName]] || 0;
+            if (score > 0) sentimentScores.push(score);
+          }
+        }
+        const avgSentiment = sentimentScores.length > 0
+          ? sentimentScores.reduce((a, b) => a + b, 0) / sentimentScores.length
+          : 3;
+        positioningPoints.push({
+          issue: issueName,
+          mentions: count,
+          sentiment: avgSentiment,
+          isMainIssue: false,
+        });
+      }
+
+      issuePositioningData = positioningPoints;
     }
 
     return {
@@ -3608,6 +3659,7 @@ export default function ResultsPage() {
       relatedIssuesCount,
       topRelatedIssues,
       framingByProvider,
+      issuePositioningData,
     };
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
 
@@ -4935,7 +4987,7 @@ export default function ResultsPage() {
               brandBlurbs={brandBlurbs}
               setCopied={setCopied}
               accessLevel={sectionAccess['overview']}
-              visibleSections={['metrics', 'ai-summary', 'framing-comparison', 'framing-evidence', 'prompt-breakdown', 'all-results']}
+              visibleSections={['metrics', 'ai-summary', 'framing-comparison', 'issue-positioning', 'framing-evidence', 'prompt-breakdown', 'all-results']}
             />
           ) : (
             <OverviewTab
