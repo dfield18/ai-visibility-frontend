@@ -897,12 +897,12 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
               return (
                 <div
                   key={idx}
-                  className={`rounded-xl border border-gray-100 border-l-[3px] ${style.border} bg-white p-5 hover:shadow-md transition-shadow`}
+                  className={`rounded-xl border border-gray-100 ${isCategory ? '' : `border-l-[3px] ${style.border}`} bg-white p-5 hover:shadow-md transition-shadow`}
                 >
                   {/* Title row with number badge and pill badges */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 min-w-0">
-                      <div className={`w-7 h-7 ${style.numBg} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                      <div className={`w-7 h-7 ${isCategory ? 'bg-gray-900' : style.numBg} rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}>
                         <span className="text-white text-xs font-bold">{idx + 1}</span>
                       </div>
                       <div className="min-w-0">
@@ -912,23 +912,25 @@ Effort: ${rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)}
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${impactBadge[rec.impact] || ''}`}
-                        title={rec.impactReason ? `Impact: ${rec.impactReason}` : undefined}
-                      >
-                        {rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)} Impact
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${effortBadge[rec.effort] || ''}`}
-                        title={rec.effortReason ? `Effort: ${rec.effortReason}` : undefined}
-                      >
-                        {rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)} Effort
-                      </span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${style.badge}`}>
-                        {quadrantName}
-                      </span>
-                    </div>
+                    {!isCategory && (
+                      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${impactBadge[rec.impact] || ''}`}
+                          title={rec.impactReason ? `Impact: ${rec.impactReason}` : undefined}
+                        >
+                          {rec.impact.charAt(0).toUpperCase() + rec.impact.slice(1)} Impact
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${effortBadge[rec.effort] || ''}`}
+                          title={rec.effortReason ? `Effort: ${rec.effortReason}` : undefined}
+                        >
+                          {rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1)} Effort
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${style.badge}`}>
+                          {quadrantName}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Tactics checklist */}
