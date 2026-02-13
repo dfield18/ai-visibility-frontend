@@ -2142,11 +2142,13 @@ export const OverviewTab = ({
                   onClick={() => handleTableSort('position')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {isCategory ? '# Brands' : 'Rank'}
+                    {isIssue ? 'Depth' : isCategory ? '# Brands' : 'Rank'}
                     <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
                       <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
                       <span className="absolute left-0 top-full mt-1 w-52 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
-                        {isCategory
+                        {isIssue
+                          ? 'How thoroughly the AI engaged with this issue (based on response length)'
+                          : isCategory
                           ? 'Number of brands mentioned in this AI response'
                           : 'Where your brand appears in the AI response (#1 = mentioned first)'
                         }
@@ -2157,7 +2159,7 @@ export const OverviewTab = ({
                     )}
                   </span>
                 </th>
-                {!isCategory && (
+                {!isCategory && !isIssue && (
                   <th
                     className="w-[12%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
                     onClick={() => handleTableSort('mentioned')}
@@ -2168,6 +2170,25 @@ export const OverviewTab = ({
                         <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
                         <span className="absolute left-0 top-full mt-1 w-52 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
                           Whether the AI included your brand in its response
+                        </span>
+                      </span>
+                      {tableSortColumn === 'mentioned' && (
+                        <span className="text-gray-900">{tableSortDirection === 'asc' ? '\u2191' : '\u2193'}</span>
+                      )}
+                    </span>
+                  </th>
+                )}
+                {isIssue && (
+                  <th
+                    className="w-[12%] text-left py-2.5 px-4 cursor-pointer hover:bg-gray-50 select-none"
+                    onClick={() => handleTableSort('mentioned')}
+                  >
+                    <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Framing
+                      <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
+                        <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
+                        <span className="absolute left-0 top-full mt-1 w-52 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
+                          How the AI framed this issue in its response
                         </span>
                       </span>
                       {tableSortColumn === 'mentioned' && (
@@ -2200,11 +2221,14 @@ export const OverviewTab = ({
                   onClick={() => handleTableSort('sentiment')}
                 >
                   <span className="flex items-center gap-1 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Sentiment
+                    {isIssue ? 'Framing' : 'Sentiment'}
                     <span className="relative group/tip" onClick={(e) => e.stopPropagation()}>
                       <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 transition-colors" />
                       <span className="absolute left-0 top-full mt-1 w-56 p-2 bg-gray-900 text-white text-xs font-normal normal-case tracking-normal rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg">
-                        How positively the AI described your brand, from Negative to Strong
+                        {isIssue
+                          ? 'How the AI framed this issue — Supportive, Balanced, or Critical'
+                          : 'How positively the AI described your brand, from Negative to Strong'
+                        }
                       </span>
                     </span>
                     {tableSortColumn === 'sentiment' && (
@@ -2447,22 +2471,78 @@ export const OverviewTab = ({
                       <td className="w-[7%] py-3 px-4">
                         {isCategory
                           ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : (result.competitors_mentioned?.length || 0)}</span>
+                          : isIssue
+                          ? (() => {
+                              if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
+                              const wordCount = (result.response_text || '').split(/\s+/).length;
+                              const depth = wordCount > 300 ? 'Detailed' : wordCount > 100 ? 'Moderate' : 'Brief';
+                              const depthColor = depth === 'Detailed' ? 'text-emerald-600 bg-emerald-50' : depth === 'Moderate' ? 'text-amber-600 bg-amber-50' : 'text-gray-500 bg-gray-100';
+                              return <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${depthColor}`}>{depth}</span>;
+                            })()
                           : getPositionBadge()
                         }
                       </td>
-                      {!isCategory && (
+                      {!isCategory && !isIssue && (
                         <td className="w-[12%] py-3 px-4">
                           {getMentionedBadge()}
+                        </td>
+                      )}
+                      {isIssue && (
+                        <td className="w-[12%] py-3 px-4">
+                          {(() => {
+                            if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
+                            const sentiment = result.brand_sentiment;
+                            const framingLabel = FRAMING_MAP[sentiment || ''] || 'Unknown';
+                            const colorMap: Record<string, string> = {
+                              'Supportive': 'text-emerald-700 bg-emerald-50',
+                              'Leaning Supportive': 'text-emerald-600 bg-emerald-50',
+                              'Balanced': 'text-gray-600 bg-gray-100',
+                              'Mixed': 'text-amber-600 bg-amber-50',
+                              'Critical': 'text-red-600 bg-red-50',
+                            };
+                            const color = colorMap[framingLabel] || 'text-gray-500 bg-gray-100';
+                            return <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${color}`}>{framingLabel}</span>;
+                          })()}
                         </td>
                       )}
                       <td className="w-[14%] py-3 px-4">
                         {isCategory
                           ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : (result.competitors_mentioned?.[0] || '\u2014')}</span>
+                          : isIssue
+                          ? (() => {
+                              if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
+                              const sentiment = result.brand_sentiment;
+                              const framingLabel = FRAMING_MAP[sentiment || ''] || '\u2014';
+                              const configs: Record<string, { text: string; subtext: string }> = {
+                                'Supportive': { text: 'text-emerald-700', subtext: 'text-emerald-600/70' },
+                                'Leaning Supportive': { text: 'text-emerald-600', subtext: 'text-emerald-500/70' },
+                                'Balanced': { text: 'text-gray-500', subtext: 'text-gray-400/80' },
+                                'Mixed': { text: 'text-amber-600', subtext: 'text-amber-500/70' },
+                                'Critical': { text: 'text-red-600', subtext: 'text-red-500/70' },
+                              };
+                              const config = configs[framingLabel];
+                              if (!config) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
+                              return <span className={`text-xs font-medium ${config.text}`}>{framingLabel}</span>;
+                            })()
                           : getSentimentBadge()
                         }
                       </td>
                       <td className="w-[20%] py-3 px-4">
-                        {getCompetitorsList()}
+                        {isIssue ? (() => {
+                          if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
+                          const issues = result.competitors_mentioned || [];
+                          if (issues.length === 0) return <span className="text-xs text-gray-400">None</span>;
+                          return (
+                            <div className="flex flex-wrap gap-1">
+                              {issues.slice(0, 3).map((issue, i) => (
+                                <span key={i} className="inline-flex text-[10px] font-medium text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full max-w-[120px] truncate" title={issue}>{issue}</span>
+                              ))}
+                              {issues.length > 3 && (
+                                <span className="text-[10px] text-gray-400">+{issues.length - 3}</span>
+                              )}
+                            </div>
+                          );
+                        })() : getCompetitorsList()}
                       </td>
                       <td className="w-[10%] py-3 px-4">
                         <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
