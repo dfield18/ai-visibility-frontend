@@ -3356,6 +3356,18 @@ export default function ResultsPage() {
     const responsesWhereMentioned = mentionedCount;
     const top1Rate = responsesWhereMentioned > 0 ? (topPositionCount / responsesWhereMentioned) * 100 : 0;
 
+    // Average brands surfaced per query (for industry reports)
+    let totalBrandsAcrossResults = 0;
+    let resultsWithBrands = 0;
+    for (const result of results) {
+      const brandCount = result.competitors_mentioned?.length || 0;
+      if (brandCount > 0) {
+        totalBrandsAcrossResults += brandCount;
+        resultsWithBrands++;
+      }
+    }
+    const avgBrandsPerQuery = resultsWithBrands > 0 ? totalBrandsAcrossResults / resultsWithBrands : 0;
+
     return {
       overallVisibility,
       shareOfVoice,
@@ -3372,6 +3384,8 @@ export default function ResultsPage() {
       responsesWhereMentioned,
       top1Rate,
       ranksCount: ranks.length,
+      avgBrandsPerQuery,
+      resultsWithBrands,
     };
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
 

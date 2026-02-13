@@ -283,27 +283,61 @@ export const OverviewTab = ({
     <div className="space-y-6">
       {/* Metrics Cards */}
       <div id="overview-metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* AI Visibility / Leader Visibility Card */}
+        {/* AI Visibility / Competitive Depth Score Card */}
         {(() => {
+          if (isCategory) {
+            // Competitive Depth Score for industry reports
+            const avgBrands = overviewMetrics?.avgBrandsPerQuery ?? 0;
+            const depthTone: 'success' | 'neutral' | 'warn' = avgBrands >= 5 ? 'success' : avgBrands >= 3 ? 'neutral' : 'warn';
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Competitive Depth</p>
+                  <div className="relative group">
+                    <button
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Learn more about Competitive Depth Score"
+                      tabIndex={0}
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      AI responses mention an average of {avgBrands.toFixed(1)} brands per query across {overviewMetrics?.resultsWithBrands || 0} responses about {runStatus?.brand || 'this category'}.
+                    </div>
+                  </div>
+                </div>
+                {/* Large number display */}
+                <div className="h-[100px] flex flex-col justify-center">
+                  <p className="text-4xl font-bold text-gray-900 tracking-tight tabular-nums">{avgBrands.toFixed(1)}</p>
+                  <p className="text-sm text-gray-500 mt-1">brands per response</p>
+                </div>
+                {/* Badge */}
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(depthTone)}`}>
+                    {avgBrands >= 5 ? 'Highly competitive' : avgBrands >= 3 ? 'Moderately competitive' : 'Low competition'}
+                  </span>
+                </div>
+                {/* Description */}
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">Average number of brands surfaced per query</p>
+              </div>
+            );
+          }
+
           const visibilityTone = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tone;
-          const leaderName = overviewMetrics?.selectedBrand || runStatus?.brand || 'your brand';
           return (
             <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">{isCategory ? 'Leader Visibility' : 'AI Visibility'}</p>
+                <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">AI Visibility</p>
                 <div className="relative group">
                   <button
                     className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                    aria-label={`Learn more about ${isCategory ? 'Leader Visibility' : 'AI Visibility'}`}
+                    aria-label="Learn more about AI Visibility"
                     tabIndex={0}
                   >
                     <HelpCircle className="w-4 h-4 text-gray-400" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                    {isCategory
-                      ? `${leaderName} is mentioned in ${overviewMetrics?.mentionedCount || 0} of ${overviewMetrics?.totalResponses || 0} AI answers about ${runStatus?.brand || 'this category'}.`
-                      : `Mentioned in ${overviewMetrics?.mentionedCount || 0} of ${overviewMetrics?.totalResponses || 0} AI answers (across selected models/prompts).`
-                    }
+                    Mentioned in {overviewMetrics?.mentionedCount || 0} of {overviewMetrics?.totalResponses || 0} AI answers (across selected models/prompts).
                   </div>
                 </div>
               </div>
@@ -342,12 +376,7 @@ export const OverviewTab = ({
                 </span>
               </div>
               {/* Description - pushed to bottom */}
-              <p className="text-xs text-gray-500 leading-relaxed mt-auto">
-                {isCategory
-                  ? `% of AI responses that mention ${leaderName}`
-                  : `% of relevant AI responses that mention ${runStatus?.brand || 'your brand'}`
-                }
-              </p>
+              <p className="text-xs text-gray-500 leading-relaxed mt-auto">% of relevant AI responses that mention {runStatus?.brand || 'your brand'}</p>
             </div>
           );
         })()}
@@ -719,12 +748,12 @@ export const OverviewTab = ({
                   <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="whitespace-nowrap">{isCategory ? 'Leader Visibility' : 'AI Visibility'}</span>
+                      <span className="whitespace-nowrap">{isCategory ? 'Avg. Brands' : 'AI Visibility'}</span>
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
                           {isCategory
-                            ? `% of AI responses that mention the market leader for this question`
+                            ? `Average number of brands surfaced per AI response for this question`
                             : `% of AI responses that mention ${runStatus?.brand || 'your brand'} for this question`
                           }
                         </div>
