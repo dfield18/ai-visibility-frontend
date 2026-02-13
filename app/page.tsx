@@ -65,8 +65,8 @@ export default function Home() {
         return;
       }
 
-      // For local sub-type of brand or category
-      if (showLocalToggle && (selectedCategory === 'brand' || selectedCategory === 'category')) {
+      // For local sub-type of brand
+      if (showLocalToggle && selectedCategory === 'brand') {
         setPendingBrandName(brandInput.trim());
         setShowLocationPrompt(true);
         setIsValidating(false);
@@ -261,8 +261,8 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Local toggle for Brand and Industry */}
-            {(selectedCategory === 'brand' || selectedCategory === 'category') && (
+            {/* Local toggle for Brand */}
+            {selectedCategory === 'brand' && (
               <div className="flex items-center gap-2 mb-4 max-w-md">
                 <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer select-none">
                   <input
