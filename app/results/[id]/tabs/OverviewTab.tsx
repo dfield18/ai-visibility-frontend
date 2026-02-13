@@ -140,28 +140,46 @@ export const OverviewTab = ({
     const issueName = (runStatus.brand || '').toLowerCase();
     const groups: Record<string, FramingEvidenceItem[]> = { Supportive: [], Balanced: [], Critical: [] };
 
+    // Strip markdown to plain text
+    const stripMd = (text: string) => text
+      .replace(/#{1,6}\s+/g, '')           // headings
+      .replace(/\*\*([^*]+)\*\*/g, '$1')   // bold
+      .replace(/\*([^*]+)\*/g, '$1')       // italic
+      .replace(/__([^_]+)__/g, '$1')       // bold alt
+      .replace(/_([^_]+)_/g, '$1')         // italic alt
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, '') // images
+      .replace(/`{1,3}[^`]*`{1,3}/g, '')  // code
+      .replace(/\[\d+\]/g, '')            // citation markers
+      .replace(/https?:\/\/\S+/g, '')     // URLs
+      .replace(/\|/g, '')                 // table pipes
+      .replace(/---+/g, '')              // horizontal rules
+      .replace(/[•\u2022]/g, '')          // bullets
+      .replace(/\s{2,}/g, ' ')           // collapse whitespace
+      .trim();
+
     for (const result of results) {
       const raw = result.brand_sentiment || 'neutral_mention';
       const label = FRAMING_MAP[raw] || 'Balanced';
-      // Collapse to 3 groups
       const bucket = (label === 'Supportive' || label === 'Leaning Supportive') ? 'Supportive'
         : label === 'Balanced' ? 'Balanced'
         : 'Critical';
 
-      // Extract key excerpt: find the most substantive sentence mentioning the issue
-      const text = result.response_text!;
-      const sentences = text.replace(/\n+/g, ' ').split(/(?<=[.!?])\s+/);
+      // Clean the response text first, then split into sentences
+      const cleanText = stripMd(result.response_text!);
+      // Split on sentence boundaries (period/exclamation/question followed by space+capital or end)
+      const sentences = cleanText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+
       let bestSentence = '';
       let bestScore = -1;
       for (const s of sentences) {
         const trimmed = s.trim();
-        if (trimmed.length < 30 || trimmed.length > 400) continue;
-        // Skip markdown artifacts, URLs, list markers
-        if (/^\s*[-*#|>]/.test(trimmed) || /https?:\/\//.test(trimmed) || /\|/.test(trimmed)) continue;
+        if (trimmed.length < 30 || trimmed.length > 300) continue;
+        if (/^\s*[-*>]/.test(trimmed)) continue;
         const mentionsIssue = issueName && trimmed.toLowerCase().includes(issueName);
-        // Score: prefer sentences that mention the issue and are mid-length (more substantive)
-        const lengthScore = Math.min(trimmed.length, 250) / 250;
-        const score = (mentionsIssue ? 2 : 0) + lengthScore;
+        // Prefer sentences mentioning the issue, with moderate length (80-200 chars)
+        const idealLength = trimmed.length >= 80 && trimmed.length <= 200 ? 1 : 0;
+        const score = (mentionsIssue ? 3 : 0) + idealLength + (trimmed.length >= 40 ? 0.5 : 0);
         if (score > bestScore) {
           bestScore = score;
           bestSentence = trimmed;
@@ -169,8 +187,12 @@ export const OverviewTab = ({
       }
 
       if (!bestSentence && sentences.length > 0) {
-        // Fallback: take first clean sentence over 30 chars
-        bestSentence = sentences.find(s => s.trim().length >= 30 && !/^\s*[-*#|>]/.test(s.trim()))?.trim() || sentences[0].trim();
+        bestSentence = sentences.find(s => s.trim().length >= 30 && s.trim().length <= 300)?.trim() || '';
+      }
+
+      // Cap at 250 chars with ellipsis
+      if (bestSentence.length > 250) {
+        bestSentence = bestSentence.slice(0, 247).replace(/\s+\S*$/, '') + '...';
       }
 
       if (bestSentence) {
@@ -1310,12 +1332,8 @@ export const OverviewTab = ({
                       <div className="divide-y divide-gray-50">
                         {visibleItems.map((item, idx) => (
                           <div key={idx} className="px-4 py-3">
-                            <div className="flex items-center gap-1.5 mb-1.5">
-                              <span className="text-xs font-medium text-gray-500">{getProviderLabel(item.provider)}</span>
-                              <span className="inline-block w-1 h-1 rounded-full bg-gray-300 flex-shrink-0" />
-                              <span className="text-xs text-gray-400 truncate" title={item.prompt}>{truncate(item.prompt, 60)}</span>
-                            </div>
                             <p className="text-sm text-gray-700 leading-relaxed italic">&ldquo;{item.excerpt}&rdquo;</p>
+                            <p className="text-xs text-gray-400 mt-0.5 truncate flex items-center gap-1.5">— {getProviderLabel(item.provider)} <span className="inline-block w-1 h-1 rounded-full bg-gray-400 flex-shrink-0" /> {item.prompt}</p>
                           </div>
                         ))}
                       </div>
