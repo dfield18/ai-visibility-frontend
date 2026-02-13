@@ -101,6 +101,10 @@ export const SourcesTab = () => {
     // State for Source Positioning chart
     const [sourcePositioningBrandFilter, setSourcePositioningBrandFilter] = useState<string>('all');
 
+    // State for Citations by Source & Brand heatmap (industry only)
+    const [sourceBrandHeatmapProviderFilter, setSourceBrandHeatmapProviderFilter] = useState<string>('all');
+    const [sourceBrandHeatmapSort, setSourceBrandHeatmapSort] = useState<string>('total');
+
     // Calculate Source Positioning data - sources plotted by importance vs sentiment
     const sourcePositioningData = useMemo(() => {
       if (!runStatus) return [];
@@ -1083,6 +1087,86 @@ export const SourcesTab = () => {
       }
     };
 
+    // Citations by Source & Brand heatmap data (industry reports only)
+    const sourceBrandHeatmapData = useMemo(() => {
+      if (!isCategory || !runStatus) return { sources: [], brands: [], matrix: {} as Record<string, Record<string, number>>, totals: { bySource: {} as Record<string, number>, byBrand: {} as Record<string, number>, grand: 0 } };
+
+      const filteredResults = globallyFilteredResults.filter((r: Result) => {
+        if (r.error || !r.sources || r.sources.length === 0) return false;
+        if (sourceBrandHeatmapProviderFilter !== 'all' && r.provider !== sourceBrandHeatmapProviderFilter) return false;
+        return true;
+      });
+
+      // Build source × brand matrix
+      const matrix: Record<string, Record<string, number>> = {};
+      const sourceTotals: Record<string, number> = {};
+      const brandTotals: Record<string, number> = {};
+      const allBrands = new Set<string>();
+
+      filteredResults.forEach((r: Result) => {
+        const brands = r.competitors_mentioned || [];
+        const domains = new Set<string>();
+        r.sources!.forEach(s => {
+          if (s.url) {
+            try {
+              domains.add(new URL(s.url).hostname.replace(/^www\./, ''));
+            } catch { /* skip bad urls */ }
+          }
+        });
+
+        brands.forEach(brand => allBrands.add(brand));
+
+        domains.forEach(domain => {
+          if (!matrix[domain]) matrix[domain] = {};
+          brands.forEach(brand => {
+            matrix[domain][brand] = (matrix[domain][brand] || 0) + 1;
+            sourceTotals[domain] = (sourceTotals[domain] || 0) + 1;
+            brandTotals[brand] = (brandTotals[brand] || 0) + 1;
+          });
+        });
+      });
+
+      // Sort sources by total citations, take top 20
+      const sortedSources = Object.keys(sourceTotals)
+        .sort((a, b) => sourceTotals[b] - sourceTotals[a])
+        .slice(0, 20);
+
+      // Sort brands by total citations
+      const sortedBrands = Array.from(allBrands)
+        .sort((a, b) => (brandTotals[b] || 0) - (brandTotals[a] || 0));
+
+      // Re-sort sources if sorting by a specific brand
+      let finalSources = sortedSources;
+      if (sourceBrandHeatmapSort !== 'total') {
+        finalSources = [...sortedSources].sort((a, b) => {
+          const aVal = matrix[a]?.[sourceBrandHeatmapSort] || 0;
+          const bVal = matrix[b]?.[sourceBrandHeatmapSort] || 0;
+          return bVal - aVal;
+        });
+      }
+
+      const grand = Object.values(sourceTotals).reduce((a, b) => a + b, 0);
+
+      return {
+        sources: finalSources,
+        brands: sortedBrands,
+        matrix,
+        totals: { bySource: sourceTotals, byBrand: brandTotals, grand },
+      };
+    }, [isCategory, runStatus, globallyFilteredResults, sourceBrandHeatmapProviderFilter, sourceBrandHeatmapSort]);
+
+    // Max cell value for heatmap color scaling
+    const heatmapMaxValue = useMemo(() => {
+      let max = 0;
+      for (const domain of sourceBrandHeatmapData.sources) {
+        for (const brand of sourceBrandHeatmapData.brands) {
+          const val = sourceBrandHeatmapData.matrix[domain]?.[brand] || 0;
+          if (val > max) max = val;
+        }
+      }
+      return max;
+    }, [sourceBrandHeatmapData]);
+
     // Check if we have any sources data
     const hasSourcesData = globallyFilteredResults.some(
       (r: Result) => !r.error && r.sources && r.sources.length > 0
@@ -1574,6 +1658,130 @@ export const SourcesTab = () => {
             </div>
           );
         })()}
+
+        {/* Citations by Source & Brand Heatmap (industry reports only) */}
+        {isCategory && sourceBrandHeatmapData.sources.length > 0 && (
+          <div id="sources-brand-heatmap" className="bg-white rounded-xl shadow-sm border border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Citations by Source & Brand</h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Number of AI responses that cite each source when mentioning a brand
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={sourceBrandHeatmapProviderFilter}
+                  onChange={(e) => setSourceBrandHeatmapProviderFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                >
+                  <option value="all">All Models</option>
+                  {availableProviders.map((provider) => (
+                    <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50">
+                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 min-w-[160px]">
+                      Source
+                    </th>
+                    {sourceBrandHeatmapData.brands.map(brand => (
+                      <th
+                        key={brand}
+                        className="text-center py-3 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none min-w-[80px]"
+                        onClick={() => setSourceBrandHeatmapSort(sourceBrandHeatmapSort === brand ? 'total' : brand)}
+                      >
+                        <span className="flex items-center justify-center gap-1">
+                          {brand.length > 12 ? brand.substring(0, 12) + '…' : brand}
+                          {sourceBrandHeatmapSort === brand && <span className="text-gray-900">↓</span>}
+                        </span>
+                      </th>
+                    ))}
+                    <th
+                      className="text-center py-3 px-3 text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:text-gray-900 select-none min-w-[60px] bg-gray-100"
+                      onClick={() => setSourceBrandHeatmapSort('total')}
+                    >
+                      <span className="flex items-center justify-center gap-1">
+                        Total
+                        {sourceBrandHeatmapSort === 'total' && <span className="text-gray-900">↓</span>}
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sourceBrandHeatmapData.sources.map((domain, rowIdx) => (
+                    <tr key={domain} className={`border-b border-gray-100 ${rowIdx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
+                      <td className="py-2.5 px-4 sticky left-0 bg-white" style={rowIdx % 2 !== 0 ? { background: 'rgba(249,250,251,0.3)' } : undefined}>
+                        <a
+                          href={`https://${domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-gray-700 hover:text-gray-900 hover:underline truncate block max-w-[160px]"
+                          title={domain}
+                        >
+                          {domain}
+                        </a>
+                      </td>
+                      {sourceBrandHeatmapData.brands.map(brand => {
+                        const count = sourceBrandHeatmapData.matrix[domain]?.[brand] || 0;
+                        const intensity = heatmapMaxValue > 0 ? count / heatmapMaxValue : 0;
+                        return (
+                          <td key={brand} className="text-center py-2.5 px-3">
+                            {count > 0 ? (
+                              <span
+                                className="inline-flex items-center justify-center w-10 h-7 rounded text-xs font-semibold"
+                                style={{
+                                  backgroundColor: `rgba(17, 24, 39, ${0.06 + intensity * 0.25})`,
+                                  color: intensity > 0.5 ? '#111827' : '#4b5563',
+                                }}
+                              >
+                                {count}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-300">—</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="text-center py-2.5 px-3 bg-gray-50/50">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {sourceBrandHeatmapData.totals.bySource[domain] || 0}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {/* Totals row */}
+                  <tr className="border-t-2 border-gray-200 bg-gray-50">
+                    <td className="py-3 px-4 sticky left-0 bg-gray-50">
+                      <span className="text-xs font-semibold text-gray-700 uppercase">Total</span>
+                    </td>
+                    {sourceBrandHeatmapData.brands.map(brand => (
+                      <td key={brand} className="text-center py-3 px-3">
+                        <span className="text-sm font-semibold text-gray-900">
+                          {sourceBrandHeatmapData.totals.byBrand[brand] || 0}
+                        </span>
+                      </td>
+                    ))}
+                    <td className="text-center py-3 px-3 bg-gray-100">
+                      <span className="text-sm font-bold text-gray-900">
+                        {sourceBrandHeatmapData.totals.grand}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p className="px-6 py-3 text-center text-xs text-gray-400 italic border-t border-gray-100">
+              Top {sourceBrandHeatmapData.sources.length} sources shown • Click a brand column header to sort • Darker cells indicate more citations
+            </p>
+          </div>
+        )}
 
         {/* Brand Website Citations */}
         <div id="sources-brand-website" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
