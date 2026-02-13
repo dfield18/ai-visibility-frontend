@@ -265,7 +265,6 @@ export const SourcesTab = () => {
 
     // Calculate brand website citations with URL details
     const brandWebsiteCitations = useMemo(() => {
-      const brandDomain = runStatus?.brand?.toLowerCase().replace(/\s+/g, '') || '';
       const searchedBrandLower = runStatus?.brand?.toLowerCase() || '';
       // Filter out the searched brand from trackedBrands to avoid duplicates (trackedBrands stores lowercase)
       const competitorsOnly = Array.from(trackedBrands).filter(b => b.toLowerCase() !== searchedBrandLower);
@@ -1548,7 +1547,7 @@ export const SourcesTab = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Website Citations</h3>
-              <p className="text-sm text-gray-500">How often AI models cite your brand's and competitors' own websites as sources</p>
+              <p className="text-sm text-gray-500">{isCategory ? 'How often AI models cite brand websites as sources' : 'How often AI models cite your brand\'s and competitors\' own websites as sources'}</p>
             </div>
             <div className="flex items-center gap-2">
               <select
