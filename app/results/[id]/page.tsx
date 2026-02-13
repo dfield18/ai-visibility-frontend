@@ -4924,20 +4924,37 @@ export default function ResultsPage() {
         >
         {activeTab === 'overview' && (
           runStatus?.search_type === 'issue' ? (
-            <OverviewTab
-              aiSummaryExpanded={aiSummaryExpanded}
-              setAiSummaryExpanded={setAiSummaryExpanded}
-              showSentimentColors={showSentimentColors}
-              setShowSentimentColors={setShowSentimentColors}
-              chartTab={chartTab}
-              setChartTab={setChartTab}
-              providerFilter={providerFilter}
-              setProviderFilter={setProviderFilter}
-              brandBlurbs={brandBlurbs}
-              setCopied={setCopied}
-              accessLevel={sectionAccess['overview']}
-              visibleSections={['metrics', 'ai-summary', 'framing-comparison', 'framing-spectrum', 'framing-evidence', 'prompt-breakdown', 'all-results']}
-            />
+            <>
+              <OverviewTab
+                aiSummaryExpanded={aiSummaryExpanded}
+                setAiSummaryExpanded={setAiSummaryExpanded}
+                showSentimentColors={showSentimentColors}
+                setShowSentimentColors={setShowSentimentColors}
+                chartTab={chartTab}
+                setChartTab={setChartTab}
+                providerFilter={providerFilter}
+                setProviderFilter={setProviderFilter}
+                brandBlurbs={brandBlurbs}
+                setCopied={setCopied}
+                accessLevel={sectionAccess['overview']}
+                visibleSections={['metrics', 'ai-summary', 'framing-comparison', 'framing-spectrum', 'framing-evidence', 'prompt-breakdown']}
+              />
+              <SentimentTab visibleSections={['sentiment-by-question', 'sentiment-by-platform']} />
+              <OverviewTab
+                aiSummaryExpanded={aiSummaryExpanded}
+                setAiSummaryExpanded={setAiSummaryExpanded}
+                showSentimentColors={showSentimentColors}
+                setShowSentimentColors={setShowSentimentColors}
+                chartTab={chartTab}
+                setChartTab={setChartTab}
+                providerFilter={providerFilter}
+                setProviderFilter={setProviderFilter}
+                brandBlurbs={brandBlurbs}
+                setCopied={setCopied}
+                accessLevel={sectionAccess['overview']}
+                visibleSections={['all-results']}
+              />
+            </>
           ) : (
             <OverviewTab
               aiSummaryExpanded={aiSummaryExpanded}

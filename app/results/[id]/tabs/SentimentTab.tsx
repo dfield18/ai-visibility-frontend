@@ -100,6 +100,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
     };
     const _scoreToSent: Record<number, string> = { 5: 'strong_endorsement', 4: 'positive_endorsement', 3: 'neutral_mention', 2: 'conditional', 1: 'negative_comparison' };
     const isIndustryReport = runStatus?.search_type === 'category';
+    const isIssue = runStatus?.search_type === 'issue';
 
     const getEffectiveSentiment = (r: Result): string | null => {
       if (isIndustryReport && r.competitor_sentiments) {
@@ -1109,10 +1110,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             <div id="sentiment-by-question" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Sentiment by Question</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{isIssue ? 'Framing by Question' : 'Sentiment by Question'}</h2>
                   <p className="text-sm text-gray-500 mt-1">
                     {isIndustryReport
                       ? `Average sentiment across all brands per question. Filter by brand or source to drill down.`
+                      : isIssue
+                      ? `Which questions lead to supportive vs critical framing of ${effectiveBrand}`
                       : `Which questions lead to positive vs negative descriptions of ${effectiveBrand}`}
                   </p>
                 </div>
@@ -1138,28 +1141,28 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                   </select>
                 </div>
               </div>
-              {/* Sentiment Legend */}
+              {/* Sentiment/Framing Legend */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-4">
-                <span className="text-xs text-gray-600 font-medium">Sentiment:</span>
+                <span className="text-xs text-gray-600 font-medium">{isIssue ? 'Framing:' : 'Sentiment:'}</span>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
-                  <span className="text-xs text-gray-500">Strong</span>
+                  <span className="text-xs text-gray-500">{isIssue ? 'Supportive' : 'Strong'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#10b981' }} />
-                  <span className="text-xs text-gray-500">Positive</span>
+                  <span className="text-xs text-gray-500">{isIssue ? 'Leaning Supportive' : 'Positive'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#9ca3af' }} />
-                  <span className="text-xs text-gray-500">Neutral</span>
+                  <span className="text-xs text-gray-500">{isIssue ? 'Balanced' : 'Neutral'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
-                  <span className="text-xs text-gray-500">Conditional</span>
+                  <span className="text-xs text-gray-500">{isIssue ? 'Mixed' : 'Conditional'}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                  <span className="text-xs text-gray-500">Negative</span>
+                  <span className="text-xs text-gray-500">{isIssue ? 'Critical' : 'Negative'}</span>
                 </div>
               </div>
               <div className="h-[400px]">
@@ -1172,9 +1175,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                       name="Avg. Sentiment"
                       domain={[xMin, xMax]}
                       ticks={xTicks}
-                      tickFormatter={(value) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][Math.round(value)] || ''}
+                      tickFormatter={isIssue
+                        ? ((value: number) => ['', 'Critical', 'Mixed', 'Balanced', 'Leaning Supportive', 'Supportive'][Math.round(value)] || '')
+                        : ((value: number) => ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'][Math.round(value)] || '')
+                      }
                       tick={{ fill: '#6b7280', fontSize: 12 }}
-                      label={{ value: 'Average Sentiment', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
+                      label={{ value: isIssue ? 'Average Framing' : 'Average Sentiment', position: 'bottom', offset: 25, style: { fill: '#374151', fontSize: 14, fontWeight: 500 } }}
                     />
                     <YAxis
                       type="number"
@@ -1196,14 +1202,16 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                       content={({ active, payload }) => {
                         if (active && payload && payload.length > 0) {
                           const data = payload[0].payload;
-                          const sentimentLabels = ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
+                          const sentimentLabels = isIssue
+                            ? ['', 'Critical', 'Mixed', 'Balanced', 'Leaning Supportive', 'Supportive']
+                            : ['', 'Negative', 'Conditional', 'Neutral', 'Positive', 'Strong'];
                           return (
                             <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm max-w-[300px]">
                               <p className="font-medium text-gray-900 mb-2 line-clamp-2">{data.prompt}</p>
                               <div className="space-y-1 text-gray-600">
-                                <p>Sentiment: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentimentScore)] || 'N/A'}</span></p>
+                                <p>{isIssue ? 'Framing' : 'Sentiment'}: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentimentScore)] || 'N/A'}</span></p>
                                 <p>Mentions: <span className="font-medium">{data.mentioned}</span> of {data.total} responses</p>
-                                <p>Visibility: <span className="font-medium">{data.visibilityScore.toFixed(0)}%</span></p>
+                                <p>{isIssue ? 'Coverage' : 'Visibility'}: <span className="font-medium">{data.visibilityScore.toFixed(0)}%</span></p>
                                 {data.avgRank && (
                                   <p>Avg. Position: <span className="font-medium">#{data.avgRank.toFixed(1)}</span></p>
                                 )}
@@ -1302,10 +1310,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         {showSection('sentiment-by-platform') && <div id="sentiment-by-platform" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Platform</h3>
+              <h3 className="text-lg font-semibold text-gray-900">{isIssue ? 'Framing by AI Platform' : 'Sentiment by AI Platform'}</h3>
               <p className="text-sm text-gray-500 mt-0.5">
                 {isIndustryReport
                   ? 'Average sentiment across all brands by platform. Filter by brand or source to see individual breakdowns.'
+                  : isIssue
+                  ? `How each AI platform frames ${effectiveSentimentBrand || 'this issue'}`
                   : `How each AI platform describes ${effectiveSentimentBrand || 'your brand'}`}
               </p>
             </div>
@@ -1342,14 +1352,14 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             return (
               <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-sm text-gray-700">
                 {highEndorsers.length > 0 && (
-                  <span><span className="font-semibold text-gray-900">{highEndorsers.length} of {totalProviders}</span> platforms endorse {effectiveSentimentBrand || 'your brand'}</span>
+                  <span><span className="font-semibold text-gray-900">{highEndorsers.length} of {totalProviders}</span> platforms {isIssue ? 'frame supportively' : 'endorse'} {effectiveSentimentBrand || (isIssue ? 'this issue' : 'your brand')}</span>
                 )}
                 {highEndorsers.length > 0 && lowEndorsers.length > 0 && <span className="mx-2 text-gray-300">·</span>}
                 {lowEndorsers.length > 0 && (
-                  <span><span className="font-semibold text-gray-900">{lowEndorsers.length}</span> {lowEndorsers.length === 1 ? 'platform has' : 'platforms have'} low endorsement</span>
+                  <span><span className="font-semibold text-gray-900">{lowEndorsers.length}</span> {lowEndorsers.length === 1 ? 'platform has' : 'platforms have'} {isIssue ? 'critical framing' : 'low endorsement'}</span>
                 )}
                 {highEndorsers.length === 0 && lowEndorsers.length === 0 && (
-                  <span>Mixed sentiment across platforms</span>
+                  <span>{isIssue ? 'Mixed framing across platforms' : 'Mixed sentiment across platforms'}</span>
                 )}
               </div>
             );
@@ -1363,26 +1373,26 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Provider</span>
                   </th>
                   <th className="text-left py-2.5 px-3" style={{ width: '22%' }}>
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Endorsement Rate</span>
-                    <div className="text-[10px] text-gray-400 font-normal normal-case tracking-normal">% positive or strong</div>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{isIssue ? 'Supportive Rate' : 'Endorsement Rate'}</span>
+                    <div className="text-[10px] text-gray-400 font-normal normal-case tracking-normal">{isIssue ? '% supportive or leaning' : '% positive or strong'}</div>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Strong</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{isIssue ? 'Supportive' : 'Strong'}</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Positive</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{isIssue ? 'Leaning' : 'Positive'}</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Neutral</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{isIssue ? 'Balanced' : 'Neutral'}</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Conditional</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{isIssue ? 'Mixed' : 'Conditional'}</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Negative</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{isIssue ? 'Critical' : 'Negative'}</span>
                   </th>
                   <th className="text-center py-2.5 px-2">
-                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Not Mentioned</span>
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{isIssue ? 'Not Discussed' : 'Not Mentioned'}</span>
                   </th>
                 </tr>
               </thead>
