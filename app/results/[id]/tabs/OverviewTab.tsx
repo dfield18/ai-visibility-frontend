@@ -1038,9 +1038,9 @@ export const OverviewTab = ({
                   {topIssues.length > 0 ? (
                     <div className="space-y-2">
                       {topIssues.map((issue, i) => (
-                        <div key={issue} className="flex items-center gap-2.5" title={issue}>
-                          <span className="w-5 h-5 rounded-full bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
-                          <span className="text-sm font-medium text-gray-900 leading-tight line-clamp-1">{issue}</span>
+                        <div key={issue} className="flex items-start gap-2.5" title={issue}>
+                          <span className="w-5 h-5 rounded-full bg-gray-900 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                          <span className="text-sm font-medium text-gray-900 leading-tight line-clamp-2">{issue}</span>
                         </div>
                       ))}
                     </div>
