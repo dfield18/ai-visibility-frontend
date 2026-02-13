@@ -103,9 +103,9 @@ export const SEARCH_TYPE_CONFIGS: Record<SearchType, SearchTypeConfig> = {
     sentimentLabel: 'Category Sentiment',
     tabs: [
       { id: 'industry-overview', label: 'Industry Overview', enabled: true },
-      ...makeTabs({ 'site-audit': { enabled: false } }),
+      ...makeTabs({ 'recommendations': { label: 'Analysis' }, 'site-audit': { enabled: false } }),
     ],
-    recommendationContext: 'industry positioning and category leadership',
+    recommendationContext: 'industry landscape analysis and AI-driven brand discovery trends',
   },
 
   local: {
