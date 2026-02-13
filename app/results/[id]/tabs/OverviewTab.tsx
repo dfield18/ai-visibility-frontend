@@ -1348,8 +1348,13 @@ export const OverviewTab = ({
           { score: 5, label: 'Supportive' },
         ];
 
-        // Provider legend
-        const providersInData = Array.from(new Set(dots.map(d => d.provider)));
+        // Provider legend — sorted by popularity
+        const providersInData = Array.from(new Set(dots.map(d => d.provider)))
+          .sort((a, b) => {
+            const ai = PROVIDER_ORDER.indexOf(a);
+            const bi = PROVIDER_ORDER.indexOf(b);
+            return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+          });
 
         return (
           <div id="overview-framing-spectrum" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
