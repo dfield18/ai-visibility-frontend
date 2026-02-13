@@ -979,7 +979,9 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">Sentiment by Question</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Which questions lead to positive vs negative descriptions
+                      {isIndustryReport
+                        ? 'Average sentiment across all brands per question. Use the filters to view sentiment for a specific brand or source.'
+                        : 'Which questions lead to positive vs negative descriptions'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1049,7 +1051,9 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">Sentiment by Question</h2>
                   <p className="text-sm text-gray-500 mt-1">
-                    Which questions lead to positive vs negative descriptions of {effectiveBrand}
+                    {isIndustryReport
+                      ? `Average sentiment across all brands per question. Filter by brand or source to drill down.`
+                      : `Which questions lead to positive vs negative descriptions of ${effectiveBrand}`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1239,7 +1243,11 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Platform</h3>
-              <p className="text-sm text-gray-500 mt-0.5">How each AI platform describes {effectiveSentimentBrand || 'your brand'}</p>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {isIndustryReport
+                  ? 'Average sentiment across all brands by platform. Filter by brand or source to see individual breakdowns.'
+                  : `How each AI platform describes ${effectiveSentimentBrand || 'your brand'}`}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <select
@@ -1558,7 +1566,11 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Sentiment Details</h3>
-              <p className="text-sm text-gray-500 mt-0.5">How each AI response describes your brand</p>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {isIndustryReport
+                  ? 'Sentiment shown is the average across all brands in each response. Filter by sentiment or model to narrow results.'
+                  : 'How each AI response describes your brand'}
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <select
