@@ -1289,6 +1289,148 @@ export const OverviewTab = ({
         </div>
       )}
 
+      {/* Framing Spectrum — beeswarm showing every response as a dot */}
+      {showSection('framing-spectrum') && isIssue && (() => {
+        const SENTIMENT_SCORE: Record<string, number> = {
+          strong_endorsement: 5,
+          positive_endorsement: 4,
+          neutral_mention: 3,
+          conditional: 2,
+          negative_comparison: 1,
+        };
+        const dots = globallyFilteredResults
+          .filter((r: Result) => !r.error && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned')
+          .map((r: Result) => ({
+            score: SENTIMENT_SCORE[r.brand_sentiment || ''] || 3,
+            provider: r.provider,
+            prompt: r.prompt,
+            id: r.id,
+          }));
+        if (dots.length === 0) return null;
+
+        // Beeswarm layout: bucket by score, stack vertically within each bucket
+        const CHART_WIDTH = 800;
+        const CHART_HEIGHT = 220;
+        const MARGIN = { left: 40, right: 40, top: 20, bottom: 50 };
+        const plotW = CHART_WIDTH - MARGIN.left - MARGIN.right;
+        const plotH = CHART_HEIGHT - MARGIN.top - MARGIN.bottom;
+        const DOT_R = 6;
+        const DOT_SPACING = DOT_R * 2 + 2;
+
+        // Map score (1-5) → x position
+        const xScale = (score: number) => MARGIN.left + ((score - 1) / 4) * plotW;
+        const centerY = MARGIN.top + plotH / 2;
+
+        // Group dots by score, then lay them out vertically
+        const buckets: Record<number, typeof dots> = {};
+        dots.forEach(d => {
+          const bucket = d.score;
+          if (!buckets[bucket]) buckets[bucket] = [];
+          buckets[bucket].push(d);
+        });
+
+        const positioned = Object.entries(buckets).flatMap(([scoreStr, group]) => {
+          const score = Number(scoreStr);
+          const cx = xScale(score);
+          return group.map((d, i) => {
+            // Spread from center: 0, -1, 1, -2, 2, ...
+            const offset = i % 2 === 0 ? -(Math.floor(i / 2)) : Math.ceil(i / 2);
+            const cy = centerY + offset * DOT_SPACING;
+            return { ...d, cx, cy };
+          });
+        });
+
+        const labels = [
+          { score: 1, label: 'Critical' },
+          { score: 2, label: 'Mixed' },
+          { score: 3, label: 'Balanced' },
+          { score: 4, label: 'Leaning\nSupportive' },
+          { score: 5, label: 'Supportive' },
+        ];
+
+        // Provider legend
+        const providersInData = Array.from(new Set(dots.map(d => d.provider)));
+
+        return (
+          <div id="overview-framing-spectrum" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Framing Spectrum</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Every AI response as a dot — positioned by how supportively or critically it frames {runStatus?.brand || 'the issue'}. Color indicates the AI platform.
+              </p>
+            </div>
+            {/* Platform legend */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+              {providersInData.map(p => (
+                <div key={p} className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getProviderBrandColor(p) }} />
+                  <span className="text-xs text-gray-500">{getProviderLabel(p)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="overflow-x-auto">
+              <svg width={CHART_WIDTH} height={CHART_HEIGHT} className="mx-auto" style={{ maxWidth: '100%' }}>
+                {/* Background zones */}
+                <rect x={MARGIN.left} y={MARGIN.top} width={plotW * 0.4} height={plotH} fill="#fef2f2" rx={4} opacity={0.5} />
+                <rect x={MARGIN.left + plotW * 0.4} y={MARGIN.top} width={plotW * 0.2} height={plotH} fill="#f9fafb" rx={0} opacity={0.5} />
+                <rect x={MARGIN.left + plotW * 0.6} y={MARGIN.top} width={plotW * 0.4} height={plotH} fill="#f0fdf4" rx={4} opacity={0.5} />
+
+                {/* Grid lines at each score */}
+                {[1, 2, 3, 4, 5].map(s => (
+                  <line key={s} x1={xScale(s)} y1={MARGIN.top} x2={xScale(s)} y2={MARGIN.top + plotH} stroke="#e5e7eb" strokeDasharray="3 3" />
+                ))}
+
+                {/* Dots */}
+                {positioned.map((d, i) => (
+                  <circle
+                    key={i}
+                    cx={d.cx}
+                    cy={d.cy}
+                    r={DOT_R}
+                    fill={getProviderBrandColor(d.provider)}
+                    opacity={0.8}
+                    stroke="white"
+                    strokeWidth={1}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <title>{`${getProviderLabel(d.provider)}: ${labels.find(l => l.score === d.score)?.label?.replace('\n', ' ') || ''}\n${d.prompt.length > 60 ? d.prompt.substring(0, 58) + '...' : d.prompt}`}</title>
+                  </circle>
+                ))}
+
+                {/* X-axis labels */}
+                {labels.map(({ score, label }) => (
+                  <text
+                    key={score}
+                    x={xScale(score)}
+                    y={CHART_HEIGHT - 12}
+                    textAnchor="middle"
+                    fill="#6b7280"
+                    fontSize={11}
+                    fontWeight={500}
+                  >
+                    {label.includes('\n') ? (
+                      <>
+                        <tspan x={xScale(score)} dy="0">{label.split('\n')[0]}</tspan>
+                        <tspan x={xScale(score)} dy="13">{label.split('\n')[1]}</tspan>
+                      </>
+                    ) : label}
+                  </text>
+                ))}
+
+                {/* Axis line */}
+                <line x1={MARGIN.left} y1={MARGIN.top + plotH} x2={MARGIN.left + plotW} y2={MARGIN.top + plotH} stroke="#d1d5db" strokeWidth={1} />
+
+                {/* Zone labels */}
+                <text x={MARGIN.left + plotW * 0.2} y={MARGIN.top + 14} textAnchor="middle" fill="#ef4444" fontSize={10} fontWeight={500} opacity={0.6}>Critical</text>
+                <text x={MARGIN.left + plotW * 0.5} y={MARGIN.top + 14} textAnchor="middle" fill="#6b7280" fontSize={10} fontWeight={500} opacity={0.6}>Neutral</text>
+                <text x={MARGIN.left + plotW * 0.8} y={MARGIN.top + 14} textAnchor="middle" fill="#22c55e" fontSize={10} fontWeight={500} opacity={0.6}>Supportive</text>
+              </svg>
+            </div>
+            <p className="text-xs text-gray-400 italic text-center mt-1">Each dot is one AI response {'\u2022'} Hover for details</p>
+          </div>
+        );
+      })()}
+
       {/* Framing Evidence (issue search type) */}
       {showSection('framing-evidence') && isIssue && (Object.values(framingEvidenceGroups).some(g => g.length > 0)) && (
         <div id="overview-framing-evidence" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
