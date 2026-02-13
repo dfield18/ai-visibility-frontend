@@ -80,6 +80,7 @@ export const OverviewTab = ({
     scatterPlotData,
     brandQuotesMap,
     isCategory,
+    isIssue,
     availableProviders,
     globallyFilteredResults,
     availableBrands,
@@ -388,8 +389,51 @@ export const OverviewTab = ({
     <div className="space-y-6">
       {/* Metrics Cards */}
       {showSection('metrics') && <div id="overview-metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* AI Visibility / Competitive Depth Score Card */}
+        {/* AI Visibility / Competitive Depth Score / Issue Coverage Card */}
         {(() => {
+          if (isIssue) {
+            // Issue Coverage — same ring as AI Visibility, relabeled
+            const visibilityTone = getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tone;
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Issue Coverage</p>
+                  <div className="relative group">
+                    <button
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Learn more about Issue Coverage"
+                      tabIndex={0}
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      Discussed in {overviewMetrics?.mentionedCount || 0} of {overviewMetrics?.totalResponses || 0} AI responses (across selected models/prompts).
+                    </div>
+                  </div>
+                </div>
+                {/* Circular Progress Ring */}
+                <div className="h-[100px] flex items-start">
+                  <div className="relative w-[80px] h-[80px]">
+                    <svg className="w-[80px] h-[80px] transform -rotate-90" viewBox="0 0 80 80">
+                      <circle cx="40" cy="40" r="32" stroke="hsl(var(--muted))" strokeWidth="7" fill="none" />
+                      <circle cx="40" cy="40" r="32" stroke={getArcColorByValue(overviewMetrics?.overallVisibility || 0)} strokeWidth="7" fill="none" strokeLinecap="round" strokeDasharray={`${(overviewMetrics?.overallVisibility || 0) * 2.01} 201`} />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-sm font-bold text-gray-900 tracking-tight tabular-nums">{overviewMetrics?.overallVisibility?.toFixed(1) || 0}%</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Badge */}
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full cursor-help ${getToneStyles(visibilityTone)}`} title={getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).tooltip}>
+                    {getKPIInterpretation('visibility', overviewMetrics?.overallVisibility ?? null).label}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">% of AI responses that discuss {runStatus?.brand || 'this issue'}</p>
+              </div>
+            );
+          }
+
           if (isCategory) {
             // Competitive Depth Score for industry reports
             const avgBrands = overviewMetrics?.avgBrandsPerQuery ?? 0;
@@ -486,9 +530,53 @@ export const OverviewTab = ({
           );
         })()}
 
-        {/* Share of Voice / Market Leader Card */}
+        {/* Share of Voice / Market Leader / Dominant Framing Card */}
         {(() => {
           const sovTone = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tone;
+
+          if (isIssue) {
+            // Dominant Framing — hero text showing the most common framing label
+            const framingLabel = overviewMetrics?.dominantFraming || 'Balanced';
+            const distribution: Record<string, number> = overviewMetrics?.framingDistribution || {};
+            const total = Object.values(distribution).reduce((a, b) => a + b, 0);
+            const dominantCount = distribution[framingLabel] || 0;
+            const dominantPct = total > 0 ? ((dominantCount / total) * 100).toFixed(0) : '0';
+            const framingTone: 'success' | 'neutral' | 'warn' =
+              framingLabel === 'Supportive' || framingLabel === 'Leaning Supportive' ? 'success'
+              : framingLabel === 'Balanced' ? 'neutral'
+              : 'warn';
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.shareOfVoice}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Dominant Framing</p>
+                  <div className="relative group">
+                    <button
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Learn more about Dominant Framing"
+                      tabIndex={0}
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      The most common way AI platforms frame {runStatus?.brand || 'this issue'}. &ldquo;{framingLabel}&rdquo; appears in {dominantPct}% of responses.
+                    </div>
+                  </div>
+                </div>
+                {/* Framing label as hero element */}
+                <div className="h-[100px] flex flex-col justify-center">
+                  <p className="text-2xl font-bold text-gray-900 leading-tight">{framingLabel}</p>
+                  <p className="text-sm text-gray-500 mt-1">{dominantPct}% of responses</p>
+                </div>
+                {/* Badge */}
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(framingTone)}`}>
+                    {framingLabel === 'Balanced' ? 'Neutral framing' : framingLabel === 'Supportive' || framingLabel === 'Leaning Supportive' ? 'Favorable framing' : 'Critical framing'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">How AI platforms most commonly frame {runStatus?.brand || 'this issue'}</p>
+              </div>
+            );
+          }
 
           if (isCategory) {
             // Market Leader variant for industry reports
@@ -585,8 +673,78 @@ export const OverviewTab = ({
           );
         })()}
 
-        {/* Top Result Rate / Competitive Fragmentation Score Card */}
+        {/* Top Result Rate / Competitive Fragmentation Score / Platform Consensus Card */}
         {(() => {
+          if (isIssue) {
+            // Platform Consensus — score/10 display (reuse Market Spread layout)
+            const score = overviewMetrics?.platformConsensus ?? 5;
+            const getConsensusLabel = (s: number) => {
+              if (s <= 2) return 'Highly divided';
+              if (s <= 4) return 'Mostly divided';
+              if (s <= 6) return 'Mixed views';
+              if (s <= 8) return 'Mostly aligned';
+              return 'Strong consensus';
+            };
+            const getConsensusTone = (s: number): 'success' | 'neutral' | 'warn' => {
+              if (s <= 3) return 'warn';
+              if (s <= 6) return 'neutral';
+              return 'success';
+            };
+            const getConsensusColor = (s: number) => {
+              if (s <= 2) return '#f97316';
+              if (s <= 4) return '#eab308';
+              if (s <= 6) return '#6b7280';
+              if (s <= 8) return '#111827';
+              return '#111827';
+            };
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.top1Rate}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Platform Consensus</p>
+                  <div className="relative group">
+                    <button
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Learn more about Platform Consensus"
+                      tabIndex={0}
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg leading-relaxed">
+                      <p className="font-semibold mb-1.5">How consistently AI platforms frame this issue</p>
+                      <p className="mb-1.5">A high score means most platforms agree on the same framing. A low score means platforms have divergent perspectives.</p>
+                      <p className="mb-1"><span className="font-medium">Scale:</span></p>
+                      <p>1-2 Divided &bull; 3-4 Mostly divided &bull; 5-6 Mixed &bull; 7-8 Mostly aligned &bull; 9-10 Aligned</p>
+                    </div>
+                  </div>
+                </div>
+                {/* Score display */}
+                <div className="h-[100px] flex flex-col justify-center items-center">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: getConsensusColor(score) }}>{score}</span>
+                    <span className="text-lg text-gray-400 font-medium">/ 10</span>
+                  </div>
+                  {/* Scale bar */}
+                  <div className="mt-3 w-full">
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${score * 10}%`, backgroundColor: getConsensusColor(score) }} />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-gray-400">Divided</span>
+                      <span className="text-[10px] text-gray-400">Aligned</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Badge */}
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(getConsensusTone(score))}`}>
+                    {getConsensusLabel(score)}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">Do AI platforms agree on how to frame {runStatus?.brand || 'this issue'}?</p>
+              </div>
+            );
+          }
+
           if (isCategory) {
             // Competitive Fragmentation Score for industry reports
             const score = overviewMetrics?.fragmentationScore ?? 5;
@@ -722,8 +880,44 @@ export const OverviewTab = ({
           );
         })()}
 
-        {/* Avg. Position / Total Brands Card */}
+        {/* Avg. Position / Total Brands / Related Issues Card */}
         {(() => {
+          if (isIssue) {
+            // Related Issues — large number showing unique related issues mentioned
+            const relatedCount = overviewMetrics?.relatedIssuesCount || 0;
+            const relatedTone: 'success' | 'neutral' | 'warn' = relatedCount >= 5 ? 'success' : relatedCount >= 2 ? 'neutral' : 'warn';
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Related Issues</p>
+                  <div className="relative group">
+                    <button
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Learn more about Related Issues"
+                      tabIndex={0}
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      {relatedCount} unique related issue{relatedCount !== 1 ? 's' : ''} mentioned across all AI responses about {runStatus?.brand || 'this issue'}.
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[100px] flex items-center justify-center">
+                  <span className="text-5xl font-bold tracking-tight tabular-nums text-gray-900">
+                    {relatedCount}
+                  </span>
+                </div>
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(relatedTone)}`}>
+                    {relatedCount >= 5 ? 'Broad context' : relatedCount >= 2 ? 'Some context' : 'Narrow focus'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">Unique related issues mentioned across all AI responses</p>
+              </div>
+            );
+          }
+
           if (isCategory) {
             const totalBrands = overviewMetrics?.fragmentationBrandCount || 0;
             const brandsTone: 'success' | 'neutral' | 'warn' = totalBrands >= 8 ? 'success' : totalBrands >= 4 ? 'neutral' : 'warn';
@@ -889,13 +1083,67 @@ export const OverviewTab = ({
         </div>
       ) : (
       <>
-      {/* What AI Says About [Brand] */}
+      {/* Platform Framing Comparison (issue search type) */}
+      {showSection('framing-comparison') && isIssue && overviewMetrics?.framingByProvider && Object.keys(overviewMetrics.framingByProvider).length > 0 && (
+        <div id="overview-framing-comparison" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-1">
+            <MessageSquare className="w-5 h-5 text-gray-700" />
+            <h2 className="text-lg font-semibold text-gray-900">Platform Framing Comparison</h2>
+          </div>
+          <p className="text-sm text-gray-500 mb-5">How each AI platform frames {runStatus?.brand || 'this issue'}</p>
+          <div className="space-y-3">
+            {Object.entries(overviewMetrics.framingByProvider as Record<string, Record<string, number>>).map(([provider, framingCounts]) => {
+              const total = Object.values(framingCounts).reduce((a, b) => a + b, 0);
+              if (total === 0) return null;
+              // Collapse into 3 groups: Supportive, Balanced, Critical
+              const supportive = (framingCounts['Supportive'] || 0) + (framingCounts['Leaning Supportive'] || 0);
+              const balanced = framingCounts['Balanced'] || 0;
+              const critical = (framingCounts['Mixed'] || 0) + (framingCounts['Critical'] || 0);
+              const segments = [
+                { label: 'Supportive', count: supportive, color: '#10b981' },
+                { label: 'Balanced', count: balanced, color: '#9ca3af' },
+                { label: 'Critical', count: critical, color: '#f87171' },
+              ].filter(s => s.count > 0);
+              return (
+                <div key={provider} className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-700 w-32 truncate flex-shrink-0" title={getProviderLabel(provider)}>{getProviderLabel(provider)}</span>
+                  <div className="flex-1 flex h-7 rounded-md overflow-hidden">
+                    {segments.map((seg) => {
+                      const pct = (seg.count / total) * 100;
+                      return (
+                        <div
+                          key={seg.label}
+                          className="flex items-center justify-center text-xs font-medium text-white relative group/seg"
+                          style={{ width: `${pct}%`, backgroundColor: seg.color, minWidth: pct > 0 ? '28px' : '0px' }}
+                        >
+                          {pct >= 20 && <span>{seg.label} {pct.toFixed(0)}%</span>}
+                          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover/seg:opacity-100 group-hover/seg:visible transition-all z-50 whitespace-nowrap">
+                            {seg.label}: {seg.count} response{seg.count !== 1 ? 's' : ''} ({pct.toFixed(0)}%)
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Legend */}
+          <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#10b981' }} /> Supportive</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#9ca3af' }} /> Balanced</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#f87171' }} /> Critical</span>
+          </div>
+        </div>
+      )}
+
+      {/* What AI Says About [Brand] / Key Perspectives on [Issue] */}
       {showSection('brand-quotes') && brandQuotes.length > 0 && (
         <div id="overview-brand-quotes" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare className="w-5 h-5 text-gray-700" />
             <h2 className="text-lg font-semibold text-gray-900">
-              What AI Says About {runStatus?.brand}
+              {isIssue ? `Key Perspectives on ${runStatus?.brand || 'This Issue'}` : `What AI Says About ${runStatus?.brand}`}
             </h2>
           </div>
           <div className="space-y-2.5">
@@ -925,9 +1173,11 @@ export const OverviewTab = ({
         <div id="overview-by-question" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Results by Question</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{isIssue ? 'Coverage by Question' : 'Results by Question'}</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {isCategory
+                {isIssue
+                  ? `How AI platforms cover ${runStatus?.brand || 'this issue'} across each question`
+                  : isCategory
                   ? `How the market leader performs across each question about ${runStatus?.brand}`
                   : `How ${runStatus?.brand} performs across each question asked to AI`
                 }
@@ -951,33 +1201,37 @@ export const OverviewTab = ({
                   <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="whitespace-nowrap">{isCategory ? 'Avg. Brands' : 'AI Visibility'}</span>
+                      <span className="whitespace-nowrap">{isIssue ? 'Issue Discussed' : isCategory ? 'Avg. Brands' : 'AI Visibility'}</span>
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          {isCategory
+                          {isIssue
+                            ? `% of AI responses that discuss ${runStatus?.brand || 'this issue'} for this question`
+                            : isCategory
                             ? `Average number of brands surfaced per AI response for this question`
                             : `% of AI responses that mention ${runStatus?.brand || 'your brand'} for this question`
                           }
                         </div>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-400 font-normal">% mentioned</div>
+                    <div className="text-xs text-gray-400 font-normal">{isIssue ? '% discussed' : '% mentioned'}</div>
                   </th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="whitespace-nowrap">{isCategory ? 'Leader Share' : 'Share of Voice'}</span>
+                      <span className="whitespace-nowrap">{isIssue ? 'Related Issues' : isCategory ? 'Leader Share' : 'Share of Voice'}</span>
                       <div className="relative group">
                         <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
                         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
-                          {isCategory
+                          {isIssue
+                            ? `Number of related issues mentioned in AI responses for this question`
+                            : isCategory
                             ? `Market leader's share of all brand mentions for this question`
                             : `${runStatus?.brand || 'Your brand'}'s share of all brand mentions for this question`
                           }
                         </div>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-400 font-normal">% of brand mentions</div>
+                    <div className="text-xs text-gray-400 font-normal">{isIssue ? '# related issues' : '% of brand mentions'}</div>
                   </th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                     <div className="flex items-center justify-center gap-1">

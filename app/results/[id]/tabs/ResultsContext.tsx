@@ -18,6 +18,7 @@ export interface ResultsContextValue {
   availablePrompts: string[];
   trackedBrands: Set<string>;
   isCategory: boolean;
+  isIssue: boolean;
   searchType: SearchType;
   searchTypeConfig: SearchTypeConfig;
   brandMentionRate: number;

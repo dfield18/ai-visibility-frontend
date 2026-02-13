@@ -3424,6 +3424,87 @@ export default function ResultsPage() {
       fragmentationScore = 1;
     }
 
+    // Issue-specific metrics
+    const FRAMING_MAP: Record<string, string> = {
+      strong_endorsement: 'Supportive',
+      positive_endorsement: 'Leaning Supportive',
+      neutral_mention: 'Balanced',
+      conditional: 'Mixed',
+      negative_comparison: 'Critical',
+    };
+
+    let dominantFraming = 'Balanced';
+    let framingDistribution: Record<string, number> = {};
+    let platformConsensus = 5;
+    let relatedIssuesCount = 0;
+    let framingByProvider: Record<string, Record<string, number>> = {};
+
+    if (runStatus.search_type === 'issue') {
+      // Build framing distribution from brand_sentiment
+      const framingCounts: Record<string, number> = {};
+      for (const result of results) {
+        const raw = result.brand_sentiment || 'neutral_mention';
+        const label = FRAMING_MAP[raw] || 'Balanced';
+        framingCounts[label] = (framingCounts[label] || 0) + 1;
+      }
+      framingDistribution = framingCounts;
+
+      // Dominant framing = most common label
+      let maxCount = 0;
+      for (const [label, count] of Object.entries(framingCounts)) {
+        if (count > maxCount) {
+          maxCount = count;
+          dominantFraming = label;
+        }
+      }
+
+      // Platform consensus: find each provider's dominant framing, check agreement
+      const providerFramings: Record<string, Record<string, number>> = {};
+      for (const result of results) {
+        const provider = result.provider;
+        if (!providerFramings[provider]) providerFramings[provider] = {};
+        const raw = result.brand_sentiment || 'neutral_mention';
+        const label = FRAMING_MAP[raw] || 'Balanced';
+        providerFramings[provider][label] = (providerFramings[provider][label] || 0) + 1;
+      }
+
+      // framingByProvider for the stacked bar chart
+      framingByProvider = providerFramings;
+
+      // Find each provider's dominant framing
+      const providerDominant: Record<string, string> = {};
+      for (const [provider, counts] of Object.entries(providerFramings)) {
+        let best = '';
+        let bestCount = 0;
+        for (const [label, count] of Object.entries(counts)) {
+          if (count > bestCount) { bestCount = count; best = label; }
+        }
+        providerDominant[provider] = best;
+      }
+
+      // Count providers that agree on the same framing
+      const providerCount = Object.keys(providerDominant).length;
+      if (providerCount > 0) {
+        const framingAgreement: Record<string, number> = {};
+        for (const framing of Object.values(providerDominant)) {
+          framingAgreement[framing] = (framingAgreement[framing] || 0) + 1;
+        }
+        const maxAgreement = Math.max(...Object.values(framingAgreement));
+        platformConsensus = Math.max(1, Math.min(10, Math.round((maxAgreement / providerCount) * 10)));
+      }
+
+      // Related issues count from competitors_mentioned
+      const relatedIssues = new Set<string>();
+      for (const result of results) {
+        if (result.competitors_mentioned) {
+          for (const comp of result.competitors_mentioned) {
+            relatedIssues.add(comp);
+          }
+        }
+      }
+      relatedIssuesCount = relatedIssues.size;
+    }
+
     return {
       overallVisibility,
       shareOfVoice,
@@ -3444,6 +3525,12 @@ export default function ResultsPage() {
       resultsWithBrands,
       fragmentationScore,
       fragmentationBrandCount: N,
+      // Issue-specific fields
+      dominantFraming,
+      framingDistribution,
+      platformConsensus,
+      relatedIssuesCount,
+      framingByProvider,
     };
   }, [runStatus, globallyFilteredResults, llmBreakdownBrands]);
 
@@ -3808,6 +3895,7 @@ export default function ResultsPage() {
   const summary = runStatus?.summary ?? null;
   const brandMentionRate = summary?.brand_mention_rate ?? 0;
   const isCategory = runStatus?.search_type === 'category';
+  const isIssue = runStatus?.search_type === 'issue';
 
   const getMentionRateColor = (rate: number) => {
     if (rate >= 0.7) return 'text-emerald-700';
@@ -4715,6 +4803,7 @@ export default function ResultsPage() {
             availablePrompts,
             trackedBrands,
             isCategory,
+            isIssue,
             searchType: (runStatus?.search_type || 'brand') as any,
             searchTypeConfig: getSearchTypeConfig((runStatus?.search_type || 'brand') as any),
             brandMentionRate,
@@ -4755,19 +4844,36 @@ export default function ResultsPage() {
           }}
         >
         {activeTab === 'overview' && (
-          <OverviewTab
-            aiSummaryExpanded={aiSummaryExpanded}
-            setAiSummaryExpanded={setAiSummaryExpanded}
-            showSentimentColors={showSentimentColors}
-            setShowSentimentColors={setShowSentimentColors}
-            chartTab={chartTab}
-            setChartTab={setChartTab}
-            providerFilter={providerFilter}
-            setProviderFilter={setProviderFilter}
-            brandBlurbs={brandBlurbs}
-            setCopied={setCopied}
-            accessLevel={sectionAccess['overview']}
-          />
+          runStatus?.search_type === 'issue' ? (
+            <OverviewTab
+              aiSummaryExpanded={aiSummaryExpanded}
+              setAiSummaryExpanded={setAiSummaryExpanded}
+              showSentimentColors={showSentimentColors}
+              setShowSentimentColors={setShowSentimentColors}
+              chartTab={chartTab}
+              setChartTab={setChartTab}
+              providerFilter={providerFilter}
+              setProviderFilter={setProviderFilter}
+              brandBlurbs={brandBlurbs}
+              setCopied={setCopied}
+              accessLevel={sectionAccess['overview']}
+              visibleSections={['metrics', 'ai-summary', 'framing-comparison', 'brand-quotes', 'prompt-breakdown', 'all-results']}
+            />
+          ) : (
+            <OverviewTab
+              aiSummaryExpanded={aiSummaryExpanded}
+              setAiSummaryExpanded={setAiSummaryExpanded}
+              showSentimentColors={showSentimentColors}
+              setShowSentimentColors={setShowSentimentColors}
+              chartTab={chartTab}
+              setChartTab={setChartTab}
+              providerFilter={providerFilter}
+              setProviderFilter={setProviderFilter}
+              brandBlurbs={brandBlurbs}
+              setCopied={setCopied}
+              accessLevel={sectionAccess['overview']}
+            />
+          )
         )}
         {activeTab === 'reference' && (
           <PaywallOverlay locked={sectionAccess['reference'] === 'locked'}>
