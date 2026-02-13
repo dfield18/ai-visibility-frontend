@@ -495,11 +495,11 @@ export const OverviewTab = ({
             const score = overviewMetrics?.fragmentationScore ?? 5;
             const brandCount = overviewMetrics?.fragmentationBrandCount ?? 0;
             const getFragLabel = (s: number) => {
-              if (s <= 2) return 'Highly Concentrated';
-              if (s <= 4) return 'Concentrated';
-              if (s <= 6) return 'Moderately Competitive';
-              if (s <= 8) return 'Competitive';
-              return 'Highly Fragmented';
+              if (s <= 2) return 'Few brands dominate';
+              if (s <= 4) return 'Top-heavy market';
+              if (s <= 6) return 'Moderately spread';
+              if (s <= 8) return 'Many options';
+              return 'Wide open market';
             };
             const getFragTone = (s: number): 'success' | 'neutral' | 'warn' => {
               if (s <= 2) return 'warn';
@@ -518,22 +518,20 @@ export const OverviewTab = ({
             return (
               <div style={{ order: 3 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.top1Rate}`}>
                 <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Fragmentation</p>
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Spread</p>
                   <div className="relative group">
                     <button
                       className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                      aria-label="Learn more about Competitive Fragmentation Score"
+                      aria-label="Learn more about Market Spread"
                       tabIndex={0}
                     >
                       <HelpCircle className="w-4 h-4 text-gray-400" />
                     </button>
-                    <div className="absolute right-0 top-full mt-1 w-80 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg leading-relaxed">
-                      <p className="font-semibold mb-1.5">Competitive Fragmentation Score</p>
-                      <p className="mb-1.5">Measures how evenly AI brand mentions are distributed across {brandCount} brands in the {runStatus?.brand || 'category'} space.</p>
-                      <p className="mb-1.5"><span className="font-medium">Formula:</span> Based on the Herfindahl-Hirschman Index (HHI). Each brand&apos;s share of total mentions is squared and summed (HHI = &Sigma;s&sup2;). The HHI is then normalized against the minimum possible concentration (1/N) and inverted so that higher scores = more fragmented.</p>
-                      <p className="mb-1.5"><span className="font-medium">Long-tail adjustment:</span> Brands outside the top 3 boost the score, rewarding markets with many smaller players.</p>
+                    <div className="absolute right-0 top-full mt-1 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg leading-relaxed">
+                      <p className="font-semibold mb-1.5">How spread out is this market?</p>
+                      <p className="mb-1.5">A low score means AI mostly recommends the same few brands. A high score means many brands get recommended fairly equally.</p>
                       <p className="mb-1"><span className="font-medium">Scale:</span></p>
-                      <p>1-2 Highly Concentrated &bull; 3-4 Concentrated &bull; 5-6 Moderately Competitive &bull; 7-8 Competitive &bull; 9-10 Highly Fragmented</p>
+                      <p>1-2 A few brands dominate &bull; 3-4 Top-heavy &bull; 5-6 Mixed &bull; 7-8 Many options &bull; 9-10 Wide open</p>
                     </div>
                   </div>
                 </div>
@@ -552,8 +550,8 @@ export const OverviewTab = ({
                       />
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className="text-[10px] text-gray-400">Concentrated</span>
-                      <span className="text-[10px] text-gray-400">Fragmented</span>
+                      <span className="text-[10px] text-gray-400">Few brands</span>
+                      <span className="text-[10px] text-gray-400">Many brands</span>
                     </div>
                   </div>
                 </div>
@@ -564,7 +562,7 @@ export const OverviewTab = ({
                   </span>
                 </div>
                 {/* Description */}
-                <p className="text-xs text-gray-500 leading-relaxed mt-auto">How evenly AI distributes brand mentions across {brandCount} brands</p>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">Do AI models recommend the same brands or spread across {brandCount}?</p>
               </div>
             );
           }

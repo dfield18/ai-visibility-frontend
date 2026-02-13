@@ -1767,6 +1767,17 @@ export const SourcesTab = () => {
                       </span>
                     </th>
                     <th
+                      className={`${isCategory ? 'w-[9%]' : 'w-[12%]'} text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
+                      onClick={() => handleDomainSort('category')}
+                    >
+                      <span className="flex items-center justify-center gap-1">
+                        Type
+                        {domainSortColumn === 'category' && (
+                          <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                        )}
+                      </span>
+                    </th>
+                    <th
                       className={`${isCategory ? 'w-[10%]' : 'w-[13%]'} text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
                       onClick={() => handleDomainSort('usedPercent')}
                     >
@@ -1787,17 +1798,6 @@ export const SourcesTab = () => {
                       <span className="flex items-center justify-center gap-1">
                         Avg Citations
                         {domainSortColumn === 'avgCitation' && (
-                          <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
-                        )}
-                      </span>
-                    </th>
-                    <th
-                      className={`${isCategory ? 'w-[9%]' : 'w-[12%]'} text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
-                      onClick={() => handleDomainSort('category')}
-                    >
-                      <span className="flex items-center justify-center gap-1">
-                        Type
-                        {domainSortColumn === 'category' && (
                           <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
                       </span>
@@ -1826,8 +1826,8 @@ export const SourcesTab = () => {
                 <table className="w-full table-fixed">
                   <colgroup>
                     <col className={isCategory ? 'w-[15%]' : 'w-[18%]'} />
-                    <col className={isCategory ? 'w-[10%]' : 'w-[13%]'} />
                     <col className={isCategory ? 'w-[9%]' : 'w-[12%]'} />
+                    <col className={isCategory ? 'w-[10%]' : 'w-[13%]'} />
                     <col className={isCategory ? 'w-[9%]' : 'w-[12%]'} />
                     <col className={isCategory ? 'w-[11%]' : 'w-[15%]'} />
                     <col className={isCategory ? 'w-[12%]' : 'w-[15%]'} />
@@ -1866,6 +1866,12 @@ export const SourcesTab = () => {
                           <span className="text-sm text-gray-900 font-medium">{row.domain}</span>
                         </td>
                         <td className="py-4 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {getCategoryIcon(row.category, "w-3.5 h-3.5")}
+                            <span className="text-sm text-gray-600">{row.category}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                               <div
@@ -1881,12 +1887,6 @@ export const SourcesTab = () => {
                         </td>
                         <td className="py-4 px-4 text-center">
                           <span className="text-sm text-gray-600">{row.avgCitation.toFixed(2)}</span>
-                        </td>
-                        <td className="py-4 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {getCategoryIcon(row.category, "w-3.5 h-3.5")}
-                            <span className="text-sm text-gray-600">{row.category}</span>
-                          </div>
                         </td>
                         <td className="py-4 px-4 text-center">
                           {getSentimentBadge()}
