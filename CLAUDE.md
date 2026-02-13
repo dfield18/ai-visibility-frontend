@@ -2,7 +2,14 @@
 
 ## Project Overview
 
-AI Visibility Frontend - A Next.js application for analyzing brand visibility across AI providers (OpenAI, Google Gemini). Users enter their brand, configure prompts and competitors, run analysis, and view results showing mention rates and response data.
+AI Visibility Frontend - A Next.js application for analyzing visibility across AI providers (ChatGPT, Claude, Gemini, Perplexity, Grok, Llama, AI Overviews). Supports multiple search types: **Brand**, **Industry** (category), **Local**, **Issue**, and **Public Figure**. Users select a search type, enter their subject, configure prompts and competitors, run analysis, and view results.
+
+## Backend Repo
+
+Located at `/Users/davidfield/Documents/ai-visibility-backend` (FastAPI/Python). Key files:
+- `app/services/openai_service.py` — GPT prompt generation for suggestions, analysis summaries, and recommendations
+- `app/api/routes/run.py` — Run creation and result formatting
+- `app/api/routes/suggest.py` — Prompt/competitor suggestion endpoints
 
 ## Tech Stack
 
@@ -19,23 +26,34 @@ AI Visibility Frontend - A Next.js application for analyzing brand visibility ac
 ## Project Structure
 
 ```
-app/                    # Next.js App Router pages
-├── layout.tsx          # Root layout with QueryClientProvider
-├── page.tsx            # Landing page (brand input)
-├── providers.tsx       # React Query provider setup
-├── api/validate-brand/ # Brand validation API route
-├── configure/page.tsx  # Prompts/competitors configuration
-├── run/[id]/page.tsx   # Real-time progress tracking
-└── results/[id]/page.tsx # Results dashboard
+app/                          # Next.js App Router pages
+├── layout.tsx                # Root layout with QueryClientProvider
+├── page.tsx                  # Landing page (search type selector + input)
+├── providers.tsx             # React Query provider setup
+├── api/validate-brand/       # Brand validation API route
+├── configure/page.tsx        # Prompts/competitors configuration
+├── run/[id]/page.tsx         # Real-time progress tracking
+└── results/[id]/
+    ├── page.tsx              # Results dashboard (orchestrates tabs + contexts)
+    └── tabs/
+        ├── shared.ts         # Shared types (Result, RunStatusResponse, TabType)
+        ├── ResultsContext.tsx # ResultsContext (data) + ResultsUIContext (UI state)
+        ├── OverviewTab.tsx    # Visibility overview metrics + charts
+        ├── CompetitiveTab.tsx # Competitive landscape / brand comparison
+        ├── SentimentTab.tsx   # Sentiment & tone analysis
+        ├── SourcesTab.tsx     # Source citations + publisher breakdown
+        ├── RecommendationsTab.tsx # Recommendations (brand) / Analysis (industry)
+        └── ReferenceTab.tsx   # Raw data table
 
-components/ui/          # Reusable UI components (Button, Card, Badge, etc.)
+components/ui/                # Reusable UI components (Button, Card, Badge, etc.)
 hooks/
-├── useApi.ts           # React Query hooks for API calls
-└── useStore.ts         # Zustand store definition
+├── useApi.ts                 # React Query hooks for API calls
+└── useStore.ts               # Zustand store definition
 lib/
-├── api.ts              # API client class
-├── types.ts            # TypeScript interfaces
-└── utils.ts            # Helper functions
+├── api.ts                    # API client class
+├── types.ts                  # TypeScript interfaces (includes SearchType union)
+├── searchTypeConfig.ts       # Per-search-type configuration registry
+└── utils.ts                  # Helper functions
 ```
 
 ## Commands
@@ -53,6 +71,46 @@ npm run lint    # ESLint
 - `OPENAI_API_KEY` - OpenAI API key for brand validation
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk public key (required)
 - `CLERK_SECRET_KEY` - Clerk secret key (required)
+
+## Search Type System (`lib/searchTypeConfig.ts`)
+
+The `SearchTypeConfig` registry is the central config that drives ALL per-search-type behavior. Instead of scattered `if (isCategory)` checks, labels and settings come from this config.
+
+**Search types**: `'brand' | 'category' | 'local' | 'issue' | 'public_figure'` (defined in `lib/types.ts`)
+
+Each config includes: labels for UI text (brandMentionLabel, competitorColumnLabel, sentimentLabel), tab list with enable/disable flags, placeholder text, example suggestions, and recommendation context for the AI.
+
+**Key behaviors per type:**
+- **Brand**: Full feature set, all tabs enabled, Site Audit included
+- **Industry (category)**: "Recommendations" tab renamed to "Analysis", Site Audit disabled, category name excluded from brand lists (use `competitors_mentioned` not `brand_mentioned`), no impact/effort badges on insights, Industry Overview tab added
+- **Local**: Like brand but requires location, no Site Audit
+- **Issue**: "Competitive" renamed to "Related Issues", "Sentiment" renamed to "Framing & Tone", no Site Audit or Reports
+- **Public Figure**: "Competitive" renamed to "Figure Comparison", no Site Audit
+
+## Results Architecture
+
+### Two-Context Pattern (`ResultsContext.tsx`)
+
+- **`ResultsContext`** (via `useResults()`): Stable/read-mostly data — run status, filtered results, computed stats, available providers/brands/prompts, search type config
+- **`ResultsUIContext`** (via `useResultsUI()`): Interactive UI state — active tab, selected result, copy/export handlers, modal setters
+
+### `visibleSections` Prop Pattern
+
+Tab components (OverviewTab, CompetitiveTab, SentimentTab) accept an optional `visibleSections` prop — an array of section IDs. When provided, only those sections render. This enables composing tabs: e.g., Industry Overview embeds `<SentimentTab visibleSections={['sentiment-by-platform']} />` between two OverviewTab instances without duplicating code.
+
+### Industry Overview Tab Composition (`page.tsx`)
+
+For category search type, the Industry Overview tab is composed from multiple tab components:
+1. `<OverviewTab visibleSections={['by-platform']} />` — Brand Visibility by Platform
+2. `<SentimentTab visibleSections={['sentiment-by-platform']} />` — Sentiment by Platform
+3. `<OverviewTab visibleSections={['all-results']} />` — All Results table (with brand filter dropdown)
+
+### Category-Specific Data Rules
+
+- `brand_mentioned` holds the category name (e.g., "Sneakers") — exclude from brand lists for industry reports
+- `competitors_mentioned` holds actual brands within the category — use these for brand filtering
+- Publisher Breakdown: skip category name when building `brandsInResponse`
+- Sources tab: don't look up websites for the category itself, only for brands within it
 
 ## Key Patterns & Conventions
 
@@ -129,9 +187,9 @@ Components in `components/ui/` follow this pattern:
 ## Key Pages
 
 ### Homepage (`app/page.tsx`)
-- Brand input with "Visibility" logo
-- Search box with TRY chips for quick examples
-- Visibility Report preview card
+- Explicit search type selector buttons (Brand, Industry, Local, Issue, Public Figure) — user must choose before searching
+- Input placeholder and TRY examples change per search type (driven by `searchTypeConfig`)
+- Buttons use `flex-1` for equal width
 
 ### Configure Page (`app/configure/page.tsx`)
 - Edit prompts/questions to ask AI
@@ -145,7 +203,13 @@ Components in `components/ui/` follow this pattern:
 - Cancel functionality
 
 ### Results Page (`app/results/[id]/page.tsx`)
-- Multi-tab dashboard (Visibility, Competitive Landscape, Sentiment, Sources, Recommendations, Site Audit, Reports, Reference)
-- Metric cards with donut charts
-- AI Brand Position by Platform chart with platform brand colors
-- Detailed response tables and exports
+- Dynamic tab list driven by `searchTypeConfig.tabs` (filtered by `enabled` flag)
+- Tab components extracted to `app/results/[id]/tabs/` directory
+- Orchestrates `ResultsProvider` with both data and UI contexts
+- Industry reports add "Industry Overview" tab composed from multiple sub-components
+- Tabs: Visibility, Competitive Landscape, Sentiment & Tone, Sources, Recommendations, Site Audit, Automated Reports, ChatGPT Advertising, Raw Data (availability varies by search type)
+- Sentiment colors: emerald-700 (Strong), green-600 (Positive), gray-500 (Neutral), amber-600 (Conditional), red-600 (Negative)
+
+### Running TypeScript checks
+- Must run from the project directory: `cd /Users/davidfield/Documents/ai-visibility-frontend && npx tsc --noEmit`
+- Running `npx tsc` from outside the project dir will fail
