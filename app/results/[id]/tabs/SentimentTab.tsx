@@ -64,13 +64,14 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
     // Helper function to get sentiment label
     const getSentimentLabel = (sentiment: string | null | undefined) => {
+      const issueMode = runStatus?.search_type === 'issue';
       switch (sentiment) {
-        case 'strong_endorsement': return 'Strong';
-        case 'positive_endorsement': return 'Positive';
-        case 'neutral_mention': return 'Neutral';
-        case 'conditional': return 'Conditional';
-        case 'negative_comparison': return 'Negative';
-        case 'not_mentioned': return 'Not Mentioned';
+        case 'strong_endorsement': return issueMode ? 'Supportive' : 'Strong';
+        case 'positive_endorsement': return issueMode ? 'Leaning Supportive' : 'Positive';
+        case 'neutral_mention': return issueMode ? 'Balanced' : 'Neutral';
+        case 'conditional': return issueMode ? 'Mixed' : 'Conditional';
+        case 'negative_comparison': return issueMode ? 'Critical' : 'Negative';
+        case 'not_mentioned': return issueMode ? 'Not Discussed' : 'Not Mentioned';
         default: return 'Unknown';
       }
     };
@@ -803,10 +804,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       <div className="space-y-6">
         {/* Brand Sentiment Overview */}
         {showSection('sentiment-distribution') && <div id="sentiment-distribution" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">How AI Describes {runStatus?.brand}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">{isIssue ? `How AI Frames ${runStatus?.brand}` : `How AI Describes ${runStatus?.brand}`}</h3>
           <p className="text-sm text-gray-500 mb-6">
             {isIndustryReport
               ? 'Average sentiment across all brands within this industry'
+              : isIssue
+              ? 'Framing classification of how AI models discuss this issue'
               : 'Sentiment classification of how AI models mention your brand'}
           </p>
 
@@ -814,7 +817,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             {/* Sentiment Distribution */}
             <div>
               <div className="flex items-baseline justify-between mb-4">
-                <h4 className="text-sm font-medium text-gray-700">Overall Sentiment Distribution</h4>
+                <h4 className="text-sm font-medium text-gray-700">{isIssue ? 'Overall Framing Distribution' : 'Overall Sentiment Distribution'}</h4>
                 <span className="text-xs text-gray-400">Bar length = number of citations</span>
               </div>
               <div className="space-y-3">
@@ -874,6 +877,18 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                     insight = `Brands in ${runStatus?.brand} appear in negative comparisons ${negativeCount} time${negativeCount !== 1 ? 's' : ''}, indicating competitive tension in AI recommendations.`;
                   } else {
                     insight = `Brands in ${runStatus?.brand} have mixed sentiment across AI responses. Average positive sentiment rate is ${strongRate.toFixed(0)}%.`;
+                  }
+                } else if (isIssue) {
+                  if (strongRate >= 50) {
+                    insight = `${runStatus?.brand} receives supportive framing in ${strongRate.toFixed(0)}% of AI responses, indicating a broadly favorable perspective across platforms.`;
+                  } else if (positiveRate >= 70) {
+                    insight = `${runStatus?.brand} is framed supportively or neutrally in ${positiveRate.toFixed(0)}% of responses, suggesting balanced AI coverage.`;
+                  } else if (conditionalCount > strongCount) {
+                    insight = `AI models often discuss ${runStatus?.brand} with mixed framing or qualifications, suggesting nuanced perspectives on the issue.`;
+                  } else if (negativeCount > 0 && negativeCount >= strongCount) {
+                    insight = `${runStatus?.brand} receives critical framing ${negativeCount} time${negativeCount !== 1 ? 's' : ''}, indicating skeptical AI perspectives on this issue.`;
+                  } else {
+                    insight = `${runStatus?.brand} has mixed framing across AI responses. Supportive framing rate is ${strongRate.toFixed(0)}% with ${mentionRate.toFixed(0)}% overall discussion rate.`;
                   }
                 } else {
                   if (strongRate >= 50) {
