@@ -4924,7 +4924,7 @@ export default function ResultsPage() {
         >
         {activeTab === 'overview' && (
           runStatus?.search_type === 'issue' ? (
-            <>
+            <div className="space-y-6">
               <OverviewTab
                 aiSummaryExpanded={aiSummaryExpanded}
                 setAiSummaryExpanded={setAiSummaryExpanded}
@@ -4984,7 +4984,7 @@ export default function ResultsPage() {
                 accessLevel={sectionAccess['overview']}
                 visibleSections={['all-results']}
               />
-            </>
+            </div>
           ) : (
             <OverviewTab
               aiSummaryExpanded={aiSummaryExpanded}
