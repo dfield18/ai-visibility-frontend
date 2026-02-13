@@ -4821,7 +4821,7 @@ export default function ResultsPage() {
               visibleSections={['visibility-reports', 'breakdown', 'positioning', 'matrix', 'cooccurrence']}
               forceCooccurrenceView="pairs"
             />
-            {/* Brand Visibility by Platform + All Results from Overview tab */}
+            {/* Brand Visibility by Platform from Overview tab */}
             <OverviewTab
               aiSummaryExpanded={aiSummaryExpanded}
               setAiSummaryExpanded={setAiSummaryExpanded}
@@ -4834,7 +4834,24 @@ export default function ResultsPage() {
               brandBlurbs={brandBlurbs}
               setCopied={setCopied}
               accessLevel={sectionAccess['overview']}
-              visibleSections={['by-platform', 'all-results']}
+              visibleSections={['by-platform']}
+            />
+            {/* Sentiment by AI Platform from Sentiment tab */}
+            <SentimentTab visibleSections={['sentiment-by-platform']} />
+            {/* All Results from Overview tab */}
+            <OverviewTab
+              aiSummaryExpanded={aiSummaryExpanded}
+              setAiSummaryExpanded={setAiSummaryExpanded}
+              showSentimentColors={showSentimentColors}
+              setShowSentimentColors={setShowSentimentColors}
+              chartTab={chartTab}
+              setChartTab={setChartTab}
+              providerFilter={providerFilter}
+              setProviderFilter={setProviderFilter}
+              brandBlurbs={brandBlurbs}
+              setCopied={setCopied}
+              accessLevel={sectionAccess['overview']}
+              visibleSections={['all-results']}
             />
           </div>
         )}

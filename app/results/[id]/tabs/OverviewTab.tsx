@@ -82,6 +82,7 @@ export const OverviewTab = ({
     isCategory,
     availableProviders,
     globallyFilteredResults,
+    availableBrands,
     llmBreakdownBrandFilter,
     setLlmBreakdownBrandFilter,
     promptBreakdownLlmFilter,
@@ -99,6 +100,7 @@ export const OverviewTab = ({
   const [expandedLLMCards, setExpandedLLMCards] = useState<Set<string>>(new Set());
   const [tableSortColumn, setTableSortColumn] = useState<'default' | 'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('default');
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [tableBrandFilter, setTableBrandFilter] = useState<string>('all');
 
   // ---------------------------------------------------------------------------
   // Moved computations
@@ -175,9 +177,10 @@ export const OverviewTab = ({
       const isAiOverviewError = result.provider === 'ai_overviews' && result.error;
       if (result.error && !isAiOverviewError) return false;
       if (providerFilter !== 'all' && result.provider !== providerFilter) return false;
+      if (tableBrandFilter !== 'all' && !result.competitors_mentioned?.includes(tableBrandFilter)) return false;
       return true;
     });
-  }, [globallyFilteredResults, providerFilter, runStatus]);
+  }, [globallyFilteredResults, providerFilter, tableBrandFilter, runStatus]);
 
   // Helper to calculate position for a result based on first appearance in response text
   const getResultPosition = (result: Result): number | null => {
@@ -1344,16 +1347,30 @@ export const OverviewTab = ({
               Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error || (r.provider === 'ai_overviews' && r.error)).length} results
             </p>
           </div>
-          <select
-            value={providerFilter}
-            onChange={(e) => setProviderFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-          >
-            <option value="all">All Models</option>
-            {availableProviders.map((p) => (
-              <option key={p} value={p}>{getProviderLabel(p)}</option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2">
+            {isCategory && (
+              <select
+                value={tableBrandFilter}
+                onChange={(e) => setTableBrandFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+              >
+                <option value="all">All Brands</option>
+                {availableBrands.map((brand) => (
+                  <option key={brand} value={brand}>{brand}</option>
+                ))}
+              </select>
+            )}
+            <select
+              value={providerFilter}
+              onChange={(e) => setProviderFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            >
+              <option value="all">All Models</option>
+              {availableProviders.map((p) => (
+                <option key={p} value={p}>{getProviderLabel(p)}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Table */}

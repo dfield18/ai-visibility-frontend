@@ -31,7 +31,14 @@ import { useResults, useResultsUI } from './ResultsContext';
 
 // No props needed - all data comes from context
 
-export const SentimentTab = () => {
+export interface SentimentTabProps {
+  /** When provided, only render sections whose IDs are in this list. */
+  visibleSections?: string[];
+}
+
+export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
+  // Section visibility helper — if visibleSections is not set, show all
+  const showSection = (id: string) => !visibleSections || visibleSections.includes(id);
   const { runStatus, globallyFilteredResults, trackedBrands, availableProviders } = useResults();
   const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
 
@@ -740,7 +747,7 @@ export const SentimentTab = () => {
     return (
       <div className="space-y-6">
         {/* Brand Sentiment Overview */}
-        <div id="sentiment-distribution" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        {showSection('sentiment-distribution') && <div id="sentiment-distribution" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-1">How AI Describes {runStatus?.brand}</h3>
           <p className="text-sm text-gray-500 mb-6">Sentiment classification of how AI models mention your brand</p>
 
@@ -814,10 +821,10 @@ export const SentimentTab = () => {
               })()}
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Key Sentiment & Tone Insights */}
-        {sentimentInsights.length > 0 && (
+        {showSection('sentiment-insights') && sentimentInsights.length > 0 && (
           <div id="sentiment-insights" className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl shadow-sm border border-teal-100 p-6">
             <div className="flex items-center gap-2 mb-4">
               <Lightbulb className="w-5 h-5 text-teal-600" />
@@ -837,7 +844,7 @@ export const SentimentTab = () => {
         )}
 
         {/* Sentiment by Prompt Chart */}
-        {globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length > 0 && (() => {
+        {showSection('sentiment-by-question') && globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).length > 0 && (() => {
           // Get effective brand filter (default to searched brand)
           const effectiveBrand = sentimentByPromptBrandFilter || runStatus?.brand || '';
 
@@ -1199,7 +1206,7 @@ export const SentimentTab = () => {
         })()}
 
         {/* Sentiment by Provider */}
-        <div id="sentiment-by-platform" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
+        {showSection('sentiment-by-platform') && <div id="sentiment-by-platform" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-visible">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Sentiment by AI Platform</h3>
@@ -1391,10 +1398,10 @@ export const SentimentTab = () => {
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />Negative</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#e5e7eb' }} />Not Mentioned</span>
           </div>
-        </div>
+        </div>}
 
         {/* Competitor Sentiment Comparison */}
-        {competitorSentimentData.length > 0 && (
+        {showSection('sentiment-competitor') && competitorSentimentData.length > 0 && (
           <div id="sentiment-competitor" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-1">Competitor Sentiment Comparison</h3>
             <p className="text-sm text-gray-500 mb-6">How AI models describe competitors in the same responses</p>
@@ -1517,7 +1524,7 @@ export const SentimentTab = () => {
         )}
 
         {/* Individual Results with Sentiment */}
-        <div id="sentiment-details" className="bg-white rounded-xl shadow-sm border border-gray-100">
+        {showSection('sentiment-details') && <div id="sentiment-details" className="bg-white rounded-xl shadow-sm border border-gray-100">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
             <div>
@@ -1721,7 +1728,7 @@ export const SentimentTab = () => {
               {copied ? 'Copied!' : 'Share'}
             </button>
           </div>
-        </div>
+        </div>}
       </div>
     );
 };
