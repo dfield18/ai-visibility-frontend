@@ -378,8 +378,11 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       if (!runStatus) return [];
       const options: { value: string; label: string; isSearched: boolean }[] = [];
 
-      // Add searched brand first
-      if (runStatus.brand) {
+      if (isIndustryReport) {
+        // For industry reports, default to all brands average; exclude category name
+        options.push({ value: '__all__', label: 'All Brands (average sentiment)', isSearched: false });
+      } else if (runStatus.brand) {
+        // For brand reports, show searched brand first
         options.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)`, isSearched: true });
       }
 
@@ -397,10 +400,11 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       });
 
       return options;
-    }, [runStatus, globallyFilteredResults]);
+    }, [runStatus, globallyFilteredResults, isIndustryReport]);
 
-    // Get the effective brand filter (default to searched brand)
-    const effectiveSentimentBrand = sentimentProviderBrandFilter || runStatus?.brand || '';
+    // Get the effective brand filter
+    // For industry reports, default to '__all__' (average across all brands)
+    const effectiveSentimentBrand = sentimentProviderBrandFilter || (isIndustryReport ? '__all__' : runStatus?.brand || '');
 
     // Get list of unique citation source domains for the filter dropdown
     const citationSourceOptions = useMemo(() => {
@@ -427,6 +431,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         not_mentioned: number;
       }> = {};
 
+      const isAllBrands = effectiveSentimentBrand === '__all__';
       const isSearchedBrand = effectiveSentimentBrand === runStatus?.brand;
 
       globallyFilteredResults
@@ -455,7 +460,10 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           }
 
           let sentiment: string;
-          if (isSearchedBrand) {
+          if (isAllBrands) {
+            // Average sentiment across all brands in response
+            sentiment = getEffectiveSentiment(r) || 'not_mentioned';
+          } else if (isSearchedBrand) {
             sentiment = getEffectiveSentiment(r) || 'not_mentioned';
           } else {
             // Use competitor_sentiments for individual competitors
@@ -491,6 +499,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
     // Helper to get results for a specific provider and sentiment
     const getResultsForProviderSentiment = (provider: string, sentiment: string): Result[] => {
+      const isAllBrands = effectiveSentimentBrand === '__all__';
       const isSearchedBrand = effectiveSentimentBrand === runStatus?.brand;
       return globallyFilteredResults.filter((r: Result) => {
         if (r.error) return false;
@@ -507,7 +516,9 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
         // Check sentiment match
         let resultSentiment: string;
-        if (isSearchedBrand) {
+        if (isAllBrands) {
+          resultSentiment = getEffectiveSentiment(r) || 'not_mentioned';
+        } else if (isSearchedBrand) {
           resultSentiment = getEffectiveSentiment(r) || 'not_mentioned';
         } else {
           resultSentiment = r.competitor_sentiments?.[effectiveSentimentBrand] || 'not_mentioned';
@@ -1277,7 +1288,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                 ))}
               </select>
               <select
-                value={sentimentProviderBrandFilter || runStatus?.brand || ''}
+                value={sentimentProviderBrandFilter || (isIndustryReport ? '__all__' : runStatus?.brand || '')}
                 onChange={(e) => setSentimentProviderBrandFilter(e.target.value)}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
