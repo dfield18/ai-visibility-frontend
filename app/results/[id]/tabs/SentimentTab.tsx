@@ -874,12 +874,16 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
         {/* Sentiment by Prompt Chart */}
         {showSection('sentiment-by-question') && globallyFilteredResults.filter((r: Result) => hasEffectiveSentiment(r)).length > 0 && (() => {
-          // Get effective brand filter (default to searched brand)
-          const effectiveBrand = sentimentByPromptBrandFilter || runStatus?.brand || '';
+          // Get effective brand filter
+          // For industry reports, default to '__all__' (average across all brands)
+          // For brand reports, default to the searched brand
+          const effectiveBrand = sentimentByPromptBrandFilter || (isIndustryReport ? '__all__' : runStatus?.brand || '');
 
           // Build brand options for dropdown
           const brandOptions: { value: string; label: string }[] = [];
-          if (runStatus?.brand) {
+          if (isIndustryReport) {
+            brandOptions.push({ value: '__all__', label: 'All Brands (average sentiment)' });
+          } else if (runStatus?.brand) {
             brandOptions.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)` });
           }
           const competitors = new Set<string>();
@@ -937,6 +941,18 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             const sentimentScores: number[] = [];
 
             results.forEach(r => {
+              // For "All Brands" mode, use average sentiment across all brands
+              if (effectiveBrand === '__all__') {
+                const eSent = getEffectiveSentiment(r);
+                if (eSent && eSent !== 'not_mentioned') {
+                  mentioned++;
+                  if (sentimentScoreMap[eSent]) {
+                    sentimentScores.push(sentimentScoreMap[eSent]);
+                  }
+                }
+                return;
+              }
+
               // Check if the selected brand is mentioned
               const isBrandMentioned = effectiveBrand === runStatus?.brand
                 ? r.brand_mentioned
@@ -996,7 +1012,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                       ))}
                     </select>
                     <select
-                      value={sentimentByPromptBrandFilter || runStatus?.brand || ''}
+                      value={sentimentByPromptBrandFilter || (isIndustryReport ? '__all__' : runStatus?.brand || '')}
                       onChange={(e) => setSentimentByPromptBrandFilter(e.target.value)}
                       className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     >
@@ -1068,7 +1084,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                     ))}
                   </select>
                   <select
-                    value={sentimentByPromptBrandFilter || runStatus?.brand || ''}
+                    value={sentimentByPromptBrandFilter || (isIndustryReport ? '__all__' : runStatus?.brand || '')}
                     onChange={(e) => setSentimentByPromptBrandFilter(e.target.value)}
                     className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
