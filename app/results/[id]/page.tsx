@@ -96,7 +96,7 @@ import { PlaceholderTable } from '@/components/PlaceholderTable';
 import { useSectionAccess } from '@/hooks/useBilling';
 
 type FilterType = 'all' | 'mentioned' | 'not_mentioned';
-type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit' | 'chatgpt-ads';
+type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit' | 'chatgpt-ads' | 'industry-overview';
 
 const TAB_ICONS: Record<string, React.ReactNode> = {
   'overview': <LayoutGrid className="w-4 h-4" />,
@@ -108,6 +108,7 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
   'reports': <FileBarChart className="w-4 h-4" />,
   'chatgpt-ads': <Megaphone className="w-4 h-4" />,
   'reference': <FileText className="w-4 h-4" />,
+  'industry-overview': <LayoutGrid className="w-4 h-4" />,
 };
 
 function buildTabs(searchType: string): { id: TabType; label: string; icon: React.ReactNode }[] {
@@ -167,6 +168,18 @@ const TAB_SECTIONS: Partial<Record<TabType, { id: string; label: string }[]>> = 
     { id: 'reference-ai-analysis', label: 'AI Analysis' },
     { id: 'reference-detailed', label: 'Detailed Results' },
     { id: 'reference-export', label: 'Export & Share' },
+  ],
+  'industry-overview': [
+    { id: 'overview-metrics', label: 'Metrics Overview' },
+    { id: 'overview-ai-analysis', label: 'AI Analysis' },
+    { id: 'competitive-cards', label: 'Visibility Reports' },
+    { id: 'competitive-insights', label: 'Key Insights' },
+    { id: 'competitive-breakdown', label: 'Market Share Breakdown' },
+    { id: 'competitive-positioning', label: 'Market Positioning' },
+    { id: 'competitive-heatmap', label: 'Performance Matrix' },
+    { id: 'competitive-cooccurrence', label: 'Mentioned Together' },
+    { id: 'overview-by-platform', label: 'Brand Visibility by Platform' },
+    { id: 'overview-all-results', label: 'All Results' },
   ],
 };
 
@@ -4779,6 +4792,47 @@ export default function ResultsPage() {
               />
             )}
           </PaywallOverlay>
+        )}
+        {activeTab === 'industry-overview' && (
+          <>
+            {/* Metrics + AI Summary from Overview tab */}
+            <OverviewTab
+              aiSummaryExpanded={aiSummaryExpanded}
+              setAiSummaryExpanded={setAiSummaryExpanded}
+              showSentimentColors={showSentimentColors}
+              setShowSentimentColors={setShowSentimentColors}
+              chartTab={chartTab}
+              setChartTab={setChartTab}
+              providerFilter={providerFilter}
+              setProviderFilter={setProviderFilter}
+              brandBlurbs={brandBlurbs}
+              setCopied={setCopied}
+              accessLevel={sectionAccess['overview']}
+              visibleSections={['metrics', 'ai-summary']}
+            />
+            {/* Competitive sections: cards, insights, breakdown, positioning, matrix, co-occurrence (pairs only) */}
+            <CompetitiveTab
+              setSelectedResultHighlight={setSelectedResultHighlight}
+              setHeatmapResultsList={setHeatmapResultsList}
+              visibleSections={['visibility-reports', 'insights', 'breakdown', 'positioning', 'matrix', 'cooccurrence']}
+              forceCooccurrenceView="pairs"
+            />
+            {/* Brand Visibility by Platform + All Results from Overview tab */}
+            <OverviewTab
+              aiSummaryExpanded={aiSummaryExpanded}
+              setAiSummaryExpanded={setAiSummaryExpanded}
+              showSentimentColors={showSentimentColors}
+              setShowSentimentColors={setShowSentimentColors}
+              chartTab={chartTab}
+              setChartTab={setChartTab}
+              providerFilter={providerFilter}
+              setProviderFilter={setProviderFilter}
+              brandBlurbs={brandBlurbs}
+              setCopied={setCopied}
+              accessLevel={sectionAccess['overview']}
+              visibleSections={['by-platform', 'all-results']}
+            />
+          </>
         )}
         {activeTab === 'sentiment' && (
           <PaywallOverlay locked={sectionAccess['sentiment'] === 'locked'}>

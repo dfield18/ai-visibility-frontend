@@ -1,6 +1,6 @@
 import type { SearchType } from './types';
 
-export type TabId = 'overview' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'site-audit' | 'reports' | 'reference' | 'chatgpt-ads';
+export type TabId = 'overview' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'site-audit' | 'reports' | 'reference' | 'chatgpt-ads' | 'industry-overview';
 
 export interface TabConfig {
   id: TabId;
@@ -101,7 +101,10 @@ export const SEARCH_TYPE_CONFIGS: Record<SearchType, SearchTypeConfig> = {
     brandMentionLabel: 'Category Coverage',
     competitorColumnLabel: 'Brands',
     sentimentLabel: 'Category Sentiment',
-    tabs: makeTabs({ 'site-audit': { enabled: false } }),
+    tabs: [
+      { id: 'industry-overview', label: 'Industry Overview', enabled: true },
+      ...makeTabs({ 'site-audit': { enabled: false } }),
+    ],
     recommendationContext: 'industry positioning and category leadership',
   },
 

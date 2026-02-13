@@ -49,6 +49,8 @@ export interface OverviewTabProps {
   brandBlurbs: Record<string, string>;
   setCopied: (val: boolean) => void;
   accessLevel?: SectionAccess;
+  /** When provided, only render sections whose IDs are in this list. */
+  visibleSections?: string[];
 }
 
 export const OverviewTab = ({
@@ -60,7 +62,10 @@ export const OverviewTab = ({
   setProviderFilter,
   setCopied,
   accessLevel = 'visible',
+  visibleSections,
 }: OverviewTabProps) => {
+  // Section visibility helper — if visibleSections is not set, show all
+  const showSection = (id: string) => !visibleSections || visibleSections.includes(id);
   // ---------------------------------------------------------------------------
   // Context
   // ---------------------------------------------------------------------------
@@ -282,7 +287,7 @@ export const OverviewTab = ({
   return (
     <div className="space-y-6">
       {/* Metrics Cards */}
-      <div id="overview-metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {showSection('metrics') && <div id="overview-metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* AI Visibility / Competitive Depth Score Card */}
         {(() => {
           if (isCategory) {
@@ -694,10 +699,10 @@ export const OverviewTab = ({
             </div>
           );
         })()}
-      </div>
+      </div>}
 
       {/* AI Summary */}
-      <div id="overview-ai-analysis" className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
+      {showSection('ai-summary') && <div id="overview-ai-analysis" className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-blue-600" />
@@ -740,7 +745,7 @@ export const OverviewTab = ({
             </button>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Remaining sections — paywalled for partial access */}
       <PaywallOverlay locked={accessLevel === 'partial'} message="Upgrade to Pro to see brand quotes, prompt breakdowns, platform analysis, and full results.">
@@ -753,7 +758,7 @@ export const OverviewTab = ({
       ) : (
       <>
       {/* What AI Says About [Brand] */}
-      {brandQuotes.length > 0 && (
+      {showSection('brand-quotes') && brandQuotes.length > 0 && (
         <div id="overview-brand-quotes" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center gap-2 mb-4">
             <MessageSquare className="w-5 h-5 text-gray-700" />
@@ -784,7 +789,7 @@ export const OverviewTab = ({
       )}
 
       {/* Prompt Breakdown Table */}
-      {promptBreakdownStats.length > 0 && (
+      {showSection('prompt-breakdown') && promptBreakdownStats.length > 0 && (
         <div id="overview-by-question" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -956,7 +961,7 @@ export const OverviewTab = ({
       )}
 
       {/* AI Brand Position by Platform */}
-      {Object.keys(positionByPlatformData).length > 0 && (
+      {showSection('position-chart') && Object.keys(positionByPlatformData).length > 0 && (
         <div id="overview-by-platform-chart" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -1130,7 +1135,7 @@ export const OverviewTab = ({
       )}
 
       {/* Results by AI Platform */}
-      {Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
+      {showSection('by-platform') && Object.keys(llmBreakdownStats).length > 0 && llmBreakdownBrands.length > 0 && (
         <div id="overview-by-platform" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -1296,7 +1301,7 @@ export const OverviewTab = ({
       )}
 
       {/* All Results Table */}
-      <div id="overview-all-results" className="bg-white rounded-2xl shadow-sm border border-gray-200">
+      {showSection('all-results') && <div id="overview-all-results" className="bg-white rounded-2xl shadow-sm border border-gray-200">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 border-b border-gray-100">
           <div>
@@ -1753,7 +1758,7 @@ export const OverviewTab = ({
             {copied ? 'Link Copied!' : 'Share Link'}
           </button>
         </div>
-      </div>
+      </div>}
       </>
       )}
       </PaywallOverlay>

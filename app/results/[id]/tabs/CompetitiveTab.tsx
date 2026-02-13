@@ -329,6 +329,10 @@ interface AllBrandsAnalysisEntry {
 export interface CompetitiveTabProps {
   setSelectedResultHighlight: (val: { brand: string; domain?: string } | null) => void;
   setHeatmapResultsList: (val: { results: Result[]; domain: string; brand: string } | null) => void;
+  /** When provided, only render sections whose IDs are in this list. */
+  visibleSections?: string[];
+  /** Force the co-occurrence view to a specific mode (pairs or venn). */
+  forceCooccurrenceView?: 'pairs' | 'venn';
 }
 
 // ---------------------------------------------------------------------------
@@ -338,7 +342,11 @@ export interface CompetitiveTabProps {
 export default function CompetitiveTab({
   setSelectedResultHighlight,
   setHeatmapResultsList,
+  visibleSections,
+  forceCooccurrenceView,
 }: CompetitiveTabProps) {
+  // Section visibility helper — if visibleSections is not set, show all
+  const showSection = (id: string) => !visibleSections || visibleSections.includes(id);
 
   // ---- Context ----
   const { runStatus, globallyFilteredResults, availableProviders, availablePrompts, brandBreakdownStats, allBrandsAnalysisData, brandQuotesMap, isCategory } = useResults();
@@ -352,6 +360,7 @@ export default function CompetitiveTab({
   const [brandPositioningPromptFilter, setBrandPositioningPromptFilter] = useState<string>('all');
   const [promptMatrixLlmFilter, setPromptMatrixLlmFilter] = useState<string>('all');
   const [cooccurrenceView, setCooccurrenceView] = useState<'pairs' | 'venn'>('venn');
+  const effectiveCooccurrenceView = forceCooccurrenceView || cooccurrenceView;
   const [heatmapProviderFilter, setHeatmapProviderFilter] = useState<string>('all');
   const [heatmapShowSentiment, setHeatmapShowSentiment] = useState<boolean>(false);
   const [brandCarouselIndex, setBrandCarouselIndex] = useState(0);
@@ -755,7 +764,7 @@ export default function CompetitiveTab({
   return (
           <div className="space-y-6">
             {/* Brand Analysis Carousel */}
-            {allBrandsAnalysisData.length > 0 && (() => {
+            {showSection('visibility-reports') && allBrandsAnalysisData.length > 0 && (() => {
               const totalCards = allBrandsAnalysisData.length;
               const canNavigate = totalCards > 3;
               const maxIndex = Math.max(0, totalCards - 3);
@@ -961,7 +970,7 @@ export default function CompetitiveTab({
             })()}
 
             {/* Competitive Insights Summary */}
-            {competitiveInsights.length > 0 && (
+            {showSection('insights') && competitiveInsights.length > 0 && (
               <div id="competitive-insights" className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl shadow-sm border border-amber-100 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Lightbulb className="w-5 h-5 text-amber-600" />
@@ -981,7 +990,7 @@ export default function CompetitiveTab({
             )}
 
             {/* Brand Breakdown Table */}
-            {brandBreakdownStats.length > 0 && (
+            {showSection('breakdown') && brandBreakdownStats.length > 0 && (
               <div id="competitive-breakdown" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -1210,7 +1219,7 @@ export default function CompetitiveTab({
             )}
 
             {/* Brand Positioning Chart - Mentions vs Sentiment */}
-            {brandPositioningStats.length > 0 && (() => {
+            {showSection('positioning') && brandPositioningStats.length > 0 && (() => {
               // Calculate dynamic x-axis range based on actual sentiment values
               const sentimentData = brandPositioningStats
                 .filter(stat => stat.avgSentimentScore !== null && stat.mentioned > 0)
@@ -1447,7 +1456,7 @@ export default function CompetitiveTab({
             })()}
 
             {/* Prompt Performance Matrix (Heatmap) */}
-            {promptPerformanceMatrix.brands.length > 0 && promptPerformanceMatrix.prompts.length > 0 && (
+            {showSection('matrix') && promptPerformanceMatrix.brands.length > 0 && promptPerformanceMatrix.prompts.length > 0 && (
               <div id="competitive-heatmap" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -1537,7 +1546,7 @@ export default function CompetitiveTab({
             )}
 
             {/* Brand Co-occurrence Analysis */}
-            {brandCooccurrence.length > 0 && (
+            {showSection('cooccurrence') && brandCooccurrence.length > 0 && (
               <div id="competitive-cooccurrence" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -1549,11 +1558,11 @@ export default function CompetitiveTab({
                       }
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                  {!forceCooccurrenceView && <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                     <button
                       onClick={() => setCooccurrenceView('pairs')}
                       className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                        cooccurrenceView === 'pairs'
+                        effectiveCooccurrenceView === 'pairs'
                           ? 'bg-white text-gray-900 shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
@@ -1563,17 +1572,17 @@ export default function CompetitiveTab({
                     <button
                       onClick={() => setCooccurrenceView('venn')}
                       className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                        cooccurrenceView === 'venn'
+                        effectiveCooccurrenceView === 'venn'
                           ? 'bg-white text-gray-900 shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
                       Venn Diagram
                     </button>
-                  </div>
+                  </div>}
                 </div>
 
-                {cooccurrenceView === 'pairs' && (() => {
+                {effectiveCooccurrenceView === 'pairs' && (() => {
                   const maxCount = brandCooccurrence[0]?.count || 1;
                   const minCount = brandCooccurrence[brandCooccurrence.length - 1]?.count || 1;
 
@@ -1635,7 +1644,7 @@ export default function CompetitiveTab({
                 })()}
 
                 {/* Venn Diagram Visualization */}
-                {cooccurrenceView === 'venn' && (() => {
+                {effectiveCooccurrenceView === 'venn' && (() => {
                   const searchedBrand = runStatus?.brand || '';
                   const brandPairs = brandCooccurrence.filter(
                     pair => pair.brand1 === searchedBrand || pair.brand2 === searchedBrand
@@ -1760,7 +1769,7 @@ export default function CompetitiveTab({
 
 
             {/* Brand-Source Heatmap */}
-            {brandSourceHeatmap.sources.length > 0 && (
+            {showSection('publishers') && brandSourceHeatmap.sources.length > 0 && (
               <div id="competitive-publishers" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
