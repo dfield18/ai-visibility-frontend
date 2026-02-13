@@ -1453,7 +1453,7 @@ export const SourcesTab = () => {
             <div id="sources-helpful" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Sources That Help Your Brand</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{isCategory ? 'Sources That Shape AI Recommendations' : 'Sources That Help Your Brand'}</h2>
                   <p className="text-sm text-gray-500 mt-1">
                     Websites linked to higher visibility and better sentiment in AI responses
                   </p>
