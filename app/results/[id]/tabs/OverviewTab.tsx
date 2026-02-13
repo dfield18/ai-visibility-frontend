@@ -619,8 +619,43 @@ export const OverviewTab = ({
           );
         })()}
 
-        {/* Avg. Position Card */}
+        {/* Avg. Position / Total Brands Card */}
         {(() => {
+          if (isCategory) {
+            const totalBrands = overviewMetrics?.fragmentationBrandCount || 0;
+            const brandsTone: 'success' | 'neutral' | 'warn' = totalBrands >= 8 ? 'success' : totalBrands >= 4 ? 'neutral' : 'warn';
+            return (
+              <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Total Brands</p>
+                  <div className="relative group">
+                    <button
+                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Learn more about Total Brands"
+                      tabIndex={0}
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
+                      {totalBrands} unique brand{totalBrands !== 1 ? 's' : ''} mentioned across all AI responses for {runStatus?.brand || 'this category'}.
+                    </div>
+                  </div>
+                </div>
+                <div className="h-[100px] flex items-center justify-center">
+                  <span className="text-5xl font-bold tracking-tight tabular-nums text-gray-900">
+                    {totalBrands}
+                  </span>
+                </div>
+                <div className="h-[28px] flex items-start mt-3">
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(brandsTone)}`}>
+                    {totalBrands >= 8 ? 'Highly competitive' : totalBrands >= 4 ? 'Moderately competitive' : 'Low competition'}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 leading-relaxed mt-auto">Unique brands mentioned across all AI responses</p>
+              </div>
+            );
+          }
+
           const avgPosTone = getKPIInterpretation('avgPosition', overviewMetrics?.avgRank ?? null).tone;
           const avgRank = overviewMetrics?.avgRank || 0;
           return (
@@ -636,10 +671,7 @@ export const OverviewTab = ({
                     <HelpCircle className="w-4 h-4 text-gray-400" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                    {isCategory
-                      ? `${overviewMetrics?.selectedBrand || 'The market leader'} appears at an average rank of ${overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on ${overviewMetrics?.ranksCount || 0} responses.`
-                      : `Average rank when ${overviewMetrics?.selectedBrand || 'your brand'} is shown: ${overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on ${overviewMetrics?.ranksCount || 0} responses.`
-                    }
+                    Average rank when {overviewMetrics?.selectedBrand || 'your brand'} is shown: {overviewMetrics?.avgRank?.toFixed(1) || 'n/a'} (lower is better). Based on {overviewMetrics?.ranksCount || 0} responses.
                   </div>
                 </div>
               </div>
@@ -691,10 +723,7 @@ export const OverviewTab = ({
               </div>
               {/* Description - pushed to bottom */}
               <p className="text-xs text-gray-500 leading-relaxed mt-auto">
-                {isCategory
-                  ? `${overviewMetrics?.selectedBrand || 'Market leader'}'s average ranking when mentioned`
-                  : `${runStatus?.brand || 'Your brand'}'s average ranking when mentioned`
-                }
+                {`${runStatus?.brand || 'Your brand'}'s average ranking when mentioned`}
               </p>
             </div>
           );

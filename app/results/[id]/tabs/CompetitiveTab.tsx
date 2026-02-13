@@ -378,7 +378,7 @@ export default function CompetitiveTab({
       return true;
     });
     const searchedBrand = runStatus.brand;
-    const allBrands = new Set<string>([searchedBrand]);
+    const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => { if (r.competitors_mentioned) r.competitors_mentioned.forEach(c => allBrands.add(c)); });
     const sentimentScoreMap: Record<string, number> = {
       'strong_endorsement': 5, 'positive_endorsement': 4, 'neutral_mention': 3, 'conditional': 2, 'negative_comparison': 1, 'not_mentioned': 0,
@@ -419,7 +419,7 @@ export default function CompetitiveTab({
     if (results.length === 0) return { brands: [] as string[], prompts: [] as string[], matrix: [] as number[][] };
     const searchedBrand = runStatus.brand;
     const prompts = Array.from(new Set(results.map(r => r.prompt)));
-    const allBrands = new Set<string>([searchedBrand]);
+    const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => { if (r.competitors_mentioned) r.competitors_mentioned.forEach(c => allBrands.add(c)); });
     const brands = Array.from(allBrands);
     const matrix = brands.map(brand => {
@@ -473,7 +473,7 @@ export default function CompetitiveTab({
     const cooccurrenceCounts: Record<string, { brand1: string; brand2: string; count: number }> = {};
     results.forEach(r => {
       const brandsInResponse: string[] = [];
-      if (r.brand_mentioned) brandsInResponse.push(searchedBrand);
+      if (!isCategory && r.brand_mentioned) brandsInResponse.push(searchedBrand);
       if (r.competitors_mentioned) r.competitors_mentioned.forEach(c => brandsInResponse.push(c));
       for (let i = 0; i < brandsInResponse.length; i++) {
         for (let j = i + 1; j < brandsInResponse.length; j++) {

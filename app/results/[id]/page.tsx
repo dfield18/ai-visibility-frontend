@@ -859,7 +859,7 @@ export default function ResultsPage() {
     if (!brandLower) return null;
     const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
       ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-      : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+      : [...(runStatus.search_type === 'category' ? [] : [runStatus.brand]), ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
     const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
     const brandPos = rankingText.indexOf(brandLower);
@@ -1302,7 +1302,7 @@ export default function ResultsPage() {
 
           const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
             ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-            : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+            : [...(runStatus.search_type === 'category' ? [] : [runStatus.brand]), ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
           // Rank by text position
           const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
@@ -1800,6 +1800,7 @@ export default function ResultsPage() {
   // Brand Co-occurrence Analysis - which brands are mentioned together
   const brandCooccurrence = useMemo(() => {
     if (!runStatus) return [];
+    const isCategory = runStatus.search_type === 'category';
 
     const results = globallyFilteredResults.filter((r: Result) => !r.error);
     if (results.length === 0) return [];
@@ -1808,9 +1809,9 @@ export default function ResultsPage() {
     const cooccurrenceCounts: Record<string, { brand1: string; brand2: string; count: number }> = {};
 
     results.forEach(r => {
-      // Get all brands mentioned in this response
+      // Get all brands mentioned in this response (exclude category name for industry searches)
       const brandsInResponse: string[] = [];
-      if (r.brand_mentioned) brandsInResponse.push(searchedBrand);
+      if (!isCategory && r.brand_mentioned) brandsInResponse.push(searchedBrand);
       if (r.competitors_mentioned) {
         r.competitors_mentioned.forEach(c => brandsInResponse.push(c));
       }
@@ -3061,7 +3062,7 @@ export default function ResultsPage() {
           const brandTextPos = textLower.indexOf(brandLower);
           const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
             ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-            : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+            : [...(runStatus.search_type === 'category' ? [] : [runStatus.brand]), ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
           if (brandTextPos >= 0) {
             // Count how many other brands appear before the searched brand in the text
@@ -3309,7 +3310,7 @@ export default function ResultsPage() {
 
       const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
         ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-        : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+        : [...(runStatus.search_type === 'category' ? [] : [runStatus.brand]), ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
       if (selectedBrand) {
         const brandLower = selectedBrand.toLowerCase();
