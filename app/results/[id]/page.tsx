@@ -4940,20 +4940,6 @@ export default function ResultsPage() {
                 visibleSections={['metrics', 'ai-summary']}
               />
               <SentimentTab visibleSections={['sentiment-distribution']} />
-              <OverviewTab
-                aiSummaryExpanded={aiSummaryExpanded}
-                setAiSummaryExpanded={setAiSummaryExpanded}
-                showSentimentColors={showSentimentColors}
-                setShowSentimentColors={setShowSentimentColors}
-                chartTab={chartTab}
-                setChartTab={setChartTab}
-                providerFilter={providerFilter}
-                setProviderFilter={setProviderFilter}
-                brandBlurbs={brandBlurbs}
-                setCopied={setCopied}
-                accessLevel={sectionAccess['overview']}
-                visibleSections={['framing-spectrum']}
-              />
               <SentimentTab visibleSections={['sentiment-by-platform']} />
               <OverviewTab
                 aiSummaryExpanded={aiSummaryExpanded}
