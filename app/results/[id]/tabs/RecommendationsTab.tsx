@@ -641,8 +641,8 @@ export function RecommendationsTab() {
       });
     }
 
-    return recs.slice(0, 6); // Limit to 6 items for the chart
-  }, [aiSummary?.recommendations]);
+    return recs.slice(0, isCategory ? 8 : 6);
+  }, [aiSummary?.recommendations, isCategory]);
 
   const getImpactBadge = (impact: 'high' | 'medium' | 'low') => {
     const colors = {
@@ -690,10 +690,10 @@ export function RecommendationsTab() {
   return (
     <div className="space-y-6">
       {/* AI-Powered Recommendations - combined section with chart + cards */}
-      {aiSummary?.recommendations && parsedAiRecommendations.length > 0 && (
+      {aiSummary?.recommendations && parsedAiRecommendations.length > 0 && !isCategory && (
       <div id="recommendations-ai" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
 
-        {/* Effort vs Impact Matrix Chart */}
+        {/* Effort vs Impact Matrix Chart — hidden for industry reports */}
         {parsedAiRecommendations.length > 0 && (() => {
           // Calculate positions and handle overlapping circles
           const effortMap = { low: 16.67, medium: 50, high: 83.33 };

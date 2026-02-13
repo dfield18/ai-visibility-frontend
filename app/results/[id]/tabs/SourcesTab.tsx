@@ -61,6 +61,7 @@ export const SourcesTab = () => {
 
   const [domainSortColumn, setDomainSortColumn] = useState<'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment'>('usedPercent');
   const [domainSortDirection, setDomainSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [publisherPromptFilter, setPublisherPromptFilter] = useState<string>('all');
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
   const [expandedInfluencers, setExpandedInfluencers] = useState<Set<string>>(new Set());
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
@@ -838,6 +839,7 @@ export const SourcesTab = () => {
         sentimentScores: number[];
         brands: Set<string>;
         providers: Set<string>;
+        prompts: Set<string>;
       }> = {};
 
       // Process each result to collect domain stats
@@ -870,6 +872,7 @@ export const SourcesTab = () => {
                 sentimentScores: [],
                 brands: new Set(),
                 providers: new Set(),
+                prompts: new Set(),
               };
             }
             domainStats[hostname].totalCitations += 1;
@@ -885,6 +888,8 @@ export const SourcesTab = () => {
           brandsInResponse.forEach(brand => domainStats[domain].brands.add(brand));
           // Track which provider cited this domain
           domainStats[domain].providers.add(r.provider);
+          // Track which prompt led to this citation
+          if (r.prompt) domainStats[domain].prompts.add(r.prompt);
           // Use brand sentiment if available (convert to numeric)
           if (r.brand_sentiment) {
             const sentimentScore = getSentimentScore(r.brand_sentiment);
@@ -926,14 +931,25 @@ export const SourcesTab = () => {
             responsesWithDomain: stat.responsesWithDomain,
             brands: sortedBrands,
             providers: Array.from(stat.providers),
+            prompts: Array.from(stat.prompts),
           };
         })
         .sort((a, b) => b.usedPercent - a.usedPercent);
     }, [runStatus, globallyFilteredResults, aiCategorizations]);
 
+    // Available prompts for the publisher prompt filter
+    const publisherPromptOptions = useMemo(() => {
+      const prompts = new Set<string>();
+      domainTableData.forEach(row => row.prompts.forEach(p => prompts.add(p)));
+      return Array.from(prompts).sort();
+    }, [domainTableData]);
+
     // Sorted domain table data based on user selection
     const sortedDomainTableData = useMemo(() => {
-      return [...domainTableData].sort((a, b) => {
+      const filtered = publisherPromptFilter === 'all'
+        ? domainTableData
+        : domainTableData.filter(row => row.prompts.includes(publisherPromptFilter));
+      return [...filtered].sort((a, b) => {
         let aVal: string | number | null;
         let bVal: string | number | null;
 
@@ -966,7 +982,7 @@ export const SourcesTab = () => {
         if (aVal > bVal) return domainSortDirection === 'asc' ? 1 : -1;
         return 0;
       });
-    }, [domainTableData, domainSortColumn, domainSortDirection]);
+    }, [domainTableData, domainSortColumn, domainSortDirection, publisherPromptFilter]);
 
     // Handle column header click for sorting
     const handleDomainSort = (column: 'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment') => {
@@ -1703,6 +1719,18 @@ export const SourcesTab = () => {
                   Showing {sortedDomainTableData.length} publishers cited across AI responses
                 </p>
               </div>
+              {publisherPromptOptions.length > 1 && (
+                <select
+                  value={publisherPromptFilter}
+                  onChange={(e) => setPublisherPromptFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[280px]"
+                >
+                  <option value="all">All Prompts</option>
+                  {publisherPromptOptions.map((prompt) => (
+                    <option key={prompt} value={prompt}>{prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Table */}
@@ -1711,7 +1739,7 @@ export const SourcesTab = () => {
                 <thead>
                   <tr className="border-b border-gray-200 bg-gray-50">
                     <th
-                      className="w-[18%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className={`${isCategory ? 'w-[15%]' : 'w-[18%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
                       onClick={() => handleDomainSort('domain')}
                     >
                       <span className="flex items-center gap-1">
@@ -1722,7 +1750,7 @@ export const SourcesTab = () => {
                       </span>
                     </th>
                     <th
-                      className="w-[13%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className={`${isCategory ? 'w-[10%]' : 'w-[13%]'} text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
                       onClick={() => handleDomainSort('usedPercent')}
                     >
                       <span className="flex flex-col items-center">
@@ -1736,7 +1764,7 @@ export const SourcesTab = () => {
                       </span>
                     </th>
                     <th
-                      className="w-[12%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className={`${isCategory ? 'w-[9%]' : 'w-[12%]'} text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
                       onClick={() => handleDomainSort('avgCitation')}
                     >
                       <span className="flex items-center justify-center gap-1">
@@ -1747,7 +1775,7 @@ export const SourcesTab = () => {
                       </span>
                     </th>
                     <th
-                      className="w-[12%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className={`${isCategory ? 'w-[9%]' : 'w-[12%]'} text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
                       onClick={() => handleDomainSort('category')}
                     >
                       <span className="flex items-center justify-center gap-1">
@@ -1758,7 +1786,7 @@ export const SourcesTab = () => {
                       </span>
                     </th>
                     <th
-                      className="w-[15%] text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none"
+                      className={`${isCategory ? 'w-[11%]' : 'w-[15%]'} text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
                       onClick={() => handleDomainSort('avgSentiment')}
                     >
                       <span className="flex items-center justify-center gap-1">
@@ -1768,8 +1796,11 @@ export const SourcesTab = () => {
                         )}
                       </span>
                     </th>
-                    <th className="w-[15%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Models</th>
-                    <th className="w-[15%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brands</th>
+                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>Models</th>
+                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>Brands</th>
+                    {isCategory && (
+                      <th className="w-[22%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompts</th>
+                    )}
                   </tr>
                 </thead>
               </table>
@@ -1777,13 +1808,14 @@ export const SourcesTab = () => {
               <div className="max-h-[540px] overflow-y-auto overscroll-contain">
                 <table className="w-full table-fixed">
                   <colgroup>
-                    <col className="w-[18%]" />
-                    <col className="w-[13%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[12%]" />
-                    <col className="w-[15%]" />
-                    <col className="w-[15%]" />
-                    <col className="w-[15%]" />
+                    <col className={isCategory ? 'w-[15%]' : 'w-[18%]'} />
+                    <col className={isCategory ? 'w-[10%]' : 'w-[13%]'} />
+                    <col className={isCategory ? 'w-[9%]' : 'w-[12%]'} />
+                    <col className={isCategory ? 'w-[9%]' : 'w-[12%]'} />
+                    <col className={isCategory ? 'w-[11%]' : 'w-[15%]'} />
+                    <col className={isCategory ? 'w-[12%]' : 'w-[15%]'} />
+                    <col className={isCategory ? 'w-[12%]' : 'w-[15%]'} />
+                    {isCategory && <col className="w-[22%]" />}
                   </colgroup>
                   <tbody>
                   {sortedDomainTableData.map((row) => {
@@ -1885,6 +1917,33 @@ export const SourcesTab = () => {
                             <span className="text-sm text-gray-400">None</span>
                           )}
                         </td>
+                        {isCategory && (
+                          <td className="py-4 px-4">
+                            {row.prompts.length > 0 ? (
+                              <div className="space-y-1">
+                                {row.prompts.slice(0, 2).map((prompt: string, pi: number) => (
+                                  <p key={pi} className="text-xs text-gray-600 leading-snug truncate" title={prompt}>
+                                    {prompt}
+                                  </p>
+                                ))}
+                                {row.prompts.length > 2 && (
+                                  <span className="relative group">
+                                    <span className="text-xs text-gray-400 cursor-pointer hover:text-gray-600">
+                                      +{row.prompts.length - 2} more
+                                    </span>
+                                    <span className="absolute left-0 bottom-full mb-1 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg px-3 py-2 z-20 shadow-lg max-w-[300px]">
+                                      {row.prompts.slice(2).map((p: string, i: number) => (
+                                        <span key={i} className="block py-0.5">{p}</span>
+                                      ))}
+                                    </span>
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
+                            )}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
