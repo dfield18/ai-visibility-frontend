@@ -4837,8 +4837,6 @@ export default function ResultsPage() {
               accessLevel={sectionAccess['overview']}
               visibleSections={['by-platform']}
             />
-            {/* Sentiment by AI Platform from Sentiment tab */}
-            <SentimentTab visibleSections={['sentiment-by-platform']} />
             {/* All Results from Overview tab */}
             <OverviewTab
               aiSummaryExpanded={aiSummaryExpanded}
