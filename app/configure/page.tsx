@@ -641,7 +641,7 @@ export default function ConfigurePage() {
                         </div>
                       ) : (
                         <>
-                          <span className="flex-1 text-xs text-gray-600 leading-snug">
+                          <span className="flex-1 text-sm text-gray-600 leading-snug">
                             {prompt}
                           </span>
                           <button
