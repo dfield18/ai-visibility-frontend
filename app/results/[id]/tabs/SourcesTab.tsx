@@ -2229,7 +2229,7 @@ export const SourcesTab = () => {
                     return (
                       <tr key={row.domain} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-4 px-4">
-                          <span className="text-sm text-gray-900 font-medium">{row.domain}</span>
+                          <span className="text-sm text-gray-900 font-medium break-all">{row.domain}</span>
                         </td>
                         <td className="py-4 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5">
