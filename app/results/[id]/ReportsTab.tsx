@@ -57,7 +57,7 @@ const getScoreBgColor = (score: number): string => {
 };
 
 export function ReportsTab({ runStatus }: ReportsTabProps) {
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn, isLoaded } = useAuth();
   const [reports, setReports] = useState<ScheduledReport[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -113,15 +113,10 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
       return await apiFn(token);
     } catch (err) {
       const msg = err instanceof Error ? err.message?.toLowerCase() : '';
-      // If token expired, get a fresh one and retry once
-      if (msg.includes('token has expired') || msg.includes('expired') || msg.includes('401')) {
-        try {
-          token = await getToken({ skipCache: true });
-          if (!token) throw new Error('Your session has expired. Please refresh the page.');
-          return await apiFn(token);
-        } catch {
-          throw new Error('Your session has expired. Please refresh the page.');
-        }
+      if (msg.includes('expired') || msg.includes('401') || msg.includes('unauthorized')) {
+        token = await getToken({ skipCache: true });
+        if (!token) throw new Error('Please sign in to access reports');
+        return await apiFn(token);
       }
       throw err;
     }
@@ -131,22 +126,50 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     try {
       setLoading(true);
       setError(null);
-      const response = await retryWithFreshToken((token) => api.listScheduledReports(token));
+      const token = await getToken();
+      if (!token) {
+        // Not signed in — don't show an error, just stop loading
+        setLoading(false);
+        return;
+      }
+      const response = await api.listScheduledReports(token);
       setReports(response.reports);
     } catch (err) {
+      const msg = err instanceof Error ? err.message?.toLowerCase() : '';
+      if (msg.includes('expired') || msg.includes('401') || msg.includes('unauthorized')) {
+        // Token expired — silently retry with fresh token
+        try {
+          const freshToken = await getToken({ skipCache: true });
+          if (freshToken) {
+            const response = await api.listScheduledReports(freshToken);
+            setReports(response.reports);
+            return;
+          }
+        } catch {
+          // Second attempt also failed — fall through to show nothing
+        }
+        // Don't show error for auth issues — just show empty state
+        setLoading(false);
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Failed to load reports');
     } finally {
       setLoading(false);
     }
-  }, [retryWithFreshToken]);
+  }, [getToken]);
 
-  // Fetch reports on mount
+  // Fetch reports when auth is ready
   useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+    if (isLoaded && isSignedIn) {
+      fetchReports();
+    } else if (isLoaded && !isSignedIn) {
+      setLoading(false);
+    }
+  }, [fetchReports, isLoaded, isSignedIn]);
 
   // Sync user profile from Clerk on mount (ensures email is correct for notifications)
   useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
     const syncProfile = async () => {
       try {
         await retryWithFreshToken((token) => api.syncProfile(token));
@@ -156,7 +179,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
       }
     };
     syncProfile();
-  }, [getToken]);
+  }, [isLoaded, isSignedIn, retryWithFreshToken]);
 
   // Sync form data when runStatus changes (e.g., when data loads after mount)
   useEffect(() => {
@@ -382,21 +405,12 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
           <p className="text-sm text-red-700">{error}</p>
-          {error.toLowerCase().includes('session') || error.toLowerCase().includes('expired') || error.toLowerCase().includes('sign in') ? (
-            <button
-              onClick={() => { setError(null); fetchReports(); }}
-              className="ml-auto px-3 py-1 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
-            >
-              Retry
-            </button>
-          ) : (
-            <button
-              onClick={() => setError(null)}
-              className="ml-auto p-1 hover:bg-red-100 rounded"
-            >
-              <X className="w-4 h-4 text-red-500" />
-            </button>
-          )}
+          <button
+            onClick={() => setError(null)}
+            className="ml-auto p-1 hover:bg-red-100 rounded"
+          >
+            <X className="w-4 h-4 text-red-500" />
+          </button>
         </div>
       )}
 
