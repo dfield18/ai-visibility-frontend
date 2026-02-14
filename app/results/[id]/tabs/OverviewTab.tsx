@@ -1744,7 +1744,9 @@ export const OverviewTab = ({
             <div>
               <h2 className="text-lg font-semibold text-gray-900">{isIssue ? 'Coverage by Question' : 'Results by Question'}</h2>
               <p className="text-sm text-gray-500 mt-1">
-                {isIssue
+                {isPublicFigure
+                  ? `How AI platforms portray ${runStatus?.brand || 'this figure'} across each question`
+                  : isIssue
                   ? `How AI platforms cover ${runStatus?.brand || 'this issue'} across each question`
                   : isCategory
                   ? `How the market leader performs across each question about ${runStatus?.brand}`
@@ -1763,7 +1765,110 @@ export const OverviewTab = ({
               ))}
             </select>
           </div>
-          {isIssue ? (
+          {isPublicFigure ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">AI Portrayal</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          Overall portrayal score (-100 to +100) based on AI sentiment for this question
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 font-normal">score</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Sentiment Polarity</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          Split between positive, neutral, and negative AI responses for this question
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 font-normal">positive vs negative</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Prominence</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          This figure&apos;s mention rate vs average peer mention rate for this question
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 font-normal">vs peers</div>
+                  </th>
+                  <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="whitespace-nowrap">Agreement</span>
+                      <div className="relative group">
+                        <HelpCircle className="w-3.5 h-3.5 text-gray-400 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 shadow-lg text-left font-normal">
+                          How consistently AI platforms portray this figure for this question (1-10)
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 font-normal">platform / 10</div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {promptBreakdownStats.map((stat, index) => {
+                  const pScore = stat.pfPortrayalScore ?? 0;
+                  const pSplit = stat.pfSentimentSplit || { positive: 0, neutral: 0, negative: 0 };
+                  const pProm = stat.pfFigureProminence || { figureRate: 0, avgCompetitorRate: 0 };
+                  const pAgree = stat.pfPlatformAgreement ?? 5;
+                  const scoreColor = pScore >= 15 ? 'text-emerald-600' : pScore >= -15 ? 'text-gray-600' : 'text-red-500';
+                  const agreeColor = pAgree >= 7 ? 'text-gray-900' : pAgree >= 4 ? 'text-yellow-600' : 'text-red-500';
+                  const promDiff = pProm.figureRate - pProm.avgCompetitorRate;
+                  const promColor = promDiff >= 10 ? 'text-emerald-600' : promDiff >= -10 ? 'text-gray-600' : 'text-red-500';
+
+                  return (
+                    <tr key={stat.prompt} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                      <td className="py-3 px-3 max-w-[300px]">
+                        <span className="text-gray-900 line-clamp-2" title={stat.prompt}>{stat.prompt}</span>
+                      </td>
+                      {/* AI Portrayal score */}
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-semibold ${scoreColor}`}>{pScore >= 0 ? '+' : ''}{pScore}</span>
+                      </td>
+                      {/* Sentiment Polarity mini bar */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1.5 justify-center min-w-[100px]">
+                          <span className="text-xs font-medium text-emerald-600 w-8 text-right">{pSplit.positive}%</span>
+                          <div className="w-16 h-2 rounded-full overflow-hidden flex bg-gray-100">
+                            {pSplit.positive > 0 && <div className="h-full" style={{ width: `${pSplit.positive}%`, backgroundColor: '#10b981' }} />}
+                            {pSplit.neutral > 0 && <div className="h-full" style={{ width: `${pSplit.neutral}%`, backgroundColor: '#d1d5db' }} />}
+                            {pSplit.negative > 0 && <div className="h-full" style={{ width: `${pSplit.negative}%`, backgroundColor: '#f87171' }} />}
+                          </div>
+                          <span className="text-xs font-medium text-red-400 w-8 text-left">{pSplit.negative}%</span>
+                        </div>
+                      </td>
+                      {/* Figure Prominence */}
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${promColor}`}>{pProm.figureRate.toFixed(0)}%</span>
+                        <span className="text-xs text-gray-400 ml-1">vs {pProm.avgCompetitorRate.toFixed(0)}%</span>
+                      </td>
+                      {/* Platform Agreement */}
+                      <td className="text-center py-3 px-3">
+                        <span className={`font-medium ${agreeColor}`}>{pAgree}/10</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          ) : isIssue ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

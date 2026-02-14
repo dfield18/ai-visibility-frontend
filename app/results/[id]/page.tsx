@@ -1506,6 +1506,64 @@ export default function ResultsPage() {
         issueConsensus = Math.max(1, Math.min(10, Math.round((maxAgree / provCount) * 10)));
       }
 
+      // Public figure per-prompt metrics
+      const PFIG_SCORE: Record<string, number> = {
+        strong_endorsement: 2, positive_endorsement: 1, neutral_mention: 0, conditional: -1, negative_comparison: -2,
+      };
+      let pfPortrayalScore = 0;
+      let pfSentimentSplit = { positive: 0, neutral: 0, negative: 0 };
+      let pfFigureProminence = { figureRate: 0, avgCompetitorRate: 0 };
+      let pfPlatformAgreement = 5;
+
+      if (runStatus.search_type === 'public_figure') {
+        let pfSum = 0; let pfCount = 0;
+        let pfPos = 0; let pfNeu = 0; let pfNeg = 0;
+        const pfProvScores: Record<string, number[]> = {};
+
+        for (const r of promptResults) {
+          const raw = r.brand_sentiment || 'neutral_mention';
+          pfSum += PFIG_SCORE[raw] ?? 0;
+          pfCount++;
+          if (raw === 'strong_endorsement' || raw === 'positive_endorsement') pfPos++;
+          else if (raw === 'neutral_mention') pfNeu++;
+          else pfNeg++;
+          if (!pfProvScores[r.provider]) pfProvScores[r.provider] = [];
+          pfProvScores[r.provider].push(PFIG_SCORE[raw] ?? 0);
+        }
+        pfPortrayalScore = pfCount > 0 ? Math.round((pfSum / pfCount) * 50) : 0;
+        const pfTotal = pfPos + pfNeu + pfNeg;
+        pfSentimentSplit = {
+          positive: pfTotal > 0 ? Math.round((pfPos / pfTotal) * 100) : 0,
+          neutral: pfTotal > 0 ? Math.round((pfNeu / pfTotal) * 100) : 0,
+          negative: pfTotal > 0 ? Math.round((pfNeg / pfTotal) * 100) : 0,
+        };
+
+        // Figure prominence per prompt
+        const pfFigRate = visibilityScore;
+        const pfCompCounts: Record<string, number> = {};
+        for (const r of promptResults) {
+          if (r.competitors_mentioned) {
+            for (const c of r.competitors_mentioned) pfCompCounts[c] = (pfCompCounts[c] || 0) + 1;
+          }
+        }
+        const pfCompRates = Object.values(pfCompCounts).map(c => total > 0 ? (c / total) * 100 : 0);
+        const pfAvgComp = pfCompRates.length > 0 ? pfCompRates.reduce((a, b) => a + b, 0) / pfCompRates.length : 0;
+        pfFigureProminence = { figureRate: pfFigRate, avgCompetitorRate: pfAvgComp };
+
+        // Platform agreement per prompt
+        const pfProvAvgs: number[] = [];
+        for (const scores of Object.values(pfProvScores)) {
+          pfProvAvgs.push(scores.reduce((a, b) => a + b, 0) / scores.length);
+        }
+        if (pfProvAvgs.length > 1) {
+          const mean = pfProvAvgs.reduce((a, b) => a + b, 0) / pfProvAvgs.length;
+          const variance = pfProvAvgs.reduce((s, v) => s + (v - mean) ** 2, 0) / pfProvAvgs.length;
+          pfPlatformAgreement = Math.max(1, Math.min(10, Math.round(10 - Math.sqrt(variance) * 4.5)));
+        } else {
+          pfPlatformAgreement = 10;
+        }
+      }
+
       return {
         prompt,
         total,
@@ -1521,6 +1579,11 @@ export default function ResultsPage() {
         issueDominantFraming,
         issueConsensus,
         issueRelatedCount: issueRelated.size,
+        // Public figure-specific
+        pfPortrayalScore,
+        pfSentimentSplit,
+        pfFigureProminence,
+        pfPlatformAgreement,
       };
     });
 
