@@ -1435,7 +1435,7 @@ export const ReferenceTab = ({
         <p className="text-sm text-gray-500 mb-4">
           Showing {filteredResults.length} of {globallyFilteredResults.filter((r: Result) => !r.error).length} results
         </p>
-        <div className="overflow-x-auto">
+        <div>
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
