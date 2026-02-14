@@ -602,7 +602,7 @@ export const OverviewTab = ({
   return (
     <div className="space-y-6">
       {/* Metrics Cards */}
-      {showSection('metrics') && <div id="overview-metrics" className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${isCategory ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+      {showSection('metrics') && <div id="overview-metrics" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* AI Visibility / Competitive Depth Score / Issue Coverage Card */}
         {(() => {
           if (isIssue) {
@@ -1143,7 +1143,7 @@ export const OverviewTab = ({
                 donutData={donutData}
                 totalMentions={totalMentions}
                 colors={DONUT_COLORS}
-                cardClassName={`${metricCardBackgrounds.top1Rate} lg:col-span-2`}
+                cardClassName={metricCardBackgrounds.top1Rate}
               />
             );
           }
