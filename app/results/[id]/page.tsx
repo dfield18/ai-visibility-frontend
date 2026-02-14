@@ -1533,8 +1533,8 @@ export default function ResultsPage() {
           pfSum += PFIG_SCORE[raw] ?? 0;
           pfCount++;
           if (raw === 'strong_endorsement' || raw === 'positive_endorsement') pfPos++;
-          else if (raw === 'neutral_mention') pfNeu++;
-          else pfNeg++;
+          else if (raw === 'negative_comparison') pfNeg++;
+          else pfNeu++; // neutral_mention + conditional both count as neutral
           if (!pfProvScores[r.provider]) pfProvScores[r.provider] = [];
           pfProvScores[r.provider].push(PFIG_SCORE[raw] ?? 0);
         }
@@ -3688,8 +3688,8 @@ export default function ResultsPage() {
         sentimentSum += score;
         sentimentCount++;
         if (raw === 'strong_endorsement' || raw === 'positive_endorsement') posCount++;
-        else if (raw === 'neutral_mention') neuCount++;
-        else negCount++;
+        else if (raw === 'negative_comparison') negCount++;
+        else neuCount++; // neutral_mention + conditional both count as neutral
       }
 
       portrayalScore = sentimentCount > 0 ? Math.round((sentimentSum / sentimentCount) * 50) : 0; // scale ±2 → ±100
