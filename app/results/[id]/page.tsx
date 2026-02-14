@@ -1473,8 +1473,8 @@ export default function ResultsPage() {
           const label = issueFramingMap[raw] || 'Balanced';
           issueFramingCounts[label] = (issueFramingCounts[label] || 0) + 1;
           if (label === 'Supportive' || label === 'Leaning Supportive') issueSupportiveCount++;
-          else if (label === 'Balanced') issueNeutralCount++;
-          else issueCriticalCount++;
+          else if (label === 'Critical') issueCriticalCount++;
+          else issueNeutralCount++;
 
           // Per-provider framing
           if (!issueProviderFramings[r.provider]) issueProviderFramings[r.provider] = {};

@@ -1921,7 +1921,7 @@ export const OverviewTab = ({
             </table>
           </div>
           ) : isIssue ? (
-          <div className="overflow-x-auto">
+          <div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
