@@ -64,6 +64,7 @@ export const SourcesTab = () => {
   const [domainSortColumn, setDomainSortColumn] = useState<'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment'>('usedPercent');
   const [domainSortDirection, setDomainSortDirection] = useState<'asc' | 'desc'>('desc');
   const [publisherPromptFilter, setPublisherPromptFilter] = useState<string>('all');
+  const [publisherBrandFilter, setPublisherBrandFilter] = useState<string>('all');
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set());
   const [expandedInfluencers, setExpandedInfluencers] = useState<Set<string>>(new Set());
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
@@ -951,11 +952,21 @@ export const SourcesTab = () => {
       return Array.from(prompts).sort();
     }, [domainTableData]);
 
+    // Available brands for the publisher brand filter
+    const publisherBrandOptions = useMemo(() => {
+      const brands = new Set<string>();
+      domainTableData.forEach(row => row.brands.forEach(b => brands.add(b)));
+      return Array.from(brands).sort();
+    }, [domainTableData]);
+
     // Sorted domain table data based on user selection
     const sortedDomainTableData = useMemo(() => {
-      const filtered = publisherPromptFilter === 'all'
+      let filtered = publisherPromptFilter === 'all'
         ? domainTableData
         : domainTableData.filter(row => row.prompts.includes(publisherPromptFilter));
+      if (publisherBrandFilter !== 'all') {
+        filtered = filtered.filter(row => row.brands.includes(publisherBrandFilter));
+      }
       return [...filtered].sort((a, b) => {
         let aVal: string | number | null;
         let bVal: string | number | null;
@@ -989,7 +1000,7 @@ export const SourcesTab = () => {
         if (aVal > bVal) return domainSortDirection === 'asc' ? 1 : -1;
         return 0;
       });
-    }, [domainTableData, domainSortColumn, domainSortDirection, publisherPromptFilter]);
+    }, [domainTableData, domainSortColumn, domainSortDirection, publisherPromptFilter, publisherBrandFilter]);
 
     // Handle column header click for sorting
     const handleDomainSort = (column: 'domain' | 'usedPercent' | 'avgCitation' | 'category' | 'avgSentiment') => {
@@ -2100,18 +2111,32 @@ export const SourcesTab = () => {
                   Showing {sortedDomainTableData.length} publishers cited across AI responses
                 </p>
               </div>
-              {publisherPromptOptions.length > 1 && (
-                <select
-                  value={publisherPromptFilter}
-                  onChange={(e) => setPublisherPromptFilter(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[280px]"
-                >
-                  <option value="all">All Prompts</option>
-                  {publisherPromptOptions.map((prompt) => (
-                    <option key={prompt} value={prompt}>{prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt}</option>
-                  ))}
-                </select>
-              )}
+              <div className="flex items-center gap-2">
+                {isCategory && publisherBrandOptions.length > 1 && (
+                  <select
+                    value={publisherBrandFilter}
+                    onChange={(e) => setPublisherBrandFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[200px]"
+                  >
+                    <option value="all">All Brands</option>
+                    {publisherBrandOptions.map((brand) => (
+                      <option key={brand} value={brand}>{brand}</option>
+                    ))}
+                  </select>
+                )}
+                {publisherPromptOptions.length > 1 && (
+                  <select
+                    value={publisherPromptFilter}
+                    onChange={(e) => setPublisherPromptFilter(e.target.value)}
+                    className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[280px]"
+                  >
+                    <option value="all">All Prompts</option>
+                    {publisherPromptOptions.map((prompt) => (
+                      <option key={prompt} value={prompt}>{prompt.length > 50 ? prompt.substring(0, 50) + '...' : prompt}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
 
             {/* Table */}

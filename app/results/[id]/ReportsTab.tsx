@@ -105,24 +105,35 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   });
 
+  // Helper: call an API with a token, retrying with a fresh one if expired
+  const retryWithFreshToken = useCallback(async <T,>(apiFn: (token: string) => Promise<T>): Promise<T> => {
+    let token = await getToken();
+    if (!token) throw new Error('Please sign in');
+    try {
+      return await apiFn(token);
+    } catch (err) {
+      // If token expired, get a fresh one and retry once
+      if (err instanceof Error && err.message?.toLowerCase().includes('token has expired')) {
+        token = await getToken({ skipCache: true });
+        if (!token) throw new Error('Please sign in');
+        return await apiFn(token);
+      }
+      throw err;
+    }
+  }, [getToken]);
+
   const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const token = await getToken();
-      if (!token) {
-        setError('Please sign in to view reports');
-        setLoading(false);
-        return;
-      }
-      const response = await api.listScheduledReports(token);
+      const response = await retryWithFreshToken((token) => api.listScheduledReports(token));
       setReports(response.reports);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load reports');
     } finally {
       setLoading(false);
     }
-  }, [getToken]);
+  }, [retryWithFreshToken]);
 
   // Fetch reports on mount
   useEffect(() => {
@@ -133,10 +144,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   useEffect(() => {
     const syncProfile = async () => {
       try {
-        const token = await getToken();
-        if (token) {
-          await api.syncProfile(token);
-        }
+        await retryWithFreshToken((token) => api.syncProfile(token));
       } catch (err) {
         // Silently fail - this is just a background sync
         console.log('[ReportsTab] Profile sync:', err instanceof Error ? err.message : 'failed');
@@ -175,12 +183,6 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   const handleCreate = async () => {
     try {
       setActionLoadingState('create', true);
-      const token = await getToken();
-      if (!token) {
-        setError('Please sign in to create reports');
-        setActionLoadingState('create', false);
-        return;
-      }
 
       const prompts = (formData.prompts || []).filter(p => p.trim());
       const competitors = (formData.competitors || []).filter(c => c.trim());
@@ -217,7 +219,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
         timezone: formData.timezone || 'UTC',
       };
 
-      const newReport = await api.createScheduledReport(data, token);
+      const newReport = await retryWithFreshToken((token) => api.createScheduledReport(data, token));
       await fetchReports();
       setIsCreating(false);
       resetForm();
@@ -234,14 +236,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     if (!editingReport) return;
     try {
       setActionLoadingState('update', true);
-      const token = await getToken();
-      if (!token) {
-        setError('Please sign in to update reports');
-        setActionLoadingState('update', false);
-        return;
-      }
-
-      await api.updateScheduledReport(editingReport.id, formData, token);
+      await retryWithFreshToken((token) => api.updateScheduledReport(editingReport.id, formData, token));
       await fetchReports();
       setEditingReport(null);
       resetForm();
@@ -255,14 +250,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   const handleDeleteConfirm = async (reportId: string) => {
     try {
       setActionLoadingState(reportId, true);
-      const token = await getToken();
-      if (!token) {
-        setError('Please sign in to delete reports');
-        setActionLoadingState(reportId, false);
-        return;
-      }
-
-      await api.deleteScheduledReport(reportId, token);
+      await retryWithFreshToken((token) => api.deleteScheduledReport(reportId, token));
       await fetchReports();
       setDeleteConfirmId(null);
     } catch (err) {
@@ -276,14 +264,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     if (actionLoading.has(reportId)) return; // Prevent double-click
     try {
       setActionLoadingState(reportId, true);
-      const token = await getToken();
-      if (!token) {
-        setError('Please sign in to toggle reports');
-        setActionLoadingState(reportId, false);
-        return;
-      }
-
-      await api.toggleScheduledReport(reportId, token);
+      await retryWithFreshToken((token) => api.toggleScheduledReport(reportId, token));
       await fetchReports();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle report');
@@ -298,14 +279,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     if (actionLoading.has(reportId)) return; // Prevent double-click
     try {
       setActionLoadingState(reportId, true);
-      const token = await getToken();
-      if (!token) {
-        setError('Please sign in to run reports');
-        setActionLoadingState(reportId, false);
-        return;
-      }
-
-      const response = await api.runScheduledReportNow(reportId, token);
+      const response = await retryWithFreshToken((token) => api.runScheduledReportNow(reportId, token));
       setSuccessMessage(`Report started! Run ID: ${response.run_id.slice(0, 8)}...`);
       setTimeout(() => setSuccessMessage(null), 5000);
       await fetchReports();
