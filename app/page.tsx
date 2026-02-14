@@ -60,6 +60,8 @@ export default function Home() {
       if (selectedCategory === 'issue' || selectedCategory === 'public_figure') {
         setBrand(brandInput.trim());
         setSearchType(selectedCategory);
+        setLocation("");
+        setLocationCoords(null);
         resetConfig();
         router.push("/configure");
         return;
@@ -118,6 +120,8 @@ export default function Home() {
 
       setBrand(brandName);
       setSearchType(resolvedType);
+      setLocation("");
+      setLocationCoords(null);
       resetConfig();
       router.push("/configure");
     } catch (err) {
@@ -133,6 +137,8 @@ export default function Home() {
   const handleSelectBrand = (brandName: string) => {
     setBrand(brandName);
     setSearchType(selectedCategory);
+    setLocation("");
+    setLocationCoords(null);
     resetConfig();
     setSuggestions(null);
     router.push("/configure");
