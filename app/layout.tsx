@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { DM_Sans, Outfit } from 'next/font/google';
+import { DM_Sans, Manrope } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 import { Providers } from './providers';
@@ -11,11 +11,11 @@ const dmSans = DM_Sans({
   variable: '--font-dm-sans',
 });
 
-const outfit = Outfit({
+const manrope = Manrope({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
-  variable: '--font-outfit',
+  variable: '--font-manrope',
 });
 
 export const metadata: Metadata = {
@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${dmSans.className} ${outfit.variable} antialiased`}>
+        <body className={`${dmSans.className} ${manrope.variable} antialiased`}>
           <Providers>{children}</Providers>
         </body>
       </html>
