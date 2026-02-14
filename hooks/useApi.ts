@@ -45,12 +45,21 @@ export function useSuggestions(
 
 /**
  * Hook to start a new run.
+ * Refreshes the auth token before each request to avoid stale tokens.
  */
 export function useStartRun() {
   const queryClient = useQueryClient();
+  const { getToken, isSignedIn } = useAuth();
 
   return useMutation({
-    mutationFn: (config: RunConfig) => api.startRun(config),
+    mutationFn: async (config: RunConfig) => {
+      // Refresh token right before the API call to avoid stale tokens
+      if (isSignedIn) {
+        const token = await getToken();
+        api.setAuthToken(token);
+      }
+      return api.startRun(config);
+    },
     onSuccess: (data: RunResponse) => {
       // Invalidate any existing run queries
       queryClient.invalidateQueries({ queryKey: ['run'] });
