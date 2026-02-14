@@ -1789,6 +1789,9 @@ export const SourcesTab = () => {
                     </th>
                   </tr>
                 </thead>
+              </table>
+              <div className="max-h-[400px] overflow-y-auto">
+              <table className="w-full text-sm">
                 <tbody>
                   {sourceBrandHeatmapData.sources.map((domain, rowIdx) => (
                     <tr key={domain} className={`border-b border-gray-100 ${rowIdx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
@@ -1887,7 +1890,7 @@ export const SourcesTab = () => {
                   <tr className="border-t-2 border-gray-200 bg-gray-50">
                     <td className="py-3 px-4 sticky left-0 bg-gray-50">
                       <span className="text-xs font-semibold text-gray-700 uppercase">
-                        {sourceBrandHeatmapView === 'sentiment' ? 'Avg' : 'Total'}
+                        {sourceBrandHeatmapView === 'sentiment' ? 'Avg' : 'Total Citations'}
                       </span>
                     </td>
                     {sourceBrandHeatmapData.brands.map(brand => {
@@ -1927,6 +1930,7 @@ export const SourcesTab = () => {
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
 
             <p className="px-6 py-3 text-center text-xs text-gray-400 italic border-t border-gray-100">
