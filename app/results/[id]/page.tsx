@@ -1528,7 +1528,8 @@ export default function ResultsPage() {
         const pfProvScores: Record<string, number[]> = {};
 
         for (const r of promptResults) {
-          const raw = r.brand_sentiment || 'neutral_mention';
+          const raw = r.brand_sentiment;
+          if (!raw || raw === 'not_mentioned') continue;
           pfSum += PFIG_SCORE[raw] ?? 0;
           pfCount++;
           if (raw === 'strong_endorsement' || raw === 'positive_endorsement') pfPos++;
@@ -3681,7 +3682,8 @@ export default function ResultsPage() {
       let negCount = 0;
 
       for (const r of results) {
-        const raw = r.brand_sentiment || 'neutral_mention';
+        const raw = r.brand_sentiment;
+        if (!raw || raw === 'not_mentioned') continue;
         const score = SENTIMENT_SCORE[raw] ?? 0;
         sentimentSum += score;
         sentimentCount++;
@@ -3720,8 +3722,9 @@ export default function ResultsPage() {
       // Platform agreement: how consistently platforms portray sentiment
       const providerSentiments: Record<string, number[]> = {};
       for (const r of results) {
+        const raw = r.brand_sentiment;
+        if (!raw || raw === 'not_mentioned') continue;
         if (!providerSentiments[r.provider]) providerSentiments[r.provider] = [];
-        const raw = r.brand_sentiment || 'neutral_mention';
         providerSentiments[r.provider].push(SENTIMENT_SCORE[raw] ?? 0);
       }
       // Find each provider's average sentiment, then check how close they are
