@@ -367,7 +367,7 @@ export default function ConfigurePage() {
                           type="text"
                           value={tempLocation}
                           onChange={(e) => setTempLocation(e.target.value)}
-                          className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 w-36"
+                          className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-cyan-600 focus:border-cyan-600 w-36"
                           autoFocus
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -384,7 +384,7 @@ export default function ConfigurePage() {
                             setLocation(tempLocation);
                             setEditingLocation(false);
                           }}
-                          className="p-0.5 text-teal-600 hover:bg-teal-50 rounded"
+                          className="p-0.5 text-cyan-600 hover:bg-cyan-50 rounded"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>
@@ -417,7 +417,7 @@ export default function ConfigurePage() {
                         type="text"
                         value={tempUrl}
                         onChange={(e) => setTempUrl(e.target.value)}
-                        className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-600 focus:border-teal-600 w-36"
+                        className="px-2 py-0.5 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-cyan-600 focus:border-cyan-600 w-36"
                         autoFocus
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
@@ -434,7 +434,7 @@ export default function ConfigurePage() {
                           setBrandUrl(tempUrl);
                           setEditingUrl(false);
                         }}
-                        className="p-0.5 text-teal-600 hover:bg-teal-50 rounded"
+                        className="p-0.5 text-cyan-600 hover:bg-cyan-50 rounded"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
@@ -467,7 +467,7 @@ export default function ConfigurePage() {
             <div className="hidden md:flex items-center gap-0">
               {/* Step 1 - Questions (completed) */}
               <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center">
+                <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center">
                   <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
                 </div>
                 <span className="text-xs font-medium text-gray-700">Questions</span>
@@ -537,7 +537,7 @@ export default function ConfigurePage() {
 
               <div className="space-y-5">
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">1</span>
                   </div>
                   <div>
@@ -547,7 +547,7 @@ export default function ConfigurePage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">2</span>
                   </div>
                   <div>
@@ -557,7 +557,7 @@ export default function ConfigurePage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">3</span>
                   </div>
                   <div>
@@ -567,8 +567,8 @@ export default function ConfigurePage() {
                 </div>
               </div>
 
-              <div className="mt-6 bg-teal-700 rounded-xl p-4">
-                <p className="text-sm text-teal-50">
+              <div className="mt-6 bg-cyan-700 rounded-xl p-4">
+                <p className="text-sm text-cyan-50">
                   <span className="mr-1">💡</span>
                   <span className="font-medium">Tip:</span> The more questions and platforms you select, the richer your analysis will be.
                 </p>
@@ -583,14 +583,14 @@ export default function ConfigurePage() {
             <div className="lg:w-[70%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
               {/* Header with step number */}
               <div className="flex items-start gap-3 mb-4">
-                <div className="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-7 h-7 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-xs font-semibold">1</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-gray-400" />
                   <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
                 </div>
-                <span className="ml-auto text-sm font-semibold text-teal-600">
+                <span className="ml-auto text-sm font-semibold text-cyan-600">
                   {selectedPromptsArray.length}/{prompts.length}
                 </span>
               </div>
@@ -621,7 +621,7 @@ export default function ConfigurePage() {
                       <div
                         className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
                           selectedPrompts.has(prompt)
-                            ? 'bg-teal-600'
+                            ? 'bg-cyan-600'
                             : 'border-2 border-gray-300'
                         }`}
                       >
@@ -635,7 +635,7 @@ export default function ConfigurePage() {
                             type="text"
                             value={editingPromptValue}
                             onChange={(e) => setEditingPromptValue(e.target.value)}
-                            className="flex-1 px-2.5 py-1.5 border border-teal-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20"
+                            className="flex-1 px-2.5 py-1.5 border border-cyan-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-600/20"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleSavePromptEdit();
@@ -644,7 +644,7 @@ export default function ConfigurePage() {
                           />
                           <button
                             onClick={handleSavePromptEdit}
-                            className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                            className="p-1.5 text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
@@ -702,7 +702,7 @@ export default function ConfigurePage() {
                       </button>
                       <button
                         onClick={() => deselectAllPrompts()}
-                        className="text-sm text-teal-600 hover:text-teal-700 transition-colors font-medium"
+                        className="text-sm text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
                       >
                         Deselect all
                       </button>
@@ -711,7 +711,7 @@ export default function ConfigurePage() {
                     <div className="border-t border-gray-100 mt-3 pt-3 flex items-center justify-end">
                       <button
                         onClick={() => deselectAllPrompts()}
-                        className="text-sm text-teal-600 hover:text-teal-700 transition-colors font-medium"
+                        className="text-sm text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
                       >
                         Deselect all
                       </button>
@@ -728,7 +728,7 @@ export default function ConfigurePage() {
                             value={newPrompt}
                             onChange={(e) => setNewPrompt(e.target.value)}
                             placeholder="Type your question here..."
-                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 placeholder-gray-400"
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-600/20 focus:border-cyan-600 placeholder-gray-400"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') { handleAddPrompt(); }
@@ -738,7 +738,7 @@ export default function ConfigurePage() {
                           <button
                             onClick={handleAddPrompt}
                             disabled={!newPrompt.trim()}
-                            className="px-3 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                            className="px-3 py-2 text-sm bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                           >
                             Add
                           </button>
@@ -771,14 +771,14 @@ export default function ConfigurePage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
                 {/* Header with step number */}
                 <div className="flex items-start gap-3 mb-1">
-                  <div className="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-7 h-7 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-xs font-semibold">2</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-gray-400" />
                     <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
                   </div>
-                  <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-700">
+                  <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700">
                     {selectedCompetitorsArray.length} selected
                   </span>
                 </div>
@@ -799,13 +799,13 @@ export default function ConfigurePage() {
                             key={competitor}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm cursor-pointer transition-all group border ${
                               isSelected
-                                ? 'border-teal-200 bg-white text-gray-700'
+                                ? 'border-cyan-200 bg-white text-gray-700'
                                 : 'border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100'
                             }`}
                             onClick={() => toggleCompetitor(competitor)}
                           >
                             {isSelected && (
-                              <div className="w-4 h-4 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0">
+                              <div className="w-4 h-4 rounded-full bg-cyan-600 flex items-center justify-center flex-shrink-0">
                                 <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                               </div>
                             )}
@@ -837,7 +837,7 @@ export default function ConfigurePage() {
                             value={newCompetitor}
                             onChange={(e) => setNewCompetitor(e.target.value)}
                             placeholder={addBrandPlaceholder}
-                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 placeholder-gray-400"
+                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-600/20 focus:border-cyan-600 placeholder-gray-400"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') { handleAddCompetitor(); }
@@ -847,7 +847,7 @@ export default function ConfigurePage() {
                           <button
                             onClick={handleAddCompetitor}
                             disabled={!newCompetitor.trim()}
-                            className="px-3 py-2 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                            className="px-3 py-2 text-sm bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                           >
                             Add
                           </button>
@@ -876,14 +876,14 @@ export default function ConfigurePage() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
                 {/* Header with step number */}
                 <div className="flex items-start gap-3 mb-1">
-                  <div className="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-7 h-7 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-xs font-semibold">3</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Bot className="w-4 h-4 text-gray-400" />
                     <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
                   </div>
-                  <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-teal-50 text-teal-700">
+                  <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700">
                     {providers.length} selected
                   </span>
                 </div>
@@ -915,7 +915,7 @@ export default function ConfigurePage() {
                             isLocked
                               ? 'bg-gray-200'
                               : isSelected
-                              ? 'bg-teal-600'
+                              ? 'bg-cyan-600'
                               : 'border-2 border-gray-300'
                           }`}
                         >
@@ -1015,7 +1015,7 @@ export default function ConfigurePage() {
                           <div
                             className={`w-4 h-4 rounded-full flex items-center justify-center ${
                               temperatures.includes(temp)
-                                ? 'bg-teal-600'
+                                ? 'bg-cyan-600'
                                 : 'border-2 border-gray-300'
                             }`}
                           >
@@ -1259,7 +1259,7 @@ export default function ConfigurePage() {
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-600 bg-white"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-600/20 focus:border-cyan-600 bg-white"
                 >
                   <option value="us">United States</option>
                   <option value="gb">United Kingdom</option>
@@ -1296,7 +1296,7 @@ export default function ConfigurePage() {
           <button
             onClick={handleRunAnalysis}
             disabled={!canRun}
-            className="px-6 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-3 bg-cyan-600 text-white font-semibold rounded-xl hover:bg-cyan-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {startRunMutation.isPending ? (
               <Spinner size="sm" />
