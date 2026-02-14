@@ -586,24 +586,22 @@ export default function ConfigurePage() {
           <div className="flex-1 space-y-8">
 
             {/* Questions Section - 70% width, centered */}
-            <div className="lg:w-[52.5%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
+            <div className="lg:w-[45%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
               {/* Header with step number */}
-              <div className="flex items-start gap-3 mb-1">
-                <div className="w-7 h-7 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-xs font-semibold">1</span>
+              <div className="flex items-center gap-2.5 mb-0.5">
+                <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-[11px] font-semibold">1</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-gray-400" />
-                  <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
-                </div>
-                <span className="ml-auto text-sm font-semibold text-cyan-600">
+                <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
+                <h2 className="text-sm font-semibold text-gray-900">Questions to Ask AI</h2>
+                <span className="ml-auto text-xs font-semibold text-cyan-600">
                   {selectedPromptsArray.length}/{prompts.length}
                 </span>
               </div>
-              <div className="flex items-center mb-4 ml-10">
+              <div className="flex items-center mb-2 ml-[34px]">
                 <button
                   onClick={() => selectedPromptsArray.length === prompts.length ? deselectAllPrompts() : selectAllPrompts()}
-                  className="text-sm text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
+                  className="text-xs text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
                 >
                   {selectedPromptsArray.length === prompts.length ? 'Deselect all' : 'Select all'}
                 </button>
@@ -611,17 +609,17 @@ export default function ConfigurePage() {
 
 
               {suggestionsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Spinner size="lg" />
-                  <span className="ml-3 text-gray-500 text-sm">Generating smart questions...</span>
+                <div className="flex items-center justify-center py-6">
+                  <Spinner size="md" />
+                  <span className="ml-2 text-gray-500 text-xs">Generating smart questions...</span>
                 </div>
               ) : (
-                <div className="space-y-0.5">
+                <div>
                   {/* Questions List */}
                   {visiblePrompts.map((prompt, index) => (
                     <div
                       key={prompt}
-                      className={`flex items-start gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all group ${
+                      className={`flex items-start gap-2.5 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all group ${
                         selectedPrompts.has(prompt)
                           ? 'bg-white'
                           : 'hover:bg-gray-50'
@@ -633,23 +631,23 @@ export default function ConfigurePage() {
                       }}
                     >
                       <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
+                        className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all ${
                           selectedPrompts.has(prompt)
                             ? 'bg-cyan-600'
                             : 'border-2 border-gray-300'
                         }`}
                       >
                         {selectedPrompts.has(prompt) && (
-                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                          <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                         )}
                       </div>
                       {editingPromptIndex === index ? (
-                        <div className="flex-1 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex-1 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="text"
                             value={editingPromptValue}
                             onChange={(e) => setEditingPromptValue(e.target.value)}
-                            className="flex-1 px-2.5 py-1.5 border border-cyan-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-600/20"
+                            className="flex-1 px-2 py-1 border border-cyan-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-cyan-600/20"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleSavePromptEdit();
@@ -671,7 +669,7 @@ export default function ConfigurePage() {
                         </div>
                       ) : (
                         <>
-                          <span className="flex-1 text-sm text-gray-600 leading-relaxed">
+                          <span className="flex-1 text-xs text-gray-600 leading-snug">
                             {prompt}
                           </span>
                           <button
@@ -697,10 +695,10 @@ export default function ConfigurePage() {
               {prompts.length > 0 && !suggestionsLoading && (
                 <>
                   {canToggleQuestions && (
-                    <div className="border-t border-gray-100 mt-3 pt-3">
+                    <div className="border-t border-gray-100 mt-2 pt-2">
                       <button
                         onClick={() => setQuestionsExpanded(!questionsExpanded)}
-                        className="text-sm text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
+                        className="text-xs text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
                       >
                         {questionsExpanded ? (
                           <>
@@ -719,15 +717,15 @@ export default function ConfigurePage() {
 
                   {/* Add question */}
                   {prompts.length < 20 && (
-                    <div className="border-t border-gray-100 mt-3 pt-3">
+                    <div className="border-t border-gray-100 mt-2 pt-2">
                       {addingPrompt ? (
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                           <input
                             type="text"
                             value={newPrompt}
                             onChange={(e) => setNewPrompt(e.target.value)}
                             placeholder="Type your question here..."
-                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-600/20 focus:border-cyan-600 placeholder-gray-400"
+                            className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-cyan-600/20 focus:border-cyan-600 placeholder-gray-400"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') { handleAddPrompt(); }
@@ -737,7 +735,7 @@ export default function ConfigurePage() {
                           <button
                             onClick={handleAddPrompt}
                             disabled={!newPrompt.trim()}
-                            className="px-3 py-2 text-sm bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                            className="px-2.5 py-1.5 text-xs bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                           >
                             Add
                           </button>
@@ -751,9 +749,9 @@ export default function ConfigurePage() {
                       ) : (
                         <button
                           onClick={() => setAddingPrompt(true)}
-                          className="text-sm text-gray-500 hover:bg-gray-50 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 border-dashed transition-colors"
+                          className="text-xs text-gray-500 hover:bg-gray-50 font-medium flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 border-dashed transition-colors"
                         >
-                          <Plus className="w-4 h-4" />
+                          <Plus className="w-3.5 h-3.5" />
                           Add your own question
                         </button>
                       )}
