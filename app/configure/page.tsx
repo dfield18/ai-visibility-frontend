@@ -579,8 +579,8 @@ export default function ConfigurePage() {
           {/* Main Content */}
           <div className="flex-1 space-y-8">
 
-            {/* Questions Section - 70% width */}
-            <div className="lg:w-[70%] bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
+            {/* Questions Section - 70% width, centered */}
+            <div className="lg:w-[70%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
               {/* Header with step number */}
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
