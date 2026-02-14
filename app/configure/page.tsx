@@ -560,7 +560,7 @@ export default function ConfigurePage() {
                   {selectedPromptsArray.length}/{prompts.length}
                 </span>
               </div>
-              <div className="flex items-center gap-2 mb-2 ml-[34px]">
+              <div className="flex items-center gap-2 mb-2 ml-2">
                 <button
                   type="button"
                   role="switch"
