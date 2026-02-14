@@ -550,33 +550,35 @@ export default function ConfigurePage() {
             {/* Questions Section - 70% width, centered */}
             <div className="lg:w-[45%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
               {/* Header with step number */}
-              <div className="flex items-center gap-2.5 mb-0.5">
+              <div className="flex items-center gap-2.5 mb-2">
                 <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-[11px] font-semibold">1</span>
                 </div>
                 <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
                 <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
-                <span className="ml-auto text-xs font-semibold text-cyan-600">
-                  {selectedPromptsArray.length}/{prompts.length}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 mb-2 ml-2">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={selectedPromptsArray.length === prompts.length}
-                  onClick={() => selectedPromptsArray.length === prompts.length ? deselectAllPrompts() : selectAllPrompts()}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    selectedPromptsArray.length === prompts.length ? 'bg-gray-900' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-                      selectedPromptsArray.length === prompts.length ? 'translate-x-6' : 'translate-x-0.5'
-                    }`}
-                  />
-                </button>
-                <span className="text-sm text-gray-700 font-medium">Select all</span>
+                <div className="ml-auto flex items-center gap-2.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-500 font-medium">Select all</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={selectedPromptsArray.length === prompts.length}
+                      onClick={() => selectedPromptsArray.length === prompts.length ? deselectAllPrompts() : selectAllPrompts()}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                        selectedPromptsArray.length === prompts.length ? 'bg-gray-900' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                          selectedPromptsArray.length === prompts.length ? 'translate-x-4.5' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <span className="text-xs font-semibold text-cyan-600">
+                    {selectedPromptsArray.length}/{prompts.length}
+                  </span>
+                </div>
               </div>
 
 
