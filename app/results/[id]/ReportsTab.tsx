@@ -374,7 +374,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
             Schedule recurring visibility analyses and receive results via email
           </p>
           {!loading && (
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-sm text-gray-600 mt-1 font-medium">
               {reports.length} of {MAX_REPORTS} reports used
             </p>
           )}
@@ -427,7 +427,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
           <p className="text-gray-500 max-w-md mx-auto mb-4">
             Create your first automated report to receive regular visibility updates for {runStatus?.brand || 'your brand'}.
           </p>
-          <p className="text-xs text-gray-400 mb-6">
+          <p className="text-sm text-gray-600 mb-6 font-medium">
             You can create up to {MAX_REPORTS} automated reports.
           </p>
           <button

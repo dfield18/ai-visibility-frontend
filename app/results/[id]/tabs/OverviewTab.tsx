@@ -52,7 +52,7 @@ function MarketSpreadDonut({
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   return (
-    <div style={{ order: 3 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${cardClassName}`}>
+    <div style={{ order: 3 }} className={`rounded-2xl shadow-sm border p-4 flex flex-col h-[270px] overflow-hidden ${cardClassName}`}>
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Spread</p>
         <div className="relative group">
@@ -69,17 +69,17 @@ function MarketSpreadDonut({
           </div>
         </div>
       </div>
-      <div className="flex-1 flex items-center gap-4 min-h-0">
+      <div className="flex-1 flex items-center gap-3 min-h-0">
         {/* Donut chart */}
-        <div className="w-[130px] h-[130px] flex-shrink-0 relative">
+        <div className="w-[110px] h-[110px] flex-shrink-0 relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={donutData}
                 cx="50%"
                 cy="50%"
-                innerRadius={32}
-                outerRadius={56}
+                innerRadius={27}
+                outerRadius={48}
                 dataKey="value"
                 strokeWidth={2}
                 stroke="#fff"
@@ -104,7 +104,7 @@ function MarketSpreadDonut({
           {/* Center label on hover */}
           {activeIndex !== null && donutData[activeIndex] && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-[11px] font-semibold text-gray-900 leading-tight text-center px-1 truncate max-w-[56px]">
+              <span className="text-[11px] font-semibold text-gray-900 leading-tight text-center px-1 truncate max-w-[48px]">
                 {donutData[activeIndex].name}
               </span>
               <span className="text-[10px] text-gray-500">
@@ -114,24 +114,24 @@ function MarketSpreadDonut({
           )}
         </div>
         {/* Brand legend */}
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           {donutData.map((entry, i) => {
             const pct = totalMentions > 0 ? ((entry.value / totalMentions) * 100).toFixed(0) : '0';
             return (
               <div
                 key={entry.name}
-                className={`flex items-center gap-2 px-1.5 py-0.5 rounded cursor-default transition-colors ${
+                className={`flex items-center gap-1.5 px-1 py-0.5 rounded cursor-default transition-colors ${
                   activeIndex === i ? 'bg-gray-100' : 'hover:bg-gray-50'
                 }`}
                 onMouseEnter={() => setActiveIndex(i)}
                 onMouseLeave={() => setActiveIndex(null)}
               >
                 <div
-                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{ backgroundColor: colors[i % colors.length] }}
                 />
-                <span className="text-xs text-gray-700">{entry.name.length > 14 ? entry.name.substring(0, 13) + '…' : entry.name}</span>
-                <span className="text-xs font-medium text-gray-500 tabular-nums">{pct}%</span>
+                <span className="text-xs text-gray-700 truncate">{entry.name}</span>
+                <span className="text-xs font-medium text-gray-500 tabular-nums flex-shrink-0">{pct}%</span>
               </div>
             );
           })}
