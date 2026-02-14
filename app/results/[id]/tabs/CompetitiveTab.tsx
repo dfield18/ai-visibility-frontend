@@ -297,7 +297,15 @@ const sentimentScores: Record<string, number> = {
   'not_mentioned': 0,
 };
 
-const getSentimentLabelFromScore = (score: number): string => {
+const getSentimentLabelFromScore = (score: number, issueMode = false): string => {
+  if (issueMode) {
+    if (score >= 4.5) return 'Supportive';
+    if (score >= 3.5) return 'Leaning Supportive';
+    if (score >= 2.5) return 'Balanced';
+    if (score >= 1.5) return 'Mixed';
+    if (score >= 0.5) return 'Critical';
+    return 'N/A';
+  }
   if (score >= 4.5) return 'Strong';
   if (score >= 3.5) return 'Positive';
   if (score >= 2.5) return 'Neutral';
@@ -1138,7 +1146,13 @@ export default function CompetitiveTab({
 
                         const getPromptSentimentLabel = (sentiment: string | null): string => {
                           if (!sentiment) return '-';
-                          const labels: Record<string, string> = {
+                          const labels: Record<string, string> = isIssue ? {
+                            'strong_endorsement': 'Supportive',
+                            'positive_endorsement': 'Leaning Supportive',
+                            'neutral_mention': 'Balanced',
+                            'conditional': 'Mixed',
+                            'negative_comparison': 'Critical',
+                          } : {
                             'strong_endorsement': 'Strong',
                             'positive_endorsement': 'Positive',
                             'neutral_mention': 'Neutral',
@@ -2012,7 +2026,7 @@ export default function CompetitiveTab({
                                   className={`text-center py-2 px-2 ${count > 0 ? 'cursor-pointer hover:bg-gray-100' : ''}`}
                                   style={{ minWidth: '100px' }}
                                   onClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
-                                  title={count > 0 ? (heatmapShowSentiment ? `${isIssue ? 'Avg framing' : 'Sentiment'}: ${getSentimentLabelFromScore(avgSentiment)} (${sentimentInfo?.total || 0} responses) - Click to view` : `${count} citations - Click to view`) : undefined}
+                                  title={count > 0 ? (heatmapShowSentiment ? `${isIssue ? 'Avg framing' : 'Sentiment'}: ${getSentimentLabelFromScore(avgSentiment, isIssue)} (${sentimentInfo?.total || 0} responses) - Click to view` : `${count} citations - Click to view`) : undefined}
                                 >
                                   {count === 0 ? (
                                     <span className="text-gray-300">{'\u2013'}</span>
@@ -2025,7 +2039,7 @@ export default function CompetitiveTab({
                                         maxWidth: '80px',
                                       }}
                                     >
-                                      <span className="text-white text-[10px] font-medium leading-none">{getSentimentLabelFromScore(avgSentiment)}</span>
+                                      <span className="text-white text-[10px] font-medium leading-none">{getSentimentLabelFromScore(avgSentiment, isIssue)}</span>
                                     </div>
                                   ) : (
                                     <div

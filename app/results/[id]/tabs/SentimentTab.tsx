@@ -131,6 +131,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
       const insights: string[] = [];
       const searchedBrand = runStatus.brand;
+      const issueMode = runStatus.search_type === 'issue';
 
       // Get sentiment data
       const resultsWithSentiment = globallyFilteredResults.filter(
@@ -185,7 +186,13 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       // 2. Strongest sentiment category
       const topSentiment = Object.entries(sentimentCounts).sort((a, b) => b[1] - a[1])[0];
       if (topSentiment && topSentiment[1] > 0) {
-        const labelMap: Record<string, string> = {
+        const labelMap: Record<string, string> = issueMode ? {
+          strong_endorsement: 'Supportive',
+          positive_endorsement: 'Leaning Supportive',
+          neutral_mention: 'Balanced',
+          conditional: 'Mixed',
+          negative_comparison: 'Critical',
+        } : {
           strong_endorsement: 'Strong',
           positive_endorsement: 'Positive',
           neutral_mention: 'Neutral',
