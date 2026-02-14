@@ -108,15 +108,20 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
   // Helper: call an API with a token, retrying with a fresh one if expired
   const retryWithFreshToken = useCallback(async <T,>(apiFn: (token: string) => Promise<T>): Promise<T> => {
     let token = await getToken();
-    if (!token) throw new Error('Please sign in');
+    if (!token) throw new Error('Please sign in to access reports');
     try {
       return await apiFn(token);
     } catch (err) {
+      const msg = err instanceof Error ? err.message?.toLowerCase() : '';
       // If token expired, get a fresh one and retry once
-      if (err instanceof Error && err.message?.toLowerCase().includes('token has expired')) {
-        token = await getToken({ skipCache: true });
-        if (!token) throw new Error('Please sign in');
-        return await apiFn(token);
+      if (msg.includes('token has expired') || msg.includes('expired') || msg.includes('401')) {
+        try {
+          token = await getToken({ skipCache: true });
+          if (!token) throw new Error('Your session has expired. Please refresh the page.');
+          return await apiFn(token);
+        } catch {
+          throw new Error('Your session has expired. Please refresh the page.');
+        }
       }
       throw err;
     }
@@ -377,12 +382,21 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
           <p className="text-sm text-red-700">{error}</p>
-          <button
-            onClick={() => setError(null)}
-            className="ml-auto p-1 hover:bg-red-100 rounded"
-          >
-            <X className="w-4 h-4 text-red-500" />
-          </button>
+          {error.toLowerCase().includes('session') || error.toLowerCase().includes('expired') || error.toLowerCase().includes('sign in') ? (
+            <button
+              onClick={() => { setError(null); fetchReports(); }}
+              className="ml-auto px-3 py-1 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
+            >
+              Retry
+            </button>
+          ) : (
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto p-1 hover:bg-red-100 rounded"
+            >
+              <X className="w-4 h-4 text-red-500" />
+            </button>
+          )}
         </div>
       )}
 
