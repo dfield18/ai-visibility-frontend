@@ -579,7 +579,10 @@ export default function ConfigurePage() {
           {/* Main Content */}
           <div className="flex-1 space-y-8">
 
-            {/* Questions Section - full width card */}
+            {/* All three sections in a grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* Questions Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
               {/* Header with step number */}
               <div className="flex items-start gap-3 mb-4">
@@ -764,11 +767,8 @@ export default function ConfigurePage() {
               )}
             </div>
 
-            {/* Competitors + Platforms side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-
               {/* Competitors Section */}
-              <div className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
                 {/* Header with step number */}
                 <div className="flex items-start gap-3 mb-1">
                   <div className="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -873,7 +873,7 @@ export default function ConfigurePage() {
               </div>
 
               {/* AI Platforms Section */}
-              <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
                 {/* Header with step number */}
                 <div className="flex items-start gap-3 mb-1">
                   <div className="w-7 h-7 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -942,7 +942,7 @@ export default function ConfigurePage() {
                 </div>
               </div>
 
-            </div>{/* End of Competitors + Platforms grid */}
+            </div>{/* End of all three sections grid */}
 
           </div>{/* End of main content */}
         </div>{/* End of sidebar + content flex */}
