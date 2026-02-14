@@ -609,8 +609,8 @@ export const OverviewTab = ({
             // Discussion Polarity — tug-of-war bar showing Supportive vs Critical ratio
             const dist: Record<string, number> = overviewMetrics?.framingDistribution || {};
             const supportiveCount = (dist['Supportive'] || 0) + (dist['Leaning Supportive'] || 0);
-            const criticalCount = (dist['Mixed'] || 0) + (dist['Critical'] || 0);
-            const neutralCount = dist['Balanced'] || 0;
+            const criticalCount = dist['Critical'] || 0;
+            const neutralCount = (dist['Balanced'] || 0) + (dist['Mixed'] || 0);
             const polarTotal = supportiveCount + criticalCount + neutralCount;
             const supportivePct = polarTotal > 0 ? (supportiveCount / polarTotal) * 100 : 0;
             const criticalPct = polarTotal > 0 ? (criticalCount / polarTotal) * 100 : 0;

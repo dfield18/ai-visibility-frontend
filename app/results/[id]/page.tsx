@@ -1469,7 +1469,14 @@ export default function ResultsPage() {
 
       if (isIssueType) {
         for (const r of promptResults) {
-          const raw = r.brand_sentiment || 'neutral_mention';
+          const raw = r.brand_sentiment;
+          if (!raw || raw === 'not_mentioned') {
+            // Still collect related issues from unmentioned results
+            if (r.competitors_mentioned) {
+              for (const c of r.competitors_mentioned) issueRelated.add(c);
+            }
+            continue;
+          }
           const label = issueFramingMap[raw] || 'Balanced';
           issueFramingCounts[label] = (issueFramingCounts[label] || 0) + 1;
           if (label === 'Supportive' || label === 'Leaning Supportive') issueSupportiveCount++;
@@ -3598,7 +3605,8 @@ export default function ResultsPage() {
       // Build framing distribution from brand_sentiment
       const framingCounts: Record<string, number> = {};
       for (const result of results) {
-        const raw = result.brand_sentiment || 'neutral_mention';
+        const raw = result.brand_sentiment;
+        if (!raw || raw === 'not_mentioned') continue; // Skip unmentioned results
         const label = FRAMING_MAP[raw] || 'Balanced';
         framingCounts[label] = (framingCounts[label] || 0) + 1;
       }
