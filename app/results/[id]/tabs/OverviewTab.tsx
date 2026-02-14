@@ -69,19 +69,19 @@ function MarketSpreadDonut({
           </div>
         </div>
       </div>
-      <div className="flex-1 flex items-center gap-3 min-h-0">
+      <div className="flex-1 flex items-center gap-4 min-h-0">
         {/* Donut chart */}
-        <div className="w-[120px] h-[120px] flex-shrink-0 relative">
+        <div className="w-[130px] h-[130px] flex-shrink-0 relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={donutData}
                 cx="50%"
                 cy="50%"
-                innerRadius={30}
-                outerRadius={52}
+                innerRadius={32}
+                outerRadius={56}
                 dataKey="value"
-                strokeWidth={1}
+                strokeWidth={2}
                 stroke="#fff"
                 onMouseEnter={(_, index) => setActiveIndex(index)}
                 onMouseLeave={() => setActiveIndex(null)}
@@ -90,7 +90,7 @@ function MarketSpreadDonut({
                   <Cell
                     key={i}
                     fill={colors[i % colors.length]}
-                    strokeWidth={activeIndex === i ? 2 : 1}
+                    strokeWidth={activeIndex === i ? 2 : 2}
                     stroke={activeIndex === i ? colors[i % colors.length] : '#fff'}
                     style={{
                       filter: activeIndex !== null && activeIndex !== i ? 'opacity(0.4)' : undefined,
@@ -104,23 +104,23 @@ function MarketSpreadDonut({
           {/* Center label on hover */}
           {activeIndex !== null && donutData[activeIndex] && (
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xs font-semibold text-gray-900 leading-tight text-center px-1 truncate max-w-[80px]">
+              <span className="text-[11px] font-semibold text-gray-900 leading-tight text-center px-1 truncate max-w-[56px]">
                 {donutData[activeIndex].name}
               </span>
               <span className="text-[10px] text-gray-500">
-                {totalMentions > 0 ? ((donutData[activeIndex].value / totalMentions) * 100).toFixed(1) : 0}%
+                {totalMentions > 0 ? ((donutData[activeIndex].value / totalMentions) * 100).toFixed(0) : 0}%
               </span>
             </div>
           )}
         </div>
         {/* Brand legend */}
-        <div className="flex-1 overflow-y-auto max-h-[150px] space-y-0.5 pr-1">
+        <div className="flex-1 space-y-1">
           {donutData.map((entry, i) => {
-            const pct = totalMentions > 0 ? ((entry.value / totalMentions) * 100).toFixed(1) : '0';
+            const pct = totalMentions > 0 ? ((entry.value / totalMentions) * 100).toFixed(0) : '0';
             return (
               <div
                 key={entry.name}
-                className={`flex items-center gap-2 px-1.5 py-1 rounded cursor-default transition-colors ${
+                className={`flex items-center gap-2 px-1.5 py-0.5 rounded cursor-default transition-colors ${
                   activeIndex === i ? 'bg-gray-100' : 'hover:bg-gray-50'
                 }`}
                 onMouseEnter={() => setActiveIndex(i)}
@@ -130,8 +130,8 @@ function MarketSpreadDonut({
                   className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                   style={{ backgroundColor: colors[i % colors.length] }}
                 />
-                <span className="text-xs text-gray-700 truncate flex-1">{entry.name}</span>
-                <span className="text-xs text-gray-400 tabular-nums">{pct}%</span>
+                <span className="text-xs text-gray-700 flex-1">{entry.name.length > 14 ? entry.name.substring(0, 13) + '…' : entry.name}</span>
+                <span className="text-xs font-medium text-gray-500 tabular-nums">{pct}%</span>
               </div>
             );
           })}
@@ -1124,7 +1124,7 @@ export const OverviewTab = ({
             // Brand mention donut chart for industry reports
             const mentionCounts: Record<string, number> = overviewMetrics?.brandMentionCounts || {};
             const sorted = Object.entries(mentionCounts).sort((a, b) => b[1] - a[1]);
-            const MAX_SLICES = 8;
+            const MAX_SLICES = 6;
             const topBrands = sorted.slice(0, MAX_SLICES);
             const otherCount = sorted.slice(MAX_SLICES).reduce((sum, [, c]) => sum + c, 0);
             const donutData = [
@@ -1132,7 +1132,7 @@ export const OverviewTab = ({
               ...(otherCount > 0 ? [{ name: 'Other', value: otherCount }] : []),
             ];
             const totalMentions = donutData.reduce((sum, d) => sum + d.value, 0);
-            const DONUT_COLORS = ['#111827', '#4285f4', '#10a37f', '#d97706', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#9ca3af'];
+            const DONUT_COLORS = ['#4285f4', '#10a37f', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#9ca3af'];
 
             return (
               <MarketSpreadDonut

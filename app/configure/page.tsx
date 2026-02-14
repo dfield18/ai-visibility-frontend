@@ -304,7 +304,7 @@ export default function ConfigurePage() {
         session_id: getSessionId(),
         brand,
         search_type: searchType,
-        ...(isLocal && location ? { location } : {}),
+        ...(location ? { location } : {}),
         prompts: selectedPromptsArray,
         competitors: selectedCompetitorsArray,
         providers,
@@ -364,8 +364,8 @@ export default function ConfigurePage() {
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-900 text-white">
                     {brand}
                   </span>
-                  {/* Location badge for local search type */}
-                  {isLocal && (
+                  {/* Location badge for local/local-industry search type */}
+                  {(isLocal || location) && (
                     editingLocation ? (
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-gray-400" />
@@ -469,44 +469,6 @@ export default function ConfigurePage() {
                 </div>
               </div>
             </div>
-            {/* Header Stepper */}
-            <div className="hidden md:flex items-center gap-0">
-              {/* Step 1 - Questions (completed) */}
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center">
-                  <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-                </div>
-                <span className="text-xs font-medium text-gray-700">Questions</span>
-              </div>
-              <div className="w-8 h-px bg-gray-300 mx-1" />
-
-              {/* Step 2 - Competitors */}
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                  <span className="text-xs font-medium text-gray-400">2</span>
-                </div>
-                <span className="text-xs font-medium text-gray-400">Competitors</span>
-              </div>
-              <div className="w-8 h-px bg-gray-300 mx-1" />
-
-              {/* Step 3 - AI Platforms */}
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                  <span className="text-xs font-medium text-gray-400">3</span>
-                </div>
-                <span className="text-xs font-medium text-gray-400">AI Platforms</span>
-              </div>
-              <div className="w-8 h-px bg-gray-300 mx-1" />
-
-              {/* Step 4 - Review */}
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                  <span className="text-xs font-medium text-gray-400">4</span>
-                </div>
-                <span className="text-xs font-medium text-gray-400">Review</span>
-              </div>
-            </div>
-
             <UserButton
               appearance={{
                 elements: {
@@ -593,7 +555,7 @@ export default function ConfigurePage() {
                   <span className="text-white text-[11px] font-semibold">1</span>
                 </div>
                 <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
-                <h2 className="text-sm font-semibold text-gray-900">Questions to Ask AI</h2>
+                <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
                 <span className="ml-auto text-xs font-semibold text-cyan-600">
                   {selectedPromptsArray.length}/{prompts.length}
                 </span>

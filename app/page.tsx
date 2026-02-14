@@ -151,7 +151,8 @@ export default function Home() {
 
   const handleLocationContinue = () => {
     setBrand(pendingBrandName);
-    setSearchType('local');
+    // Keep 'category' search type for industry + local so it uses industry report format
+    setSearchType(selectedCategory === 'category' ? 'category' : 'local');
     resetConfig();
     setShowLocationPrompt(false);
     router.push("/configure");
