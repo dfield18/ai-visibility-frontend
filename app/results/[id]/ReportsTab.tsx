@@ -58,6 +58,7 @@ const getScoreBgColor = (score: number): string => {
 
 export function ReportsTab({ runStatus }: ReportsTabProps) {
   const { getToken, isSignedIn, isLoaded } = useAuth();
+  const searchType = runStatus?.search_type || 'brand';
   const [reports, setReports] = useState<ScheduledReport[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -221,11 +222,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
         setActionLoadingState('create', false);
         return;
       }
-      if (competitors.length === 0) {
-        setError('At least one competitor is required');
-        setActionLoadingState('create', false);
-        return;
-      }
+      // Competitors are auto-detected from the run results — no validation needed
       if (providers.length === 0) {
         setError('At least one provider is required');
         setActionLoadingState('create', false);
@@ -427,7 +424,7 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No automated reports yet</h3>
           <p className="text-gray-500 max-w-md mx-auto mb-4">
-            Create your first automated report to receive regular visibility updates for {runStatus?.brand || 'your brand'}.
+            Create your first automated report to receive regular visibility updates for {runStatus?.brand || 'your subject'}.
           </p>
           <p className="text-sm text-gray-600 mb-6 font-medium">
             You can create up to {MAX_REPORTS} automated reports.
@@ -713,9 +710,19 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Report Configuration</h4>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p><span className="font-medium">Brand:</span> {formData.brand}</p>
+                  <p><span className="font-medium">{
+                    searchType === 'category' ? 'Industry:' :
+                    searchType === 'issue' ? 'Issue:' :
+                    searchType === 'public_figure' ? 'Public Figure:' :
+                    'Brand:'
+                  }</span> {formData.brand}</p>
                   <p><span className="font-medium">Prompts:</span> {formData.prompts?.length || 0}</p>
-                  <p><span className="font-medium">Competitors:</span> {formData.competitors?.length || 0}</p>
+                  <p><span className="font-medium">{
+                    searchType === 'category' ? 'Brands (auto-detected):' :
+                    searchType === 'issue' ? 'Related Issues (auto-detected):' :
+                    searchType === 'public_figure' ? 'Similar Figures (auto-detected):' :
+                    'Competitors (auto-detected):'
+                  }</span> {formData.competitors?.filter(c => c.trim()).length || 0}</p>
                   <p><span className="font-medium">Providers:</span> {formData.providers?.map(p => PROVIDER_LABELS[p] || p).join(', ')}</p>
                 </div>
               </div>
