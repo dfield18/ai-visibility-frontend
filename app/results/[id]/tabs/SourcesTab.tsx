@@ -57,6 +57,7 @@ export const SourcesTab = () => {
     hasAnySources,
     isCategory,
     isIssue,
+    isPublicFigure,
   } = useResults();
   const { copied, handleCopyLink, setSelectedResult, setSelectedResultHighlight } = useResultsUI();
 
@@ -249,10 +250,10 @@ export const SourcesTab = () => {
     const sourcePositioningBrandOptions = useMemo(() => {
       if (!runStatus) return [];
       const options: { value: string; label: string }[] = [
-        { value: 'all', label: isIssue ? 'All Issues' : 'All Brands' }
+        { value: 'all', label: isIssue ? 'All Issues' : isPublicFigure ? 'All Figures' : 'All Brands' }
       ];
 
-      // Add searched brand/issue (skip for category — it's the industry name, not a brand)
+      // Add searched brand/issue/figure (skip for category — it's the industry name, not a brand)
       if (runStatus.brand && !isCategory) {
         options.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)` });
       }
@@ -267,7 +268,7 @@ export const SourcesTab = () => {
       });
 
       return options;
-    }, [runStatus, globallyFilteredResults, isIssue]);
+    }, [runStatus, globallyFilteredResults, isIssue, isPublicFigure]);
 
     // Calculate brand website citations with URL details
     const brandWebsiteCitations = useMemo(() => {
@@ -1027,7 +1028,7 @@ export const SourcesTab = () => {
         'Type',
         isIssue ? 'Framing' : 'Sentiment',
         'Models',
-        isIssue ? 'Issues' : 'Brands',
+        isIssue ? 'Issues' : isPublicFigure ? 'Figures' : 'Brands',
       ];
 
       const rows = domainTableData.map(row => [
@@ -1201,6 +1202,8 @@ export const SourcesTab = () => {
             <p className="text-sm text-gray-500 mb-4">
               {isIssue
                 ? 'Sources cited by multiple AI platforms — these shape how AI frames this issue.'
+                : isPublicFigure
+                ? 'Sources cited by multiple AI platforms — these shape how AI portrays this figure.'
                 : 'Sources cited by multiple AI platforms — these have a big impact on what AI recommends.'}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -1299,7 +1302,7 @@ export const SourcesTab = () => {
                     onChange={(e) => setSourcesBrandFilter(e.target.value)}
                     className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
-                    <option value="all">{isIssue ? 'All Issues' : 'All Brands'}</option>
+                    <option value="all">{isIssue ? 'All Issues' : isPublicFigure ? 'All Figures' : 'All Brands'}</option>
                     {!isCategory && runStatus?.brand && availableBrands.includes(runStatus.brand) && (
                       <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
                     )}
@@ -1583,10 +1586,12 @@ export const SourcesTab = () => {
             <div id="sources-helpful" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{isIssue ? 'Sources That Shape Issue Coverage' : isCategory ? 'Sources That Shape AI Recommendations' : 'Sources That Help Your Brand'}</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">{isIssue ? 'Sources That Shape Issue Coverage' : isPublicFigure ? 'Sources That Shape Public Perception' : isCategory ? 'Sources That Shape AI Recommendations' : 'Sources That Help Your Brand'}</h2>
                   <p className="text-sm text-gray-500 mt-1">
                     {isIssue
                       ? 'Websites frequently cited when AI discusses this issue, colored by average framing'
+                      : isPublicFigure
+                      ? 'Websites frequently cited when AI discusses this figure, colored by average sentiment'
                       : 'Websites linked to higher visibility and better sentiment in AI responses'}
                   </p>
                 </div>
@@ -1675,7 +1680,7 @@ export const SourcesTab = () => {
                   );
                 })}
               </div>
-              <p className="mt-4 text-center text-xs text-gray-400 italic">{isIssue ? 'Bar color indicates average framing • Position badge shows avg rank when this source is cited' : 'Bar color indicates average sentiment • Position badge shows avg brand rank when this source is cited'}</p>
+              <p className="mt-4 text-center text-xs text-gray-400 italic">{isIssue ? 'Bar color indicates average framing • Position badge shows avg rank when this source is cited' : isPublicFigure ? 'Bar color indicates average sentiment • Position badge shows avg rank when this source is cited' : 'Bar color indicates average sentiment • Position badge shows avg brand rank when this source is cited'}</p>
             </div>
           );
         })()}
@@ -1810,8 +1815,8 @@ export const SourcesTab = () => {
         {!isIssue && <div id="sources-brand-website" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Brand Website Citations</h3>
-              <p className="text-sm text-gray-500">{isCategory ? 'How often AI models cite brand websites as sources' : 'How often AI models cite your brand\'s and competitors\' own websites as sources'}</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">{isPublicFigure ? 'Figure Website Citations' : 'Brand Website Citations'}</h3>
+              <p className="text-sm text-gray-500">{isCategory ? 'How often AI models cite brand websites as sources' : isPublicFigure ? 'How often AI models cite websites associated with this figure and similar figures as sources' : 'How often AI models cite your brand\'s and competitors\' own websites as sources'}</p>
             </div>
             <div className="flex items-center gap-2">
               <select
@@ -1819,7 +1824,7 @@ export const SourcesTab = () => {
                 onChange={(e) => setBrandCitationsBrandFilter(e.target.value)}
                 className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
-                <option value="all">All Brands</option>
+                <option value="all">{isPublicFigure ? 'All Figures' : 'All Brands'}</option>
                 {!isCategory && runStatus?.brand && (
                   <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
                 )}
@@ -1932,10 +1937,10 @@ export const SourcesTab = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-sm text-gray-500">No brand or competitor websites were cited as sources.</p>
+              <p className="text-sm text-gray-500">{isPublicFigure ? 'No figure-associated websites were cited as sources.' : 'No brand or competitor websites were cited as sources.'}</p>
               <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg inline-block">
                 <p className="text-xs text-yellow-800">
-                  <strong>Opportunity:</strong> Consider improving your website's SEO and creating authoritative content that Models might cite.
+                  <strong>Opportunity:</strong> {isPublicFigure ? 'Consider creating authoritative online profiles and content that AI models might cite when discussing this figure.' : 'Consider improving your website\'s SEO and creating authoritative content that Models might cite.'}
                 </p>
               </div>
             </div>
@@ -1949,7 +1954,7 @@ export const SourcesTab = () => {
                 <span className="font-medium text-gray-900">{brandWebsiteCitations.totalResultsWithSources}</span>
               </div>
               <div>
-                <span className="text-gray-500">Brands with citations: </span>
+                <span className="text-gray-500">{isPublicFigure ? 'Figures with citations: ' : 'Brands with citations: '}</span>
                 <span className="font-medium text-gray-900">{brandWebsiteCitations.totalBrandsWithCitations}</span>
               </div>
             </div>
@@ -2045,7 +2050,7 @@ export const SourcesTab = () => {
                       </span>
                     </th>
                     <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>Models</th>
-                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>{isIssue ? 'Issues' : 'Brands'}</th>
+                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>{isIssue ? 'Issues' : isPublicFigure ? 'Figures' : 'Brands'}</th>
                     {isCategory && (
                       <th className="w-[22%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompts</th>
                     )}
