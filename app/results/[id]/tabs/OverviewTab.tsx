@@ -2604,7 +2604,7 @@ export const OverviewTab = ({
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div>
           <table className="w-full table-fixed">
             <thead>
               <tr className="border-b border-gray-200">
