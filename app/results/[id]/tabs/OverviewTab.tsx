@@ -114,7 +114,7 @@ function MarketSpreadDonut({
           )}
         </div>
         {/* Brand legend */}
-        <div className="flex-1 space-y-1">
+        <div className="space-y-1">
           {donutData.map((entry, i) => {
             const pct = totalMentions > 0 ? ((entry.value / totalMentions) * 100).toFixed(0) : '0';
             return (
@@ -130,7 +130,7 @@ function MarketSpreadDonut({
                   className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                   style={{ backgroundColor: colors[i % colors.length] }}
                 />
-                <span className="text-xs text-gray-700 flex-1">{entry.name.length > 14 ? entry.name.substring(0, 13) + '…' : entry.name}</span>
+                <span className="text-xs text-gray-700">{entry.name.length > 14 ? entry.name.substring(0, 13) + '…' : entry.name}</span>
                 <span className="text-xs font-medium text-gray-500 tabular-nums">{pct}%</span>
               </div>
             );
