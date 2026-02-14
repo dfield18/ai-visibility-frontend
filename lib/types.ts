@@ -25,6 +25,7 @@ export interface RunConfig {
   repeats: number;
   openai_model?: 'gpt-4o-mini' | 'gpt-4o';
   anthropic_model?: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-20250514';
+  perplexity_model?: 'sonar' | 'sonar-pro';
   grok_model?: 'grok-3' | 'grok-3-mini';
   llama_model?: 'llama-3.3-70b-versatile' | 'meta-llama/llama-4-scout-17b-16e-instruct';
   country?: string;

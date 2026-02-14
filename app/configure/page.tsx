@@ -109,6 +109,8 @@ export default function ConfigurePage() {
     setOpenaiModel,
     anthropicModel,
     setAnthropicModel,
+    perplexityModel,
+    setPerplexityModel,
     grokModel,
     setGrokModel,
     llamaModel,
@@ -308,6 +310,7 @@ export default function ConfigurePage() {
         repeats,
         openai_model: openaiModel,
         anthropic_model: anthropicModel,
+        perplexity_model: perplexityModel,
         grok_model: grokModel,
         llama_model: llamaModel,
         country,
@@ -1064,7 +1067,7 @@ export default function ConfigurePage() {
               </div>
 
               {/* Model Selection */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 {/* OpenAI Model */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -1147,6 +1150,49 @@ export default function ConfigurePage() {
                         <span className="text-xs text-gray-500">~$0.035/call</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">More capable with web search</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Perplexity Model */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Perplexity Version
+                  </label>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setPerplexityModel('sonar')}
+                      className={`w-full p-3 rounded-xl text-left transition-all ${
+                        perplexityModel === 'sonar'
+                          ? 'bg-gray-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${perplexityModel === 'sonar' ? 'text-gray-900' : 'text-gray-700'}`}>
+                          Sonar
+                        </span>
+                        <span className="text-xs text-gray-500">$0.001/call</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Fast search model</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPerplexityModel('sonar-pro')}
+                      className={`w-full p-3 rounded-xl text-left transition-all ${
+                        perplexityModel === 'sonar-pro'
+                          ? 'bg-gray-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${perplexityModel === 'sonar-pro' ? 'text-gray-900' : 'text-gray-700'}`}>
+                          Sonar Pro
+                        </span>
+                        <span className="text-xs text-gray-500">$0.003/call</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">More capable</p>
                     </button>
                   </div>
                 </div>
