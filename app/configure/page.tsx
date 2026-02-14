@@ -570,7 +570,7 @@ export default function ConfigurePage() {
                     >
                       <span
                         className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
-                          selectedPromptsArray.length === prompts.length ? 'translate-x-4.5' : 'translate-x-0.5'
+                          selectedPromptsArray.length === prompts.length ? 'translate-x-[18px]' : 'translate-x-[3px]'
                         }`}
                       />
                     </button>
