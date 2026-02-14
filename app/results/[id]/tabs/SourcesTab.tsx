@@ -2170,11 +2170,14 @@ export const SourcesTab = () => {
                       className={`${isCategory ? 'w-[11%]' : 'w-[15%]'} text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
                       onClick={() => handleDomainSort('avgSentiment')}
                     >
-                      <span className="flex items-center justify-center gap-1">
-                        {isIssue ? 'Framing' : 'Sentiment'}
-                        {domainSortColumn === 'avgSentiment' && (
-                          <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
-                        )}
+                      <span className="flex flex-col items-center">
+                        <span className="flex items-center gap-1">
+                          {isIssue ? 'Framing' : isCategory ? 'Sentiment' : 'Sentiment'}
+                          {domainSortColumn === 'avgSentiment' && (
+                            <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
+                          )}
+                        </span>
+                        {isCategory && <span className="text-[10px] text-gray-400 font-normal normal-case tracking-normal">avg across brands</span>}
                       </span>
                     </th>
                     <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>Models</th>
