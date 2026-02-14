@@ -3597,7 +3597,7 @@ export default function ResultsPage() {
 
     // Public figure metrics
     let portrayalScore = 0; // -100 to +100
-    let sentimentSplit = { positive: 0, neutral: 0, negative: 0 };
+    let sentimentSplit = { positive: 0, neutral: 0, negative: 0, strong: 0, positiveEndorsement: 0, neutralMention: 0, conditional: 0, negativeComparison: 0 };
     let figureProminence = { figureRate: 0, avgCompetitorRate: 0 };
     let platformAgreement = 5; // 1-10
 
@@ -3688,6 +3688,7 @@ export default function ResultsPage() {
       let posCount = 0;
       let neuCount = 0;
       let negCount = 0;
+      const perCategory = { strong: 0, positiveEndorsement: 0, neutralMention: 0, conditional: 0, negativeComparison: 0 };
 
       for (const r of results) {
         const raw = r.brand_sentiment;
@@ -3695,9 +3696,11 @@ export default function ResultsPage() {
         const score = SENTIMENT_SCORE[raw] ?? 0;
         sentimentSum += score;
         sentimentCount++;
-        if (raw === 'strong_endorsement' || raw === 'positive_endorsement') posCount++;
-        else if (raw === 'negative_comparison') negCount++;
-        else neuCount++; // neutral_mention + conditional both count as neutral
+        if (raw === 'strong_endorsement') { posCount++; perCategory.strong++; }
+        else if (raw === 'positive_endorsement') { posCount++; perCategory.positiveEndorsement++; }
+        else if (raw === 'neutral_mention') { neuCount++; perCategory.neutralMention++; }
+        else if (raw === 'conditional') { neuCount++; perCategory.conditional++; }
+        else if (raw === 'negative_comparison') { negCount++; perCategory.negativeComparison++; }
       }
 
       portrayalScore = sentimentCount > 0 ? Math.round((sentimentSum / sentimentCount) * 50) : 0; // scale ±2 → ±100
@@ -3706,6 +3709,11 @@ export default function ResultsPage() {
         positive: totalSplit > 0 ? Math.round((posCount / totalSplit) * 100) : 0,
         neutral: totalSplit > 0 ? Math.round((neuCount / totalSplit) * 100) : 0,
         negative: totalSplit > 0 ? Math.round((negCount / totalSplit) * 100) : 0,
+        strong: totalSplit > 0 ? Math.round((perCategory.strong / totalSplit) * 100) : 0,
+        positiveEndorsement: totalSplit > 0 ? Math.round((perCategory.positiveEndorsement / totalSplit) * 100) : 0,
+        neutralMention: totalSplit > 0 ? Math.round((perCategory.neutralMention / totalSplit) * 100) : 0,
+        conditional: totalSplit > 0 ? Math.round((perCategory.conditional / totalSplit) * 100) : 0,
+        negativeComparison: totalSplit > 0 ? Math.round((perCategory.negativeComparison / totalSplit) * 100) : 0,
       };
 
       // Figure prominence: this figure's mention rate vs average competitor mention rate

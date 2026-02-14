@@ -606,19 +606,22 @@ export const OverviewTab = ({
         {/* AI Visibility / Competitive Depth Score / Issue Coverage Card */}
         {(() => {
           if (isIssue) {
-            // Discussion Polarity — tug-of-war bar showing Supportive vs Critical ratio
+            // Discussion Polarity — stacked bar showing all framing categories
             const dist: Record<string, number> = overviewMetrics?.framingDistribution || {};
-            const supportiveCount = (dist['Supportive'] || 0) + (dist['Leaning Supportive'] || 0);
-            const criticalCount = dist['Critical'] || 0;
-            const neutralCount = (dist['Balanced'] || 0) + (dist['Mixed'] || 0);
-            const polarTotal = supportiveCount + criticalCount + neutralCount;
-            const supportivePct = polarTotal > 0 ? (supportiveCount / polarTotal) * 100 : 0;
-            const criticalPct = polarTotal > 0 ? (criticalCount / polarTotal) * 100 : 0;
-            const neutralPct = polarTotal > 0 ? (neutralCount / polarTotal) * 100 : 0;
+            const segments = [
+              { label: 'Supportive', count: dist['Supportive'] || 0, color: '#047857' },
+              { label: 'Leaning Supportive', count: dist['Leaning Supportive'] || 0, color: '#10b981' },
+              { label: 'Balanced', count: dist['Balanced'] || 0, color: '#9ca3af' },
+              { label: 'Mixed', count: dist['Mixed'] || 0, color: '#f59e0b' },
+              { label: 'Critical', count: dist['Critical'] || 0, color: '#ef4444' },
+            ];
+            const polarTotal = segments.reduce((s, seg) => s + seg.count, 0);
+            const supportivePct = polarTotal > 0 ? ((segments[0].count + segments[1].count) / polarTotal) * 100 : 0;
+            const criticalPct = polarTotal > 0 ? (segments[4].count / polarTotal) * 100 : 0;
             const polarityLabel = supportivePct > criticalPct + 15 ? 'Leans Supportive'
               : criticalPct > supportivePct + 15 ? 'Leans Critical'
-              : Math.abs(supportivePct - criticalPct) <= 15 && neutralPct < 50 ? 'Polarized'
-              : 'Balanced';
+              : supportivePct + criticalPct < 30 ? 'Balanced'
+              : 'Polarized';
             const polarityTone: 'success' | 'neutral' | 'warn' =
               polarityLabel === 'Leans Supportive' ? 'success'
               : polarityLabel === 'Balanced' ? 'neutral'
@@ -636,32 +639,26 @@ export const OverviewTab = ({
                       <HelpCircle className="w-4 h-4 text-gray-400" />
                     </button>
                     <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                      Shows how AI responses split between supportive ({supportiveCount}), balanced ({neutralCount}), and critical ({criticalCount}) framing of {runStatus?.brand || 'this issue'}.
+                      Shows how AI responses frame {runStatus?.brand || 'this issue'} across {polarTotal} responses.
                     </div>
                   </div>
                 </div>
-                {/* Tug-of-war bar */}
+                {/* Stacked bar */}
                 <div className="h-[100px] flex flex-col justify-center">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-xs font-semibold text-emerald-600">{supportivePct.toFixed(0)}% Supportive</span>
-                    <span className="text-xs font-semibold text-red-400">{criticalPct.toFixed(0)}% Critical</span>
-                  </div>
                   <div className="w-full h-5 rounded-full overflow-hidden flex bg-gray-100">
-                    {supportivePct > 0 && (
-                      <div className="h-full transition-all" style={{ width: `${supportivePct}%`, backgroundColor: '#10b981' }} />
-                    )}
-                    {neutralPct > 0 && (
-                      <div className="h-full transition-all" style={{ width: `${neutralPct}%`, backgroundColor: '#d1d5db' }} />
-                    )}
-                    {criticalPct > 0 && (
-                      <div className="h-full transition-all" style={{ width: `${criticalPct}%`, backgroundColor: '#f87171' }} />
-                    )}
+                    {segments.filter(s => s.count > 0).map(seg => (
+                      <div key={seg.label} className="h-full transition-all" style={{ width: `${(seg.count / polarTotal) * 100}%`, backgroundColor: seg.color }} />
+                    ))}
                   </div>
-                  {neutralPct > 0 && (
-                    <div className="text-center mt-1.5">
-                      <span className="text-[10px] text-gray-400">{neutralPct.toFixed(0)}% Balanced</span>
-                    </div>
-                  )}
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3">
+                    {segments.filter(s => s.count > 0).map(seg => (
+                      <div key={seg.label} className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }} />
+                        <span className="text-[10px] text-gray-500">{seg.label} {polarTotal > 0 ? ((seg.count / polarTotal) * 100).toFixed(0) : 0}%</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 {/* Badge */}
                 <div className="h-[28px] flex items-start mt-3">
@@ -856,8 +853,15 @@ export const OverviewTab = ({
           }
 
           if (isPublicFigure) {
-            // Sentiment Polarity — tug-of-war bar: positive vs negative
-            const split = overviewMetrics?.sentimentSplit || { positive: 0, neutral: 0, negative: 0 };
+            // Sentiment Polarity — stacked bar showing all sentiment categories
+            const split = overviewMetrics?.sentimentSplit || { positive: 0, neutral: 0, negative: 0, strong: 0, positiveEndorsement: 0, neutralMention: 0, conditional: 0, negativeComparison: 0 };
+            const segments = [
+              { label: 'Strong', pct: split.strong || 0, color: '#047857' },
+              { label: 'Positive', pct: split.positiveEndorsement || 0, color: '#10b981' },
+              { label: 'Neutral', pct: split.neutralMention || 0, color: '#9ca3af' },
+              { label: 'Conditional', pct: split.conditional || 0, color: '#f59e0b' },
+              { label: 'Negative', pct: split.negativeComparison || 0, color: '#ef4444' },
+            ];
             const polarityLabel = split.positive > split.negative + 20 ? 'Largely favorable'
               : split.negative > split.positive + 20 ? 'Largely unfavorable'
               : split.neutral >= 50 ? 'Mostly neutral'
@@ -875,31 +879,25 @@ export const OverviewTab = ({
                       <HelpCircle className="w-4 h-4 text-gray-400" />
                     </button>
                     <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                      Shows how AI responses split between positive ({split.positive}%), neutral ({split.neutral}%), and negative ({split.negative}%) sentiment toward {runStatus?.brand || 'this figure'}.
+                      Shows how AI responses split across sentiment categories toward {runStatus?.brand || 'this figure'}.
                     </div>
                   </div>
                 </div>
                 <div className="h-[100px] flex flex-col justify-center">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-xs font-semibold text-emerald-600">{split.positive}% Positive</span>
-                    <span className="text-xs font-semibold text-red-400">{split.negative}% Negative</span>
-                  </div>
                   <div className="w-full h-5 rounded-full overflow-hidden flex bg-gray-100">
-                    {split.positive > 0 && (
-                      <div className="h-full transition-all" style={{ width: `${split.positive}%`, backgroundColor: '#10b981' }} />
-                    )}
-                    {split.neutral > 0 && (
-                      <div className="h-full transition-all" style={{ width: `${split.neutral}%`, backgroundColor: '#d1d5db' }} />
-                    )}
-                    {split.negative > 0 && (
-                      <div className="h-full transition-all" style={{ width: `${split.negative}%`, backgroundColor: '#f87171' }} />
-                    )}
+                    {segments.filter(s => s.pct > 0).map(seg => (
+                      <div key={seg.label} className="h-full transition-all" style={{ width: `${seg.pct}%`, backgroundColor: seg.color }} />
+                    ))}
                   </div>
-                  {split.neutral > 0 && (
-                    <div className="text-center mt-1.5">
-                      <span className="text-[10px] text-gray-400">{split.neutral}% Neutral</span>
-                    </div>
-                  )}
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-3">
+                    {segments.filter(s => s.pct > 0).map(seg => (
+                      <div key={seg.label} className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: seg.color }} />
+                        <span className="text-[10px] text-gray-500">{seg.label} {seg.pct}%</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="h-[28px] flex items-start mt-3">
                   <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(polarityTone)}`}>
