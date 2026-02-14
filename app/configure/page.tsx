@@ -14,7 +14,7 @@ import {
   HelpCircle,
   MessageSquare,
   Users,
-  Bot,
+  Cpu,
   Settings2,
   Globe,
   MapPin,
@@ -849,7 +849,7 @@ export default function ConfigurePage() {
                     <span className="text-white text-xs font-semibold">3</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Bot className="w-4 h-4 text-gray-400" />
+                    <Cpu className="w-4 h-4 text-gray-400" />
                     <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
                   </div>
                   <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700">
