@@ -109,6 +109,10 @@ export default function ConfigurePage() {
     setOpenaiModel,
     anthropicModel,
     setAnthropicModel,
+    grokModel,
+    setGrokModel,
+    llamaModel,
+    setLlamaModel,
     country,
     setCountry,
   } = useStore();
@@ -304,6 +308,8 @@ export default function ConfigurePage() {
         repeats,
         openai_model: openaiModel,
         anthropic_model: anthropicModel,
+        grok_model: grokModel,
+        llama_model: llamaModel,
         country,
       });
       router.push(`/run/${result.run_id}`);
@@ -457,6 +463,44 @@ export default function ConfigurePage() {
                 </div>
               </div>
             </div>
+            {/* Header Stepper */}
+            <div className="hidden md:flex items-center gap-0">
+              {/* Step 1 - Questions (completed) */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center">
+                  <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                </div>
+                <span className="text-xs font-medium text-gray-700">Questions</span>
+              </div>
+              <div className="w-8 h-px bg-gray-300 mx-1" />
+
+              {/* Step 2 - Competitors */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                  <span className="text-xs font-medium text-gray-400">2</span>
+                </div>
+                <span className="text-xs font-medium text-gray-400">Competitors</span>
+              </div>
+              <div className="w-8 h-px bg-gray-300 mx-1" />
+
+              {/* Step 3 - AI Platforms */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                  <span className="text-xs font-medium text-gray-400">3</span>
+                </div>
+                <span className="text-xs font-medium text-gray-400">AI Platforms</span>
+              </div>
+              <div className="w-8 h-px bg-gray-300 mx-1" />
+
+              {/* Step 4 - Review */}
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                  <span className="text-xs font-medium text-gray-400">4</span>
+                </div>
+                <span className="text-xs font-medium text-gray-400">Review</span>
+              </div>
+            </div>
+
             <UserButton
               appearance={{
                 elements: {
@@ -493,7 +537,7 @@ export default function ConfigurePage() {
 
               <div className="space-y-5">
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">1</span>
                   </div>
                   <div>
@@ -503,7 +547,7 @@ export default function ConfigurePage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">2</span>
                   </div>
                   <div>
@@ -513,7 +557,7 @@ export default function ConfigurePage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">3</span>
                   </div>
                   <div>
@@ -523,8 +567,8 @@ export default function ConfigurePage() {
                 </div>
               </div>
 
-              <div className="mt-6 bg-amber-50 border border-amber-100 rounded-xl p-4">
-                <p className="text-sm text-amber-800">
+              <div className="mt-6 bg-teal-700 rounded-xl p-4">
+                <p className="text-sm text-teal-50">
                   <span className="mr-1">💡</span>
                   <span className="font-medium">Tip:</span> The more questions and platforms you select, the richer your analysis will be.
                 </p>
@@ -551,35 +595,6 @@ export default function ConfigurePage() {
                 </span>
               </div>
 
-              {/* Select All toggle */}
-              {prompts.length > 0 && !suggestionsLoading && !addingPrompt && (
-                <div className="flex justify-start mb-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={selectedPrompts.size === prompts.length}
-                      onClick={() => {
-                        if (selectedPrompts.size === prompts.length) {
-                          deselectAllPrompts();
-                        } else {
-                          selectAllPrompts();
-                        }
-                      }}
-                      className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
-                        selectedPrompts.size === prompts.length ? 'bg-blue-500' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform mt-[3px] ${
-                          selectedPrompts.size === prompts.length ? 'translate-x-[18px]' : 'translate-x-[3px]'
-                        }`}
-                      />
-                    </button>
-                    <span className="text-base text-gray-700 font-medium">Select All</span>
-                  </label>
-                </div>
-              )}
 
               {suggestionsLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -667,8 +682,8 @@ export default function ConfigurePage() {
               {/* Show less/more + Add question */}
               {prompts.length > 0 && !suggestionsLoading && (
                 <>
-                  {canToggleQuestions && (
-                    <div className="border-t border-gray-100 mt-3 pt-3">
+                  {canToggleQuestions ? (
+                    <div className="border-t border-gray-100 mt-3 pt-3 flex items-center justify-between">
                       <button
                         onClick={() => setQuestionsExpanded(!questionsExpanded)}
                         className="text-sm text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
@@ -684,6 +699,21 @@ export default function ConfigurePage() {
                             Show more ({prompts.length - COLLAPSED_QUESTION_COUNT} more)
                           </>
                         )}
+                      </button>
+                      <button
+                        onClick={() => deselectAllPrompts()}
+                        className="text-sm text-teal-600 hover:text-teal-700 transition-colors font-medium"
+                      >
+                        Deselect all
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-t border-gray-100 mt-3 pt-3 flex items-center justify-end">
+                      <button
+                        onClick={() => deselectAllPrompts()}
+                        className="text-sm text-teal-600 hover:text-teal-700 transition-colors font-medium"
+                      >
+                        Deselect all
                       </button>
                     </div>
                   )}
@@ -1041,7 +1071,7 @@ export default function ConfigurePage() {
               </div>
 
               {/* Model Selection */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {/* OpenAI Model */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -1124,6 +1154,92 @@ export default function ConfigurePage() {
                         <span className="text-xs text-gray-500">~$0.035/call</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">More capable with web search</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Grok Model */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Grok Version
+                  </label>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setGrokModel('grok-3')}
+                      className={`w-full p-3 rounded-xl text-left transition-all ${
+                        grokModel === 'grok-3'
+                          ? 'bg-gray-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${grokModel === 'grok-3' ? 'text-gray-900' : 'text-gray-700'}`}>
+                          Grok-3
+                        </span>
+                        <span className="text-xs text-gray-500">$0.001/call</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Most capable</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGrokModel('grok-3-mini')}
+                      className={`w-full p-3 rounded-xl text-left transition-all ${
+                        grokModel === 'grok-3-mini'
+                          ? 'bg-gray-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${grokModel === 'grok-3-mini' ? 'text-gray-900' : 'text-gray-700'}`}>
+                          Grok-3 Mini
+                        </span>
+                        <span className="text-xs text-gray-500">$0.0003/call</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Faster & cheaper</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Llama Model */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Llama Version
+                  </label>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setLlamaModel('llama-3.3-70b-versatile')}
+                      className={`w-full p-3 rounded-xl text-left transition-all ${
+                        llamaModel === 'llama-3.3-70b-versatile'
+                          ? 'bg-gray-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${llamaModel === 'llama-3.3-70b-versatile' ? 'text-gray-900' : 'text-gray-700'}`}>
+                          Llama 3.3 70B
+                        </span>
+                        <span className="text-xs text-gray-500">$0.0005/call</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Proven & reliable</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLlamaModel('meta-llama/llama-4-scout-17b-16e-instruct')}
+                      className={`w-full p-3 rounded-xl text-left transition-all ${
+                        llamaModel === 'meta-llama/llama-4-scout-17b-16e-instruct'
+                          ? 'bg-gray-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${llamaModel === 'meta-llama/llama-4-scout-17b-16e-instruct' ? 'text-gray-900' : 'text-gray-700'}`}>
+                          Llama 4 Scout
+                        </span>
+                        <span className="text-xs text-gray-500">$0.0003/call</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Newer Llama 4 model</p>
                     </button>
                   </div>
                 </div>

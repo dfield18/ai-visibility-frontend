@@ -57,6 +57,10 @@ interface VisibilityStore {
   setOpenaiModel: (model: 'gpt-4o-mini' | 'gpt-4o') => void;
   anthropicModel: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-20250514';
   setAnthropicModel: (model: 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-20250514') => void;
+  grokModel: 'grok-3' | 'grok-3-mini';
+  setGrokModel: (model: 'grok-3' | 'grok-3-mini') => void;
+  llamaModel: 'llama-3.3-70b-versatile' | 'meta-llama/llama-4-scout-17b-16e-instruct';
+  setLlamaModel: (model: 'llama-3.3-70b-versatile' | 'meta-llama/llama-4-scout-17b-16e-instruct') => void;
 
   // Country/Region
   country: string;
@@ -72,6 +76,8 @@ const DEFAULT_TEMPERATURES = [0.3];
 const DEFAULT_REPEATS = 1;
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini' as const;
 const DEFAULT_ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001' as const;
+const DEFAULT_GROK_MODEL = 'grok-3' as const;
+const DEFAULT_LLAMA_MODEL = 'llama-3.3-70b-versatile' as const;
 const DEFAULT_COUNTRY = 'us';
 
 export const useStore = create<VisibilityStore>()(
@@ -205,6 +211,10 @@ export const useStore = create<VisibilityStore>()(
       setOpenaiModel: (openaiModel) => set({ openaiModel }),
       anthropicModel: DEFAULT_ANTHROPIC_MODEL,
       setAnthropicModel: (anthropicModel) => set({ anthropicModel }),
+      grokModel: DEFAULT_GROK_MODEL,
+      setGrokModel: (grokModel) => set({ grokModel }),
+      llamaModel: DEFAULT_LLAMA_MODEL,
+      setLlamaModel: (llamaModel) => set({ llamaModel }),
 
       // Country/Region
       country: DEFAULT_COUNTRY,
@@ -227,6 +237,8 @@ export const useStore = create<VisibilityStore>()(
           repeats: DEFAULT_REPEATS,
           openaiModel: DEFAULT_OPENAI_MODEL,
           anthropicModel: DEFAULT_ANTHROPIC_MODEL,
+          grokModel: DEFAULT_GROK_MODEL,
+          llamaModel: DEFAULT_LLAMA_MODEL,
           country: DEFAULT_COUNTRY,
         }),
       resetConfig: () =>
@@ -242,6 +254,8 @@ export const useStore = create<VisibilityStore>()(
           repeats: DEFAULT_REPEATS,
           openaiModel: DEFAULT_OPENAI_MODEL,
           anthropicModel: DEFAULT_ANTHROPIC_MODEL,
+          grokModel: DEFAULT_GROK_MODEL,
+          llamaModel: DEFAULT_LLAMA_MODEL,
           country: DEFAULT_COUNTRY,
         }),
     }),
@@ -262,6 +276,8 @@ export const useStore = create<VisibilityStore>()(
         repeats: state.repeats,
         openaiModel: state.openaiModel,
         anthropicModel: state.anthropicModel,
+        grokModel: state.grokModel,
+        llamaModel: state.llamaModel,
         country: state.country,
       }),
       onRehydrateStorage: () => (state) => {
