@@ -210,6 +210,7 @@ export const OverviewTab = ({
   const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
   const [tableBrandFilter, setTableBrandFilter] = useState<string>('all');
   const [positionChartBrandFilter, setPositionChartBrandFilter] = useState<string>('__all__');
+  const [positionChartPromptFilter, setPositionChartPromptFilter] = useState<string>('__all__');
   const [framingPromptFilter, setFramingPromptFilter] = useState<string>('all');
   const [framingEvidenceExpanded, setFramingEvidenceExpanded] = useState<Set<string>>(new Set(['Supportive', 'Balanced']));
   const [framingEvidenceShowAll, setFramingEvidenceShowAll] = useState<Set<string>>(new Set());
@@ -460,8 +461,11 @@ export const OverviewTab = ({
 
     // Default behavior for non-industry reports
     if (!scatterPlotData.length) return [];
+    const filtered = positionChartPromptFilter === '__all__'
+      ? scatterPlotData
+      : scatterPlotData.filter((dp) => dp.originalResult?.prompt === positionChartPromptFilter);
     const grouped: Record<string, Record<string, { sentiment: string | null; prompt: string; rank: number; label: string; originalResult: Result }[]>> = {};
-    scatterPlotData.forEach((dp) => {
+    filtered.forEach((dp) => {
       const provider = dp.label;
       if (!grouped[provider]) {
         grouped[provider] = {};
@@ -477,7 +481,7 @@ export const OverviewTab = ({
       grouped[provider][category].push({ sentiment: dp.sentiment, prompt: dp.prompt, rank: dp.rank, label: dp.label, originalResult: dp.originalResult });
     });
     return grouped;
-  }, [scatterPlotData, isCategory, runStatus, globallyFilteredResults, positionChartBrandFilter]);
+  }, [scatterPlotData, isCategory, runStatus, globallyFilteredResults, positionChartBrandFilter, positionChartPromptFilter]);
 
   const filteredResults = useMemo(() => {
     if (!runStatus) return [];
@@ -2250,6 +2254,20 @@ export const OverviewTab = ({
                   {positionChartBrandOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {isPublicFigure && availablePrompts.length > 1 && (
+                <select
+                  value={positionChartPromptFilter}
+                  onChange={(e) => setPositionChartPromptFilter(e.target.value)}
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[220px]"
+                >
+                  <option value="__all__">All Questions</option>
+                  {availablePrompts.map((prompt) => (
+                    <option key={prompt} value={prompt}>
+                      {truncate(prompt, 40)}
                     </option>
                   ))}
                 </select>
