@@ -2131,7 +2131,7 @@ export const SourcesTab = () => {
                       onClick={() => handleDomainSort('category')}
                     >
                       <span className="flex items-center justify-center gap-1">
-                        Type
+                        Publisher Type
                         {domainSortColumn === 'category' && (
                           <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
@@ -2232,9 +2232,9 @@ export const SourcesTab = () => {
                           <span className="text-sm text-gray-900 font-medium break-all">{row.domain}</span>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {getCategoryIcon(row.category, "w-3.5 h-3.5")}
-                            <span className="text-sm text-gray-600">{row.category}</span>
+                          <div className="flex items-center justify-center gap-1 whitespace-nowrap">
+                            {getCategoryIcon(row.category, "w-3 h-3")}
+                            <span className="text-xs text-gray-600">{row.category}</span>
                           </div>
                         </td>
                         <td className="py-4 px-4 text-center">
