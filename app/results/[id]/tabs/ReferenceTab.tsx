@@ -74,6 +74,7 @@ export const ReferenceTab = ({
   const {
     runStatus,
     isCategory,
+    isPublicFigure,
     brandMentionRate,
     scatterPlotData,
     rangeChartData,
@@ -1443,7 +1444,7 @@ export const ReferenceTab = ({
                 {!isCategory && (
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Brand?</th>
                 )}
-                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : 'Competitors'}</th>
+                <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isCategory ? 'Brands' : isPublicFigure ? 'Other Figures' : 'Competitors'}</th>
                 <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                 <th className="text-right py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>

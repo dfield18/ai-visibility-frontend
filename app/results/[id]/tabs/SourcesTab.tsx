@@ -106,6 +106,7 @@ export const SourcesTab = () => {
     // State for Citations by Source & Brand heatmap (industry only)
     const [sourceBrandHeatmapProviderFilter, setSourceBrandHeatmapProviderFilter] = useState<string>('all');
     const [sourceBrandHeatmapSort, setSourceBrandHeatmapSort] = useState<string>('total');
+    const [sourceBrandHeatmapView, setSourceBrandHeatmapView] = useState<'citations' | 'sentiment'>('citations');
 
     // Calculate Source Positioning data - sources plotted by importance vs sentiment
     const sourcePositioningData = useMemo(() => {
@@ -1093,7 +1094,7 @@ export const SourcesTab = () => {
 
     // Citations by Source & Brand heatmap data (industry reports only)
     const sourceBrandHeatmapData = useMemo(() => {
-      if (!isCategory || !runStatus) return { sources: [], brands: [], matrix: {} as Record<string, Record<string, number>>, totals: { bySource: {} as Record<string, number>, byBrand: {} as Record<string, number>, grand: 0 } };
+      if (!isCategory || !runStatus) return { sources: [], brands: [], matrix: {} as Record<string, Record<string, number>>, sentimentMatrix: {} as Record<string, Record<string, { sum: number; count: number }>>, totals: { bySource: {} as Record<string, number>, byBrand: {} as Record<string, number>, grand: 0 } };
 
       const filteredResults = globallyFilteredResults.filter((r: Result) => {
         if (r.error || !r.sources || r.sources.length === 0) return false;
@@ -1101,8 +1102,9 @@ export const SourcesTab = () => {
         return true;
       });
 
-      // Build source × brand matrix
+      // Build source × brand matrix (citations) and sentiment matrix
       const matrix: Record<string, Record<string, number>> = {};
+      const sentimentMatrix: Record<string, Record<string, { sum: number; count: number }>> = {};
       const sourceTotals: Record<string, number> = {};
       const brandTotals: Record<string, number> = {};
       const allBrands = new Set<string>();
@@ -1122,10 +1124,26 @@ export const SourcesTab = () => {
 
         domains.forEach(domain => {
           if (!matrix[domain]) matrix[domain] = {};
+          if (!sentimentMatrix[domain]) sentimentMatrix[domain] = {};
           brands.forEach(brand => {
             matrix[domain][brand] = (matrix[domain][brand] || 0) + 1;
             sourceTotals[domain] = (sourceTotals[domain] || 0) + 1;
             brandTotals[brand] = (brandTotals[brand] || 0) + 1;
+
+            // Compute per-source-brand sentiment
+            if (!sentimentMatrix[domain][brand]) sentimentMatrix[domain][brand] = { sum: 0, count: 0 };
+            const perSourceSentiment = r.source_brand_sentiments?.[domain]?.[brand];
+            const fallbackSentiment = r.competitor_sentiments?.[brand];
+            const effectiveSentiment = (perSourceSentiment && perSourceSentiment !== 'not_mentioned')
+              ? perSourceSentiment
+              : fallbackSentiment;
+            if (effectiveSentiment && effectiveSentiment !== 'not_mentioned') {
+              const score = getSentimentScore(effectiveSentiment);
+              if (score > 0) {
+                sentimentMatrix[domain][brand].sum += score;
+                sentimentMatrix[domain][brand].count += 1;
+              }
+            }
           });
         });
       });
@@ -1143,6 +1161,13 @@ export const SourcesTab = () => {
       let finalSources = sortedSources;
       if (sourceBrandHeatmapSort !== 'total') {
         finalSources = [...sortedSources].sort((a, b) => {
+          if (sourceBrandHeatmapView === 'sentiment') {
+            const aAvg = sentimentMatrix[a]?.[sourceBrandHeatmapSort]?.count > 0
+              ? sentimentMatrix[a][sourceBrandHeatmapSort].sum / sentimentMatrix[a][sourceBrandHeatmapSort].count : 0;
+            const bAvg = sentimentMatrix[b]?.[sourceBrandHeatmapSort]?.count > 0
+              ? sentimentMatrix[b][sourceBrandHeatmapSort].sum / sentimentMatrix[b][sourceBrandHeatmapSort].count : 0;
+            return bAvg - aAvg;
+          }
           const aVal = matrix[a]?.[sourceBrandHeatmapSort] || 0;
           const bVal = matrix[b]?.[sourceBrandHeatmapSort] || 0;
           return bVal - aVal;
@@ -1155,9 +1180,10 @@ export const SourcesTab = () => {
         sources: finalSources,
         brands: sortedBrands,
         matrix,
+        sentimentMatrix,
         totals: { bySource: sourceTotals, byBrand: brandTotals, grand },
       };
-    }, [isCategory, runStatus, globallyFilteredResults, sourceBrandHeatmapProviderFilter, sourceBrandHeatmapSort]);
+    }, [isCategory, runStatus, globallyFilteredResults, sourceBrandHeatmapProviderFilter, sourceBrandHeatmapSort, sourceBrandHeatmapView]);
 
     // Max cell value for heatmap color scaling
     const heatmapMaxValue = useMemo(() => {
@@ -1692,10 +1718,34 @@ export const SourcesTab = () => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Citations by Source & Brand</h3>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  Number of AI responses that cite each source when mentioning a brand
+                  {sourceBrandHeatmapView === 'citations'
+                    ? 'Number of AI responses that cite each source when mentioning a brand'
+                    : 'Average sentiment when a source describes each brand'}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+                  <button
+                    onClick={() => setSourceBrandHeatmapView('citations')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      sourceBrandHeatmapView === 'citations'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Citations
+                  </button>
+                  <button
+                    onClick={() => setSourceBrandHeatmapView('sentiment')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      sourceBrandHeatmapView === 'sentiment'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Avg Sentiment
+                  </button>
+                </div>
                 <select
                   value={sourceBrandHeatmapProviderFilter}
                   onChange={(e) => setSourceBrandHeatmapProviderFilter(e.target.value)}
@@ -1733,7 +1783,7 @@ export const SourcesTab = () => {
                       onClick={() => setSourceBrandHeatmapSort('total')}
                     >
                       <span className="flex items-center justify-center gap-1">
-                        Total
+                        {sourceBrandHeatmapView === 'sentiment' ? 'Avg' : 'Total'}
                         {sourceBrandHeatmapSort === 'total' && <span className="text-gray-900">↓</span>}
                       </span>
                     </th>
@@ -1755,6 +1805,45 @@ export const SourcesTab = () => {
                       </td>
                       {sourceBrandHeatmapData.brands.map(brand => {
                         const count = sourceBrandHeatmapData.matrix[domain]?.[brand] || 0;
+
+                        if (sourceBrandHeatmapView === 'sentiment') {
+                          const sentData = sourceBrandHeatmapData.sentimentMatrix[domain]?.[brand];
+                          const avg = sentData && sentData.count > 0 ? sentData.sum / sentData.count : null;
+                          const getSentimentColor = (score: number) => {
+                            if (score >= 4.5) return { bg: '#059669', text: 'white' }; // Strong endorsement
+                            if (score >= 3.5) return { bg: '#16a34a', text: 'white' }; // Positive
+                            if (score >= 2.5) return { bg: '#6b7280', text: 'white' }; // Neutral
+                            if (score >= 1.5) return { bg: '#d97706', text: 'white' }; // Conditional
+                            return { bg: '#dc2626', text: 'white' }; // Negative
+                          };
+                          const getSentimentText = (score: number) => {
+                            if (score >= 4.5) return 'Strong';
+                            if (score >= 3.5) return 'Positive';
+                            if (score >= 2.5) return 'Neutral';
+                            if (score >= 1.5) return 'Mixed';
+                            return 'Negative';
+                          };
+                          return (
+                            <td key={brand} className="text-center py-2.5 px-2">
+                              {avg !== null ? (
+                                <div
+                                  className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity"
+                                  style={{
+                                    backgroundColor: getSentimentColor(avg).bg,
+                                    width: '80%',
+                                    maxWidth: '80px',
+                                  }}
+                                  title={`Avg: ${avg.toFixed(1)}/5 (${sentData!.count} samples)`}
+                                >
+                                  <span className="text-white text-xs font-medium">{getSentimentText(avg)}</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-gray-300">—</span>
+                              )}
+                            </td>
+                          );
+                        }
+
                         const intensity = heatmapMaxValue > 0 ? count / heatmapMaxValue : 0;
                         return (
                           <td key={brand} className="text-center py-2.5 px-2">
@@ -1778,26 +1867,61 @@ export const SourcesTab = () => {
                       })}
                       <td className="text-center py-2.5 px-3 bg-gray-50/50">
                         <span className="text-sm font-semibold text-gray-900">
-                          {sourceBrandHeatmapData.totals.bySource[domain] || 0}
+                          {sourceBrandHeatmapView === 'sentiment' ? (() => {
+                            let totalSum = 0;
+                            let totalCount = 0;
+                            sourceBrandHeatmapData.brands.forEach(brand => {
+                              const sentData = sourceBrandHeatmapData.sentimentMatrix[domain]?.[brand];
+                              if (sentData && sentData.count > 0) {
+                                totalSum += sentData.sum;
+                                totalCount += sentData.count;
+                              }
+                            });
+                            return totalCount > 0 ? (totalSum / totalCount).toFixed(1) : '—';
+                          })() : (sourceBrandHeatmapData.totals.bySource[domain] || 0)}
                         </span>
                       </td>
                     </tr>
                   ))}
-                  {/* Totals row */}
+                  {/* Totals / Averages row */}
                   <tr className="border-t-2 border-gray-200 bg-gray-50">
                     <td className="py-3 px-4 sticky left-0 bg-gray-50">
-                      <span className="text-xs font-semibold text-gray-700 uppercase">Total</span>
+                      <span className="text-xs font-semibold text-gray-700 uppercase">
+                        {sourceBrandHeatmapView === 'sentiment' ? 'Avg' : 'Total'}
+                      </span>
                     </td>
-                    {sourceBrandHeatmapData.brands.map(brand => (
-                      <td key={brand} className="text-center py-3 px-3">
-                        <span className="text-sm font-semibold text-gray-900">
-                          {sourceBrandHeatmapData.totals.byBrand[brand] || 0}
-                        </span>
-                      </td>
-                    ))}
+                    {sourceBrandHeatmapData.brands.map(brand => {
+                      if (sourceBrandHeatmapView === 'sentiment') {
+                        // Calculate overall average sentiment for this brand across all sources
+                        let totalSum = 0;
+                        let totalCount = 0;
+                        sourceBrandHeatmapData.sources.forEach(domain => {
+                          const sentData = sourceBrandHeatmapData.sentimentMatrix[domain]?.[brand];
+                          if (sentData && sentData.count > 0) {
+                            totalSum += sentData.sum;
+                            totalCount += sentData.count;
+                          }
+                        });
+                        const avg = totalCount > 0 ? totalSum / totalCount : null;
+                        return (
+                          <td key={brand} className="text-center py-3 px-3">
+                            <span className="text-sm font-semibold text-gray-900">
+                              {avg !== null ? avg.toFixed(1) : '—'}
+                            </span>
+                          </td>
+                        );
+                      }
+                      return (
+                        <td key={brand} className="text-center py-3 px-3">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {sourceBrandHeatmapData.totals.byBrand[brand] || 0}
+                          </span>
+                        </td>
+                      );
+                    })}
                     <td className="text-center py-3 px-3 bg-gray-100">
                       <span className="text-sm font-bold text-gray-900">
-                        {sourceBrandHeatmapData.totals.grand}
+                        {sourceBrandHeatmapView === 'sentiment' ? '' : sourceBrandHeatmapData.totals.grand}
                       </span>
                     </td>
                   </tr>
@@ -1806,7 +1930,7 @@ export const SourcesTab = () => {
             </div>
 
             <p className="px-6 py-3 text-center text-xs text-gray-400 italic border-t border-gray-100">
-              Top {sourceBrandHeatmapData.sources.length} sources shown • Click a brand column header to sort • Darker cells indicate more citations
+              Top {sourceBrandHeatmapData.sources.length} sources shown • Click a brand column header to sort • {sourceBrandHeatmapView === 'sentiment' ? 'Colors indicate sentiment: green = positive, gray = neutral, amber/red = negative' : 'Darker cells indicate more citations'}
             </p>
           </div>
         )}

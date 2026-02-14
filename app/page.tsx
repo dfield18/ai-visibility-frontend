@@ -65,8 +65,8 @@ export default function Home() {
         return;
       }
 
-      // For local sub-type of brand
-      if (showLocalToggle && selectedCategory === 'brand') {
+      // For local sub-type of brand or category
+      if (showLocalToggle && (selectedCategory === 'brand' || selectedCategory === 'category')) {
         setPendingBrandName(brandInput.trim());
         setShowLocationPrompt(true);
         setIsValidating(false);
@@ -261,8 +261,8 @@ export default function Home() {
               ))}
             </div>
 
-            {/* Local toggle for Brand */}
-            {selectedCategory === 'brand' && (
+            {/* Local toggle for Brand and Industry */}
+            {(selectedCategory === 'brand' || selectedCategory === 'category') && (
               <div className="flex items-center gap-2 mb-4 max-w-md">
                 <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer select-none">
                   <input
@@ -272,7 +272,7 @@ export default function Home() {
                     className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
                   />
                   <MapPin className="w-3.5 h-3.5" />
-                  Search local businesses in a specific area
+                  {selectedCategory === 'category' ? 'Search for a local area (e.g. best coffee shops in town)' : 'Search local businesses in a specific area'}
                 </label>
               </div>
             )}

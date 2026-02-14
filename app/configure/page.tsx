@@ -598,13 +598,23 @@ export default function ConfigurePage() {
                   {selectedPromptsArray.length}/{prompts.length}
                 </span>
               </div>
-              <div className="flex items-center mb-2 ml-[34px]">
+              <div className="flex items-center gap-2 mb-2 ml-[34px]">
                 <button
+                  type="button"
+                  role="switch"
+                  aria-checked={selectedPromptsArray.length === prompts.length}
                   onClick={() => selectedPromptsArray.length === prompts.length ? deselectAllPrompts() : selectAllPrompts()}
-                  className="text-xs text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
+                  className={`relative inline-flex h-4 w-7 items-center rounded-full transition-colors ${
+                    selectedPromptsArray.length === prompts.length ? 'bg-cyan-600' : 'bg-gray-300'
+                  }`}
                 >
-                  {selectedPromptsArray.length === prompts.length ? 'Deselect all' : 'Select all'}
+                  <span
+                    className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${
+                      selectedPromptsArray.length === prompts.length ? 'translate-x-3.5' : 'translate-x-0.5'
+                    }`}
+                  />
                 </button>
+                <span className="text-xs text-gray-500 font-medium">Select all</span>
               </div>
 
 

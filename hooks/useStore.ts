@@ -93,7 +93,9 @@ export const useStore = create<VisibilityStore>()(
       brand: '',
       brandUrl: '',
       searchType: 'brand' as SearchType,
-      setBrand: (brand) => set({ brand }),
+      setBrand: (brand) => set({
+        brand: brand.replace(/\b[a-z]+/g, word => word.charAt(0).toUpperCase() + word.slice(1)),
+      }),
       setBrandUrl: (brandUrl) => set({ brandUrl }),
       setSearchType: (searchType) => set({ searchType }),
 
@@ -177,10 +179,11 @@ export const useStore = create<VisibilityStore>()(
         }),
       addCompetitor: (competitor) =>
         set((state) => {
-          if (state.competitors.includes(competitor)) return state;
-          const newCompetitors = [...state.competitors, competitor];
+          const titleCased = competitor.replace(/\b[a-z]+/g, word => word.charAt(0).toUpperCase() + word.slice(1));
+          if (state.competitors.includes(titleCased)) return state;
+          const newCompetitors = [...state.competitors, titleCased];
           const newSelected = new Set(state.selectedCompetitors);
-          newSelected.add(competitor);
+          newSelected.add(titleCased);
           return { competitors: newCompetitors, selectedCompetitors: newSelected };
         }),
       removeCompetitor: (competitor) =>

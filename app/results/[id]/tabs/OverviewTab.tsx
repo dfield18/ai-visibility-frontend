@@ -13,6 +13,7 @@ import {
   Download,
   Link2,
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatPercent, truncate } from '@/lib/utils';
 import type { SectionAccess } from '@/lib/billing';
@@ -36,6 +37,110 @@ import {
   getTextForRanking,
 } from './shared';
 import { useResults, useResultsUI } from './ResultsContext';
+
+function MarketSpreadDonut({
+  donutData,
+  totalMentions,
+  colors,
+  cardClassName,
+}: {
+  donutData: { name: string; value: number }[];
+  totalMentions: number;
+  colors: string[];
+  cardClassName: string;
+}) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  return (
+    <div style={{ order: 3 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${cardClassName}`}>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Spread</p>
+        <div className="relative group">
+          <button
+            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="Learn more about Market Spread"
+            tabIndex={0}
+          >
+            <HelpCircle className="w-4 h-4 text-gray-400" />
+          </button>
+          <div className="absolute right-0 top-full mt-1 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg leading-relaxed">
+            <p className="font-semibold mb-1">Brand mention breakdown</p>
+            <p>Shows how often each brand is mentioned across all AI responses. Hover over a brand name or chart slice for details.</p>
+          </div>
+        </div>
+      </div>
+      <div className="flex-1 flex items-center gap-3 min-h-0">
+        {/* Donut chart */}
+        <div className="w-[120px] h-[120px] flex-shrink-0 relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={donutData}
+                cx="50%"
+                cy="50%"
+                innerRadius={30}
+                outerRadius={52}
+                dataKey="value"
+                strokeWidth={1}
+                stroke="#fff"
+                onMouseEnter={(_, index) => setActiveIndex(index)}
+                onMouseLeave={() => setActiveIndex(null)}
+              >
+                {donutData.map((_, i) => (
+                  <Cell
+                    key={i}
+                    fill={colors[i % colors.length]}
+                    strokeWidth={activeIndex === i ? 2 : 1}
+                    stroke={activeIndex === i ? colors[i % colors.length] : '#fff'}
+                    style={{
+                      filter: activeIndex !== null && activeIndex !== i ? 'opacity(0.4)' : undefined,
+                      transition: 'filter 0.2s, transform 0.2s',
+                    }}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+          {/* Center label on hover */}
+          {activeIndex !== null && donutData[activeIndex] && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-xs font-semibold text-gray-900 leading-tight text-center px-1 truncate max-w-[80px]">
+                {donutData[activeIndex].name}
+              </span>
+              <span className="text-[10px] text-gray-500">
+                {totalMentions > 0 ? ((donutData[activeIndex].value / totalMentions) * 100).toFixed(1) : 0}%
+              </span>
+            </div>
+          )}
+        </div>
+        {/* Brand legend */}
+        <div className="flex-1 overflow-y-auto max-h-[150px] space-y-0.5 pr-1">
+          {donutData.map((entry, i) => {
+            const pct = totalMentions > 0 ? ((entry.value / totalMentions) * 100).toFixed(1) : '0';
+            return (
+              <div
+                key={entry.name}
+                className={`flex items-center gap-2 px-1.5 py-1 rounded cursor-default transition-colors ${
+                  activeIndex === i ? 'bg-gray-100' : 'hover:bg-gray-50'
+                }`}
+                onMouseEnter={() => setActiveIndex(i)}
+                onMouseLeave={() => setActiveIndex(null)}
+              >
+                <div
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: colors[i % colors.length] }}
+                />
+                <span className="text-xs text-gray-700 truncate flex-1">{entry.name}</span>
+                <span className="text-xs text-gray-400 tabular-nums">{pct}%</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <p className="text-xs text-gray-500 mt-auto pt-1">{donutData.length} brands across {totalMentions} mentions</p>
+    </div>
+  );
+}
 
 export interface OverviewTabProps {
   aiSummaryExpanded: boolean;
@@ -1016,79 +1121,26 @@ export const OverviewTab = ({
           }
 
           if (isCategory) {
-            // Competitive Fragmentation Score for industry reports
-            const score = overviewMetrics?.fragmentationScore ?? 5;
-            const brandCount = overviewMetrics?.fragmentationBrandCount ?? 0;
-            const getFragLabel = (s: number) => {
-              if (s <= 2) return 'Few brands dominate';
-              if (s <= 4) return 'Top-heavy market';
-              if (s <= 6) return 'Moderately spread';
-              if (s <= 8) return 'Many options';
-              return 'Wide open market';
-            };
-            const getFragTone = (s: number): 'success' | 'neutral' | 'warn' => {
-              if (s <= 2) return 'warn';
-              if (s <= 4) return 'warn';
-              if (s <= 6) return 'neutral';
-              return 'success';
-            };
-            // Color for the score number
-            const getScoreColor = (s: number) => {
-              if (s <= 2) return '#f97316';
-              if (s <= 4) return '#eab308';
-              if (s <= 6) return '#6b7280';
-              if (s <= 8) return '#111827';
-              return '#111827';
-            };
+            // Brand mention donut chart for industry reports
+            const mentionCounts: Record<string, number> = overviewMetrics?.brandMentionCounts || {};
+            const sorted = Object.entries(mentionCounts).sort((a, b) => b[1] - a[1]);
+            const MAX_SLICES = 8;
+            const topBrands = sorted.slice(0, MAX_SLICES);
+            const otherCount = sorted.slice(MAX_SLICES).reduce((sum, [, c]) => sum + c, 0);
+            const donutData = [
+              ...topBrands.map(([name, count]) => ({ name, value: count })),
+              ...(otherCount > 0 ? [{ name: 'Other', value: otherCount }] : []),
+            ];
+            const totalMentions = donutData.reduce((sum, d) => sum + d.value, 0);
+            const DONUT_COLORS = ['#111827', '#4285f4', '#10a37f', '#d97706', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#9ca3af'];
+
             return (
-              <div style={{ order: 3 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.top1Rate}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Spread</p>
-                  <div className="relative group">
-                    <button
-                      className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-                      aria-label="Learn more about Market Spread"
-                      tabIndex={0}
-                    >
-                      <HelpCircle className="w-4 h-4 text-gray-400" />
-                    </button>
-                    <div className="absolute right-0 top-full mt-1 w-72 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg leading-relaxed">
-                      <p className="font-semibold mb-1.5">How spread out is this market?</p>
-                      <p className="mb-1.5">A low score means AI mostly recommends the same few brands. A high score means many brands get recommended fairly equally.</p>
-                      <p className="mb-1"><span className="font-medium">Scale:</span></p>
-                      <p>1-2 A few brands dominate &bull; 3-4 Top-heavy &bull; 5-6 Mixed &bull; 7-8 Many options &bull; 9-10 Wide open</p>
-                    </div>
-                  </div>
-                </div>
-                {/* Score display */}
-                <div className="h-[100px] flex flex-col justify-center items-center">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold tracking-tight tabular-nums" style={{ color: getScoreColor(score) }}>{score}</span>
-                    <span className="text-lg text-gray-400 font-medium">/ 10</span>
-                  </div>
-                  {/* Scale bar */}
-                  <div className="mt-3 w-full">
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${score * 10}%`, backgroundColor: getScoreColor(score) }}
-                      />
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-[10px] text-gray-400">Few brands</span>
-                      <span className="text-[10px] text-gray-400">Many brands</span>
-                    </div>
-                  </div>
-                </div>
-                {/* Badge */}
-                <div className="h-[28px] flex items-start mt-3">
-                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full ${getToneStyles(getFragTone(score))}`}>
-                    {getFragLabel(score)}
-                  </span>
-                </div>
-                {/* Description */}
-                <p className="text-xs text-gray-500 leading-relaxed mt-auto">Do AI models recommend the same brands or spread across {brandCount}?</p>
-              </div>
+              <MarketSpreadDonut
+                donutData={donutData}
+                totalMentions={totalMentions}
+                colors={DONUT_COLORS}
+                cardClassName={metricCardBackgrounds.top1Rate}
+              />
             );
           }
 

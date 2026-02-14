@@ -672,6 +672,13 @@ export default function ResultsPage() {
     }
   }, [aiSummary]);
 
+  // Default to industry-overview tab for category reports
+  useEffect(() => {
+    if (runStatus?.search_type === 'category' && !searchParams.get('tab')) {
+      setActiveTab('industry-overview');
+    }
+  }, [runStatus?.search_type]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
@@ -3754,6 +3761,7 @@ export default function ResultsPage() {
       resultsWithBrands,
       fragmentationScore,
       fragmentationBrandCount: N,
+      brandMentionCounts,
       // Issue-specific fields
       dominantFraming,
       framingDistribution,

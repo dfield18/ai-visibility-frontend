@@ -863,13 +863,15 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
               {(() => {
                 const total = brandSentimentData.reduce((sum, d) => sum + d.count, 0);
                 const strongCount = brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0;
+                const positiveEndorsementCount = brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.count || 0;
                 const neutralCount = brandSentimentData.find(d => d.sentiment === 'neutral_mention')?.count || 0;
                 const conditionalCount = brandSentimentData.find(d => d.sentiment === 'conditional')?.count || 0;
                 const negativeCount = brandSentimentData.find(d => d.sentiment === 'negative_comparison')?.count || 0;
                 const notMentionedCount = brandSentimentData.find(d => d.sentiment === 'not_mentioned')?.count || 0;
 
-                const strongRate = total > 0 ? (strongCount / total) * 100 : 0;
-                const positiveRate = total > 0 ? ((strongCount + neutralCount) / total) * 100 : 0;
+                // Endorsement rate = (strong + positive) / total — consistent with provider & competitor tables
+                const strongRate = total > 0 ? ((strongCount + positiveEndorsementCount) / total) * 100 : 0;
+                const positiveRate = total > 0 ? ((strongCount + positiveEndorsementCount + neutralCount) / total) * 100 : 0;
                 const mentionRate = total > 0 ? ((total - notMentionedCount) / total) * 100 : 0;
 
                 let insight = '';

@@ -1846,7 +1846,7 @@ export default function CompetitiveTab({
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">{isIssue ? 'Which Publishers Cover Which Issues' : 'Which Publishers Mention Which Brands'}</h3>
                     <p className="text-sm text-gray-500">
-                      {heatmapShowSentiment ? (isIssue ? 'How each publisher frames each issue' : 'How positively each publisher describes each brand') : (isIssue ? 'See citation patterns across publishers and issues' : 'See citation patterns across publishers and brands')}
+                      {heatmapShowSentiment ? (isIssue ? 'Average framing sentiment for each publisher and issue combination' : 'How positively each publisher describes each brand') : (isIssue ? 'See citation patterns across publishers and issues' : 'See citation patterns across publishers and brands')}
                       <span className="ml-2 text-gray-400">Click any cell to view responses</span>
                     </p>
                   </div>
@@ -1890,7 +1890,7 @@ export default function CompetitiveTab({
                 <div className="mb-4 flex items-center gap-4 text-xs text-gray-500">
                   {heatmapShowSentiment ? (
                     <>
-                      <span className="text-gray-600 font-medium">{isIssue ? 'Framing:' : 'Sentiment:'}</span>
+                      <span className="text-gray-600 font-medium">{isIssue ? 'Avg Framing:' : 'Sentiment:'}</span>
                       <div className="flex items-center gap-1.5">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#047857' }} />
                         <span>{isIssue ? 'Supportive' : 'Strong'}</span>
@@ -2012,7 +2012,7 @@ export default function CompetitiveTab({
                                   className={`text-center py-2 px-2 ${count > 0 ? 'cursor-pointer hover:bg-gray-100' : ''}`}
                                   style={{ minWidth: '100px' }}
                                   onClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
-                                  title={count > 0 ? (heatmapShowSentiment ? `${getSentimentLabelFromScore(avgSentiment)} - Click to view` : `${count} citations - Click to view`) : undefined}
+                                  title={count > 0 ? (heatmapShowSentiment ? `${isIssue ? 'Avg framing' : 'Sentiment'}: ${getSentimentLabelFromScore(avgSentiment)} (${sentimentInfo?.total || 0} responses) - Click to view` : `${count} citations - Click to view`) : undefined}
                                 >
                                   {count === 0 ? (
                                     <span className="text-gray-300">{'\u2013'}</span>
