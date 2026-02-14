@@ -63,6 +63,8 @@ interface VisibilityStore {
   setGrokModel: (model: 'grok-3' | 'grok-3-mini') => void;
   llamaModel: 'llama-3.3-70b-versatile' | 'meta-llama/llama-4-scout-17b-16e-instruct';
   setLlamaModel: (model: 'llama-3.3-70b-versatile' | 'meta-llama/llama-4-scout-17b-16e-instruct') => void;
+  geminiModel: 'gemini-2.5-flash' | 'gemini-2.5-pro';
+  setGeminiModel: (model: 'gemini-2.5-flash' | 'gemini-2.5-pro') => void;
 
   // Country/Region
   country: string;
@@ -81,6 +83,7 @@ const DEFAULT_ANTHROPIC_MODEL = 'claude-haiku-4-5-20251001' as const;
 const DEFAULT_PERPLEXITY_MODEL = 'sonar' as const;
 const DEFAULT_GROK_MODEL = 'grok-3' as const;
 const DEFAULT_LLAMA_MODEL = 'llama-3.3-70b-versatile' as const;
+const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash' as const;
 const DEFAULT_COUNTRY = 'us';
 
 export const useStore = create<VisibilityStore>()(
@@ -220,6 +223,8 @@ export const useStore = create<VisibilityStore>()(
       setGrokModel: (grokModel) => set({ grokModel }),
       llamaModel: DEFAULT_LLAMA_MODEL,
       setLlamaModel: (llamaModel) => set({ llamaModel }),
+      geminiModel: DEFAULT_GEMINI_MODEL,
+      setGeminiModel: (geminiModel) => set({ geminiModel }),
 
       // Country/Region
       country: DEFAULT_COUNTRY,
@@ -245,6 +250,7 @@ export const useStore = create<VisibilityStore>()(
           perplexityModel: DEFAULT_PERPLEXITY_MODEL,
           grokModel: DEFAULT_GROK_MODEL,
           llamaModel: DEFAULT_LLAMA_MODEL,
+          geminiModel: DEFAULT_GEMINI_MODEL,
           country: DEFAULT_COUNTRY,
         }),
       resetConfig: () =>
@@ -263,6 +269,7 @@ export const useStore = create<VisibilityStore>()(
           perplexityModel: DEFAULT_PERPLEXITY_MODEL,
           grokModel: DEFAULT_GROK_MODEL,
           llamaModel: DEFAULT_LLAMA_MODEL,
+          geminiModel: DEFAULT_GEMINI_MODEL,
           country: DEFAULT_COUNTRY,
         }),
     }),
@@ -286,6 +293,7 @@ export const useStore = create<VisibilityStore>()(
         perplexityModel: state.perplexityModel,
         grokModel: state.grokModel,
         llamaModel: state.llamaModel,
+        geminiModel: state.geminiModel,
         country: state.country,
       }),
       onRehydrateStorage: () => (state) => {

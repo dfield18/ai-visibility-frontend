@@ -115,6 +115,8 @@ export default function ConfigurePage() {
     setGrokModel,
     llamaModel,
     setLlamaModel,
+    geminiModel,
+    setGeminiModel,
     country,
     setCountry,
   } = useStore();
@@ -313,6 +315,7 @@ export default function ConfigurePage() {
         perplexity_model: perplexityModel,
         grok_model: grokModel,
         llama_model: llamaModel,
+        gemini_model: geminiModel,
         country,
       });
       router.push(`/run/${result.run_id}`);
@@ -583,9 +586,9 @@ export default function ConfigurePage() {
           <div className="flex-1 space-y-8">
 
             {/* Questions Section - 70% width, centered */}
-            <div className="lg:w-[70%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
+            <div className="lg:w-[52.5%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
               {/* Header with step number */}
-              <div className="flex items-start gap-3 mb-4">
+              <div className="flex items-start gap-3 mb-1">
                 <div className="w-7 h-7 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-xs font-semibold">1</span>
                 </div>
@@ -593,17 +596,17 @@ export default function ConfigurePage() {
                   <MessageSquare className="w-4 h-4 text-gray-400" />
                   <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
                 </div>
-                <div className="ml-auto flex items-center gap-3">
-                  <button
-                    onClick={() => deselectAllPrompts()}
-                    className="text-sm text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
-                  >
-                    Deselect all
-                  </button>
-                  <span className="text-sm font-semibold text-cyan-600">
-                    {selectedPromptsArray.length}/{prompts.length}
-                  </span>
-                </div>
+                <span className="ml-auto text-sm font-semibold text-cyan-600">
+                  {selectedPromptsArray.length}/{prompts.length}
+                </span>
+              </div>
+              <div className="flex items-center mb-4 ml-10">
+                <button
+                  onClick={() => selectedPromptsArray.length === prompts.length ? deselectAllPrompts() : selectAllPrompts()}
+                  className="text-sm text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
+                >
+                  {selectedPromptsArray.length === prompts.length ? 'Deselect all' : 'Select all'}
+                </button>
               </div>
 
 
@@ -1067,7 +1070,7 @@ export default function ConfigurePage() {
               </div>
 
               {/* Model Selection */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
                 {/* OpenAI Model */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -1150,6 +1153,49 @@ export default function ConfigurePage() {
                         <span className="text-xs text-gray-500">~$0.035/call</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">More capable with web search</p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Gemini Model */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Gemini Version
+                  </label>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setGeminiModel('gemini-2.5-flash')}
+                      className={`w-full p-3 rounded-xl text-left transition-all ${
+                        geminiModel === 'gemini-2.5-flash'
+                          ? 'bg-gray-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${geminiModel === 'gemini-2.5-flash' ? 'text-gray-900' : 'text-gray-700'}`}>
+                          Gemini 2.5 Flash
+                        </span>
+                        <span className="text-xs text-gray-500">$0.00025/call</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Fast & affordable</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGeminiModel('gemini-2.5-pro')}
+                      className={`w-full p-3 rounded-xl text-left transition-all ${
+                        geminiModel === 'gemini-2.5-pro'
+                          ? 'bg-gray-100'
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${geminiModel === 'gemini-2.5-pro' ? 'text-gray-900' : 'text-gray-700'}`}>
+                          Gemini 2.5 Pro
+                        </span>
+                        <span className="text-xs text-gray-500">$0.005/call</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Most capable</p>
                     </button>
                   </div>
                 </div>

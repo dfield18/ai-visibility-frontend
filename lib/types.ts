@@ -28,6 +28,7 @@ export interface RunConfig {
   perplexity_model?: 'sonar' | 'sonar-pro';
   grok_model?: 'grok-3' | 'grok-3-mini';
   llama_model?: 'llama-3.3-70b-versatile' | 'meta-llama/llama-4-scout-17b-16e-instruct';
+  gemini_model?: 'gemini-2.5-flash' | 'gemini-2.5-pro';
   country?: string;
 }
 

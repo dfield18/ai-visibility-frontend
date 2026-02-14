@@ -231,7 +231,7 @@ export default function RunPage() {
   if (isLoading) {
     return (
       <main className="min-h-screen bg-[#FAFAF8] flex items-center justify-center">
-        <div className="text-center">
+        <div className="flex flex-col items-center">
           <Spinner size="lg" />
           <p className="mt-4 text-gray-500">Loading run status...</p>
         </div>
