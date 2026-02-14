@@ -590,9 +590,17 @@ export default function ConfigurePage() {
                   <MessageSquare className="w-4 h-4 text-gray-400" />
                   <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
                 </div>
-                <span className="ml-auto text-sm font-semibold text-cyan-600">
-                  {selectedPromptsArray.length}/{prompts.length}
-                </span>
+                <div className="ml-auto flex items-center gap-3">
+                  <button
+                    onClick={() => deselectAllPrompts()}
+                    className="text-sm text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
+                  >
+                    Deselect all
+                  </button>
+                  <span className="text-sm font-semibold text-cyan-600">
+                    {selectedPromptsArray.length}/{prompts.length}
+                  </span>
+                </div>
               </div>
 
 
@@ -682,8 +690,8 @@ export default function ConfigurePage() {
               {/* Show less/more + Add question */}
               {prompts.length > 0 && !suggestionsLoading && (
                 <>
-                  {canToggleQuestions ? (
-                    <div className="border-t border-gray-100 mt-3 pt-3 flex items-center justify-between">
+                  {canToggleQuestions && (
+                    <div className="border-t border-gray-100 mt-3 pt-3">
                       <button
                         onClick={() => setQuestionsExpanded(!questionsExpanded)}
                         className="text-sm text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
@@ -699,21 +707,6 @@ export default function ConfigurePage() {
                             Show more ({prompts.length - COLLAPSED_QUESTION_COUNT} more)
                           </>
                         )}
-                      </button>
-                      <button
-                        onClick={() => deselectAllPrompts()}
-                        className="text-sm text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
-                      >
-                        Deselect all
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="border-t border-gray-100 mt-3 pt-3 flex items-center justify-end">
-                      <button
-                        onClick={() => deselectAllPrompts()}
-                        className="text-sm text-cyan-600 hover:text-cyan-700 transition-colors font-medium"
-                      >
-                        Deselect all
                       </button>
                     </div>
                   )}
