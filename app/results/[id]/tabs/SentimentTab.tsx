@@ -429,6 +429,10 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
     // Get the effective brand filter
     // For industry reports, default to '__all__' (average across all brands)
     const effectiveSentimentBrand = sentimentProviderBrandFilter || (isIndustryReport ? '__all__' : runStatus?.brand || '');
+    // Human-readable label for display (never shows '__all__')
+    const sentimentBrandLabel = effectiveSentimentBrand === '__all__'
+      ? (isIndustryReport ? `brands in ${runStatus?.brand}` : (isIssue ? 'this issue' : 'your brand'))
+      : effectiveSentimentBrand || (isIssue ? 'this issue' : 'your brand');
 
     // Get list of unique citation source domains for the filter dropdown
     const citationSourceOptions = useMemo(() => {
@@ -1347,8 +1351,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                 {isIndustryReport
                   ? 'Average sentiment across all brands by platform. Filter by brand or source to see individual breakdowns.'
                   : isIssue
-                  ? `How each AI platform frames ${effectiveSentimentBrand || 'this issue'}`
-                  : `How each AI platform describes ${effectiveSentimentBrand || 'your brand'}`}
+                  ? `How each AI platform frames ${sentimentBrandLabel}`
+                  : `How each AI platform describes ${sentimentBrandLabel}`}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -1397,7 +1401,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             return (
               <div className="bg-gray-50 rounded-lg px-4 py-3 mb-5 text-sm text-gray-700">
                 {highEndorsers.length > 0 && (
-                  <span><span className="font-semibold text-gray-900">{highEndorsers.length} of {totalProviders}</span> platforms {isIssue ? 'frame supportively' : 'endorse'} {effectiveSentimentBrand || (isIssue ? 'this issue' : 'your brand')}</span>
+                  <span><span className="font-semibold text-gray-900">{highEndorsers.length} of {totalProviders}</span> platforms {isIssue ? 'frame supportively' : 'endorse'} {sentimentBrandLabel}</span>
                 )}
                 {highEndorsers.length > 0 && lowEndorsers.length > 0 && <span className="mx-2 text-gray-300">·</span>}
                 {lowEndorsers.length > 0 && (
