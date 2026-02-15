@@ -1453,26 +1453,23 @@ export const OverviewTab = ({
             </button>
           )}
         </div>
-        {/* Brand stats table for industry reports */}
-        {isCategory && brandBreakdownStats.length > 0 && (
-          <div className="mb-4">
-            <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 gap-y-1.5 text-sm">
-              <span className="text-xs font-semibold text-gray-500 uppercase">Brand</span>
-              <span className="text-xs font-semibold text-gray-500 uppercase text-right">% of All Mentions</span>
-              <span className="text-xs font-semibold text-gray-500 uppercase text-right">Mention Rate</span>
-              {brandBreakdownStats.map((b: any) => (
-                <React.Fragment key={b.brand}>
-                  <span className="text-gray-800 font-medium truncate">{b.brand}</span>
-                  <span className="text-gray-600 text-right tabular-nums">{b.shareOfVoice.toFixed(1)}%</span>
-                  <span className="text-gray-600 text-right tabular-nums">{b.visibilityScore.toFixed(1)}%</span>
-                </React.Fragment>
-              ))}
+        {/* Market leader stats for industry reports */}
+        {isCategory && brandBreakdownStats.length > 0 && (() => {
+          const leader = brandBreakdownStats[0];
+          return (
+            <div className="mb-4 text-sm text-gray-700">
+              <p>
+                <span className="font-semibold text-gray-900">{leader.brand}</span>
+                {' '}is the market leader with a{' '}
+                <span className="font-semibold tabular-nums">{leader.shareOfVoice.toFixed(1)}%</span> share of all mentions
+                {' '}(% of total brand mentions captured by this brand)
+                {' '}and a{' '}
+                <span className="font-semibold tabular-nums">{leader.visibilityScore.toFixed(1)}%</span> mention rate
+                {' '}(% of AI responses that mention the brand).
+              </p>
             </div>
-            <p className="text-xs text-gray-400 mt-2 italic">
-              Mention Rate = % of AI responses that mention the brand (mentioned / total responses)
-            </p>
-          </div>
-        )}
+          );
+        })()}
 
         {isSummaryLoading ? (
           <div className="flex items-center gap-3 py-4">

@@ -13,7 +13,7 @@ import {
   ChevronUp,
   HelpCircle,
   MessageSquare,
-  Cpu,
+  BrainCircuit,
   Settings2,
   Globe,
   MapPin,
@@ -708,7 +708,7 @@ export default function ConfigurePage() {
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-1">
                   <div className="flex items-center gap-2">
-                    <Cpu className="w-4 h-4 text-gray-400" />
+                    <BrainCircuit className="w-4 h-4 text-gray-400" />
                     <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
                   </div>
                   <div className="ml-auto flex items-center gap-2">
