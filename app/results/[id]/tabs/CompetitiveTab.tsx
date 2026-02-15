@@ -721,7 +721,7 @@ export default function CompetitiveTab({
             // Ignore "not_mentioned" from per-source since the brand IS in this response
             const perSourceSentiment = result.source_brand_sentiments?.[domain]?.[brand];
             const effectiveSentiment = (perSourceSentiment && perSourceSentiment !== 'not_mentioned') ? perSourceSentiment : sentiment;
-            if (effectiveSentiment && sentimentScores[effectiveSentiment] !== undefined) {
+            if (effectiveSentiment && effectiveSentiment !== 'not_mentioned' && sentimentScores[effectiveSentiment] > 0) {
               sourceBrandSentiments[domain][brand].total += 1;
               sourceBrandSentiments[domain][brand].sum += sentimentScores[effectiveSentiment];
             }

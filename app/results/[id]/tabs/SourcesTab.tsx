@@ -164,38 +164,50 @@ export const SourcesTab = () => {
           domainStats[domain].providers.add(r.provider);
 
           // Track sentiment when brand is mentioned
+          // Use source_brand_sentiments first (per-source per-brand), fall back to competitor_sentiments
+          // Only include brands actually mentioned (skip not_mentioned / missing)
           if (brandMentioned) {
             domainStats[domain].brandMentioned++;
 
-            // Get sentiment score for the selected brand
-            const sentimentMap: Record<string, number> = {
-              'strong_endorsement': 5,
-              'positive_endorsement': 4,
-              'neutral_mention': 3,
-              'conditional': 2,
-              'negative_comparison': 1,
-            };
             if (selectedBrand) {
-              let sentimentScore = 3;
-              if (!isCategory && selectedBrand === runStatus.brand && r.brand_sentiment) {
-                sentimentScore = sentimentMap[r.brand_sentiment] || 3;
-              } else if (r.competitor_sentiments?.[selectedBrand]) {
-                sentimentScore = sentimentMap[r.competitor_sentiments[selectedBrand]] || 3;
-              }
-              domainStats[domain].sentimentScores.push(sentimentScore);
-            } else if (isCategory) {
-              // For category "all" filter: aggregate sentiments from all competitor brands
-              if (r.competitor_sentiments) {
-                const scores = Object.values(r.competitor_sentiments)
-                  .map(s => sentimentMap[s] || 0)
-                  .filter(s => s > 0);
-                if (scores.length > 0) {
-                  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-                  domainStats[domain].sentimentScores.push(avg);
+              // Specific brand selected — get sentiment for that brand at this source
+              const perSourceSent = r.source_brand_sentiments?.[domain]?.[selectedBrand];
+              const fallbackSent = (!isCategory && selectedBrand === runStatus.brand)
+                ? r.brand_sentiment
+                : r.competitor_sentiments?.[selectedBrand];
+              const effectiveSent = (perSourceSent && perSourceSent !== 'not_mentioned')
+                ? perSourceSent : fallbackSent;
+              if (effectiveSent && effectiveSent !== 'not_mentioned') {
+                const score = getSentimentScore(effectiveSent);
+                if (score > 0) {
+                  domainStats[domain].sentimentScores.push(score);
                 }
               }
-            } else if (r.brand_sentiment) {
-              domainStats[domain].sentimentScores.push(sentimentMap[r.brand_sentiment] || 3);
+            } else if (isCategory) {
+              // "All Brands" filter: average per-brand sentiments only for brands in this result
+              const rBrandsForSent = r.all_brands_mentioned?.length
+                ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase())
+                : r.competitors_mentioned || [];
+              const scores: number[] = [];
+              rBrandsForSent.forEach(b => {
+                const perSourceSent = r.source_brand_sentiments?.[domain]?.[b];
+                const fallbackSent = r.competitor_sentiments?.[b];
+                const effectiveSent = (perSourceSent && perSourceSent !== 'not_mentioned')
+                  ? perSourceSent : fallbackSent;
+                if (effectiveSent && effectiveSent !== 'not_mentioned') {
+                  const s = getSentimentScore(effectiveSent);
+                  if (s > 0) scores.push(s);
+                }
+              });
+              if (scores.length > 0) {
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                domainStats[domain].sentimentScores.push(avg);
+              }
+            } else if (r.brand_sentiment && r.brand_sentiment !== 'not_mentioned') {
+              const score = getSentimentScore(r.brand_sentiment);
+              if (score > 0) {
+                domainStats[domain].sentimentScores.push(score);
+              }
             }
 
             // Get position using the helper function

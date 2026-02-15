@@ -3102,6 +3102,7 @@ export default function ResultsPage() {
       .forEach((r: Result) => {
         if (r.competitor_sentiments) {
           Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
+            if (!sentiment || sentiment === 'not_mentioned') return;
             if (!competitorSentiments[comp]) {
               competitorSentiments[comp] = { positive: 0, total: 0 };
             }
@@ -4777,13 +4778,16 @@ export default function ResultsPage() {
             seenDomainBrandPairs.add(pairKey);
             sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
 
-            // Track sentiment
+            // Track sentiment — prefer per-source sentiment, fall back to response-level
             if (!sourceBrandSentiments[domain][brand]) {
               sourceBrandSentiments[domain][brand] = { total: 0, sum: 0 };
             }
-            if (sentiment && sentimentScores[sentiment] !== undefined) {
+            const perSourceSent = result.source_brand_sentiments?.[domain]?.[brand];
+            const effectiveSent = (perSourceSent && perSourceSent !== 'not_mentioned')
+              ? perSourceSent : sentiment;
+            if (effectiveSent && effectiveSent !== 'not_mentioned' && sentimentScores[effectiveSent] > 0) {
               sourceBrandSentiments[domain][brand].total += 1;
-              sourceBrandSentiments[domain][brand].sum += sentimentScores[sentiment];
+              sourceBrandSentiments[domain][brand].sum += sentimentScores[effectiveSent];
             }
           }
         });

@@ -25,6 +25,71 @@ export async function POST(request: NextRequest) {
       );
     }
     if (search_type === 'public_figure') {
+      if (!process.env.OPENAI_API_KEY) {
+        return NextResponse.json(
+          { valid: true, type: 'public_figure', correctedName: brand.trim(), suggestions: null },
+          { status: 200 }
+        );
+      }
+
+      try {
+        const pfResponse = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a public figure name validator. Given a user input, check if it is the name of a real public figure (politician, celebrity, athlete, business leader, influencer, etc.).
+
+Your task:
+1. If the name is clearly a typo of a well-known public figure (1-3 character difference), auto-correct it:
+   {"valid": true, "type": "public_figure", "correctedName": "Correct Full Name", "suggestions": null}
+
+2. If the name is ambiguous and could refer to multiple well-known people:
+   {"valid": true, "type": "public_figure", "correctedName": null, "suggestions": [
+     {"name": "Person A", "description": "Brief description"},
+     {"name": "Person B", "description": "Brief description"}
+   ]}
+
+3. If the name looks like a real person (even if you don't recognize them), accept as-is:
+   {"valid": true, "type": "public_figure", "correctedName": "Input As Provided", "suggestions": null}
+
+4. If the input is clearly not a person's name (gibberish, a brand, a category):
+   {"valid": false, "type": null, "correctedName": null, "suggestions": null}
+
+Examples:
+- "Elon Musk" → {"valid": true, "type": "public_figure", "correctedName": "Elon Musk", "suggestions": null}
+- "elon musk" → {"valid": true, "type": "public_figure", "correctedName": "Elon Musk", "suggestions": null}
+- "Elom Musk" → {"valid": true, "type": "public_figure", "correctedName": "Elon Musk", "suggestions": null}
+- "Taylro Swift" → {"valid": true, "type": "public_figure", "correctedName": "Taylor Swift", "suggestions": null}
+- "Jordan" → {"valid": true, "type": "public_figure", "correctedName": null, "suggestions": [{"name": "Michael Jordan", "description": "Basketball legend"}, {"name": "Jordan Peterson", "description": "Author and psychologist"}]}
+- "asdfghjkl" → {"valid": false, "type": null, "correctedName": null, "suggestions": null}
+
+Respond ONLY with a JSON object. Do not include any other text.`,
+            },
+            {
+              role: 'user',
+              content: brand,
+            },
+          ],
+          temperature: 0,
+          max_tokens: 400,
+        });
+
+        const pfContent = pfResponse.choices[0]?.message?.content?.trim();
+        if (pfContent) {
+          try {
+            const pfResult = JSON.parse(pfContent);
+            // Ensure type stays as public_figure
+            pfResult.type = 'public_figure';
+            return NextResponse.json(pfResult, { status: 200 });
+          } catch {
+            // Parse failed, pass through
+          }
+        }
+      } catch {
+        // OpenAI call failed, pass through
+      }
+
       return NextResponse.json(
         { valid: true, type: 'public_figure', correctedName: brand.trim(), suggestions: null },
         { status: 200 }
