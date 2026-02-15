@@ -827,7 +827,7 @@ export default function ResultsPage() {
       // Brand filter - check if brand is mentioned in this result
       if (globalBrandFilter !== 'all') {
         const isBrandMentioned = result.brand_mentioned && globalBrandFilter === runStatus.brand;
-        const isCompetitorMentioned = result.competitors_mentioned?.includes(globalBrandFilter);
+        const isCompetitorMentioned = result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(globalBrandFilter) : result.competitors_mentioned?.includes(globalBrandFilter);
         if (!isBrandMentioned && !isCompetitorMentioned) return false;
       }
 
@@ -874,7 +874,7 @@ export default function ResultsPage() {
   const getResultPosition = (result: Result): number | null => {
     if (!result.response_text || result.error || !runStatus) return null;
     const selectedBrand = runStatus.search_type === 'category'
-      ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
+      ? (runStatus.results.find((r: Result) => r.all_brands_mentioned?.length || r.competitors_mentioned?.length)?.all_brands_mentioned?.[0] || runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
       : runStatus.brand;
     const brandLower = (selectedBrand || '').toLowerCase();
     if (!brandLower) return null;
@@ -938,8 +938,8 @@ export default function ResultsPage() {
           comparison = sentA - sentB;
           break;
         case 'competitors':
-          const compA = a.competitors_mentioned?.length || 0;
-          const compB = b.competitors_mentioned?.length || 0;
+          const compA = a.all_brands_mentioned?.length || a.competitors_mentioned?.length || 0;
+          const compB = b.all_brands_mentioned?.length || b.competitors_mentioned?.length || 0;
           comparison = compB - compA; // More competitors first
           break;
       }
@@ -1409,9 +1409,8 @@ export default function ResultsPage() {
           searchedBrandMentions++;
           totalBrandMentions++;
         }
-        if (r.competitors_mentioned) {
-          totalBrandMentions += r.competitors_mentioned.length;
-        }
+        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+        totalBrandMentions += rBrands.length;
       });
       const shareOfVoice = totalBrandMentions > 0 ? (searchedBrandMentions / totalBrandMentions) * 100 : 0;
 
@@ -1565,9 +1564,8 @@ export default function ResultsPage() {
         const pfFigRate = visibilityScore;
         const pfCompCounts: Record<string, number> = {};
         for (const r of promptResults) {
-          if (r.competitors_mentioned) {
-            for (const c of r.competitors_mentioned) pfCompCounts[c] = (pfCompCounts[c] || 0) + 1;
-          }
+          const pfBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+          for (const c of pfBrands) { if (c.toLowerCase() !== searchedBrand.toLowerCase()) pfCompCounts[c] = (pfCompCounts[c] || 0) + 1; }
         }
         const pfCompRates = Object.values(pfCompCounts).map(c => total > 0 ? (c / total) * 100 : 0);
         const pfAvgComp = pfCompRates.length > 0 ? pfCompRates.reduce((a, b) => a + b, 0) / pfCompRates.length : 0;
@@ -1643,9 +1641,8 @@ export default function ResultsPage() {
     // Get all brands: searched brand + competitors (exclude category name for industry searches)
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
-      if (r.competitors_mentioned) {
-        r.competitors_mentioned.forEach(c => allBrands.add(c));
-      }
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) allBrands.add(c); });
     });
 
     const sentimentScoreMap: Record<string, number> = {
@@ -1666,7 +1663,7 @@ export default function ResultsPage() {
         if (isSearchedBrand) {
           return r.brand_mentioned;
         } else {
-          return r.competitors_mentioned?.includes(brand);
+          return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
         }
       }).length;
 
@@ -1677,11 +1674,12 @@ export default function ResultsPage() {
       let thisBrandMentions = 0;
       results.forEach(r => {
         if (r.brand_mentioned) totalBrandMentions++;
-        if (r.competitors_mentioned) totalBrandMentions += r.competitors_mentioned.length;
+        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+        totalBrandMentions += rBrands.length;
 
         if (isSearchedBrand && r.brand_mentioned) {
           thisBrandMentions++;
-        } else if (!isSearchedBrand && r.competitors_mentioned?.includes(brand)) {
+        } else if (!isSearchedBrand && (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand))) {
           thisBrandMentions++;
         }
       });
@@ -1692,7 +1690,7 @@ export default function ResultsPage() {
       const ranks: number[] = [];
 
       results.forEach(r => {
-        const isMentioned = isSearchedBrand ? r.brand_mentioned : r.competitors_mentioned?.includes(brand);
+        const isMentioned = isSearchedBrand ? r.brand_mentioned : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand));
         if (!isMentioned) return;
 
         const allBrandsInResponse: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
@@ -1728,7 +1726,7 @@ export default function ResultsPage() {
         if (isSearchedBrand) {
           return r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned';
         } else {
-          return r.competitors_mentioned?.includes(brand) && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned';
+          return (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand)) && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned';
         }
       });
 
@@ -1752,7 +1750,7 @@ export default function ResultsPage() {
         }
         promptStats[r.prompt].total++;
 
-        const isMentioned = isSearchedBrand ? r.brand_mentioned : r.competitors_mentioned?.includes(brand);
+        const isMentioned = isSearchedBrand ? r.brand_mentioned : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand));
         if (isMentioned) {
           promptStats[r.prompt].mentioned++;
           // Get sentiment for this prompt
@@ -1811,9 +1809,8 @@ export default function ResultsPage() {
     // Get all brands: searched brand + competitors (exclude category name for industry searches)
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
-      if (r.competitors_mentioned) {
-        r.competitors_mentioned.forEach(c => allBrands.add(c));
-      }
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) allBrands.add(c); });
     });
 
     const sentimentScoreMap: Record<string, number> = {
@@ -1834,7 +1831,7 @@ export default function ResultsPage() {
         if (isSearchedBrand) {
           return r.brand_mentioned;
         } else {
-          return r.competitors_mentioned?.includes(brand);
+          return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
         }
       }).length;
 
@@ -1845,7 +1842,7 @@ export default function ResultsPage() {
         if (isSearchedBrand) {
           return r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned';
         } else {
-          return r.competitors_mentioned?.includes(brand) && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned';
+          return (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand)) && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned';
         }
       });
 
@@ -1892,9 +1889,8 @@ export default function ResultsPage() {
     // Get all brands mentioned (exclude category name for industry searches)
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
-      if (r.competitors_mentioned) {
-        r.competitors_mentioned.forEach(c => allBrands.add(c));
-      }
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) allBrands.add(c); });
     });
     const brands = Array.from(allBrands);
 
@@ -1905,7 +1901,7 @@ export default function ResultsPage() {
         const promptResults = results.filter(r => r.prompt === prompt);
         const mentioned = promptResults.filter(r => {
           if (isSearchedBrand) return r.brand_mentioned;
-          return r.competitors_mentioned?.includes(brand);
+          return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
         }).length;
         return promptResults.length > 0 ? (mentioned / promptResults.length) * 100 : 0;
       });
@@ -1928,14 +1924,12 @@ export default function ResultsPage() {
     );
 
     // Get top brands (searched + top competitors by mention count)
-    const brandCounts: Record<string, number> = { [searchedBrand]: 0 };
+    const isCategory = runStatus.search_type === 'category';
+    const brandCounts: Record<string, number> = isCategory ? {} : { [searchedBrand]: 0 };
     results.forEach(r => {
-      if (r.brand_mentioned) brandCounts[searchedBrand]++;
-      if (r.competitors_mentioned) {
-        r.competitors_mentioned.forEach(c => {
-          brandCounts[c] = (brandCounts[c] || 0) + 1;
-        });
-      }
+      if (!isCategory && r.brand_mentioned) brandCounts[searchedBrand]++;
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) brandCounts[c] = (brandCounts[c] || 0) + 1; });
     });
     const topBrands = Object.entries(brandCounts)
       .sort((a, b) => b[1] - a[1])
@@ -1951,7 +1945,7 @@ export default function ResultsPage() {
         const isSearchedBrand = brand === searchedBrand;
         const mentioned = providerResults.filter(r => {
           if (isSearchedBrand) return r.brand_mentioned;
-          return r.competitors_mentioned?.includes(brand);
+          return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
         }).length;
         brandRates[brand] = providerResults.length > 0 ? (mentioned / providerResults.length) * 100 : 0;
       });
@@ -1975,9 +1969,8 @@ export default function ResultsPage() {
       // Get all brands mentioned in this response (exclude category name for industry searches)
       const brandsInResponse: string[] = [];
       if (!isCategory && r.brand_mentioned) brandsInResponse.push(searchedBrand);
-      if (r.competitors_mentioned) {
-        r.competitors_mentioned.forEach(c => brandsInResponse.push(c));
-      }
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) brandsInResponse.push(c); });
 
       // Count co-occurrences
       for (let i = 0; i < brandsInResponse.length; i++) {
@@ -2215,9 +2208,10 @@ export default function ResultsPage() {
         }
 
         // Check competitors mentioned and extract snippets
-        if (r.competitors_mentioned && r.response_text) {
+        const rCompBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
+        if (rCompBrands.length > 0 && r.response_text) {
           const responseText = r.response_text; // Capture for TypeScript narrowing
-          r.competitors_mentioned.forEach(competitor => {
+          rCompBrands.forEach(competitor => {
             if (!sourceStats[domain].competitorCitations[competitor]) {
               sourceStats[domain].competitorCitations[competitor] = 0;
             }
@@ -2420,9 +2414,10 @@ export default function ResultsPage() {
         }
 
         // Track all competitor sentiments
-        if (r.competitors_mentioned && r.competitor_sentiments) {
+        const rSentBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
+        if (rSentBrands.length > 0 && r.competitor_sentiments) {
           const responseText = r.response_text;
-          r.competitors_mentioned.forEach(competitor => {
+          rSentBrands.forEach(competitor => {
             const sentiment = r.competitor_sentiments?.[competitor];
             if (sentiment && sentiment !== 'not_mentioned') {
               const score = sentimentScoreMap[sentiment] || 0;
@@ -2754,9 +2749,8 @@ export default function ResultsPage() {
         if (result.brand_mentioned && runStatus.brand) {
           resultBrands.push(runStatus.brand);
         }
-        if (result.competitors_mentioned) {
-          resultBrands.push(...result.competitors_mentioned);
-        }
+        const resultCompBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus.brand || '').toLowerCase()) : result.competitors_mentioned || [];
+        resultBrands.push(...resultCompBrands);
 
         const seenUrlsInResponse = new Set<string>();
         const uniqueSourcesInResponse = result.sources.filter((source: { url?: string }) => {
@@ -3217,7 +3211,7 @@ export default function ResultsPage() {
 
         // Check if brand is mentioned
         const isMentioned = isCategory
-          ? result.competitors_mentioned?.includes(selectedBrand)
+          ? (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand) : result.competitors_mentioned?.includes(selectedBrand))
           : result.brand_mentioned;
 
         if (isMentioned) {
@@ -3459,7 +3453,7 @@ export default function ResultsPage() {
     let mentionedCount = 0;
     for (const result of results) {
       const isMentioned = isCategory
-        ? result.competitors_mentioned?.includes(selectedBrand || '')
+        ? (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand || '') : result.competitors_mentioned?.includes(selectedBrand || ''))
         : result.brand_mentioned;
       if (isMentioned) mentionedCount++;
     }
@@ -3511,7 +3505,7 @@ export default function ResultsPage() {
       }
 
       // Count competitor mentions
-      const competitors = result.competitors_mentioned || [];
+      const competitors = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
       for (const competitor of competitors) {
         if (competitor && competitor.toLowerCase() !== selectedBrand?.toLowerCase()) {
           if (responseText.includes(competitor.toLowerCase())) {
@@ -3540,7 +3534,7 @@ export default function ResultsPage() {
     let totalBrandsAcrossResults = 0;
     let resultsWithBrands = 0;
     for (const result of results) {
-      const brandCount = result.competitors_mentioned?.length || 0;
+      const brandCount = result.all_brands_mentioned?.length || result.competitors_mentioned?.length || 0;
       if (brandCount > 0) {
         totalBrandsAcrossResults += brandCount;
         resultsWithBrands++;
@@ -3554,10 +3548,9 @@ export default function ResultsPage() {
     let fragmentationScore = 5; // default mid-range
     const brandMentionCounts: Record<string, number> = {};
     for (const result of results) {
-      if (result.competitors_mentioned) {
-        for (const comp of result.competitors_mentioned) {
-          brandMentionCounts[comp] = (brandMentionCounts[comp] || 0) + 1;
-        }
+      const fragBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned || [];
+      for (const comp of fragBrands) {
+        brandMentionCounts[comp] = (brandMentionCounts[comp] || 0) + 1;
       }
     }
     const mentionBrands = Object.keys(brandMentionCounts);
@@ -3867,7 +3860,7 @@ export default function ResultsPage() {
           r.model,
           r.temperature,
           r.brand_mentioned ? 'Yes' : 'No',
-          `"${r.competitors_mentioned.join(', ')}"`,
+          `"${(r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || []).join(', ')}"`,
           rank,
           r.response_type || '',
           r.tokens || '',
@@ -4429,7 +4422,7 @@ export default function ResultsPage() {
 
         const isMentioned = isSearchedBrand
           ? r.brand_mentioned
-          : r.competitors_mentioned?.includes(brand);
+          : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand));
 
         if (isMentioned) {
           providerStats[r.provider].mentioned++;
@@ -4490,7 +4483,7 @@ export default function ResultsPage() {
     for (const brand of allBrands) {
       const isSearched = brand === searchedBrand;
       const relevant = results.filter(r =>
-        isSearched ? r.brand_mentioned : r.competitors_mentioned?.includes(brand)
+        isSearched ? r.brand_mentioned : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand))
       );
 
       const allQuotes: BrandQuote[] = [];
@@ -4750,11 +4743,10 @@ export default function ResultsPage() {
       if (result.brand_mentioned && runStatus.brand) {
         brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
       }
-      if (result.competitors_mentioned) {
-        result.competitors_mentioned.forEach(comp => {
-          brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null });
-        });
-      }
+      const heatmapBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned || [];
+      heatmapBrands.forEach(comp => {
+        brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null });
+      });
 
       // Count brand mentions for sorting
       brandsInResult.forEach(({ brand }) => {
@@ -4869,7 +4861,7 @@ export default function ResultsPage() {
       // Check if brand is mentioned in the response
       const brandMentioned = brand === runStatus.brand
         ? result.brand_mentioned
-        : result.competitors_mentioned?.includes(brand);
+        : (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(brand) : result.competitors_mentioned?.includes(brand));
       if (!brandMentioned) return false;
 
       // Check if source domain is cited in the same response
@@ -5446,11 +5438,14 @@ export default function ResultsPage() {
                         {runStatus?.brand} {selectedResult.brand_mentioned ? 'Mentioned' : 'Not Mentioned'}
                       </span>
                     )}
-                    {selectedResult.competitors_mentioned && selectedResult.competitors_mentioned.length > 0 && (
+                    {(() => {
+                      const detectedBrands = selectedResult.all_brands_mentioned?.length ? selectedResult.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : selectedResult.competitors_mentioned || [];
+                      return detectedBrands.length > 0 ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg">
-                        {selectedResult.competitors_mentioned.length} competitor{selectedResult.competitors_mentioned.length !== 1 ? 's' : ''} mentioned
+                        {detectedBrands.length} competitor{detectedBrands.length !== 1 ? 's' : ''} mentioned
                       </span>
-                    )}
+                      ) : null;
+                    })()}
                     {selectedResult.response_type && (
                       <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg capitalize">
                         {selectedResult.response_type}

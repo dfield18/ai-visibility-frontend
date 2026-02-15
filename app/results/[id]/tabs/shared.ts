@@ -311,7 +311,7 @@ export const getTextForRanking = (text: string, provider: string): string => {
 export const getResultPosition = (result: Result, runStatus: RunStatusResponse): number | null => {
   if (!result.response_text || result.error || !runStatus) return null;
   const selectedBrand = runStatus.search_type === 'category'
-    ? (runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
+    ? (runStatus.results.find((r: Result) => r.all_brands_mentioned?.length || r.competitors_mentioned?.length)?.all_brands_mentioned?.[0] || runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
     : runStatus.brand;
   const brandLower = (selectedBrand || '').toLowerCase();
   if (!brandLower) return null;

@@ -304,7 +304,7 @@ export function RecommendationsTab() {
       if (!providerCompetitorRates[r.provider]) {
         providerCompetitorRates[r.provider] = [];
       }
-      const competitorMentionCount = r.competitors_mentioned?.length || 0;
+      const competitorMentionCount = r.all_brands_mentioned?.length || r.competitors_mentioned?.length || 0;
       if (competitorMentionCount > 0) {
         providerCompetitorRates[r.provider].push(1);
       } else {
@@ -376,13 +376,12 @@ export function RecommendationsTab() {
           if (r.brand_mentioned) {
             sourceData[domain].brandMentions++;
           }
-          if (r.competitors_mentioned) {
-            r.competitors_mentioned.forEach(comp => {
-              if (!sourceData[domain].competitors.includes(comp)) {
-                sourceData[domain].competitors.push(comp);
-              }
-            });
-          }
+          const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
+          rBrands.forEach(comp => {
+            if (!sourceData[domain].competitors.includes(comp)) {
+              sourceData[domain].competitors.push(comp);
+            }
+          });
         } catch {}
       });
     });
@@ -470,13 +469,12 @@ export function RecommendationsTab() {
           if (r.brand_mentioned) {
             sourceMentions[domain].brand++;
           }
-          if (r.competitors_mentioned) {
-            r.competitors_mentioned.forEach(comp => {
-              if (!sourceMentions[domain].competitors.includes(comp)) {
-                sourceMentions[domain].competitors.push(comp);
-              }
-            });
-          }
+          const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
+          rBrands.forEach(comp => {
+            if (!sourceMentions[domain].competitors.includes(comp)) {
+              sourceMentions[domain].competitors.push(comp);
+            }
+          });
         } catch {}
       });
     });

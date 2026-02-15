@@ -31,7 +31,7 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
   // Extract existing config from runStatus
   const existingConfig = runStatus.config || {
     prompts: [...new Set(runStatus.results.map(r => r.prompt))],
-    competitors: [...new Set(runStatus.results.flatMap(r => r.competitors_mentioned || []))],
+    competitors: [...new Set(runStatus.results.flatMap(r => r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || []))].filter(b => b.toLowerCase() !== (runStatus.brand || '').toLowerCase()),
     providers: [...new Set(runStatus.results.map(r => r.provider))],
     temperatures: [0.7],
     repeats: 1,

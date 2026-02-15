@@ -135,12 +135,13 @@ export const SourcesTab = () => {
 
       resultsWithSources.forEach((r: Result) => {
         // Check if this result mentions the selected brand (or any brand if all)
+        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
         const brandMentioned = selectedBrand
           ? ((!isCategory && r.brand_mentioned && runStatus.brand === selectedBrand) ||
-            r.competitors_mentioned?.includes(selectedBrand))
+            rBrands.includes(selectedBrand))
           : isCategory
-            ? (r.competitors_mentioned && r.competitors_mentioned.length > 0)
-            : (r.brand_mentioned || (r.competitors_mentioned && r.competitors_mentioned.length > 0));
+            ? (rBrands.length > 0)
+            : (r.brand_mentioned || rBrands.length > 0);
 
         r.sources?.forEach((source) => {
           if (!source.url) return;
@@ -263,7 +264,8 @@ export const SourcesTab = () => {
       // Add competitors / related issues
       const competitors = new Set<string>();
       globallyFilteredResults.forEach((r: Result) => {
-        r.competitors_mentioned?.forEach(comp => competitors.add(comp));
+        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+        rBrands.forEach(comp => competitors.add(comp));
       });
       Array.from(competitors).sort().forEach(comp => {
         options.push({ value: comp, label: comp });
@@ -859,9 +861,8 @@ export const SourcesTab = () => {
         if (!isCategory && r.brand_mentioned && searchedBrand) {
           brandsInResponse.push(searchedBrand);
         }
-        if (r.competitors_mentioned) {
-          brandsInResponse.push(...r.competitors_mentioned);
-        }
+        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (searchedBrand || '').toLowerCase()) : r.competitors_mentioned || [];
+        brandsInResponse.push(...rBrands);
 
         // Track unique domains per response
         const domainsInResponse = new Set<string>();
@@ -1121,7 +1122,7 @@ export const SourcesTab = () => {
       const allBrands = new Set<string>();
 
       filteredResults.forEach((r: Result) => {
-        const brands = r.competitors_mentioned || [];
+        const brands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
         const domains = new Set<string>();
         r.sources!.forEach(s => {
           if (s.url) {
