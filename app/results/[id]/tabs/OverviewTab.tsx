@@ -734,8 +734,20 @@ export const OverviewTab = ({
           }
 
           if (isCategory) {
-            // Competitive Depth Score for industry reports
-            const avgBrands = overviewMetrics?.avgBrandsPerQuery ?? 0;
+            // Competitive Depth Score for industry reports — use brandBreakdownStats for consistency
+            const allowedBrands = new Set(brandBreakdownStats.map(s => s.brand));
+            let totalBrandsAcrossResults = 0;
+            let resultsWithBrands = 0;
+            for (const r of globallyFilteredResults) {
+              if (r.error) continue;
+              const brands = (r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [])
+                .filter(b => allowedBrands.has(b));
+              if (brands.length > 0) {
+                totalBrandsAcrossResults += brands.length;
+                resultsWithBrands++;
+              }
+            }
+            const avgBrands = resultsWithBrands > 0 ? totalBrandsAcrossResults / resultsWithBrands : 0;
             const depthTone: 'success' | 'neutral' | 'warn' = avgBrands >= 5 ? 'success' : avgBrands >= 3 ? 'neutral' : 'warn';
             return (
               <div style={{ order: 2 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
@@ -750,7 +762,7 @@ export const OverviewTab = ({
                       <HelpCircle className="w-4 h-4 text-gray-400" />
                     </button>
                     <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                      AI responses mention an average of {avgBrands.toFixed(1)} brands per query across {overviewMetrics?.resultsWithBrands || 0} responses about {runStatus?.brand || 'this category'}.
+                      AI responses mention an average of {avgBrands.toFixed(1)} brands per query across {resultsWithBrands} responses about {runStatus?.brand || 'this category'}.
                     </div>
                   </div>
                 </div>
@@ -1343,7 +1355,8 @@ export const OverviewTab = ({
           }
 
           if (isCategory) {
-            const totalBrands = overviewMetrics?.fragmentationBrandCount || 0;
+            // Use brandBreakdownStats for consistency (already filters excluded brands)
+            const totalBrands = brandBreakdownStats.length;
             const brandsTone: 'success' | 'neutral' | 'warn' = totalBrands >= 8 ? 'success' : totalBrands >= 4 ? 'neutral' : 'warn';
             return (
               <div style={{ order: 1 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
