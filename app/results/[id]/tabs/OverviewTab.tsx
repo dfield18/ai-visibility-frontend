@@ -458,8 +458,20 @@ export const OverviewTab = ({
         else if (rank >= 6 && rank <= 10) { category = '6-10'; }
         else { category = '>10'; }
 
+        // Determine sentiment for this dot
+        let dotSentiment: string | null;
+        if (rank === 0) {
+          // Brand not mentioned in this response — always show as not_mentioned
+          dotSentiment = 'not_mentioned';
+        } else if (effectiveBrand !== '__all__' && result.competitor_sentiments?.[effectiveBrand]) {
+          // Use brand-specific sentiment when filtering by a specific brand
+          dotSentiment = result.competitor_sentiments[effectiveBrand];
+        } else {
+          dotSentiment = result.brand_sentiment || null;
+        }
+
         grouped[provider][category].push({
-          sentiment: result.brand_sentiment || null,
+          sentiment: dotSentiment,
           prompt: truncate(result.prompt, 30),
           rank,
           label: provider,
