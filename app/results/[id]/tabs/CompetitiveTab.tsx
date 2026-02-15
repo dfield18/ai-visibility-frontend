@@ -1371,6 +1371,57 @@ export default function CompetitiveTab({
                 return { ...point, groupSize, indexInGroup, showLabel };
               });
 
+              // Pre-compute label positions to avoid overlaps
+              // Collect labelled points with approximate pixel positions
+              const chartWidth = 800; // approximate usable width
+              const chartHeight = 460;
+              const marginLeft = 60, marginRight = 40, marginTop = 30, marginBottom = 60;
+              const plotW = chartWidth - marginLeft - marginRight;
+              const plotH = chartHeight - marginTop - marginBottom;
+              const xRange = xMax - xMin;
+
+              type LabelInfo = { brand: string; px: number; py: number; labelY: number; anchor: 'start' | 'middle' | 'end' };
+              const labelPositions: LabelInfo[] = [];
+              processedData.forEach(point => {
+                if (!point.showLabel) return;
+                const spacing = 18;
+                const totalWidth = (point.groupSize - 1) * spacing;
+                const xOff = point.groupSize > 1 ? (point.indexInGroup * spacing) - (totalWidth / 2) : 0;
+                const px = marginLeft + ((point.sentiment - xMin) / xRange) * plotW + xOff;
+                const py = marginTop + (1 - point.mentions / yMax) * plotH;
+                const r = point.isSearchedBrand ? 10 : 7;
+                labelPositions.push({ brand: point.brand, px, py, labelY: py - r - 6, anchor: 'middle' });
+              });
+
+              // Sort by y then x for collision resolution
+              labelPositions.sort((a, b) => a.labelY - b.labelY || a.px - b.px);
+
+              // Resolve overlaps: if two labels are too close, push one below the dot
+              const labelHeight = 14;
+              const labelWidthEstimate = (text: string) => text.length * 6;
+              for (let i = 0; i < labelPositions.length; i++) {
+                for (let j = i + 1; j < labelPositions.length; j++) {
+                  const a = labelPositions[i];
+                  const b = labelPositions[j];
+                  const aHalfW = labelWidthEstimate(a.brand) / 2;
+                  const bHalfW = labelWidthEstimate(b.brand) / 2;
+                  const xOverlap = Math.abs(a.px - b.px) < (aHalfW + bHalfW + 4);
+                  const yOverlap = Math.abs(a.labelY - b.labelY) < labelHeight;
+                  if (xOverlap && yOverlap) {
+                    // Move the lower-priority label (j) below its dot instead
+                    const r = 7;
+                    b.labelY = b.py + r + 14;
+                    // Also try anchoring to avoid going off chart
+                    if (b.px < 120) b.anchor = 'start';
+                    else if (b.px > chartWidth - 120) b.anchor = 'end';
+                  }
+                }
+              }
+
+              // Build a lookup map for the shape renderer
+              const labelOffsetMap = new Map<string, { labelY: number; anchor: 'start' | 'middle' | 'end' }>();
+              labelPositions.forEach(l => labelOffsetMap.set(l.brand, { labelY: l.labelY, anchor: l.anchor }));
+
               const maxMentions = rawData.length > 0 ? Math.max(...rawData.map(d => d.mentions)) : 10;
               const yMax = maxMentions + Math.max(1, Math.ceil(maxMentions * 0.15));
 
@@ -1516,6 +1567,10 @@ export default function CompetitiveTab({
                           const totalWidth = (groupSize - 1) * spacing;
                           const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
+                          const labelInfo = showLabel ? labelOffsetMap.get(payload.brand) : null;
+                          const labelYDelta = labelInfo ? labelInfo.labelY - (cy - circleRadius - 6) : 0;
+                          const labelAnchor = labelInfo?.anchor || 'middle';
+
                           return (
                             <g>
                               <circle
@@ -1531,8 +1586,8 @@ export default function CompetitiveTab({
                               {showLabel && (
                                 <text
                                   x={cx + xOffset}
-                                  y={cy - circleRadius - 4}
-                                  textAnchor="middle"
+                                  y={cy - circleRadius - 6 + labelYDelta}
+                                  textAnchor={labelAnchor}
                                   fill="#374151"
                                   fontSize={isSearched ? 11 : 10}
                                   fontWeight={isSearched ? 600 : 500}

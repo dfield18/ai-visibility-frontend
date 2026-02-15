@@ -407,7 +407,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         options.push({ value: '__all__', label: 'All Brands (average sentiment)', isSearched: false });
       } else if (runStatus.brand) {
         // For brand reports, show searched brand first
-        options.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)`, isSearched: true });
+        options.push({ value: runStatus.brand, label: runStatus.brand, isSearched: true });
       }
 
       // Collect all competitors from competitor_sentiments
@@ -965,7 +965,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           if (isIndustryReport) {
             brandOptions.push({ value: '__all__', label: 'All Brands (average sentiment)' });
           } else if (runStatus?.brand) {
-            brandOptions.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)` });
+            brandOptions.push({ value: runStatus.brand, label: runStatus.brand });
           }
           const competitors = new Set<string>();
           globallyFilteredResults.forEach((r: Result) => {
@@ -1224,6 +1224,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                       dataKey="mentioned"
                       name="Mentions"
                       domain={[0, yMax]}
+                      allowDecimals={false}
                       tick={{ fill: '#6b7280', fontSize: 12 }}
                       label={{
                         value: 'Number of Mentions',
