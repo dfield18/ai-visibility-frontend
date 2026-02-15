@@ -1453,24 +1453,6 @@ export const OverviewTab = ({
             </button>
           )}
         </div>
-        {/* Market leader stats for industry reports */}
-        {isCategory && brandBreakdownStats.length > 0 && (() => {
-          const leader = brandBreakdownStats[0];
-          return (
-            <div className="mb-4 text-sm text-gray-700">
-              <p>
-                <span className="font-semibold text-gray-900">{leader.brand}</span>
-                {' '}is the market leader with a{' '}
-                <span className="font-semibold tabular-nums">{leader.shareOfVoice.toFixed(1)}%</span> share of all mentions
-                {' '}(% of total brand mentions captured by this brand)
-                {' '}and a{' '}
-                <span className="font-semibold tabular-nums">{leader.visibilityScore.toFixed(1)}%</span> mention rate
-                {' '}(% of AI responses that mention the brand).
-              </p>
-            </div>
-          );
-        })()}
-
         {isSummaryLoading ? (
           <div className="flex items-center gap-3 py-4">
             <Spinner size="sm" />
@@ -1478,7 +1460,15 @@ export const OverviewTab = ({
           </div>
         ) : aiSummary?.summary ? (
           <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{removeActionableTakeaway(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews')}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{(() => {
+              let text = removeActionableTakeaway(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews');
+              if (isCategory && brandBreakdownStats.length > 0) {
+                const leader = brandBreakdownStats[0];
+                const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% mention rate (% of AI responses that mention the brand)`;
+                text = text.replace(/(Market leader\s*[-–—]\s*[^.]+)(\.)/i, `$1${stats}$2`);
+              }
+              return text;
+            })()}</ReactMarkdown>
           </div>
         ) : (
           <p className="text-sm text-gray-500 italic">
