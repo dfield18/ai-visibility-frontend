@@ -958,7 +958,7 @@ export const OverviewTab = ({
                 {/* Brand name as hero element */}
                 <div className="h-[100px] flex flex-col justify-center">
                   <p className="text-2xl font-bold text-gray-900 leading-tight truncate" title={leaderName}>{leaderName}</p>
-                  <p className="text-sm text-gray-500 mt-1">{mentionRate.toFixed(1)}% of all mentions</p>
+                  <p className="text-sm text-gray-500 mt-1">{mentionRate.toFixed(1)}% share of voice (% of total brand mentions captured)</p>
                 </div>
                 {/* Badge */}
                 <div className="h-[28px] flex items-start mt-3">
