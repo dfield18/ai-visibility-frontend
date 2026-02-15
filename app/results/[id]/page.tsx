@@ -1275,6 +1275,7 @@ export default function ResultsPage() {
 
     if (isCategory) {
       return Object.entries(mentionCounts)
+        .filter(([brand]) => !isCategoryName(brand, runStatus.brand))
         .sort((a, b) => b[1] - a[1])
         .map(([brand]) => brand)
         .filter(b => !excludedBrands.has(b));
