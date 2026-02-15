@@ -224,7 +224,7 @@ Components in `components/ui/` follow this pattern:
 - Industry reports add "Industry Overview" tab composed from multiple sub-components
 - Tabs: Visibility, Competitive Landscape, Sentiment & Tone, Sources, Recommendations, Site Audit, Automated Reports, ChatGPT Advertising, Raw Data (availability varies by search type)
 - Sentiment colors: emerald-700 (Strong), green-600 (Positive), gray-500 (Neutral), amber-600 (Conditional), red-600 (Negative)
-- **AI Analysis section** (industry reports, OverviewTab): shows a brand stats grid (% of All Mentions + Mention Rate per brand) above the GPT-generated summary text. Definition note below: "Mention Rate = % of AI responses that mention the brand"
+- **AI Analysis section** (industry reports, OverviewTab): shows only the market leader (top brand by visibility score) with their share of all mentions (% of total brand mentions captured) and mention rate (% of AI responses that mention the brand), with definitions inline in parentheses. Does NOT list all brands — full brand breakdown is in the Competitive tab.
 
 ### Running TypeScript checks
 - Must run from the project directory: `cd /Users/davidfield/Documents/ai-visibility-frontend && npx tsc --noEmit`
