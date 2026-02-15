@@ -1309,14 +1309,12 @@ export default function CompetitiveTab({
               const filteredStats = brandPositioningStats
                 .filter(stat => stat.mentioned > 0)
                 .sort((a, b) => b.mentioned - a.mentioned);
-              // For brand reports, always include the searched brand + top 10 competitors
-              const limitedStats = isCategory || isIssue
-                ? filteredStats
-                : (() => {
-                    const searched = filteredStats.filter(s => s.isSearchedBrand);
-                    const competitors = filteredStats.filter(s => !s.isSearchedBrand).slice(0, 10);
-                    return [...searched, ...competitors];
-                  })();
+              // Limit to top brands to keep chart readable
+              const limitedStats = (() => {
+                const searched = filteredStats.filter(s => s.isSearchedBrand);
+                const others = filteredStats.filter(s => !s.isSearchedBrand).slice(0, 10);
+                return [...searched, ...others];
+              })();
               const rawData = limitedStats
                 .map(stat => ({
                   brand: stat.brand,
@@ -1351,14 +1349,15 @@ export default function CompetitiveTab({
                 group.sort((a, b) => a.sentiment - b.sentiment);
               });
 
-              // Determine which brands get visible labels (searched brand + top 5 by mentions)
+              // Determine which brands get visible labels
               const sortedByMentions = [...rawData].sort((a, b) => b.mentions - a.mentions);
+              const maxLabels = rawData.length <= 6 ? rawData.length : 5;
               const labelledBrands = new Set<string>();
               // Always label the searched brand
               rawData.forEach(d => { if (d.isSearchedBrand) labelledBrands.add(d.brand); });
-              // Add top brands by mentions until we have up to 5
+              // Add top brands by mentions
               for (const d of sortedByMentions) {
-                if (labelledBrands.size >= 5) break;
+                if (labelledBrands.size >= maxLabels) break;
                 labelledBrands.add(d.brand);
               }
 
@@ -1383,7 +1382,7 @@ export default function CompetitiveTab({
               const plotH = chartHeight - marginTop - marginBottom;
               const xRange = xMax - xMin;
 
-              type LabelInfo = { brand: string; px: number; py: number; labelY: number; anchor: 'start' | 'middle' | 'end' };
+              type LabelInfo = { brand: string; px: number; py: number; labelX: number; labelY: number; anchor: 'start' | 'middle' | 'end' };
               const labelPositions: LabelInfo[] = [];
               processedData.forEach(point => {
                 if (!point.showLabel) return;
@@ -1393,37 +1392,64 @@ export default function CompetitiveTab({
                 const px = marginLeft + ((point.sentiment - xMin) / xRange) * plotW + xOff;
                 const py = marginTop + (1 - point.mentions / yMax) * plotH;
                 const r = point.isSearchedBrand ? 10 : 7;
-                labelPositions.push({ brand: point.brand, px, py, labelY: py - r - 6, anchor: 'middle' });
+                labelPositions.push({ brand: point.brand, px, py, labelX: px, labelY: py - r - 6, anchor: 'middle' });
               });
 
-              // Sort by y then x for collision resolution
-              labelPositions.sort((a, b) => a.labelY - b.labelY || a.px - b.px);
+              // Sort by mentions (higher mentions = higher priority for label placement)
+              labelPositions.sort((a, b) => a.py - b.py || a.px - b.px);
 
-              // Resolve overlaps: if two labels are too close, push one below the dot
+              // Resolve overlaps by trying multiple candidate positions
               const labelHeight = 14;
-              const labelWidthEstimate = (text: string) => text.length * 6;
-              for (let i = 0; i < labelPositions.length; i++) {
-                for (let j = i + 1; j < labelPositions.length; j++) {
-                  const a = labelPositions[i];
-                  const b = labelPositions[j];
-                  const aHalfW = labelWidthEstimate(a.brand) / 2;
-                  const bHalfW = labelWidthEstimate(b.brand) / 2;
-                  const xOverlap = Math.abs(a.px - b.px) < (aHalfW + bHalfW + 4);
-                  const yOverlap = Math.abs(a.labelY - b.labelY) < labelHeight;
-                  if (xOverlap && yOverlap) {
-                    // Move the lower-priority label (j) below its dot instead
-                    const r = 7;
-                    b.labelY = b.py + r + 14;
-                    // Also try anchoring to avoid going off chart
-                    if (b.px < 120) b.anchor = 'start';
-                    else if (b.px > chartWidth - 120) b.anchor = 'end';
+              const labelWidthEstimate = (text: string) => Math.min(text.length, 18) * 6;
+
+              const hasOverlap = (label: LabelInfo, placed: LabelInfo[]) => {
+                const halfW = labelWidthEstimate(label.brand) / 2;
+                for (const other of placed) {
+                  const otherHalfW = labelWidthEstimate(other.brand) / 2;
+                  const xOv = label.anchor === 'middle'
+                    ? Math.abs(label.labelX - other.labelX) < (halfW + otherHalfW + 6)
+                    : Math.abs(label.labelX - other.labelX) < (halfW + otherHalfW + 6);
+                  const yOv = Math.abs(label.labelY - other.labelY) < labelHeight;
+                  if (xOv && yOv) return true;
+                }
+                return false;
+              };
+
+              const placed: LabelInfo[] = [];
+              for (const label of labelPositions) {
+                const r = 7;
+                // Candidate positions: above, below, right, left
+                const candidates: { lx: number; ly: number; anchor: 'start' | 'middle' | 'end' }[] = [
+                  { lx: label.px, ly: label.py - r - 6, anchor: 'middle' },
+                  { lx: label.px, ly: label.py + r + 14, anchor: 'middle' },
+                  { lx: label.px + r + 4, ly: label.py + 4, anchor: 'start' },
+                  { lx: label.px - r - 4, ly: label.py + 4, anchor: 'end' },
+                  { lx: label.px, ly: label.py - r - 20, anchor: 'middle' },
+                  { lx: label.px, ly: label.py + r + 28, anchor: 'middle' },
+                ];
+
+                let foundSpot = false;
+                for (const c of candidates) {
+                  label.labelX = c.lx;
+                  label.labelY = c.ly;
+                  label.anchor = c.anchor;
+                  if (!hasOverlap(label, placed)) {
+                    foundSpot = true;
+                    break;
                   }
                 }
+                // If no candidate works, use the first (above) anyway
+                if (!foundSpot) {
+                  label.labelX = label.px;
+                  label.labelY = label.py - r - 6;
+                  label.anchor = 'middle';
+                }
+                placed.push({ ...label });
               }
 
               // Build a lookup map for the shape renderer
-              const labelOffsetMap = new Map<string, { labelY: number; anchor: 'start' | 'middle' | 'end' }>();
-              labelPositions.forEach(l => labelOffsetMap.set(l.brand, { labelY: l.labelY, anchor: l.anchor }));
+              const labelOffsetMap = new Map<string, { labelX: number; labelY: number; anchor: 'start' | 'middle' | 'end' }>();
+              labelPositions.forEach(l => labelOffsetMap.set(l.brand, { labelX: l.labelX, labelY: l.labelY, anchor: l.anchor }));
 
               return (
               <div id="competitive-positioning" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -1568,7 +1594,11 @@ export default function CompetitiveTab({
                           const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
 
                           const labelInfo = showLabel ? labelOffsetMap.get(payload.brand) : null;
-                          const labelYDelta = labelInfo ? labelInfo.labelY - (cy - circleRadius - 6) : 0;
+                          // Compute deltas from the pre-computed pixel positions to actual chart positions
+                          const expectedPx = marginLeft + ((payload.sentiment - xMin) / xRange) * plotW + xOffset;
+                          const expectedPy = marginTop + (1 - payload.mentions / yMax) * plotH;
+                          const labelXDelta = labelInfo ? (labelInfo.labelX - expectedPx) : 0;
+                          const labelYDelta = labelInfo ? (labelInfo.labelY - expectedPy) : -(circleRadius + 6);
                           const labelAnchor = labelInfo?.anchor || 'middle';
 
                           return (
@@ -1585,8 +1615,8 @@ export default function CompetitiveTab({
                               />
                               {showLabel && (
                                 <text
-                                  x={cx + xOffset}
-                                  y={cy - circleRadius - 6 + labelYDelta}
+                                  x={cx + xOffset + labelXDelta}
+                                  y={cy + labelYDelta}
                                   textAnchor={labelAnchor}
                                   fill="#374151"
                                   fontSize={isSearched ? 11 : 10}

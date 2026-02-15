@@ -1771,27 +1771,27 @@ export const SourcesTab = () => {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
+            <div className="overflow-x-auto max-h-[480px] overflow-y-auto">
+              <table className="text-sm" style={{ minWidth: `${180 + sourceBrandHeatmapData.brands.length * 90 + 70}px` }}>
+                <thead className="sticky top-0 z-10">
                   <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 min-w-[160px]">
+                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-20 w-[180px] min-w-[180px]">
                       Source
                     </th>
                     {sourceBrandHeatmapData.brands.map(brand => (
                       <th
                         key={brand}
-                        className="text-center py-3 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none min-w-[80px]"
+                        className="text-center py-3 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none w-[90px] min-w-[90px]"
                         onClick={() => setSourceBrandHeatmapSort(sourceBrandHeatmapSort === brand ? 'total' : brand)}
                       >
-                        <span className="flex items-center justify-center gap-1">
-                          {brand.length > 12 ? brand.substring(0, 12) + '…' : brand}
+                        <span className="flex items-center justify-center gap-1 whitespace-nowrap overflow-hidden text-ellipsis" title={brand}>
+                          {brand.length > 10 ? brand.substring(0, 10) + '…' : brand}
                           {sourceBrandHeatmapSort === brand && <span className="text-gray-900">↓</span>}
                         </span>
                       </th>
                     ))}
                     <th
-                      className="text-center py-3 px-3 text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:text-gray-900 select-none min-w-[60px] bg-gray-100"
+                      className="text-center py-3 px-3 text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:text-gray-900 select-none w-[70px] min-w-[70px] bg-gray-100"
                       onClick={() => setSourceBrandHeatmapSort('total')}
                     >
                       <span className="flex items-center justify-center gap-1">
@@ -1801,18 +1801,15 @@ export const SourcesTab = () => {
                     </th>
                   </tr>
                 </thead>
-              </table>
-              <div className="max-h-[400px] overflow-y-auto">
-              <table className="w-full text-sm">
                 <tbody>
                   {sourceBrandHeatmapData.sources.map((domain, rowIdx) => (
                     <tr key={domain} className={`border-b border-gray-100 ${rowIdx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
-                      <td className="py-2.5 px-4 sticky left-0 bg-white" style={rowIdx % 2 !== 0 ? { background: 'rgba(249,250,251,0.3)' } : undefined}>
+                      <td className="py-2.5 px-4 sticky left-0 z-10 bg-white w-[180px] min-w-[180px]" style={rowIdx % 2 !== 0 ? { background: 'rgba(249,250,251,0.3)' } : undefined}>
                         <a
                           href={`https://${domain}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-gray-700 hover:text-gray-900 hover:underline truncate block max-w-[160px]"
+                          className="text-sm text-gray-700 hover:text-gray-900 hover:underline truncate block max-w-[170px]"
                           title={domain}
                         >
                           {domain}
@@ -1839,7 +1836,7 @@ export const SourcesTab = () => {
                             return 'Negative';
                           };
                           return (
-                            <td key={brand} className="text-center py-2.5 px-2">
+                            <td key={brand} className="text-center py-2.5 px-2 w-[90px] min-w-[90px]">
                               {avg !== null ? (
                                 <div
                                   className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity"
@@ -1861,7 +1858,7 @@ export const SourcesTab = () => {
 
                         const intensity = heatmapMaxValue > 0 ? count / heatmapMaxValue : 0;
                         return (
-                          <td key={brand} className="text-center py-2.5 px-2">
+                          <td key={brand} className="text-center py-2.5 px-2 w-[90px] min-w-[90px]">
                             {count > 0 ? (
                               <div
                                 className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity"
@@ -1900,7 +1897,7 @@ export const SourcesTab = () => {
                   ))}
                   {/* Totals / Averages row */}
                   <tr className="border-t-2 border-gray-200 bg-gray-50">
-                    <td className="py-3 px-4 sticky left-0 bg-gray-50">
+                    <td className="py-3 px-4 sticky left-0 z-10 bg-gray-50 w-[180px] min-w-[180px]">
                       <span className="text-xs font-semibold text-gray-700 uppercase">
                         {sourceBrandHeatmapView === 'sentiment' ? 'Avg' : 'Total Citations'}
                       </span>
@@ -1942,7 +1939,6 @@ export const SourcesTab = () => {
                   </tr>
                 </tbody>
               </table>
-              </div>
             </div>
 
             <p className="px-6 py-3 text-center text-xs text-gray-400 italic border-t border-gray-100">
@@ -2262,7 +2258,15 @@ export const SourcesTab = () => {
                     return (
                       <tr key={row.domain} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-4 px-4">
-                          <span className="text-sm text-gray-900 font-medium break-all">{row.domain}</span>
+                          <span className="text-sm text-gray-900 font-medium" style={{ wordBreak: 'break-all' }}>
+                            {(() => {
+                              const lastDot = row.domain.lastIndexOf('.');
+                              if (lastDot > 0) {
+                                return <>{row.domain.substring(0, lastDot)}<wbr />{row.domain.substring(lastDot)}</>;
+                              }
+                              return row.domain;
+                            })()}
+                          </span>
                         </td>
                         <td className="py-4 px-4 text-center">
                           <div className="flex items-center justify-center gap-1 whitespace-nowrap">
