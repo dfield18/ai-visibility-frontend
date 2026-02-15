@@ -30,11 +30,12 @@ app/                          # Next.js App Router pages
 ├── layout.tsx                # Root layout with QueryClientProvider
 ├── page.tsx                  # Landing page (search type selector + input)
 ├── providers.tsx             # React Query provider setup
-├── api/validate-brand/       # Brand validation API route
+├── api/validate-brand/       # Brand validation API route (GPT-4o-mini)
 ├── configure/page.tsx        # Prompts/competitors configuration
 ├── run/[id]/page.tsx         # Real-time progress tracking
 └── results/[id]/
     ├── page.tsx              # Results dashboard (orchestrates tabs + contexts)
+    ├── BrandFilterPanel.tsx  # Sidebar brand filter for industry reports
     └── tabs/
         ├── shared.ts         # Shared types (Result, RunStatusResponse, TabType)
         ├── ResultsContext.tsx # ResultsContext (data) + ResultsUIContext (UI state)
@@ -112,6 +113,16 @@ For category search type, the Industry Overview tab is composed from multiple ta
 - Publisher Breakdown: skip category name when building `brandsInResponse`
 - Sources tab: don't look up websites for the category itself, only for brands within it
 
+### Brand Filter Panel (Industry Reports)
+
+- `app/results/[id]/BrandFilterPanel.tsx` — sidebar panel lets users exclude brands from the report
+- Uses **pending state** pattern: checkbox changes are local until user clicks "Update Report" button
+- `excludedBrands` state lives in `page.tsx`, filtered derivatives (`filteredAvailableBrands`, `filteredTrackedBrands`) passed through `ResultsContext`
+- Computed stats (`shareOfVoiceData`, `llmBreakdownBrands`, `brandBreakdownStats`) also filter out excluded brands
+- `ResultsContext` exposes: `allAvailableBrands` (unfiltered, for sidebar), `availableBrands` (filtered), `excludedBrands`, `setExcludedBrands`
+- Select-all checkbox uses **purple accent** (`#7c3aed`), individual checkboxes use gray-900
+- `SectionGuide` component accepts `children` prop to render the panel below the "On this page" nav
+
 ## Key Patterns & Conventions
 
 ### Component Structure
@@ -168,7 +179,7 @@ For category search type, the Industry Overview tab is composed from multiple ta
 ## API Endpoints
 
 ### Internal Next.js API Routes
-- `POST /api/validate-brand` - Validates and corrects brand names using OpenAI
+- `POST /api/validate-brand` - Validates and corrects brand/category names using OpenAI (GPT-4o-mini). For categories, fixes spelling/grammar and returns Title Case corrected names (e.g., "computers Mouses" → "Computer Mice"). System prompt is in `app/api/validate-brand/route.ts`.
 
 ### External Backend Endpoints
 The frontend expects these backend endpoints:
@@ -190,6 +201,10 @@ Components in `components/ui/` follow this pattern:
 - Explicit search type selector buttons (Brand, Industry, Local, Issue, Public Figure) — user must choose before searching
 - Input placeholder and TRY examples change per search type (driven by `searchTypeConfig`)
 - Buttons use `flex-1` for equal width
+- **Typo correction flow**: When `/api/validate-brand` returns a `correctedName` that differs from user input, an amber inline banner shows "Did you mean **X**?" with accept/reject buttons (state: `correctionSuggestion`). Works for all search types (brand, category, local).
+
+### Configure Page (`app/configure/page.tsx`)
+- "AI Platforms to Test" section uses `BrainCircuit` icon (not `Cpu`)
 
 ### Configure Page (`app/configure/page.tsx`)
 - Edit prompts/questions to ask AI
@@ -209,6 +224,7 @@ Components in `components/ui/` follow this pattern:
 - Industry reports add "Industry Overview" tab composed from multiple sub-components
 - Tabs: Visibility, Competitive Landscape, Sentiment & Tone, Sources, Recommendations, Site Audit, Automated Reports, ChatGPT Advertising, Raw Data (availability varies by search type)
 - Sentiment colors: emerald-700 (Strong), green-600 (Positive), gray-500 (Neutral), amber-600 (Conditional), red-600 (Negative)
+- **AI Analysis section** (industry reports, OverviewTab): shows a brand stats grid (% of All Mentions + Mention Rate per brand) above the GPT-generated summary text. Definition note below: "Mention Rate = % of AI responses that mention the brand"
 
 ### Running TypeScript checks
 - Must run from the project directory: `cd /Users/davidfield/Documents/ai-visibility-frontend && npx tsc --noEmit`
