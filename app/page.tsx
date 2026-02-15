@@ -106,8 +106,8 @@ export default function Home() {
         (data.suggestions && data.suggestions[0]?.name) ||
         brandInput.trim();
 
-      // Use the selected category, not auto-inferred type
-      const resolvedType = selectedCategory === 'category' && data.type === 'local'
+      // Only treat as local if the user explicitly opted in via the local toggle
+      const resolvedType = showLocalToggle && selectedCategory === 'category' && data.type === 'local'
         ? 'local'
         : selectedCategory;
 
