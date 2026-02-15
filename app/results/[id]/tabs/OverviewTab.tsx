@@ -55,7 +55,7 @@ function MarketSpreadDonut({
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   return (
-    <div style={{ order: 3 }} className={`rounded-2xl shadow-sm border p-4 flex flex-col h-[270px] overflow-hidden ${cardClassName}`}>
+    <div style={{ order: 3 }} className={`rounded-2xl shadow-sm border p-4 flex flex-col h-[270px] ${cardClassName}`}>
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Spread</p>
         <div className="relative group">
@@ -140,7 +140,7 @@ function MarketSpreadDonut({
           })}
         </div>
       </div>
-      <p className="text-xs text-gray-500 mt-auto pt-1">{totalBrands} brands across {totalMentions} mentions</p>
+      <p className="text-xs text-gray-500 mt-auto pt-1">{totalBrands} brands by share of voice</p>
     </div>
   );
 }
@@ -961,7 +961,8 @@ export const OverviewTab = ({
                 {/* Brand name as hero element */}
                 <div className="h-[100px] flex flex-col justify-center">
                   <p className="text-2xl font-bold text-gray-900 leading-tight truncate" title={leaderName}>{leaderName}</p>
-                  <p className="text-sm text-gray-500 mt-1">{leaderSov.toFixed(1)}% share of voice (% of total brand mentions captured)</p>
+                  <p className="text-sm text-gray-500 mt-1">{leaderSov.toFixed(1)}% share of voice</p>
+                  <p className="text-xs text-gray-400 mt-0.5">% of total brand mentions captured</p>
                 </div>
                 {/* Badge */}
                 <div className="h-[28px] flex items-start mt-3">
@@ -1151,15 +1152,14 @@ export const OverviewTab = ({
           }
 
           if (isCategory) {
-            // Brand mention donut chart for industry reports
-            const mentionCounts: Record<string, number> = overviewMetrics?.brandMentionCounts || {};
-            const sorted = Object.entries(mentionCounts).sort((a, b) => b[1] - a[1]);
+            // Brand mention donut chart for industry reports — use brandBreakdownStats for consistency
+            const sorted = [...brandBreakdownStats].sort((a, b) => b.shareOfVoice - a.shareOfVoice);
             const MAX_SLICES = 6;
             const topBrands = sorted.slice(0, MAX_SLICES);
-            const otherCount = sorted.slice(MAX_SLICES).reduce((sum, [, c]) => sum + c, 0);
+            const otherSov = sorted.slice(MAX_SLICES).reduce((sum, s) => sum + s.shareOfVoice, 0);
             const donutData = [
-              ...topBrands.map(([name, count]) => ({ name, value: count })),
-              ...(otherCount > 0 ? [{ name: 'Other', value: otherCount }] : []),
+              ...topBrands.map(s => ({ name: s.brand, value: s.shareOfVoice })),
+              ...(otherSov > 0 ? [{ name: 'Other', value: otherSov }] : []),
             ];
             const totalMentions = donutData.reduce((sum, d) => sum + d.value, 0);
             const DONUT_COLORS = ['#4285f4', '#10a37f', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#9ca3af'];
