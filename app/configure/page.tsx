@@ -497,10 +497,10 @@ export default function ConfigurePage() {
                 </div>
               </div>
 
-              <div className="mt-6 bg-cyan-700 rounded-xl p-4">
-                <p className="text-sm text-cyan-50">
+              <div className="mt-6 rounded-lg border-l-2 border-cyan-600/40 pl-3 py-2">
+                <p className="text-sm text-gray-500">
                   <span className="mr-1">💡</span>
-                  <span className="font-medium">Tip:</span> The more questions and platforms you select, the richer your analysis will be.
+                  <span className="font-medium text-gray-900">Tip:</span> The more questions and platforms you select, the richer your analysis will be.
                 </p>
               </div>
             </div>
@@ -509,38 +509,15 @@ export default function ConfigurePage() {
           {/* Main Content */}
           <div className="flex-1 space-y-8">
 
-            {/* Questions Section - 70% width, centered */}
-            <div className="lg:w-[45%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
-              {/* Header with step number */}
+            {/* Questions Section - centered */}
+            <div className="lg:w-[70%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+              {/* Header */}
               <div className="flex items-center gap-2.5 mb-2">
-                <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-white text-[11px] font-semibold">1</span>
-                </div>
                 <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
                 <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
-                <div className="ml-auto flex items-center gap-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-gray-500 font-medium">Select all</span>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={selectedPromptsArray.length === prompts.length}
-                      onClick={() => selectedPromptsArray.length === prompts.length ? deselectAllPrompts() : selectAllPrompts()}
-                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                        selectedPromptsArray.length === prompts.length ? 'bg-gray-900' : 'bg-gray-300'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
-                          selectedPromptsArray.length === prompts.length ? 'translate-x-[18px]' : 'translate-x-[3px]'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  <span className="text-xs font-semibold text-cyan-600">
-                    {selectedPromptsArray.length}/{prompts.length}
-                  </span>
-                </div>
+                <span className="ml-auto text-xs font-semibold text-cyan-600">
+                  {selectedPromptsArray.length}/{prompts.length}
+                </span>
               </div>
 
 
@@ -556,9 +533,7 @@ export default function ConfigurePage() {
                     <div
                       key={prompt}
                       className={`flex items-start gap-2.5 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all group ${
-                        selectedPrompts.has(prompt)
-                          ? 'bg-white'
-                          : 'hover:bg-gray-50'
+                        index % 2 === 0 ? 'bg-gray-50/50' : ''
                       }`}
                       onClick={() => {
                         if (editingPromptIndex !== index) {
@@ -627,11 +602,11 @@ export default function ConfigurePage() {
                 </div>
               )}
 
-              {/* Show less/more + Add question */}
+              {/* Show less/more + Select/Deselect all + Add question */}
               {prompts.length > 0 && !suggestionsLoading && (
                 <>
                   {canToggleQuestions && (
-                    <div className="border-t border-gray-100 mt-2 pt-2">
+                    <div className="border-t border-gray-100 mt-2 pt-2 flex items-center justify-between">
                       <button
                         onClick={() => setQuestionsExpanded(!questionsExpanded)}
                         className="text-xs text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
@@ -647,6 +622,13 @@ export default function ConfigurePage() {
                             Show more ({prompts.length - COLLAPSED_QUESTION_COUNT} more)
                           </>
                         )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => selectedPromptsArray.length === prompts.length ? deselectAllPrompts() : selectAllPrompts()}
+                        className="text-xs text-cyan-600 font-medium underline underline-offset-2 hover:text-cyan-700 transition-colors"
+                      >
+                        {selectedPromptsArray.length === prompts.length ? 'Deselect all' : 'Select all'}
                       </button>
                     </div>
                   )}
@@ -685,7 +667,7 @@ export default function ConfigurePage() {
                       ) : (
                         <button
                           onClick={() => setAddingPrompt(true)}
-                          className="text-xs text-gray-500 hover:bg-gray-50 font-medium flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-gray-200 border-dashed transition-colors"
+                          className="w-full text-xs text-gray-500 hover:border-cyan-600/40 font-medium flex items-center justify-center gap-1 py-2.5 rounded-lg border-2 border-dashed border-gray-200 transition-colors"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           Add your own question
@@ -698,13 +680,10 @@ export default function ConfigurePage() {
             </div>
 
             {/* AI Platforms Section - centered */}
-            <div className="lg:w-[45%] lg:mx-auto">
+            <div className="lg:w-[70%] lg:mx-auto">
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
-                {/* Header with step number */}
+                {/* Header */}
                 <div className="flex items-start gap-3 mb-1">
-                  <div className="w-7 h-7 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-xs font-semibold">2</span>
-                  </div>
                   <div className="flex items-center gap-2">
                     <Cpu className="w-4 h-4 text-gray-400" />
                     <h2 className="text-base font-semibold text-gray-900">AI Platforms to Test</h2>
@@ -713,12 +692,12 @@ export default function ConfigurePage() {
                     {providers.length} selected
                   </span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1 mb-4 ml-10">
+                <p className="text-sm text-gray-500 mt-1 mb-4">
                   Choose which AI assistants to include in your analysis
                 </p>
 
-                {/* 2-column grid */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* 3-column grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
                   {Object.entries(PROVIDER_INFO).map(([key, info]) => {
                     const isSelected = providers.includes(key);
                     const isLocked = !isBillingPlaceholder && !isPaidUser && !isProviderFree(key);
@@ -1198,11 +1177,15 @@ export default function ConfigurePage() {
       {/* Sticky bottom CTA bar */}
       <div className="sticky bottom-0 z-10 bg-white/80 backdrop-blur-sm border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
-            {selectedPromptsArray.length} question{selectedPromptsArray.length !== 1 ? 's' : ''}
-            {' · '}
-            {providers.length} platform{providers.length !== 1 ? 's' : ''}
-          </p>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-xs font-semibold text-cyan-700">
+              {selectedPromptsArray.length} question{selectedPromptsArray.length !== 1 ? 's' : ''}
+            </span>
+            <span className="text-xs text-gray-400">&middot;</span>
+            <span className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-xs font-semibold text-cyan-700">
+              {providers.length} platform{providers.length !== 1 ? 's' : ''}
+            </span>
+          </div>
           <button
             onClick={handleRunAnalysis}
             disabled={!canRun}
