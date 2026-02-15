@@ -68,7 +68,7 @@ export function BrandFilterPanel({ allBrands, excludedBrands, setExcludedBrands 
           {allChecked && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
           {indeterminate && <Minus className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
         </button>
-        <span className="text-xs font-medium text-gray-600">{allChecked ? 'Deselect all' : 'Select all'}</span>
+        <span className="text-sm font-medium text-gray-600">{allChecked ? 'Deselect all' : 'Select all'}</span>
       </label>
 
       {/* Brand list */}

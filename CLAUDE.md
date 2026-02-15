@@ -37,7 +37,7 @@ app/                          # Next.js App Router pages
     ├── page.tsx              # Results dashboard (orchestrates tabs + contexts)
     ├── BrandFilterPanel.tsx  # Sidebar brand filter for industry reports
     └── tabs/
-        ├── shared.ts         # Shared types (Result, RunStatusResponse, TabType)
+        ├── shared.ts         # Shared types (Result, RunStatusResponse, TabType) + isCategoryName() helper
         ├── ResultsContext.tsx # ResultsContext (data) + ResultsUIContext (UI state)
         ├── OverviewTab.tsx    # Visibility overview metrics + charts
         ├── CompetitiveTab.tsx # Competitive landscape / brand comparison
@@ -112,6 +112,9 @@ For category search type, the Industry Overview tab is composed from multiple ta
 - `competitors_mentioned` holds actual brands within the category — use these for brand filtering
 - Publisher Breakdown: skip category name when building `brandsInResponse`
 - Sources tab: don't look up websites for the category itself, only for brands within it
+- **`isCategoryName()` helper** (`shared.ts`): Uses substring matching (not exact match) to detect category name variants (e.g., "Laptop" vs "Laptops"). Used across `page.tsx`, `OverviewTab.tsx`, `CompetitiveTab.tsx`, and `SourcesTab.tsx` to filter category names from brand lists, market leader calculations, and `llmBreakdownBrands`.
+- **All Results table "# Brands" column** (OverviewTab): Uses `all_brands_mentioned` (filtered by `isCategoryName()`) for industry reports, with fallback to `competitors_mentioned` for other search types.
+- **Market Leader card** (OverviewTab): Shows "share of voice (% of total brand mentions captured)" instead of "% of all mentions".
 
 ### Brand Filter Panel (Industry Reports)
 
