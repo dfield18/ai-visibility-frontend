@@ -41,11 +41,13 @@ import { useResults, useResultsUI } from './ResultsContext';
 function MarketSpreadDonut({
   donutData,
   totalMentions,
+  totalBrands,
   colors,
   cardClassName,
 }: {
   donutData: { name: string; value: number }[];
   totalMentions: number;
+  totalBrands: number;
   colors: string[];
   cardClassName: string;
 }) {
@@ -137,7 +139,7 @@ function MarketSpreadDonut({
           })}
         </div>
       </div>
-      <p className="text-xs text-gray-500 mt-auto pt-1">{donutData.length} brands across {totalMentions} mentions</p>
+      <p className="text-xs text-gray-500 mt-auto pt-1">{totalBrands} brands across {totalMentions} mentions</p>
     </div>
   );
 }
@@ -1163,6 +1165,7 @@ export const OverviewTab = ({
               <MarketSpreadDonut
                 donutData={donutData}
                 totalMentions={totalMentions}
+                totalBrands={sorted.length}
                 colors={DONUT_COLORS}
                 cardClassName={metricCardBackgrounds.top1Rate}
               />
