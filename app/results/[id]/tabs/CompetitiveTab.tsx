@@ -1371,6 +1371,9 @@ export default function CompetitiveTab({
                 return { ...point, groupSize, indexInGroup, showLabel };
               });
 
+              const maxMentions = rawData.length > 0 ? Math.max(...rawData.map(d => d.mentions)) : 10;
+              const yMax = maxMentions + Math.max(1, Math.ceil(maxMentions * 0.15));
+
               // Pre-compute label positions to avoid overlaps
               // Collect labelled points with approximate pixel positions
               const chartWidth = 800; // approximate usable width
@@ -1421,9 +1424,6 @@ export default function CompetitiveTab({
               // Build a lookup map for the shape renderer
               const labelOffsetMap = new Map<string, { labelY: number; anchor: 'start' | 'middle' | 'end' }>();
               labelPositions.forEach(l => labelOffsetMap.set(l.brand, { labelY: l.labelY, anchor: l.anchor }));
-
-              const maxMentions = rawData.length > 0 ? Math.max(...rawData.map(d => d.mentions)) : 10;
-              const yMax = maxMentions + Math.max(1, Math.ceil(maxMentions * 0.15));
 
               return (
               <div id="competitive-positioning" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
