@@ -224,7 +224,8 @@ Components in `components/ui/` follow this pattern:
 - Industry reports add "Industry Overview" tab composed from multiple sub-components
 - Tabs: Visibility, Competitive Landscape, Sentiment & Tone, Sources, Recommendations, Site Audit, Automated Reports, ChatGPT Advertising, Raw Data (availability varies by search type)
 - Sentiment colors: emerald-700 (Strong), green-600 (Positive), gray-500 (Neutral), amber-600 (Conditional), red-600 (Negative)
-- **AI Analysis section** (industry reports, OverviewTab): shows only the market leader (top brand by visibility score) with their share of all mentions (% of total brand mentions captured) and mention rate (% of AI responses that mention the brand), with definitions inline in parentheses. Does NOT list all brands — full brand breakdown is in the Competitive tab.
+- **AI Analysis section** (industry reports, OverviewTab): Market leader stats (share of all mentions + mention rate with parenthetical definitions) are injected into the AI summary's "Market leader" paragraph — not shown as a separate line. Any "mention rate" in the summary without a definition gets "(% of AI responses that mention the brand)" appended. Repeated "suggest/suggests" is varied with alternatives (indicates, points to, reflects). Does NOT list all brands — full brand breakdown is in the Competitive tab.
+- **Prompt Performance Matrix** (industry reports, CompetitiveTab): Table is capped at ~10 visible rows (`max-height: 480px`) with vertical scroll to see all brands. Header stays sticky. Hint text shown below: "Scroll down to see all X brands".
 
 ### Running TypeScript checks
 - Must run from the project directory: `cd /Users/davidfield/Documents/ai-visibility-frontend && npx tsc --noEmit`
