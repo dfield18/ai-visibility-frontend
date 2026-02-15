@@ -1466,6 +1466,8 @@ export const OverviewTab = ({
                 const leader = brandBreakdownStats[0];
                 const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% mention rate (% of AI responses that mention the brand)`;
                 text = text.replace(/(Market leader\s*[-–—]\s*[^.]+)(\.)/i, `$1${stats}$2`);
+                // Add definition for any other "mention rate" occurrences not already followed by a parenthetical
+                text = text.replace(/mention rate(?!\s*\()/gi, 'mention rate (% of AI responses that mention the brand)');
               }
               return text;
             })()}</ReactMarkdown>
