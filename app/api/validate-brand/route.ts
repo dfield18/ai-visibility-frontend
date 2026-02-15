@@ -144,9 +144,19 @@ Your task:
 
 2. If it's a PRODUCT CATEGORY (things people buy), return type "category":
    {"valid": true, "type": "category", "correctedName": "normalized category", "suggestions": null}
+   IMPORTANT: Always fix spelling mistakes, grammar errors, and awkward phrasing in category names.
+   Use the standard industry term. Examples:
+   - "computers Mouses" → "Computer Mice"
+   - "runnin shoes" → "Running Shoes"
+   - "labtops" → "Laptops"
+   - "smart watchs" → "Smartwatches"
+   - "wireles earbuds" → "Wireless Earbuds"
+   - "mens sneaker" → "Men's Sneakers"
+   Use proper capitalization (Title Case) for the correctedName.
 
 3. If it's a LOCAL SERVICE CATEGORY (businesses people visit locally), return type "local":
    {"valid": true, "type": "local", "correctedName": "normalized category", "suggestions": null}
+   IMPORTANT: Same as above — fix spelling, grammar, and use the standard term with Title Case.
 
 4. If it's a BRAND/BUSINESS NAME:
 
@@ -175,14 +185,17 @@ Your task:
    {"valid": false, "type": null, "correctedName": null, "suggestions": null}
 
 Examples:
-- "cars" → {"valid": true, "type": "category", "correctedName": "cars", "suggestions": null}
-- "laptops" → {"valid": true, "type": "category", "correctedName": "laptops", "suggestions": null}
-- "coffee shops" → {"valid": true, "type": "local", "correctedName": "coffee shops", "suggestions": null}
-- "restaurants" → {"valid": true, "type": "local", "correctedName": "restaurants", "suggestions": null}
-- "gyms" → {"valid": true, "type": "local", "correctedName": "gyms", "suggestions": null}
-- "dentists" → {"valid": true, "type": "local", "correctedName": "dentists", "suggestions": null}
-- "plumbers" → {"valid": true, "type": "local", "correctedName": "plumbers", "suggestions": null}
-- "italian restaurants" → {"valid": true, "type": "local", "correctedName": "italian restaurants", "suggestions": null}
+- "cars" → {"valid": true, "type": "category", "correctedName": "Cars", "suggestions": null}
+- "laptops" → {"valid": true, "type": "category", "correctedName": "Laptops", "suggestions": null}
+- "computers Mouses" → {"valid": true, "type": "category", "correctedName": "Computer Mice", "suggestions": null}
+- "runnin shoes" → {"valid": true, "type": "category", "correctedName": "Running Shoes", "suggestions": null}
+- "labtops" → {"valid": true, "type": "category", "correctedName": "Laptops", "suggestions": null}
+- "coffee shops" → {"valid": true, "type": "local", "correctedName": "Coffee Shops", "suggestions": null}
+- "restaurants" → {"valid": true, "type": "local", "correctedName": "Restaurants", "suggestions": null}
+- "gyms" → {"valid": true, "type": "local", "correctedName": "Gyms", "suggestions": null}
+- "dentists" → {"valid": true, "type": "local", "correctedName": "Dentists", "suggestions": null}
+- "plumbers" → {"valid": true, "type": "local", "correctedName": "Plumbers", "suggestions": null}
+- "italian restaurants" → {"valid": true, "type": "local", "correctedName": "Italian Restaurants", "suggestions": null}
 - "toymota" → {"valid": true, "type": "brand", "correctedName": "Toyota", "suggestions": null} (clear 2-char typo)
 - "Joe's Pizza" → {"valid": true, "type": "brand", "correctedName": "Joe's Pizza", "suggestions": null}
 - "spirit" → {"valid": true, "type": "brand", "correctedName": null, "suggestions": [{"name": "Spirit Airlines", "description": "Budget airline"}, {"name": "Spirit Halloween", "description": "Seasonal costume retailer"}, {"name": "spirit", "description": "Use as entered (different business)"}]}

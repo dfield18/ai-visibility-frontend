@@ -42,6 +42,7 @@ export default function Home() {
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [pendingBrandName, setPendingBrandName] = useState("");
   const [showLocalToggle, setShowLocalToggle] = useState(false);
+  const [correctionSuggestion, setCorrectionSuggestion] = useState<{ original: string; corrected: string; type: string } | null>(null);
   const router = useRouter();
   const { setBrand, setSearchType, setLocation, setLocationCoords, resetConfig } = useStore();
 
@@ -54,6 +55,7 @@ export default function Home() {
     setIsValidating(true);
     setError(null);
     setSuggestions(null);
+    setCorrectionSuggestion(null);
 
     try {
       // For issue and public_figure, skip validation and go directly
@@ -106,6 +108,15 @@ export default function Home() {
         (data.suggestions && data.suggestions[0]?.name) ||
         brandInput.trim();
 
+      // If the corrected name differs meaningfully from the input, prompt the user
+      const inputNorm = brandInput.trim().toLowerCase().replace(/\s+/g, ' ');
+      const correctedNorm = brandName.toLowerCase().replace(/\s+/g, ' ');
+      if (correctedNorm !== inputNorm && data.correctedName) {
+        setCorrectionSuggestion({ original: brandInput.trim(), corrected: brandName, type: data.type || selectedCategory });
+        setIsValidating(false);
+        return;
+      }
+
       // Only treat as local if the user explicitly opted in via the local toggle
       const resolvedType = showLocalToggle && selectedCategory === 'category' && data.type === 'local'
         ? 'local'
@@ -146,6 +157,51 @@ export default function Home() {
 
   const handleCloseSuggestions = () => {
     setSuggestions(null);
+  };
+
+  const handleAcceptCorrection = (corrected: string) => {
+    const type = correctionSuggestion?.type || selectedCategory;
+    setCorrectionSuggestion(null);
+
+    const resolvedType = showLocalToggle && selectedCategory === 'category' && type === 'local'
+      ? 'local'
+      : selectedCategory;
+
+    if (resolvedType === 'local') {
+      setPendingBrandName(corrected);
+      setShowLocationPrompt(true);
+      return;
+    }
+
+    setBrand(corrected);
+    setSearchType(resolvedType);
+    setLocation("");
+    setLocationCoords(null);
+    resetConfig();
+    router.push("/configure");
+  };
+
+  const handleRejectCorrection = () => {
+    const original = correctionSuggestion?.original || brandInput.trim();
+    const type = correctionSuggestion?.type || selectedCategory;
+    setCorrectionSuggestion(null);
+
+    const resolvedType = showLocalToggle && selectedCategory === 'category' && type === 'local'
+      ? 'local'
+      : selectedCategory;
+
+    if (resolvedType === 'local') {
+      setPendingBrandName(original);
+      setShowLocationPrompt(true);
+      return;
+    }
+
+    setBrand(original);
+    setSearchType(resolvedType);
+    setLocation("");
+    setLocationCoords(null);
+    resetConfig();
+    router.push("/configure");
   };
 
   const handleLocationChange = (location: string, coords?: { lat: number; lng: number }) => {
@@ -294,6 +350,7 @@ export default function Home() {
                   onChange={(e) => {
                     setBrandInput(e.target.value);
                     if (error) setError(null);
+                    if (correctionSuggestion) setCorrectionSuggestion(null);
                   }}
                   disabled={isValidating}
                   className="flex-1 px-4 py-3.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent disabled:opacity-50"
@@ -319,6 +376,30 @@ export default function Home() {
 
               {error && (
                 <p className="mt-2 text-sm text-red-600">{error}</p>
+              )}
+
+              {correctionSuggestion && (
+                <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-sm text-gray-700 mb-2.5">
+                    Did you mean <span className="font-semibold text-gray-900">{correctionSuggestion.corrected}</span>?
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleAcceptCorrection(correctionSuggestion.corrected)}
+                      className="px-3 py-1.5 text-xs font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                    >
+                      Yes, use this
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRejectCorrection}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      No, keep "{correctionSuggestion.original}"
+                    </button>
+                  </div>
+                </div>
               )}
             </form>
 
