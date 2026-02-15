@@ -35,6 +35,7 @@ import {
   POSITION_CATEGORIES,
   sentimentOrder,
   getTextForRanking,
+  isCategoryName,
 } from './shared';
 import { useResults, useResultsUI } from './ResultsContext';
 
@@ -427,10 +428,9 @@ export const OverviewTab = ({
 
       // Get all tracked brands for averaging
       const allTrackedBrands = new Set<string>();
-      const catBrandLower = runStatus.brand.toLowerCase();
       results.forEach(r => {
         const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-        rBrands.forEach(c => { if (c.toLowerCase() !== catBrandLower) allTrackedBrands.add(c); });
+        rBrands.forEach(c => { if (!isCategoryName(c, runStatus.brand)) allTrackedBrands.add(c); });
       });
       const trackedBrandsList = Array.from(allTrackedBrands);
 

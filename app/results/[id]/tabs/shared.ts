@@ -20,6 +20,13 @@ export type { Result, Source, RunStatusResponse };
 export type { AISummaryResponse, SiteAuditResult } from '@/lib/types';
 export type { BrandQuote } from '@/hooks/useApi';
 
+/** Check if a brand name is actually the category/industry name (or a close variant). */
+export const isCategoryName = (name: string, categoryName: string): boolean => {
+  const a = name.toLowerCase();
+  const b = categoryName.toLowerCase();
+  return a === b || b.includes(a) || a.includes(b);
+};
+
 export type FilterType = 'all' | 'mentioned' | 'not_mentioned';
 export type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit' | 'chatgpt-ads' | 'industry-overview';
 

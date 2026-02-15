@@ -32,6 +32,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { Result, Source } from '@/lib/types';
+import { isCategoryName } from './shared';
 import { useResults, useResultsUI } from './ResultsContext';
 
 // ---------------------------------------------------------------------------
@@ -387,10 +388,9 @@ export default function CompetitiveTab({
     });
     const searchedBrand = runStatus.brand;
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
-    const searchedBrandLower = searchedBrand.toLowerCase();
     results.forEach(r => {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrandLower) allBrands.add(c); });
+      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) allBrands.add(c); });
     });
     const sentimentScoreMap: Record<string, number> = {
       'strong_endorsement': 5, 'positive_endorsement': 4, 'neutral_mention': 3, 'conditional': 2, 'negative_comparison': 1, 'not_mentioned': 0,
@@ -433,10 +433,9 @@ export default function CompetitiveTab({
     const searchedBrand = runStatus.brand;
     const prompts = Array.from(new Set(results.map(r => r.prompt)));
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
-    const searchedBrandLower2 = searchedBrand.toLowerCase();
     results.forEach(r => {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrandLower2) allBrands.add(c); });
+      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) allBrands.add(c); });
     });
     const brands = Array.from(allBrands);
     const matrix = brands.map(brand => {
@@ -467,7 +466,7 @@ export default function CompetitiveTab({
     results.forEach(r => {
       if (!isCategory && r.brand_mentioned) brandCounts[searchedBrand]++;
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) brandCounts[c] = (brandCounts[c] || 0) + 1; });
+      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) brandCounts[c] = (brandCounts[c] || 0) + 1; });
     });
     const topBrands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([brand]) => brand);
     return providers.map(provider => {
@@ -493,7 +492,7 @@ export default function CompetitiveTab({
       const brandsInResponse: string[] = [];
       if (!isCategory && r.brand_mentioned) brandsInResponse.push(searchedBrand);
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) brandsInResponse.push(c); });
+      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) brandsInResponse.push(c); });
       for (let i = 0; i < brandsInResponse.length; i++) {
         for (let j = i + 1; j < brandsInResponse.length; j++) {
           const brand1 = brandsInResponse[i];

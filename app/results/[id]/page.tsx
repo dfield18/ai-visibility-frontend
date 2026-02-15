@@ -89,7 +89,7 @@ import { ReferenceTab } from './tabs/ReferenceTab';
 import { ChatGPTAdsTab } from './tabs/ChatGPTAdsTab';
 import { ResultsProvider } from './tabs/ResultsContext';
 import { BrandFilterPanel } from './BrandFilterPanel';
-import { getTextForRanking } from './tabs/shared';
+import { getTextForRanking, isCategoryName } from './tabs/shared';
 import { getSearchTypeConfig, type TabId } from '@/lib/searchTypeConfig';
 import { PaywallOverlay } from '@/components/PaywallOverlay';
 import { PlaceholderChart } from '@/components/PlaceholderChart';
@@ -1584,7 +1584,7 @@ export default function ResultsPage() {
         const pfCompCounts: Record<string, number> = {};
         for (const r of promptResults) {
           const pfBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-          for (const c of pfBrands) { if (c.toLowerCase() !== searchedBrand.toLowerCase()) pfCompCounts[c] = (pfCompCounts[c] || 0) + 1; }
+          for (const c of pfBrands) { if (!isCategoryName(c, searchedBrand)) pfCompCounts[c] = (pfCompCounts[c] || 0) + 1; }
         }
         const pfCompRates = Object.values(pfCompCounts).map(c => total > 0 ? (c / total) * 100 : 0);
         const pfAvgComp = pfCompRates.length > 0 ? pfCompRates.reduce((a, b) => a + b, 0) / pfCompRates.length : 0;
@@ -1661,7 +1661,7 @@ export default function ResultsPage() {
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) allBrands.add(c); });
+      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) allBrands.add(c); });
     });
     // Remove excluded brands
     for (const eb of excludedBrands) {
@@ -1833,7 +1833,7 @@ export default function ResultsPage() {
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) allBrands.add(c); });
+      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) allBrands.add(c); });
     });
 
     const sentimentScoreMap: Record<string, number> = {
@@ -1913,7 +1913,7 @@ export default function ResultsPage() {
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) allBrands.add(c); });
+      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) allBrands.add(c); });
     });
     const brands = Array.from(allBrands);
 
@@ -1952,7 +1952,7 @@ export default function ResultsPage() {
     results.forEach(r => {
       if (!isCategory && r.brand_mentioned) brandCounts[searchedBrand]++;
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) brandCounts[c] = (brandCounts[c] || 0) + 1; });
+      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) brandCounts[c] = (brandCounts[c] || 0) + 1; });
     });
     const topBrands = Object.entries(brandCounts)
       .sort((a, b) => b[1] - a[1])
@@ -1993,7 +1993,7 @@ export default function ResultsPage() {
       const brandsInResponse: string[] = [];
       if (!isCategory && r.brand_mentioned) brandsInResponse.push(searchedBrand);
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) brandsInResponse.push(c); });
+      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) brandsInResponse.push(c); });
 
       // Count co-occurrences
       for (let i = 0; i < brandsInResponse.length; i++) {
