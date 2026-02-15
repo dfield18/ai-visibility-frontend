@@ -1469,6 +1469,15 @@ export const OverviewTab = ({
                 // Add definition for any other "mention rate" occurrences not already followed by a parenthetical
                 text = text.replace(/mention rate(?!\s*\()/gi, 'mention rate (% of AI responses that mention the brand)');
               }
+              // Vary repeated "suggest/suggests" usage
+              const alternatives = ['indicates', 'points to', 'reflects'];
+              let altIdx = 0;
+              let count = 0;
+              text = text.replace(/\b(suggests?)\b/gi, (match) => {
+                count++;
+                if (count === 1) return match; // keep the first occurrence
+                return alternatives[(altIdx++) % alternatives.length];
+              });
               return text;
             })()}</ReactMarkdown>
           </div>
