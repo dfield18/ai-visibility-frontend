@@ -111,7 +111,7 @@ function MarketSpreadDonut({
                 {donutData[activeIndex].name}
               </span>
               <span className="text-[10px] text-gray-500">
-                {totalMentions > 0 ? ((donutData[activeIndex].value / totalMentions) * 100).toFixed(0) : 0}%
+                {donutData[activeIndex].value.toFixed(0)}%
               </span>
             </div>
           )}
@@ -119,7 +119,7 @@ function MarketSpreadDonut({
         {/* Brand legend */}
         <div className="min-w-0 space-y-1">
           {donutData.map((entry, i) => {
-            const pct = totalMentions > 0 ? ((entry.value / totalMentions) * 100).toFixed(0) : '0';
+            const pct = entry.value.toFixed(0);
             return (
               <div
                 key={entry.name}
