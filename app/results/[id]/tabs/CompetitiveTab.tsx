@@ -1663,15 +1663,15 @@ export default function CompetitiveTab({
                     ))}
                   </select>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto" style={isCategory && promptPerformanceMatrix.brands.length > 10 ? { maxHeight: '480px', overflowY: 'auto' } : undefined}>
                   <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
+                    <thead className={isCategory && promptPerformanceMatrix.brands.length > 10 ? 'sticky top-0 z-10' : ''}>
+                      <tr className="border-b border-gray-200 bg-white">
                         <th className="text-left py-3 px-2 text-sm font-medium text-gray-600 sticky left-0 bg-white min-w-[120px]">{isIssue ? 'Issue' : 'Brand'}</th>
                         {promptPerformanceMatrix.prompts.map((prompt, idx) => (
                           <th
                             key={idx}
-                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[160px] max-w-[200px] cursor-help"
+                            className="text-center py-3 px-2 font-medium text-gray-600 min-w-[160px] max-w-[200px] cursor-help bg-white"
                             title={prompt}
                           >
                             <span className="text-sm block truncate" title={prompt}>
@@ -1679,7 +1679,7 @@ export default function CompetitiveTab({
                             </span>
                           </th>
                         ))}
-                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-600 min-w-[80px]">Avg</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-600 min-w-[80px] bg-white">Avg</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1726,6 +1726,9 @@ export default function CompetitiveTab({
                     </tbody>
                   </table>
                 </div>
+                {isCategory && promptPerformanceMatrix.brands.length > 10 && (
+                  <p className="text-xs text-gray-400 italic text-center mt-2">Scroll down to see all {promptPerformanceMatrix.brands.length} brands</p>
+                )}
               </div>
             )}
 
