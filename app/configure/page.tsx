@@ -521,6 +521,28 @@ export default function ConfigurePage() {
               </div>
 
 
+              {/* Select All Toggle */}
+              {prompts.length > 0 && !suggestionsLoading && (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-500">
+                    {selectedPromptsArray.length === prompts.length ? 'All questions selected' : `${selectedPromptsArray.length} of ${prompts.length} selected`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => selectedPromptsArray.length === prompts.length ? deselectAllPrompts() : selectAllPrompts()}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                      selectedPromptsArray.length === prompts.length ? 'bg-cyan-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                        selectedPromptsArray.length === prompts.length ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                      }`}
+                    />
+                  </button>
+                </div>
+              )}
+
               {suggestionsLoading ? (
                 <div className="flex items-center justify-center py-6">
                   <Spinner size="md" />
@@ -606,7 +628,7 @@ export default function ConfigurePage() {
               {prompts.length > 0 && !suggestionsLoading && (
                 <>
                   {canToggleQuestions && (
-                    <div className="border-t border-gray-100 mt-2 pt-2 flex items-center justify-between">
+                    <div className="border-t border-gray-100 mt-2 pt-2 flex items-center justify-center">
                       <button
                         onClick={() => setQuestionsExpanded(!questionsExpanded)}
                         className="text-xs text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
@@ -622,13 +644,6 @@ export default function ConfigurePage() {
                             Show more ({prompts.length - COLLAPSED_QUESTION_COUNT} more)
                           </>
                         )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => selectedPromptsArray.length === prompts.length ? deselectAllPrompts() : selectAllPrompts()}
-                        className="text-xs text-cyan-600 font-medium underline underline-offset-2 hover:text-cyan-700 transition-colors"
-                      >
-                        {selectedPromptsArray.length === prompts.length ? 'Deselect all' : 'Select all'}
                       </button>
                     </div>
                   )}

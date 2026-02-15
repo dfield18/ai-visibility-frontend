@@ -1099,9 +1099,9 @@ export default function CompetitiveTab({
                     </select>
                   </div>
                 </div>
-                <div className="overflow-x-auto">
+                <div className={`overflow-x-auto ${brandBreakdownStats.length > 10 ? 'max-h-[580px] overflow-y-auto' : ''}`}>
                   <table className="w-full text-sm">
-                    <thead>
+                    <thead className="sticky top-0 bg-white z-10">
                       <tr className="border-b border-gray-200">
                         <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">{isIssue ? 'Issue' : 'Brand'}</th>
                         <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
@@ -1306,25 +1306,33 @@ export default function CompetitiveTab({
 
             {/* Brand Positioning Chart - Mentions vs Sentiment */}
             {showSection('positioning') && brandPositioningStats.length > 0 && (() => {
+              const filteredStats = brandPositioningStats
+                .filter(stat => stat.mentioned > 0)
+                .sort((a, b) => b.mentioned - a.mentioned);
+              // For brand reports, always include the searched brand + top 10 competitors
+              const limitedStats = isCategory || isIssue
+                ? filteredStats
+                : (() => {
+                    const searched = filteredStats.filter(s => s.isSearchedBrand);
+                    const competitors = filteredStats.filter(s => !s.isSearchedBrand).slice(0, 10);
+                    return [...searched, ...competitors];
+                  })();
+              const rawData = limitedStats
+                .map(stat => ({
+                  brand: stat.brand,
+                  mentions: stat.mentioned,
+                  sentiment: stat.avgSentimentScore ?? 3,
+                  visibility: stat.visibilityScore,
+                  isSearchedBrand: stat.isSearchedBrand,
+                }));
+
               // Calculate dynamic x-axis range based on actual sentiment values
-              const sentimentData = brandPositioningStats
-                .filter(stat => stat.avgSentimentScore !== null && stat.mentioned > 0)
-                .map(stat => stat.avgSentimentScore || 0);
+              const sentimentData = rawData.map(d => d.sentiment);
               const minSentiment = sentimentData.length > 0 ? Math.min(...sentimentData) : 1;
               const maxSentiment = sentimentData.length > 0 ? Math.max(...sentimentData) : 5;
               const xMin = Math.max(0, Math.floor(minSentiment) - 0.5);
               const xMax = Math.min(5.5, Math.ceil(maxSentiment) + 0.5);
               const xTicks = [1, 2, 3, 4, 5].filter(t => t >= xMin && t <= xMax);
-
-              const rawData = brandPositioningStats
-                .filter(stat => stat.avgSentimentScore !== null && stat.mentioned > 0)
-                .map(stat => ({
-                  brand: stat.brand,
-                  mentions: stat.mentioned,
-                  sentiment: stat.avgSentimentScore || 0,
-                  visibility: stat.visibilityScore,
-                  isSearchedBrand: stat.isSearchedBrand,
-                }));
 
               const getClusterKey = (mentions: number, sentiment: number) => {
                 const mentionBucket = Math.round(mentions);
@@ -1439,6 +1447,7 @@ export default function CompetitiveTab({
                         dataKey="mentions"
                         name="Mentions"
                         domain={[0, yMax]}
+                        allowDecimals={false}
                         tick={{ fill: '#6b7280', fontSize: 12 }}
                         label={{ value: 'Mention Count', angle: -90, position: 'insideLeft', offset: -10, style: { fill: '#374151', fontSize: 14, fontWeight: 500, textAnchor: 'middle' } }}
                       />
