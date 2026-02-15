@@ -1150,13 +1150,13 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                   <h2 className="text-lg font-semibold text-gray-900">{isIssue ? 'Framing by Question' : 'Sentiment by Question'}</h2>
                   <p className="text-sm text-gray-500 mt-1">
                     {isIndustryReport
-                      ? `Average sentiment across all brands per question. Filter by brand or source to drill down.`
+                      ? <>Average sentiment across all brands per question.<br />Filter by brand or source to drill down.</>
                       : isIssue
                       ? `Which questions lead to supportive vs critical framing of ${effectiveBrand}`
                       : `Which questions lead to positive vs negative descriptions of ${effectiveBrand}`}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <select
                     value={sentimentByPromptSourceFilter}
                     onChange={(e) => setSentimentByPromptSourceFilter(e.target.value)}
