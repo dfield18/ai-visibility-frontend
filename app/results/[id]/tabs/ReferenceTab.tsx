@@ -252,9 +252,10 @@ export const ReferenceTab = ({
         }
 
         // Check competitors mentioned and extract snippets
-        if (r.competitors_mentioned && r.response_text) {
+        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
+        if (rBrands.length > 0 && r.response_text) {
           const responseText = r.response_text;
-          r.competitors_mentioned.forEach(competitor => {
+          rBrands.forEach(competitor => {
             if (!sourceStats[domain].competitorCitations[competitor]) {
               sourceStats[domain].competitorCitations[competitor] = 0;
             }
@@ -435,9 +436,10 @@ export const ReferenceTab = ({
           }
         }
 
-        if (r.competitors_mentioned && r.competitor_sentiments) {
+        const rBrandsSent = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
+        if (rBrandsSent.length > 0 && r.competitor_sentiments) {
           const responseText = r.response_text;
-          r.competitors_mentioned.forEach(competitor => {
+          rBrandsSent.forEach(competitor => {
             const sentiment = r.competitor_sentiments?.[competitor];
             if (sentiment && sentiment !== 'not_mentioned') {
               const score = sentimentScoreMap[sentiment] || 0;
@@ -1483,20 +1485,23 @@ export const ReferenceTab = ({
                     <td className="py-3 px-4">
                       {result.error ? (
                         <span className="text-sm text-gray-400">-</span>
-                      ) : result.competitors_mentioned && result.competitors_mentioned.length > 0 ? (
-                        <span className="text-sm text-gray-700">
-                          {isCategory ? result.competitors_mentioned.join(', ') : (
-                            <>
-                              {result.competitors_mentioned.slice(0, 2).join(', ')}
-                              {result.competitors_mentioned.length > 2 && (
-                                <span className="text-gray-400"> +{result.competitors_mentioned.length - 2}</span>
-                              )}
-                            </>
-                          )}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-400">None</span>
-                      )}
+                      ) : (() => {
+                        const displayBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned || [];
+                        return displayBrands.length > 0 ? (
+                          <span className="text-sm text-gray-700">
+                            {isCategory ? displayBrands.join(', ') : (
+                              <>
+                                {displayBrands.slice(0, 2).join(', ')}
+                                {displayBrands.length > 2 && (
+                                  <span className="text-gray-400"> +{displayBrands.length - 2}</span>
+                                )}
+                              </>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">None</span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3 px-4">
                       <span className="text-sm text-gray-600 capitalize">{result.response_type || '-'}</span>

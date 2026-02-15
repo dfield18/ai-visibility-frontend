@@ -969,7 +969,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           }
           const competitors = new Set<string>();
           globallyFilteredResults.forEach((r: Result) => {
-            r.competitors_mentioned?.forEach(c => competitors.add(c));
+            const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+            rBrands.forEach(c => competitors.add(c));
           });
           competitors.forEach(c => {
             if (c !== runStatus?.brand) {
@@ -1037,7 +1038,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
               // Check if the selected brand is mentioned
               const isBrandMentioned = effectiveBrand === runStatus?.brand
                 ? r.brand_mentioned
-                : r.competitors_mentioned?.includes(effectiveBrand);
+                : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(effectiveBrand) : r.competitors_mentioned?.includes(effectiveBrand));
 
               if (isBrandMentioned) {
                 mentioned++;
@@ -1823,7 +1824,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                         };
 
                         // Get competitor info
-                        const competitors = result.competitors_mentioned || [];
+                        const competitors = result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned || [];
                         const getCompetitorsList = () => {
                           if (competitors.length === 0) {
                             return <span className="text-xs text-gray-400">None</span>;

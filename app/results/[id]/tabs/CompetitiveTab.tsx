@@ -387,7 +387,11 @@ export default function CompetitiveTab({
     });
     const searchedBrand = runStatus.brand;
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
-    results.forEach(r => { if (r.competitors_mentioned) r.competitors_mentioned.forEach(c => allBrands.add(c)); });
+    const searchedBrandLower = searchedBrand.toLowerCase();
+    results.forEach(r => {
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrandLower) allBrands.add(c); });
+    });
     const sentimentScoreMap: Record<string, number> = {
       'strong_endorsement': 5, 'positive_endorsement': 4, 'neutral_mention': 3, 'conditional': 2, 'negative_comparison': 1, 'not_mentioned': 0,
     };
@@ -396,12 +400,13 @@ export default function CompetitiveTab({
       const total = results.length;
       const mentioned = results.filter(r => {
         if (isSearchedBrand) return r.brand_mentioned;
-        return r.competitors_mentioned?.includes(brand);
+        return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
       }).length;
       const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
       const sentimentResults = results.filter(r => {
         if (isSearchedBrand) return r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned';
-        return r.competitors_mentioned?.includes(brand) && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned';
+        const hasBrand = r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
+        return hasBrand && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned';
       });
       let avgSentimentScore: number | null = null;
       if (sentimentResults.length > 0) {
@@ -428,7 +433,11 @@ export default function CompetitiveTab({
     const searchedBrand = runStatus.brand;
     const prompts = Array.from(new Set(results.map(r => r.prompt)));
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
-    results.forEach(r => { if (r.competitors_mentioned) r.competitors_mentioned.forEach(c => allBrands.add(c)); });
+    const searchedBrandLower2 = searchedBrand.toLowerCase();
+    results.forEach(r => {
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrandLower2) allBrands.add(c); });
+    });
     const brands = Array.from(allBrands);
     const matrix = brands.map(brand => {
       const isSearchedBrand = brand === searchedBrand;
@@ -436,7 +445,7 @@ export default function CompetitiveTab({
         const promptResults = results.filter(r => r.prompt === prompt);
         const mentioned = promptResults.filter(r => {
           if (isSearchedBrand) return r.brand_mentioned;
-          return r.competitors_mentioned?.includes(brand);
+          return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
         }).length;
         return promptResults.length > 0 ? (mentioned / promptResults.length) * 100 : 0;
       });
@@ -454,10 +463,11 @@ export default function CompetitiveTab({
     const providers = PROVIDER_ORDER.filter(p => providerSet.has(p)).concat(
       Array.from(providerSet).filter(p => !PROVIDER_ORDER.includes(p))
     );
-    const brandCounts: Record<string, number> = { [searchedBrand]: 0 };
+    const brandCounts: Record<string, number> = isCategory ? {} : { [searchedBrand]: 0 };
     results.forEach(r => {
-      if (r.brand_mentioned) brandCounts[searchedBrand]++;
-      if (r.competitors_mentioned) r.competitors_mentioned.forEach(c => { brandCounts[c] = (brandCounts[c] || 0) + 1; });
+      if (!isCategory && r.brand_mentioned) brandCounts[searchedBrand]++;
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) brandCounts[c] = (brandCounts[c] || 0) + 1; });
     });
     const topBrands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([brand]) => brand);
     return providers.map(provider => {
@@ -465,7 +475,7 @@ export default function CompetitiveTab({
       const brandRates: Record<string, number> = {};
       topBrands.forEach(brand => {
         const isSearchedBrand = brand === searchedBrand;
-        const mentioned = providerResults.filter(r => { if (isSearchedBrand) return r.brand_mentioned; return r.competitors_mentioned?.includes(brand); }).length;
+        const mentioned = providerResults.filter(r => { if (isSearchedBrand) return r.brand_mentioned; return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand); }).length;
         brandRates[brand] = providerResults.length > 0 ? (mentioned / providerResults.length) * 100 : 0;
       });
       return { provider, ...brandRates };
@@ -482,7 +492,8 @@ export default function CompetitiveTab({
     results.forEach(r => {
       const brandsInResponse: string[] = [];
       if (!isCategory && r.brand_mentioned) brandsInResponse.push(searchedBrand);
-      if (r.competitors_mentioned) r.competitors_mentioned.forEach(c => brandsInResponse.push(c));
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) brandsInResponse.push(c); });
       for (let i = 0; i < brandsInResponse.length; i++) {
         for (let j = i + 1; j < brandsInResponse.length; j++) {
           const brand1 = brandsInResponse[i];
@@ -691,7 +702,8 @@ export default function CompetitiveTab({
       if (!result.sources) continue;
       const brandsInResult: Array<{ brand: string; sentiment: string | null }> = [];
       if (result.brand_mentioned && runStatus.brand) brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
-      if (result.competitors_mentioned) result.competitors_mentioned.forEach(comp => { brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null }); });
+      const heatmapBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
+      heatmapBrands.forEach(comp => { if (comp !== runStatus.brand || !isCategory) brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null }); });
       brandsInResult.forEach(({ brand }) => { brandTotalMentions[brand] = (brandTotalMentions[brand] || 0) + 1; });
       if (brandsInResult.length === 0) continue;
       const seenDomainBrandPairs = new Set<string>();
@@ -750,7 +762,7 @@ export default function CompetitiveTab({
     const matchingResults = globallyFilteredResults.filter((result: Result) => {
       if (result.error || !result.sources || result.sources.length === 0) return false;
       if (heatmapProviderFilter !== 'all' && result.provider !== heatmapProviderFilter) return false;
-      const brandMentioned = brand === runStatus.brand ? result.brand_mentioned : result.competitors_mentioned?.includes(brand);
+      const brandMentioned = brand === runStatus.brand ? result.brand_mentioned : (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(brand) : result.competitors_mentioned?.includes(brand));
       if (!brandMentioned) return false;
       const hasMatchingSource = result.sources.some((source: Source) => { if (!source.url) return false; return getDomain(source.url) === domain; });
       return hasMatchingSource;
@@ -778,7 +790,7 @@ export default function CompetitiveTab({
       const matching = globallyFilteredResults.filter((result: Result) => {
         if (result.error || !result.sources || result.sources.length === 0) return false;
         if (heatmapProviderFilter !== 'all' && result.provider !== heatmapProviderFilter) return false;
-        const brandMentioned = brand === runStatus.brand ? result.brand_mentioned : result.competitors_mentioned?.includes(brand);
+        const brandMentioned = brand === runStatus.brand ? result.brand_mentioned : (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(brand) : result.competitors_mentioned?.includes(brand));
         if (!brandMentioned) return false;
         return result.sources.some((source: Source) => source.url && getDomain(source.url) === domain);
       });

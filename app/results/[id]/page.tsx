@@ -782,11 +782,19 @@ export default function ResultsPage() {
     if (runStatus.brand && !isCategory) {
       brands.add(runStatus.brand);
     }
+    const brandLower = runStatus.brand?.toLowerCase() || '';
     runStatus.results.forEach((r: Result) => {
-      if (!r.error && r.competitors_mentioned) {
-        r.competitors_mentioned.forEach((comp: string) => brands.add(comp));
+      if (!r.error) {
+        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+        rBrands.forEach((b: string) => brands.add(b));
       }
     });
+    // For category searches, remove the category name itself
+    if (isCategory) {
+      for (const b of Array.from(brands)) {
+        if (b.toLowerCase() === brandLower) brands.delete(b);
+      }
+    }
     return Array.from(brands).sort();
   }, [runStatus]);
 
@@ -968,8 +976,9 @@ export default function ResultsPage() {
       tracked.add(runStatus.brand.toLowerCase());
     }
     runStatus.results.forEach((r: Result) => {
-      if (!r.error && r.competitors_mentioned) {
-        r.competitors_mentioned.forEach((c: string) => tracked.add(c.toLowerCase()));
+      if (!r.error) {
+        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+        rBrands.forEach((c: string) => tracked.add(c.toLowerCase()));
       }
     });
     return tracked;
@@ -1066,13 +1075,12 @@ export default function ResultsPage() {
     }
 
     for (const result of results) {
-      if (result.competitors_mentioned) {
-        for (const comp of result.competitors_mentioned) {
-          if (!mentions[comp]) {
-            mentions[comp] = { count: 0, total: 0, isTracked: true };
-          }
-          mentions[comp].count += 1;
+      const rBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
+      for (const comp of rBrands) {
+        if (!mentions[comp]) {
+          mentions[comp] = { count: 0, total: 0, isTracked: true };
         }
+        mentions[comp].count += 1;
       }
     }
 
@@ -1139,13 +1147,12 @@ export default function ResultsPage() {
     }
 
     for (const result of results) {
-      if (result.competitors_mentioned) {
-        for (const comp of result.competitors_mentioned) {
-          if (!mentions[comp]) {
-            mentions[comp] = { count: 0, isTracked: true };
-          }
-          mentions[comp].count += 1;
+      const rBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
+      for (const comp of rBrands) {
+        if (!mentions[comp]) {
+          mentions[comp] = { count: 0, isTracked: true };
         }
+        mentions[comp].count += 1;
       }
     }
 
@@ -1240,8 +1247,9 @@ export default function ResultsPage() {
 
     const mentionCounts: Record<string, number> = {};
     globallyFilteredResults.forEach((r: Result) => {
-      if (!r.error && r.competitors_mentioned) {
-        r.competitors_mentioned.forEach((c: string) => {
+      if (!r.error) {
+        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+        rBrands.forEach((c: string) => {
           mentionCounts[c] = (mentionCounts[c] || 0) + 1;
         });
       }
@@ -1304,7 +1312,7 @@ export default function ResultsPage() {
       if (isSearchedBrand) {
         isMentioned = result.brand_mentioned === true;
       } else {
-        isMentioned = result.competitors_mentioned?.includes(selectedBrand) || false;
+        isMentioned = (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand) : result.competitors_mentioned?.includes(selectedBrand)) || false;
       }
 
       if (isMentioned) {
