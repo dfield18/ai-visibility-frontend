@@ -3036,7 +3036,7 @@ export const OverviewTab = ({
                       </td>
                       <td className="w-[7%] py-3 px-4">
                         {isCategory
-                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : (result.competitors_mentioned?.length || 0)}</span>
+                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : ((result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => !isCategoryName(b, runStatus?.brand || '')).length : result.competitors_mentioned?.length) || 0)}</span>
                           : isIssue
                           ? (() => {
                               if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
