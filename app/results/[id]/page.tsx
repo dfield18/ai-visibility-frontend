@@ -88,6 +88,7 @@ import { RecommendationsTab } from './tabs/RecommendationsTab';
 import { ReferenceTab } from './tabs/ReferenceTab';
 import { ChatGPTAdsTab } from './tabs/ChatGPTAdsTab';
 import { ResultsProvider } from './tabs/ResultsContext';
+import { BrandFilterPanel } from './BrandFilterPanel';
 import { getTextForRanking } from './tabs/shared';
 import { getSearchTypeConfig, type TabId } from '@/lib/searchTypeConfig';
 import { PaywallOverlay } from '@/components/PaywallOverlay';
@@ -189,7 +190,7 @@ const TAB_SECTIONS: Partial<Record<TabType, { id: string; label: string }[]>> = 
 };
 
 // Section Guide sidebar component
-function SectionGuide({ activeTab }: { activeTab: TabType }) {
+function SectionGuide({ activeTab, children }: { activeTab: TabType; children?: React.ReactNode }) {
   const [activeSection, setActiveSection] = useState('');
   const sections = TAB_SECTIONS[activeTab];
 
@@ -236,7 +237,7 @@ function SectionGuide({ activeTab }: { activeTab: TabType }) {
 
   return (
     <div className="hidden xl:block w-44 flex-shrink-0">
-      <div className="sticky top-36">
+      <div className="sticky top-36 max-h-[calc(100vh-10rem)] overflow-y-auto">
         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">On this page</p>
         <nav className="space-y-0.5">
           {sections.map(({ id, label }) => (
@@ -259,6 +260,7 @@ function SectionGuide({ activeTab }: { activeTab: TabType }) {
             </button>
           ))}
         </nav>
+        {children}
       </div>
     </div>
   );
@@ -649,6 +651,7 @@ export default function ResultsPage() {
   const [brandCarouselIndex, setBrandCarouselIndex] = useState(0);
   const [providerScrollIndex, setProviderScrollIndex] = useState<Record<string, number>>({});
   const [showModifyModal, setShowModifyModal] = useState(false);
+  const [excludedBrands, setExcludedBrands] = useState<Set<string>>(new Set());
 
   const { data: runStatus, isLoading, error } = useRunStatus(runId, true);
 
@@ -984,6 +987,16 @@ export default function ResultsPage() {
     return tracked;
   }, [runStatus]);
 
+  // Filtered brand lists that exclude user-deselected brands
+  const filteredAvailableBrands = useMemo(
+    () => availableBrands.filter(b => !excludedBrands.has(b)),
+    [availableBrands, excludedBrands]
+  );
+  const filteredTrackedBrands = useMemo(
+    () => new Set([...trackedBrands].filter(b => !Array.from(excludedBrands).some(eb => eb.toLowerCase() === b))),
+    [trackedBrands, excludedBrands]
+  );
+
   // Extract potential brand names from response text that weren't tracked
   const extractUntrackedBrands = (text: string, trackedSet: Set<string>, categoryName: string): string[] => {
     if (!text) return [];
@@ -1156,6 +1169,11 @@ export default function ResultsPage() {
       }
     }
 
+    // Remove excluded brands
+    for (const eb of excludedBrands) {
+      delete mentions[eb];
+    }
+
     let otherCount = 0;
     for (const result of results) {
       if (result.response_text) {
@@ -1238,7 +1256,7 @@ export default function ResultsPage() {
     }
 
     return chartData;
-  }, [runStatus, globallyFilteredResults, brandMentionsProviderFilter, trackedBrands, shareOfVoiceFilter]);
+  }, [runStatus, globallyFilteredResults, brandMentionsProviderFilter, trackedBrands, shareOfVoiceFilter, excludedBrands]);
 
   // Get all brands for LLM breakdown dropdown
   const llmBreakdownBrands = useMemo(() => {
@@ -1258,7 +1276,8 @@ export default function ResultsPage() {
     if (isCategory) {
       return Object.entries(mentionCounts)
         .sort((a, b) => b[1] - a[1])
-        .map(([brand]) => brand);
+        .map(([brand]) => brand)
+        .filter(b => !excludedBrands.has(b));
     } else {
       const brands: string[] = [];
       if (runStatus.brand) {
@@ -1269,9 +1288,9 @@ export default function ResultsPage() {
         .forEach(([brand]) => {
           if (!brands.includes(brand)) brands.push(brand);
         });
-      return brands;
+      return brands.filter(b => !excludedBrands.has(b));
     }
-  }, [runStatus, globallyFilteredResults]);
+  }, [runStatus, globallyFilteredResults, excludedBrands]);
 
   // Calculate LLM breakdown stats for selected brand
   const llmBreakdownStats = useMemo(() => {
@@ -1644,6 +1663,10 @@ export default function ResultsPage() {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
       rBrands.forEach(c => { if (!isCategory || c.toLowerCase() !== searchedBrand.toLowerCase()) allBrands.add(c); });
     });
+    // Remove excluded brands
+    for (const eb of excludedBrands) {
+      allBrands.delete(eb);
+    }
 
     const sentimentScoreMap: Record<string, number> = {
       'strong_endorsement': 5,
@@ -1790,7 +1813,7 @@ export default function ResultsPage() {
 
     // Sort by visibility score descending
     return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
-  }, [runStatus, globallyFilteredResults, brandBreakdownLlmFilter, brandBreakdownPromptFilter]);
+  }, [runStatus, globallyFilteredResults, brandBreakdownLlmFilter, brandBreakdownPromptFilter, excludedBrands]);
 
   // Calculate brand positioning stats with separate filters
   const brandPositioningStats = useMemo(() => {
@@ -5060,16 +5083,23 @@ export default function ResultsPage() {
       {/* Tab Content */}
       <div className="max-w-7xl mx-auto px-6 pt-6">
         <div className="flex gap-6">
-          <SectionGuide activeTab={activeTab} />
+          <SectionGuide activeTab={activeTab}>
+            {isCategory && availableBrands.length > 0 && (
+              <BrandFilterPanel allBrands={availableBrands} excludedBrands={excludedBrands} setExcludedBrands={setExcludedBrands} />
+            )}
+          </SectionGuide>
           <div className="flex-1 min-w-0">
         <ResultsProvider
           data={{
             runStatus: runStatus ?? null,
             globallyFilteredResults,
             availableProviders,
-            availableBrands,
+            availableBrands: filteredAvailableBrands,
             availablePrompts,
-            trackedBrands,
+            trackedBrands: filteredTrackedBrands,
+            allAvailableBrands: availableBrands,
+            excludedBrands,
+            setExcludedBrands,
             isCategory,
             isIssue,
             isPublicFigure,

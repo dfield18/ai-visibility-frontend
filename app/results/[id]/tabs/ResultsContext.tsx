@@ -17,6 +17,9 @@ export interface ResultsContextValue {
   availableBrands: string[];
   availablePrompts: string[];
   trackedBrands: Set<string>;
+  allAvailableBrands: string[];
+  excludedBrands: Set<string>;
+  setExcludedBrands: (brands: Set<string>) => void;
   isCategory: boolean;
   isIssue: boolean;
   isPublicFigure: boolean;
