@@ -5435,7 +5435,9 @@ export default function ResultsPage() {
                 <p className="text-sm text-gray-500">
                   {selectedResultHighlight && (
                     <span className="ml-2 text-gray-900">
-                      • Highlighting {selectedResultHighlight.domain
+                      • Highlighting {selectedResultHighlight.domain && selectedResultHighlight.brand
+                        ? <>references to <span className="font-medium">{selectedResultHighlight.domain}</span> + <span className="font-medium">{selectedResultHighlight.brand}</span></>
+                        : selectedResultHighlight.domain
                         ? <>references to <span className="font-medium">{selectedResultHighlight.domain}</span></>
                         : <>mentions of <span className="font-medium">{selectedResultHighlight.brand}</span></>
                       }
@@ -5591,7 +5593,7 @@ export default function ResultsPage() {
 
                             if (containsDomain || containsSourceKeywords) {
                               return <p className="bg-yellow-100 rounded px-2 py-1 -mx-2 border-l-4 border-yellow-400">{children}</p>;
-                            } else if (containsBrand && !selectedResultHighlight.domain) {
+                            } else if (containsBrand) {
                               return <p className="bg-yellow-100 rounded px-2 py-1 -mx-2 border-l-4 border-yellow-400">{children}</p>;
                             }
                           }
@@ -5643,7 +5645,7 @@ export default function ResultsPage() {
 
                             if (containsDomain || containsSourceKeywords) {
                               return <li className="bg-yellow-100 rounded px-2 py-0.5 -mx-2 border-l-4 border-yellow-400">{children}</li>;
-                            } else if (containsBrand && !selectedResultHighlight.domain) {
+                            } else if (containsBrand) {
                               return <li className="bg-yellow-100 rounded px-2 py-0.5 -mx-2 border-l-4 border-yellow-400">{children}</li>;
                             }
                           }

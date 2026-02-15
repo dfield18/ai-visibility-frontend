@@ -1830,6 +1830,19 @@ export const SourcesTab = () => {
                       {sourceBrandHeatmapData.brands.map(brand => {
                         const count = sourceBrandHeatmapData.matrix[domain]?.[brand] || 0;
 
+                        const handleCellClick = () => {
+                          const matchingResult = globallyFilteredResults.find((r: Result) =>
+                            !r.error &&
+                            r.sources?.some((s: Source) => getDomain(s.url) === domain) &&
+                            (r.all_brands_mentioned?.some(b => b.toLowerCase() === brand.toLowerCase()) ||
+                             r.competitors_mentioned?.some(b => b.toLowerCase() === brand.toLowerCase()))
+                          );
+                          if (matchingResult) {
+                            setSelectedResult(matchingResult);
+                            setSelectedResultHighlight({ brand, domain });
+                          }
+                        };
+
                         if (sourceBrandHeatmapView === 'sentiment') {
                           const sentData = sourceBrandHeatmapData.sentimentMatrix[domain]?.[brand];
                           const avg = sentData && sentData.count > 0 ? sentData.sum / sentData.count : null;
@@ -1851,13 +1864,14 @@ export const SourcesTab = () => {
                             <td key={brand} className="text-center py-2.5 px-2 w-[90px] min-w-[90px]">
                               {avg !== null ? (
                                 <div
-                                  className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity"
+                                  className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
                                   style={{
                                     backgroundColor: getSentimentColor(avg).bg,
                                     width: '80%',
                                     maxWidth: '80px',
                                   }}
-                                  title={`Avg: ${avg.toFixed(1)}/5 (${sentData!.count} samples)`}
+                                  title={`Avg: ${avg.toFixed(1)}/5 (${sentData!.count} samples) — Click to view response`}
+                                  onClick={handleCellClick}
                                 >
                                   <span className="text-white text-xs font-medium">{getSentimentText(avg)}</span>
                                 </div>
@@ -1873,13 +1887,15 @@ export const SourcesTab = () => {
                           <td key={brand} className="text-center py-2.5 px-2 w-[90px] min-w-[90px]">
                             {count > 0 ? (
                               <div
-                                className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity"
+                                className="h-7 rounded-md mx-auto flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer"
                                 style={{
                                   backgroundColor: '#5ba3c0',
                                   opacity: 0.3 + intensity * 0.7,
                                   width: '80%',
                                   maxWidth: '80px',
                                 }}
+                                title={`${count} citations — Click to view response`}
+                                onClick={handleCellClick}
                               >
                                 <span className="text-white text-xs font-medium">{count}</span>
                               </div>
@@ -1954,7 +1970,7 @@ export const SourcesTab = () => {
             </div>
 
             <p className="px-6 py-3 text-center text-xs text-gray-400 italic border-t border-gray-100">
-              Top {sourceBrandHeatmapData.sources.length} sources shown • Click a brand column header to sort • {sourceBrandHeatmapView === 'sentiment' ? 'Colors indicate sentiment: green = positive, gray = neutral, amber/red = negative' : 'Darker cells indicate more citations'}
+              Top {sourceBrandHeatmapData.sources.length} sources shown • Click a cell to view the full response • Click a brand column header to sort • {sourceBrandHeatmapView === 'sentiment' ? 'Colors indicate sentiment: green = positive, gray = neutral, amber/red = negative' : 'Darker cells indicate more citations'}
             </p>
           </div>
         )}
