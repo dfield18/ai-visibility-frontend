@@ -19,7 +19,7 @@ export interface RunConfig {
   search_type?: SearchType;
   location?: string;  // Required for local search type
   prompts: string[];
-  competitors: string[];
+  competitors?: string[];
   providers: string[];
   temperatures: number[];
   repeats: number;

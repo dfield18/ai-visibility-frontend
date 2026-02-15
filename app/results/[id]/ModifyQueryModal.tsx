@@ -83,7 +83,7 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
     return {
       count,
       newPrompts: validNewPrompts.filter(p => !existingPrompts.has(p)),
-      newCompetitors: validNewCompetitors.filter(c => !existingConfig.competitors.includes(c)),
+      newCompetitors: validNewCompetitors.filter(c => !(existingConfig.competitors ?? []).includes(c)),
       newProviders: selectedNewProviders,
       estimatedCost,
     };
@@ -262,7 +262,7 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
                 onClick={() => setShowExistingCompetitors(!showExistingCompetitors)}
                 className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700"
               >
-                {existingConfig.competitors.length} existing
+                {(existingConfig.competitors ?? []).length} existing
                 {showExistingCompetitors ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
             </div>
@@ -270,7 +270,7 @@ export function ModifyQueryModal({ runStatus, onClose, onSuccess }: ModifyQueryM
             {/* Existing competitors (collapsible) */}
             {showExistingCompetitors && (
               <div className="mb-3 flex flex-wrap gap-2">
-                {existingConfig.competitors.map((comp: string, index: number) => (
+                {(existingConfig.competitors ?? []).map((comp: string, index: number) => (
                   <span key={`existing-${index}`} className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 rounded-full text-sm text-gray-600">
                     <Check className="w-3 h-3 text-green-500" />
                     {comp}

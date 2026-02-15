@@ -13,7 +13,6 @@ import {
   ChevronUp,
   HelpCircle,
   MessageSquare,
-  Users,
   Cpu,
   Settings2,
   Globe,
@@ -29,10 +28,7 @@ import {
   calculateEstimatedCost,
   calculateTotalCalls,
   estimateDuration,
-  formatCurrency,
-  formatDuration,
 } from '@/lib/utils';
-import { getSearchTypeConfig } from '@/lib/searchTypeConfig';
 import { useBillingStatus } from '@/hooks/useBilling';
 import { FREEMIUM_CONFIG, isProviderFree } from '@/lib/billing';
 
@@ -92,12 +88,6 @@ export default function ConfigurePage() {
     addPrompt,
     removePrompt,
     updatePrompt,
-    competitors,
-    selectedCompetitors,
-    setCompetitors,
-    toggleCompetitor,
-    addCompetitor,
-    removeCompetitor,
     providers,
     setProviders,
     toggleProvider,
@@ -140,22 +130,15 @@ export default function ConfigurePage() {
   }, [billing, isPaidUser, isBillingPlaceholder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Labels from config registry
-  const searchConfig = getSearchTypeConfig(searchType);
   const isCategory = searchType === 'category';
   const isLocal = searchType === 'local';
-  const brandsLabel = searchConfig.competitorsLabel;
-  const brandsDescription = searchConfig.competitorsDescription;
-  const brandsLoadingText = searchConfig.competitorsLoadingText;
-  const addBrandPlaceholder = searchConfig.addCompetitorPlaceholder;
 
   const [newPrompt, setNewPrompt] = useState('');
-  const [newCompetitor, setNewCompetitor] = useState('');
   const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null);
   const [editingPromptValue, setEditingPromptValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [addingPrompt, setAddingPrompt] = useState(false);
-  const [addingCompetitor, setAddingCompetitor] = useState(false);
   const [editingUrl, setEditingUrl] = useState(false);
   const [tempUrl, setTempUrl] = useState('');
   const [editingLocation, setEditingLocation] = useState(false);
@@ -228,15 +211,11 @@ export default function ConfigurePage() {
 
         setPrompts(basePrompts);
       }
-      if (competitors.length === 0) {
-        setCompetitors(suggestions.competitors);
-      }
     }
-  }, [suggestions, prompts.length, competitors.length, setPrompts, setCompetitors, isCategory, brand]);
+  }, [suggestions, prompts.length, setPrompts, isCategory, brand]);
 
   // Calculate estimates
   const selectedPromptsArray = Array.from(selectedPrompts);
-  const selectedCompetitorsArray = Array.from(selectedCompetitors);
   const totalCalls = calculateTotalCalls(
     selectedPromptsArray.length,
     providers.length,
@@ -258,13 +237,6 @@ export default function ConfigurePage() {
     if (newPrompt.trim() && prompts.length < 20) {
       addPrompt(newPrompt.trim());
       setNewPrompt('');
-    }
-  };
-
-  const handleAddCompetitor = () => {
-    if (newCompetitor.trim() && competitors.length < 10) {
-      addCompetitor(newCompetitor.trim());
-      setNewCompetitor('');
     }
   };
 
@@ -306,7 +278,7 @@ export default function ConfigurePage() {
         search_type: searchType,
         ...(location ? { location } : {}),
         prompts: selectedPromptsArray,
-        competitors: selectedCompetitorsArray,
+        competitors: [],
         providers,
         temperatures,
         repeats,
@@ -500,7 +472,7 @@ export default function ConfigurePage() {
             <div className="sticky top-20">
               <h2 className="text-lg font-semibold text-gray-900 mb-1">How it works</h2>
               <p className="text-sm text-gray-500 mb-6">
-                Configure your AI-powered competitive analysis in three simple steps.
+                Configure your AI-powered competitive analysis in two simple steps.
               </p>
 
               <div className="space-y-5">
@@ -517,16 +489,6 @@ export default function ConfigurePage() {
                 <div className="flex gap-3">
                   <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-white text-xs font-bold">2</span>
-                  </div>
-                  <div>
-                    <p className="text-base font-medium text-gray-900">Choose competitors</p>
-                    <p className="text-sm text-gray-500 mt-0.5">Add the brands you want to benchmark against in the analysis results.</p>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-xs font-bold">3</span>
                   </div>
                   <div>
                     <p className="text-base font-medium text-gray-900">Select AI platforms</p>
@@ -735,120 +697,13 @@ export default function ConfigurePage() {
               )}
             </div>
 
-            {/* Competitors + Platforms side by side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:w-[80%] lg:mx-auto">
-
-              {/* Competitors Section */}
+            {/* AI Platforms Section - centered */}
+            <div className="lg:w-[45%] lg:mx-auto">
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
                 {/* Header with step number */}
                 <div className="flex items-start gap-3 mb-1">
                   <div className="w-7 h-7 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-xs font-semibold">2</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-gray-400" />
-                    <h2 className="text-base font-semibold text-gray-900">{brandsLabel}</h2>
-                  </div>
-                  <span className="ml-auto inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700">
-                    {selectedCompetitorsArray.length} selected
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 mt-1 mb-4 ml-10">{brandsDescription}</p>
-
-                <div>
-                  {suggestionsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Spinner size="lg" />
-                      <span className="ml-3 text-gray-500">{brandsLoadingText}</span>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {competitors.map((competitor) => {
-                        const isSelected = selectedCompetitors.has(competitor);
-                        return (
-                          <div
-                            key={competitor}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm cursor-pointer transition-all group border ${
-                              isSelected
-                                ? 'border-cyan-200 bg-white text-gray-700'
-                                : 'border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100'
-                            }`}
-                            onClick={() => toggleCompetitor(competitor)}
-                          >
-                            {isSelected && (
-                              <div className="w-4 h-4 rounded-full bg-cyan-600 flex items-center justify-center flex-shrink-0">
-                                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                              </div>
-                            )}
-                            <span>{competitor}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeCompetitor(competitor);
-                              }}
-                              className={`p-0.5 opacity-0 group-hover:opacity-100 transition-opacity ${
-                                isSelected ? 'text-gray-400 hover:text-gray-600' : 'text-gray-400 hover:text-gray-600'
-                              }`}
-                              aria-label="Remove"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {competitors.length < 10 && (
-                    <div className="mt-3">
-                      {addingCompetitor ? (
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={newCompetitor}
-                            onChange={(e) => setNewCompetitor(e.target.value)}
-                            placeholder={addBrandPlaceholder}
-                            className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-600/20 focus:border-cyan-600 placeholder-gray-400"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') { handleAddCompetitor(); }
-                              if (e.key === 'Escape') { setAddingCompetitor(false); setNewCompetitor(''); }
-                            }}
-                          />
-                          <button
-                            onClick={handleAddCompetitor}
-                            disabled={!newCompetitor.trim()}
-                            className="px-3 py-2 text-sm bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                          >
-                            Add
-                          </button>
-                          <button
-                            onClick={() => { setAddingCompetitor(false); setNewCompetitor(''); }}
-                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setAddingCompetitor(true)}
-                          className="text-sm text-gray-500 hover:bg-gray-50 font-medium flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 border-dashed transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Add {isCategory ? 'another brand' : searchType === 'public_figure' ? 'another public figure' : searchType === 'issue' ? 'another issue' : 'another competitor'}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* AI Platforms Section */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-5 py-5">
-                {/* Header with step number */}
-                <div className="flex items-start gap-3 mb-1">
-                  <div className="w-7 h-7 bg-cyan-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-xs font-semibold">3</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Cpu className="w-4 h-4 text-gray-400" />
@@ -913,7 +768,7 @@ export default function ConfigurePage() {
                 </div>
               </div>
 
-            </div>{/* End of Competitors + Platforms grid */}
+            </div>{/* End of AI Platforms section */}
 
           </div>{/* End of main content */}
         </div>{/* End of sidebar + content flex */}
@@ -1345,8 +1200,6 @@ export default function ConfigurePage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <p className="text-sm text-gray-500">
             {selectedPromptsArray.length} question{selectedPromptsArray.length !== 1 ? 's' : ''}
-            {' · '}
-            {selectedCompetitorsArray.length} competitor{selectedCompetitorsArray.length !== 1 ? 's' : ''}
             {' · '}
             {providers.length} platform{providers.length !== 1 ? 's' : ''}
           </p>
