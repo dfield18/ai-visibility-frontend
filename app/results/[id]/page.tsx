@@ -604,6 +604,7 @@ export default function ResultsPage() {
   // Tab state - persisted in URL
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tab = searchParams.get('tab') as TabType;
+    if (tab === 'industry-overview') return tab;
     const defaultTabs = buildTabs('brand');
     return defaultTabs.some(t => t.id === tab) ? tab : 'overview';
   });

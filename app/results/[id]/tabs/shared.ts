@@ -20,11 +20,18 @@ export type { Result, Source, RunStatusResponse };
 export type { AISummaryResponse, SiteAuditResult } from '@/lib/types';
 export type { BrandQuote } from '@/hooks/useApi';
 
-/** Check if a brand name is actually the category/industry name (or a close variant). */
+/** Check if a brand name is actually the category/industry name (or a close variant).
+ *  Matches exact, singular/plural ("Laptop" vs "Laptops"), and minor suffix differences.
+ *  Does NOT use broad substring matching to avoid filtering real brands (e.g., "Car" from "Electric Cars"). */
 export const isCategoryName = (name: string, categoryName: string): boolean => {
-  const a = name.toLowerCase();
-  const b = categoryName.toLowerCase();
-  return a === b || b.includes(a) || a.includes(b);
+  const a = name.toLowerCase().trim();
+  const b = categoryName.toLowerCase().trim();
+  if (a === b) return true;
+  // Singular/plural: one is the other plus "s", "es", or "ies"/"y" swap
+  if (a + 's' === b || b + 's' === a) return true;
+  if (a + 'es' === b || b + 'es' === a) return true;
+  if (a.replace(/ies$/, 'y') === b || b.replace(/ies$/, 'y') === a) return true;
+  return false;
 };
 
 export type FilterType = 'all' | 'mentioned' | 'not_mentioned';
