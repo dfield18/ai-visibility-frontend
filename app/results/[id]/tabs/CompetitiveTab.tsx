@@ -1351,12 +1351,24 @@ export default function CompetitiveTab({
                 group.sort((a, b) => a.sentiment - b.sentiment);
               });
 
+              // Determine which brands get visible labels (searched brand + top 5 by mentions)
+              const sortedByMentions = [...rawData].sort((a, b) => b.mentions - a.mentions);
+              const labelledBrands = new Set<string>();
+              // Always label the searched brand
+              rawData.forEach(d => { if (d.isSearchedBrand) labelledBrands.add(d.brand); });
+              // Add top brands by mentions until we have up to 5
+              for (const d of sortedByMentions) {
+                if (labelledBrands.size >= 5) break;
+                labelledBrands.add(d.brand);
+              }
+
               const processedData = rawData.map(point => {
                 const key = getClusterKey(point.mentions, point.sentiment);
                 const group = positionGroups[key];
                 const indexInGroup = group.findIndex(p => p.brand === point.brand);
                 const groupSize = group.length;
-                return { ...point, groupSize, indexInGroup };
+                const showLabel = labelledBrands.has(point.brand);
+                return { ...point, groupSize, indexInGroup, showLabel };
               });
 
               const maxMentions = rawData.length > 0 ? Math.max(...rawData.map(d => d.mentions)) : 10;
@@ -1425,7 +1437,7 @@ export default function CompetitiveTab({
                     <span className="text-xs text-gray-500">{isIssue ? 'Critical' : 'Negative'}</span>
                   </div>
                 </div>
-                <div className="h-[400px]">
+                <div className="h-[460px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <ScatterChart margin={{ top: 30, right: 40, bottom: 60, left: 60 }}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -1481,6 +1493,7 @@ export default function CompetitiveTab({
                           const isSearched = payload.isSearchedBrand;
                           const groupSize = payload.groupSize || 1;
                           const indexInGroup = payload.indexInGroup || 0;
+                          const showLabel = payload.showLabel;
 
                           const sentiment = payload.sentiment || 3;
                           const getColor = () => {
@@ -1498,30 +1511,10 @@ export default function CompetitiveTab({
                             return '#dc2626';
                           };
 
-                          const circleRadius = isSearched ? 11 : 9;
-                          const spacing = 22;
+                          const circleRadius = isSearched ? 10 : 7;
+                          const spacing = 18;
                           const totalWidth = (groupSize - 1) * spacing;
                           const xOffset = groupSize > 1 ? (indexInGroup * spacing) - (totalWidth / 2) : 0;
-
-                          const shortBrand = payload.brand.length > 15
-                            ? payload.brand.substring(0, 13) + '...'
-                            : payload.brand;
-
-                          let labelXOffset = 0;
-                          let labelYOffset = -14;
-                          let textAnchor: 'start' | 'middle' | 'end' = 'middle';
-
-                          if (groupSize === 2) {
-                            labelYOffset = indexInGroup === 0 ? -14 : 22;
-                          } else if (groupSize >= 3) {
-                            const angles = [-90, 150, 30, -45, -135, 90];
-                            const angle = angles[indexInGroup % angles.length];
-                            const radians = (angle * Math.PI) / 180;
-                            labelXOffset = Math.cos(radians) * 18;
-                            labelYOffset = Math.sin(radians) * 18;
-                            if (labelXOffset < -5) textAnchor = 'end';
-                            else if (labelXOffset > 5) textAnchor = 'start';
-                          }
 
                           return (
                             <g>
@@ -1531,20 +1524,22 @@ export default function CompetitiveTab({
                                 r={circleRadius}
                                 fill={getColor()}
                                 stroke={isSearched ? '#1f2937' : getStroke()}
-                                strokeWidth={isSearched ? 3 : 2}
+                                strokeWidth={isSearched ? 3 : 1.5}
                                 opacity={0.85}
                                 style={{ cursor: 'pointer' }}
                               />
-                              <text
-                                x={cx + xOffset + labelXOffset}
-                                y={cy + labelYOffset}
-                                textAnchor={textAnchor}
-                                fill="#374151"
-                                fontSize={isSearched ? 11 : 10}
-                                fontWeight={isSearched ? 600 : 500}
-                              >
-                                {shortBrand}
-                              </text>
+                              {showLabel && (
+                                <text
+                                  x={cx + xOffset}
+                                  y={cy - circleRadius - 4}
+                                  textAnchor="middle"
+                                  fill="#374151"
+                                  fontSize={isSearched ? 11 : 10}
+                                  fontWeight={isSearched ? 600 : 500}
+                                >
+                                  {payload.brand.length > 18 ? payload.brand.substring(0, 16) + '...' : payload.brand}
+                                </text>
+                              )}
                             </g>
                           );
                         }}

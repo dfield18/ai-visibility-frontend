@@ -512,15 +512,13 @@ export default function ConfigurePage() {
             {/* Questions Section - centered */}
             <div className="lg:w-[70%] lg:mx-auto bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
               {/* Header */}
-              <div className="flex items-center gap-2.5 mb-2">
+              <div className="flex items-center gap-2.5 mb-1">
                 <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
                 <h2 className="text-base font-semibold text-gray-900">Questions to Ask AI</h2>
                 <span className="ml-auto text-xs font-semibold text-cyan-600">
                   {selectedPromptsArray.length}/{prompts.length}
                 </span>
               </div>
-
-
               {/* Select All Toggle */}
               {prompts.length > 0 && !suggestionsLoading && (
                 <div className="flex items-center justify-between mb-2">
@@ -707,9 +705,41 @@ export default function ConfigurePage() {
                     {providers.length} selected
                   </span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1 mb-4">
+                <p className="text-sm text-gray-500 mt-1 mb-2">
                   Choose which AI assistants to include in your analysis
                 </p>
+                {/* Select All Toggle */}
+                {(() => {
+                  const allProviderKeys = Object.keys(PROVIDER_INFO);
+                  const availableKeys = allProviderKeys.filter(k => isBillingPlaceholder || isPaidUser || isProviderFree(k));
+                  const allAvailableSelected = availableKeys.every(k => providers.includes(k));
+                  return (
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs text-gray-500">
+                        {allAvailableSelected ? 'All platforms selected' : `${providers.length} of ${availableKeys.length} selected`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (allAvailableSelected) {
+                            setProviders([]);
+                          } else {
+                            setProviders(availableKeys);
+                          }
+                        }}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                          allAvailableSelected ? 'bg-cyan-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                            allAvailableSelected ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 {/* 3-column grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
