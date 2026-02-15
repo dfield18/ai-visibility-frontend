@@ -83,12 +83,18 @@ export function ReportsTab({ runStatus }: ReportsTabProps) {
     runStatus?.results ? [...new Set(runStatus.results.map(r => r.provider))] : [],
     [runStatus?.results]
   );
-  const allCompetitorsMentioned = useMemo(() =>
-    runStatus?.results
-      ? [...new Set(runStatus.results.flatMap(r => r.competitors_mentioned || []))]
-      : [],
-    [runStatus?.results]
-  );
+  const allCompetitorsMentioned = useMemo(() => {
+    if (!runStatus?.results) return [];
+    const brand = runStatus.brand?.toLowerCase() || '';
+    const allBrands = runStatus.results.flatMap(r =>
+      r.all_brands_mentioned?.length
+        ? r.all_brands_mentioned
+        : r.competitors_mentioned || []
+    );
+    return [...new Set(allBrands)].filter(
+      b => b.toLowerCase() !== brand
+    );
+  }, [runStatus?.results, runStatus?.brand]);
 
   // Form state
   const [formData, setFormData] = useState<Partial<ScheduledReportCreate>>({
