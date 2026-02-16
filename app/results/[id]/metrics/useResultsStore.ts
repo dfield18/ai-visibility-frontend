@@ -496,8 +496,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   );
 
   const brandCooccurrence = useMemo(
-    () => computeBrandCooccurrence(runStatus, globallyFilteredResults),
-    [runStatus, globallyFilteredResults],
+    () => computeBrandCooccurrence(runStatus, globallyFilteredResults, excludedBrands),
+    [runStatus, globallyFilteredResults, excludedBrands],
   );
 
   const competitiveInsights = useMemo(

@@ -420,6 +420,7 @@ export function computeModelPreferenceData(
 export function computeBrandCooccurrence(
   runStatus: RunStatusResponse | null,
   globallyFilteredResults: Result[],
+  excludedBrands?: Set<string>,
 ): BrandCooccurrenceEntry[] {
   if (!runStatus) return [];
   const isCategory = runStatus.search_type === 'category';
@@ -432,10 +433,15 @@ export function computeBrandCooccurrence(
 
   results.forEach(r => {
     // Get all brands mentioned in this response (exclude category name for industry searches)
-    const brandsInResponse: string[] = [];
-    if (!isCategory && r.brand_mentioned) brandsInResponse.push(searchedBrand);
+    const brandsSet = new Set<string>();
+    if (!isCategory && r.brand_mentioned) brandsSet.add(searchedBrand);
     const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-    rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) brandsInResponse.push(c); });
+    rBrands.forEach(c => {
+      if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands?.has(c)) {
+        brandsSet.add(c);
+      }
+    });
+    const brandsInResponse = Array.from(brandsSet);
 
     // Count co-occurrences
     for (let i = 0; i < brandsInResponse.length; i++) {
