@@ -358,7 +358,7 @@ export default function CompetitiveTab({
   const showSection = (id: string) => !visibleSections || visibleSections.includes(id);
 
   // ---- Context ----
-  const { runStatus, globallyFilteredResults, availableProviders, availablePrompts, brandBreakdownStats, allBrandsAnalysisData, brandQuotesMap, isCategory, isIssue } = useResults();
+  const { runStatus, globallyFilteredResults, availableProviders, availablePrompts, brandBreakdownStats, allBrandsAnalysisData, brandQuotesMap, isCategory, isIssue, excludedBrands } = useResults();
   const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
 
   // ---- Internalized state ----
@@ -490,13 +490,18 @@ export default function CompetitiveTab({
     const cooccurrenceCounts: Record<string, { brand1: string; brand2: string; count: number }> = {};
     results.forEach(r => {
       const brandsInResponse: string[] = [];
-      if (!isCategory && r.brand_mentioned) brandsInResponse.push(searchedBrand);
+      if (!isCategory && r.brand_mentioned && !excludedBrands.has(searchedBrand)) brandsInResponse.push(searchedBrand);
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) brandsInResponse.push(c); });
-      for (let i = 0; i < brandsInResponse.length; i++) {
-        for (let j = i + 1; j < brandsInResponse.length; j++) {
-          const brand1 = brandsInResponse[i];
-          const brand2 = brandsInResponse[j];
+      rBrands.forEach(c => {
+        if (excludedBrands.has(c)) return;
+        if (!isCategory || !isCategoryName(c, searchedBrand)) brandsInResponse.push(c);
+      });
+      // Deduplicate brands within a single response
+      const uniqueBrands = [...new Set(brandsInResponse)];
+      for (let i = 0; i < uniqueBrands.length; i++) {
+        for (let j = i + 1; j < uniqueBrands.length; j++) {
+          const brand1 = uniqueBrands[i];
+          const brand2 = uniqueBrands[j];
           const key = [brand1, brand2].sort().join('|||');
           if (!cooccurrenceCounts[key]) cooccurrenceCounts[key] = { brand1, brand2, count: 0 };
           cooccurrenceCounts[key].count++;
@@ -505,9 +510,8 @@ export default function CompetitiveTab({
     });
     return Object.values(cooccurrenceCounts)
       .map(item => ({ brand1: item.brand1, brand2: item.brand2, count: item.count, percentage: (item.count / results.length) * 100 }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-  }, [runStatus, globallyFilteredResults]);
+      .sort((a, b) => b.count - a.count);
+  }, [runStatus, globallyFilteredResults, excludedBrands]);
 
   // Competitive Insights
   const competitiveInsights = useMemo(() => {
@@ -1804,7 +1808,7 @@ export default function CompetitiveTab({
 
                   return (
                   <>
-                  <div className="space-y-3">
+                  <div className="space-y-3 max-h-[480px] overflow-y-auto">
                     {brandCooccurrence.map((pair, idx) => {
                       const widthPercent = (pair.count / maxCount) * 100;
                       const barColor = getBarColor(pair.count);
@@ -1835,6 +1839,9 @@ export default function CompetitiveTab({
                       );
                     })}
                   </div>
+                  {brandCooccurrence.length > 10 && (
+                    <p className="text-xs text-gray-400 mt-2 text-center">Scroll to see all {brandCooccurrence.length} brand pairs</p>
+                  )}
                   <div className="mt-4 flex items-center gap-4 text-xs text-gray-500">
                     <span>Bar shade shows how often {isIssue ? 'issues' : 'brands'} appear together:</span>
                     <div className="flex items-center gap-1">
