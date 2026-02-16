@@ -2038,7 +2038,7 @@ export default function ResultsPage() {
     // 1. Overall visibility ranking
     const visibilityRank = brandBreakdownStats.findIndex(s => s.isSearchedBrand) + 1;
     if (visibilityRank === 1) {
-      insights.push(`${searchedBrand} leads in AI visibility with ${searchedBrandStats.visibilityScore.toFixed(0)}% mention rate`);
+      insights.push(`${searchedBrand} leads in AI visibility with ${searchedBrandStats.visibilityScore.toFixed(0)}% visibility score`);
     } else if (visibilityRank <= 3) {
       const leader = brandBreakdownStats[0];
       insights.push(`${searchedBrand} ranks #${visibilityRank} in visibility (${searchedBrandStats.visibilityScore.toFixed(0)}%), behind ${leader.brand} (${leader.visibilityScore.toFixed(0)}%)`);

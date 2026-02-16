@@ -637,7 +637,7 @@ export default function CompetitiveTab({
       if (!searchedBrandStats) return [];
       const visibilityRank = brandBreakdownStats.findIndex((s: any) => s.isSearchedBrand) + 1;
       if (visibilityRank === 1) {
-        insights.push(`${searchedBrand} leads in AI visibility with ${searchedBrandStats.visibilityScore.toFixed(0)}% mention rate`);
+        insights.push(`${searchedBrand} leads in AI visibility with ${searchedBrandStats.visibilityScore.toFixed(0)}% visibility score`);
       } else if (visibilityRank <= 3) {
         const leader = brandBreakdownStats[0];
         insights.push(`${searchedBrand} ranks #${visibilityRank} in visibility (${searchedBrandStats.visibilityScore.toFixed(0)}%), behind ${leader.brand} (${leader.visibilityScore.toFixed(0)}%)`);
@@ -964,7 +964,7 @@ export default function CompetitiveTab({
                                 {/* Overall Visibility with donut ring */}
                                 <div className="px-4 py-2 border-b border-gray-100 text-center">
                                   <p className="text-[9px] text-gray-400 uppercase tracking-widest mb-0.5">Overall Visibility</p>
-                                  <p className="text-[9px] text-gray-400 mb-1">Based on mention rate across all questions</p>
+                                  <p className="text-[9px] text-gray-400 mb-1">Based on visibility score across all questions</p>
                                   <div className="inline-flex items-center justify-center relative">
                                     <svg width="82" height="82" viewBox="0 0 82 82" className="transform -rotate-90">
                                       <circle cx="41" cy="41" r="35" fill="none" stroke="#f3f4f6" strokeWidth="5" />

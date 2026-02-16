@@ -1495,17 +1495,19 @@ export const OverviewTab = ({
               let text = removeActionableTakeaway(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews');
               if (isCategory && brandBreakdownStats.length > 0) {
                 const leader = brandBreakdownStats[0];
-                const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% mention rate`;
+                const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
                 text = text.replace(/(Market leader\s*[-–—]\s*[^.]+)(\.)/i, `$1${stats}$2`);
-                // Add definition for only the first "mention rate" not already followed by a parenthetical
-                let mentionRateDefined = false;
-                text = text.replace(/mention rates?(?!\s*\()/gi, (match) => {
-                  if (!mentionRateDefined) {
-                    mentionRateDefined = true;
-                    return 'mention rate (% of AI responses that mention the brand)';
+                // Add definition for only the first "visibility score" not already followed by a parenthetical
+                let visibilityScoreDefined = false;
+                text = text.replace(/visibility scores?(?!\s*\()/gi, (match) => {
+                  if (!visibilityScoreDefined) {
+                    visibilityScoreDefined = true;
+                    return 'visibility score (% of AI responses that mention the brand)';
                   }
-                  return 'mention rate';
+                  return 'visibility score';
                 });
+                // Also replace any "mention rate" from backend-generated text with "visibility score"
+                text = text.replace(/mention rates?/gi, 'visibility score');
               }
               // Vary repeated "suggest/suggests" usage
               const alternatives = ['indicates', 'points to', 'reflects'];
