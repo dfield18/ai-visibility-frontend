@@ -466,8 +466,7 @@ export function computeBrandCooccurrence(
       count: item.count,
       percentage: (item.count / results.length) * 100,
     }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
+    .sort((a, b) => b.count - a.count);
 }
 
 // ---------------------------------------------------------------------------
