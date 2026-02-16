@@ -1145,11 +1145,43 @@ export const OverviewTab = ({
                     new RegExp(`(${brandEscaped}\\s*\\()\\d+\\.?\\d*(%)`, 'gi'),
                     `$1${bStat.visibilityScore.toFixed(1)}$2`
                   );
-                  // "Brand ...with/at/has a Z%" — percentage near brand in flowing text
+                  // "Brand ...with/at/has/achieving a Z%" — percentage near brand in flowing text
                   text = text.replace(
-                    new RegExp(`(${brandEscaped}[^.]*?(?:with|at|has|leads?|captures?|achieves?|shows?|reaches?|holds?|commands?)[^.]*?)\\b\\d+\\.?\\d*(%\\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))`, 'gi'),
+                    new RegExp(`(${brandEscaped}[^.]*?(?:with|at|has|leads?|leading|captures?|capturing|achiev(?:es?|ing)|shows?|showing|reaches?|reaching|holds?|holding|commands?|commanding|earn(?:s|ing)?|scor(?:es?|ing)|getting|having)[^.]*?)\\b\\d+\\.?\\d*(%\\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))`, 'gi'),
                     `$1${bStat.visibilityScore.toFixed(1)}$2`
                   );
+                }
+
+                // Catch-all: replace any "X% visibility score" that doesn't match frontend values.
+                // This handles comma-separated brand lists like "Brand1, Brand2, and Brand3 each achieving a X%"
+                // where per-brand regex only patches the first brand's occurrence.
+                if (brandBreakdownStats.length > 0) {
+                  // Find the most common visibility score among top brands to use as replacement
+                  const scoreCounts = new Map<string, number>();
+                  brandBreakdownStats.forEach(b => {
+                    const key = b.visibilityScore.toFixed(1);
+                    scoreCounts.set(key, (scoreCounts.get(key) || 0) + 1);
+                  });
+                  // Replace any bare "X% visibility score" where X doesn't match any known brand's score
+                  const knownScores = new Set(brandBreakdownStats.map(b => b.visibilityScore.toFixed(1)));
+                  text = text.replace(/\b(\d+\.?\d*)(%\s*visibility score)/gi, (match, num, suffix) => {
+                    const rounded = parseFloat(num).toFixed(1);
+                    if (knownScores.has(rounded)) return match; // already correct
+                    // Find the brand(s) mentioned closest before this percentage in the same sentence
+                    const idx = text.indexOf(match);
+                    const sentenceStart = text.lastIndexOf('.', idx);
+                    const sentence = text.slice(sentenceStart + 1, idx + match.length);
+                    // Check which brands appear in this sentence fragment
+                    const mentionedBrands = brandBreakdownStats.filter(b =>
+                      sentence.toLowerCase().includes(b.brand.toLowerCase())
+                    );
+                    if (mentionedBrands.length > 0) {
+                      // Use the average visibility of mentioned brands
+                      const avg = mentionedBrands.reduce((sum, b) => sum + b.visibilityScore, 0) / mentionedBrands.length;
+                      return `${avg.toFixed(1)}${suffix}`;
+                    }
+                    return match;
+                  });
                 }
 
                 // Replace "Total Unique Brands Mentioned: X" or "X unique brands" with frontend count
