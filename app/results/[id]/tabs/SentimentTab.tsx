@@ -40,7 +40,7 @@ export interface SentimentTabProps {
 export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
   // Section visibility helper — if visibleSections is not set, show all
   const showSection = (id: string) => !visibleSections || visibleSections.includes(id);
-  const { runStatus, globallyFilteredResults, trackedBrands, availableProviders } = useResults();
+  const { runStatus, globallyFilteredResults, trackedBrands, availableProviders, excludedBrands } = useResults();
   const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
 
   const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
@@ -107,9 +107,10 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
     const getEffectiveSentiment = (r: Result): string | null => {
       if (isIndustryReport && r.competitor_sentiments) {
-        const scores = Object.values(r.competitor_sentiments)
-          .filter(s => s in _sentScores)
-          .map(s => _sentScores[s as keyof typeof _sentScores]);
+        const searchedBrand = runStatus?.brand || '';
+        const scores = Object.entries(r.competitor_sentiments)
+          .filter(([brand, s]) => s in _sentScores && !excludedBrands.has(brand) && !isCategoryName(brand, searchedBrand))
+          .map(([, s]) => _sentScores[s as keyof typeof _sentScores]);
         if (scores.length > 0) {
           const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
           const nearest = Object.keys(_scoreToSent).map(Number).reduce((prev, curr) => Math.abs(curr - avg) < Math.abs(prev - avg) ? curr : prev);
@@ -122,7 +123,11 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
     const hasEffectiveSentiment = (r: Result): boolean => {
       if (r.error) return false;
-      if (isIndustryReport) return !!(r.competitor_sentiments && Object.keys(r.competitor_sentiments).length > 0);
+      if (isIndustryReport) {
+        if (!r.competitor_sentiments) return false;
+        const searchedBrand = runStatus?.brand || '';
+        return Object.keys(r.competitor_sentiments).some(b => !excludedBrands.has(b) && !isCategoryName(b, searchedBrand));
+      }
       return !!r.brand_sentiment;
     };
 
@@ -291,7 +296,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       }
 
       return insights.slice(0, 5);
-    }, [runStatus, globallyFilteredResults]);
+    }, [runStatus, globallyFilteredResults, excludedBrands]);
 
     // Export sentiment CSV handler
     const handleExportSentimentCSV = () => {
@@ -395,7 +400,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           color: getSentimentBarColor(sentiment),
         }))
         .filter(d => d.count > 0);
-    }, [globallyFilteredResults]);
+    }, [globallyFilteredResults, excludedBrands]);
 
     // Calculate sentiment by provider
     // Get list of brands for the sentiment provider filter dropdown
@@ -413,9 +418,14 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
       // Collect all competitors from competitor_sentiments
       const competitors = new Set<string>();
+      const searchedBrand = runStatus?.brand || '';
       globallyFilteredResults.forEach((r: Result) => {
         if (!r.error && r.competitor_sentiments) {
-          Object.keys(r.competitor_sentiments).forEach(comp => competitors.add(comp));
+          Object.keys(r.competitor_sentiments).forEach(comp => {
+            if (!excludedBrands.has(comp) && !isCategoryName(comp, searchedBrand)) {
+              competitors.add(comp);
+            }
+          });
         }
       });
 
@@ -425,7 +435,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       });
 
       return options;
-    }, [runStatus, globallyFilteredResults, isIndustryReport]);
+    }, [runStatus, globallyFilteredResults, isIndustryReport, excludedBrands]);
 
     // Get the effective brand filter
     // For industry reports, default to '__all__' (average across all brands)
@@ -528,7 +538,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         const bIdx = PROVIDER_ORDER.indexOf(b.provider);
         return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
       });
-    }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderCitationFilter, sentimentProviderModelFilter, isIssue]);
+    }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderCitationFilter, sentimentProviderModelFilter, isIssue, excludedBrands]);
 
     // Helper to get results for a specific provider and sentiment
     const getResultsForProviderSentiment = (provider: string, sentiment: string): Result[] => {
@@ -756,12 +766,14 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       }> = {};
       const trackedComps = trackedBrands;
 
+      const searchedBrandForComp = runStatus?.brand || '';
       globallyFilteredResults
         .filter((r: Result) => !r.error && r.competitor_sentiments)
         .forEach((r: Result) => {
           if (r.competitor_sentiments) {
             Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
-              if (!trackedComps.has(comp)) return;
+              if (!trackedComps.has(comp.toLowerCase())) return;
+              if (isCategoryName(comp, searchedBrandForComp)) return;
               if (!competitorData[comp]) {
                 competitorData[comp] = {
                   strong_endorsement: 0,
@@ -799,7 +811,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           };
         })
         .sort((a, b) => b.strongRate - a.strongRate);
-    }, [globallyFilteredResults, trackedBrands]);
+    }, [globallyFilteredResults, trackedBrands, excludedBrands]);
 
     // Check if we have any sentiment data
     const hasSentimentData = globallyFilteredResults.some(
@@ -969,9 +981,14 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             brandOptions.push({ value: runStatus.brand, label: runStatus.brand });
           }
           const competitors = new Set<string>();
+          const searchedBrandForPrompt = runStatus?.brand || '';
           globallyFilteredResults.forEach((r: Result) => {
             const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-            rBrands.forEach(c => competitors.add(c));
+            rBrands.forEach(c => {
+              if (!excludedBrands.has(c) && !isCategoryName(c, searchedBrandForPrompt)) {
+                competitors.add(c);
+              }
+            });
           });
           competitors.forEach(c => {
             if (c !== runStatus?.brand) {
@@ -1827,7 +1844,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                         };
 
                         // Get competitor info
-                        const competitors = result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned || [];
+                        const competitors = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || []).filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase() && !excludedBrands.has(b) && !isCategoryName(b, runStatus?.brand || ''));
                         const getCompetitorsList = () => {
                           if (competitors.length === 0) {
                             return <span className="text-xs text-gray-400">None</span>;
@@ -1856,7 +1873,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                             </td>
                             <td className="py-3 px-4">
                               {isIndustryReport
-                                ? <span className="text-xs font-medium text-gray-700">{(result.all_brands_mentioned || result.competitors_mentioned || []).filter(b => !isCategoryName(b, runStatus?.brand || '')).length}</span>
+                                ? <span className="text-xs font-medium text-gray-700">{(result.all_brands_mentioned || result.competitors_mentioned || []).filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b)).length}</span>
                                 : getPositionBadge()}
                             </td>
                             <td className="py-3 px-4">

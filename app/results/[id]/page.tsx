@@ -1736,9 +1736,13 @@ export default function ResultsPage() {
         const isMentioned = isSearchedBrand ? r.brand_mentioned : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand));
         if (!isMentioned) return;
 
-        const allBrandsInResponse: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
+        const allBrandsInResponseRaw: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
           ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
           : [searchedBrand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+        // For industry reports, filter out category name and excluded brands from ranking comparison
+        const allBrandsInResponse = isCategory
+          ? allBrandsInResponseRaw.filter(b => !isCategoryName(b, searchedBrand) && !excludedBrands.has(b))
+          : allBrandsInResponseRaw.filter(b => !excludedBrands.has(b));
 
         const brandLower = brand.toLowerCase();
         const rankingText = r.response_text ? getTextForRanking(r.response_text, r.provider).toLowerCase() : '';
