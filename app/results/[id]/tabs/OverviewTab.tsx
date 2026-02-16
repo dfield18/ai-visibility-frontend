@@ -202,6 +202,7 @@ export const OverviewTab = ({
     promptBreakdownLlmFilter,
     setPromptBreakdownLlmFilter,
     brandBreakdownStats,
+    excludedBrands,
   } = useResults();
 
   const {
@@ -380,21 +381,18 @@ export const OverviewTab = ({
     globallyFilteredResults.forEach((r: Result) => {
       if (!r.error) {
         const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-        rBrands.forEach(comp => brands.add(comp));
+        rBrands.forEach(comp => {
+          if (!excludedBrands.has(comp) && !isCategoryName(comp, runStatus?.brand || '')) {
+            brands.add(comp);
+          }
+        });
       }
     });
-    // Remove category name for industry reports
-    if (runStatus?.brand) {
-      const brandLower = runStatus.brand.toLowerCase();
-      for (const b of Array.from(brands)) {
-        if (b.toLowerCase() === brandLower) brands.delete(b);
-      }
-    }
     Array.from(brands).sort().forEach(b => {
       options.push({ value: b, label: b });
     });
     return options;
-  }, [isCategory, globallyFilteredResults]);
+  }, [isCategory, globallyFilteredResults, excludedBrands, runStatus]);
 
   // Helper: compute rank for a specific brand within a result
   const computeBrandRank = (result: Result, brand: string): number => {
@@ -2627,9 +2625,12 @@ export const OverviewTab = ({
                           let position: number | null = null;
                           if (result.response_text && selectedBrand && isMentioned) {
                             const brandLower = selectedBrand.toLowerCase();
-                            const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+                            const allBrandsRaw: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
                               ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
                               : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+                            const allBrands = isCategory
+                              ? allBrandsRaw.filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b))
+                              : allBrandsRaw.filter(b => !excludedBrands.has(b));
 
                             const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
                             const brandPos = rankingText.indexOf(brandLower);
@@ -3065,7 +3066,7 @@ export const OverviewTab = ({
                 // Competitors list
                 const getCompetitorsList = () => {
                   if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
-                  const competitors = result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned || [];
+                  const competitors = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || []).filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase() && !excludedBrands.has(b) && !isCategoryName(b, runStatus?.brand || ''));
                   if (competitors.length === 0) {
                     return <span className="text-xs text-gray-400">None</span>;
                   }
@@ -3093,7 +3094,7 @@ export const OverviewTab = ({
                       </td>
                       <td className="w-[7%] py-3 px-4">
                         {isCategory
-                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : ((result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => !isCategoryName(b, runStatus?.brand || '')).length : result.competitors_mentioned?.length) || 0)}</span>
+                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : ((result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b)).length : (result.competitors_mentioned || []).filter(b => !excludedBrands.has(b)).length) || 0)}</span>
                           : isIssue
                           ? (() => {
                               if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
@@ -3229,7 +3230,7 @@ export const OverviewTab = ({
                   result.brand_sentiment === 'negative_comparison' ? 'Negative' :
                   result.brand_sentiment === 'neutral_mention' ? 'Neutral' : 'Not mentioned';
 
-                const allBrandsList = (result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => !isCategoryName(b, runStatus?.brand || '')) : result.competitors_mentioned || []);
+                const allBrandsList = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || []).filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b));
                 const responseText = `"${(result.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""')}"`;
 
                 if (isCategory) {

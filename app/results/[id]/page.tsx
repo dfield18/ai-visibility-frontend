@@ -1853,11 +1853,11 @@ export default function ResultsPage() {
 
     const searchedBrand = runStatus.brand;
 
-    // Get all brands: searched brand + competitors (exclude category name for industry searches)
+    // Get all brands: searched brand + competitors (exclude category name and excluded brands for industry searches)
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) allBrands.add(c); });
+      rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) allBrands.add(c); });
     });
 
     const sentimentScoreMap: Record<string, number> = {
@@ -1916,7 +1916,7 @@ export default function ResultsPage() {
 
     // Sort by visibility score descending
     return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
-  }, [runStatus, globallyFilteredResults, brandPositioningLlmFilter, brandPositioningPromptFilter]);
+  }, [runStatus, globallyFilteredResults, brandPositioningLlmFilter, brandPositioningPromptFilter, excludedBrands]);
 
   // Prompt Performance Matrix - brands vs prompts heatmap data
   const promptPerformanceMatrix = useMemo(() => {
@@ -1933,11 +1933,11 @@ export default function ResultsPage() {
     const searchedBrand = runStatus.brand;
     const prompts = Array.from(new Set(results.map(r => r.prompt)));
 
-    // Get all brands mentioned (exclude category name for industry searches)
+    // Get all brands mentioned (exclude category name and excluded brands for industry searches)
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) allBrands.add(c); });
+      rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) allBrands.add(c); });
     });
     const brands = Array.from(allBrands);
 
@@ -1955,7 +1955,7 @@ export default function ResultsPage() {
     });
 
     return { brands, prompts, matrix };
-  }, [runStatus, globallyFilteredResults, promptMatrixLlmFilter]);
+  }, [runStatus, globallyFilteredResults, promptMatrixLlmFilter, excludedBrands]);
 
   // Model Preference Analysis - which LLMs favor which brands
   const modelPreferenceData = useMemo(() => {
@@ -1976,7 +1976,7 @@ export default function ResultsPage() {
     results.forEach(r => {
       if (!isCategory && r.brand_mentioned) brandCounts[searchedBrand]++;
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) brandCounts[c] = (brandCounts[c] || 0) + 1; });
+      rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) brandCounts[c] = (brandCounts[c] || 0) + 1; });
     });
     const topBrands = Object.entries(brandCounts)
       .sort((a, b) => b[1] - a[1])
@@ -1999,7 +1999,7 @@ export default function ResultsPage() {
 
       return { provider, ...brandRates };
     });
-  }, [runStatus, globallyFilteredResults]);
+  }, [runStatus, globallyFilteredResults, excludedBrands]);
 
   // Brand Co-occurrence Analysis - which brands are mentioned together
   const brandCooccurrence = useMemo(() => {
