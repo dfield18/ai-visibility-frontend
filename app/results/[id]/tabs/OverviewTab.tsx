@@ -1503,9 +1503,27 @@ export const OverviewTab = ({
                 const leader = brandBreakdownStats[0];
                 const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
                 text = text.replace(/(Market leader\s*[-–—]\s*[^.]+)(\.)/i, `$1${stats}$2`);
+
+                // Replace backend-generated percentages for known brands with frontend values
+                // Matches patterns like "BrandName (45.0%)" or "BrandName: 45.0%" or "BrandName at 45.0%"
+                const brandStatsMap = new Map(brandBreakdownStats.map(b => [b.brand.toLowerCase(), b]));
+                for (const [brandLower, bStat] of brandStatsMap) {
+                  const brandEscaped = bStat.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                  // "Brand (XX.X%)" or "Brand: XX/YY (XX.X%)"
+                  text = text.replace(
+                    new RegExp(`(${brandEscaped})([:\\s]+)\\d+/\\d+\\s*\\(\\d+\\.?\\d*%\\)`, 'gi'),
+                    `$1$2${bStat.mentioned}/${bStat.total} (${bStat.visibilityScore.toFixed(1)}%)`
+                  );
+                  // "Brand (XX.X% mention rate/visibility score)"
+                  text = text.replace(
+                    new RegExp(`(${brandEscaped}\\s*\\()\\d+\\.?\\d*(%\\s*(?:mention rate|visibility score))`, 'gi'),
+                    `$1${bStat.visibilityScore.toFixed(1)}$2`
+                  );
+                }
+
                 // Add definition for only the first "visibility score" not already followed by a parenthetical
                 let visibilityScoreDefined = false;
-                text = text.replace(/visibility scores?(?!\s*\()/gi, (match) => {
+                text = text.replace(/visibility scores?(?!\s*\()/gi, () => {
                   if (!visibilityScoreDefined) {
                     visibilityScoreDefined = true;
                     return 'visibility score (% of AI responses that mention the brand)';
