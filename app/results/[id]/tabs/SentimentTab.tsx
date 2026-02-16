@@ -307,7 +307,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         'Provider',
         'Model',
         'Position',
-        `${runStatus.brand} Sentiment`,
+        runStatus.search_type === 'category' ? 'Avg Brand Sentiment' : `${runStatus.brand} Sentiment`,
         'Competitor Sentiments',
         'All Brands Mentioned',
         'Response',
@@ -318,7 +318,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         .map((r: Result) => {
           const compSentiments = r.competitor_sentiments
             ? Object.entries(r.competitor_sentiments)
-                .filter(([_, sentiment]) => sentiment !== 'not_mentioned')
+                .filter(([comp, sentiment]) => sentiment !== 'not_mentioned' && !excludedBrands.has(comp) && !isCategoryName(comp, runStatus.brand))
                 .map(([comp, sentiment]) => `${comp}: ${sentiment}`)
                 .join('; ')
             : '';
@@ -354,7 +354,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             rank > 0 ? rank : '',
             getEffectiveSentiment(r) || '',
             `"${compSentiments}"`,
-            `"${(r.all_brands_mentioned || []).join(', ')}"`,
+            `"${(r.all_brands_mentioned || []).filter(b => !excludedBrands.has(b) && !isCategoryName(b, runStatus.brand)).join(', ')}"`,
             `"${(r.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""')}"`,
           ];
         });

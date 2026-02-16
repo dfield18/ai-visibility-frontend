@@ -1471,10 +1471,28 @@ export default function ResultsPage() {
       const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
 
       // Average sentiment
-      const sentimentResults = promptResults.filter(r => r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned');
-      const avgSentimentScore = sentimentResults.length > 0
-        ? sentimentResults.reduce((sum, r) => sum + (sentimentScoreMap[r.brand_sentiment || ''] || 0), 0) / sentimentResults.length
-        : null;
+      const isCategory = runStatus.search_type === 'category';
+      let avgSentimentScore: number | null = null;
+      if (isCategory) {
+        // For industry reports, average competitor_sentiments across all brands (excluding category name and excluded brands)
+        const scores: number[] = [];
+        promptResults.forEach(r => {
+          if (!r.competitor_sentiments) return;
+          Object.entries(r.competitor_sentiments).forEach(([brand, sentiment]) => {
+            if (!sentiment || sentiment === 'not_mentioned') return;
+            if (isCategoryName(brand, searchedBrand)) return;
+            if (excludedBrands.has(brand)) return;
+            const score = sentimentScoreMap[sentiment] || 0;
+            if (score > 0) scores.push(score);
+          });
+        });
+        avgSentimentScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null;
+      } else {
+        const sentimentResults = promptResults.filter(r => r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned');
+        avgSentimentScore = sentimentResults.length > 0
+          ? sentimentResults.reduce((sum, r) => sum + (sentimentScoreMap[r.brand_sentiment || ''] || 0), 0) / sentimentResults.length
+          : null;
+      }
 
       // Issue-specific per-prompt metrics
       const isIssueType = runStatus.search_type === 'issue';
@@ -1631,7 +1649,7 @@ export default function ResultsPage() {
 
     // Sort by visibility score descending
     return promptStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
-  }, [runStatus, globallyFilteredResults, promptBreakdownLlmFilter]);
+  }, [runStatus, globallyFilteredResults, promptBreakdownLlmFilter, excludedBrands]);
 
   // State for competitive landscape filters
   const [brandBreakdownLlmFilter, setBrandBreakdownLlmFilter] = useState<string>('all');
@@ -2340,9 +2358,10 @@ export default function ResultsPage() {
   const sourceSentimentGapAnalysis = useMemo(() => {
     if (!runStatus) return [];
 
-    // Use selected brand or default to searched brand
-    const comparisonBrand = sentimentComparisonBrand || runStatus.brand;
     const searchedBrand = runStatus.brand;
+    const isCategory = runStatus.search_type === 'category';
+    // Use selected brand or default to searched brand (for industry, default resolved after data collection)
+    let comparisonBrand = sentimentComparisonBrand || (isCategory ? '' : runStatus.brand);
 
     // Ordinal sentiment scale (1-5, higher = more positive)
     const sentimentScoreMap: Record<string, number> = {
@@ -2434,8 +2453,8 @@ export default function ResultsPage() {
         // Track provider for this source
         sourceStats[domain].providers.add(r.provider);
 
-        // Track searched brand sentiment
-        if (r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned') {
+        // Track searched brand sentiment (skip for industry — brand_sentiment is category-level)
+        if (!isCategory && r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned') {
           const score = sentimentScoreMap[r.brand_sentiment] || 0;
           if (!sourceStats[domain].allBrandSentiments[searchedBrand]) {
             sourceStats[domain].allBrandSentiments[searchedBrand] = [];
@@ -2460,8 +2479,13 @@ export default function ResultsPage() {
           }
         }
 
-        // Track all competitor sentiments
-        const rSentBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
+        // Track all competitor/brand sentiments
+        // For industry: include all brands from competitor_sentiments, filtering category name and excluded brands
+        // For other types: include competitors (excluding searched brand)
+        const rSentBrands = isCategory
+          ? (r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [])
+              .filter(b => !isCategoryName(b, searchedBrand) && !excludedBrands.has(b))
+          : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || []);
         if (rSentBrands.length > 0 && r.competitor_sentiments) {
           const responseText = r.response_text;
           rSentBrands.forEach(competitor => {
@@ -2495,6 +2519,19 @@ export default function ResultsPage() {
       });
     });
 
+    // For industry reports with no explicit selection, default to the brand with the most sentiment data
+    if (isCategory && !comparisonBrand) {
+      const brandDataCounts: Record<string, number> = {};
+      Object.values(sourceStats).forEach(stat => {
+        Object.entries(stat.allBrandSentiments).forEach(([brand, scores]) => {
+          brandDataCounts[brand] = (brandDataCounts[brand] || 0) + scores.length;
+        });
+      });
+      const sorted = Object.entries(brandDataCounts).sort((a, b) => b[1] - a[1]);
+      comparisonBrand = sorted[0]?.[0] || '';
+    }
+    if (!comparisonBrand) return [];
+
     // Convert to array with calculated metrics based on selected comparison brand
     return Object.values(sourceStats)
       .filter(stat => {
@@ -2510,12 +2547,12 @@ export default function ResultsPage() {
           : 0;
         const brandSentimentIndex = Math.round(avgBrandScore);
 
-        // Find the other brand with best sentiment for this source (excluding comparison brand)
+        // Find the other brand with best sentiment for this source (excluding comparison brand and excluded brands)
         let topCompetitor = '';
         let topCompetitorIndex = 0;
         let topCompetitorAvgScore = 0;
         Object.entries(stat.allBrandSentiments).forEach(([brand, scores]) => {
-          if (brand !== comparisonBrand && scores.length > 0) {
+          if (brand !== comparisonBrand && !excludedBrands.has(brand) && !(isCategory && isCategoryName(brand, searchedBrand)) && scores.length > 0) {
             const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
             if (avg > topCompetitorAvgScore) {
               topCompetitor = brand;
@@ -2576,7 +2613,7 @@ export default function ResultsPage() {
       })
       .filter(stat => stat.delta !== 0) // Show sources where there's any difference
       .sort((a, b) => b.signedValue - a.signedValue); // Sort by strongest competitor advantage first
-  }, [runStatus, globallyFilteredResults, sourceSentimentGapProviderFilter, sourceSentimentGapPromptFilter, sentimentComparisonBrand]);
+  }, [runStatus, globallyFilteredResults, sourceSentimentGapProviderFilter, sourceSentimentGapPromptFilter, sentimentComparisonBrand, excludedBrands]);
 
   // State for sources filters
   const [sourcesProviderFilter, setSourcesProviderFilter] = useState<string>('all');
@@ -3039,15 +3076,23 @@ export default function ResultsPage() {
 
     const insights: string[] = [];
     const searchedBrand = runStatus.brand;
+    const isCategory = runStatus.search_type === 'category';
 
-    // Get sentiment data
-    const resultsWithSentiment = globallyFilteredResults.filter(
-      (r: Result) => !r.error && r.brand_sentiment
-    );
+    const formatProviderName = (p: string) => {
+      switch (p) {
+        case 'openai': return 'GPT-4o';
+        case 'anthropic': return 'Claude';
+        case 'perplexity': return 'Perplexity';
+        case 'ai_overviews': return 'Google AI Overviews';
+        case 'gemini': return 'Gemini';
+        case 'grok': return 'Grok';
+        case 'llama': return 'Llama';
+        default: return p;
+      }
+    };
 
-    if (resultsWithSentiment.length === 0) return [];
-
-    // Count sentiments
+    // For industry reports, aggregate from competitor_sentiments (per-brand sentiments)
+    // For other types, use brand_sentiment (response-level sentiment)
     const sentimentCounts: Record<string, number> = {
       strong_endorsement: 0,
       positive_endorsement: 0,
@@ -3056,26 +3101,57 @@ export default function ResultsPage() {
       negative_comparison: 0,
     };
 
-    resultsWithSentiment.forEach((r: Result) => {
-      const sentiment = r.brand_sentiment || '';
-      if (sentimentCounts[sentiment] !== undefined) {
-        sentimentCounts[sentiment]++;
-      }
-    });
+    // Per-brand aggregation for industry reports
+    const perBrandSentiments: Record<string, { positive: number; total: number }> = {};
+    // Per-provider aggregation
+    const providerSentiments: Record<string, { positive: number; total: number }> = {};
+
+    if (isCategory) {
+      // Industry: use competitor_sentiments across all brands
+      globallyFilteredResults.filter((r: Result) => !r.error && r.competitor_sentiments).forEach((r: Result) => {
+        Object.entries(r.competitor_sentiments!).forEach(([brand, sentiment]) => {
+          if (!sentiment || sentiment === 'not_mentioned') return;
+          if (isCategoryName(brand, searchedBrand)) return;
+          if (excludedBrands.has(brand)) return;
+          if (sentimentCounts[sentiment] !== undefined) sentimentCounts[sentiment]++;
+          // Per-brand
+          if (!perBrandSentiments[brand]) perBrandSentiments[brand] = { positive: 0, total: 0 };
+          perBrandSentiments[brand].total++;
+          if (sentiment === 'strong_endorsement' || sentiment === 'positive_endorsement') perBrandSentiments[brand].positive++;
+          // Per-provider
+          if (!providerSentiments[r.provider]) providerSentiments[r.provider] = { positive: 0, total: 0 };
+          providerSentiments[r.provider].total++;
+          if (sentiment === 'strong_endorsement' || sentiment === 'positive_endorsement') providerSentiments[r.provider].positive++;
+        });
+      });
+    } else {
+      // Non-industry: use brand_sentiment
+      globallyFilteredResults.filter((r: Result) => !r.error && r.brand_sentiment).forEach((r: Result) => {
+        const sentiment = r.brand_sentiment || '';
+        if (sentimentCounts[sentiment] !== undefined) sentimentCounts[sentiment]++;
+        // Per-provider
+        if (!providerSentiments[r.provider]) providerSentiments[r.provider] = { positive: 0, total: 0 };
+        providerSentiments[r.provider].total++;
+        if (r.brand_sentiment === 'strong_endorsement' || r.brand_sentiment === 'positive_endorsement') providerSentiments[r.provider].positive++;
+      });
+    }
 
     const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0);
+    if (total === 0) return [];
+
     const positiveCount = sentimentCounts.strong_endorsement + sentimentCounts.positive_endorsement;
     const positiveRate = total > 0 ? (positiveCount / total) * 100 : 0;
 
     // 1. Overall sentiment insight
+    const subjectLabel = isCategory ? `Brands in ${searchedBrand}` : searchedBrand;
     if (positiveRate >= 70) {
-      insights.push(`${searchedBrand} receives highly positive framing — ${positiveRate.toFixed(0)}% of mentions are endorsements`);
+      insights.push(`${subjectLabel} receive${isCategory ? '' : 's'} highly positive framing — ${positiveRate.toFixed(0)}% of mentions are endorsements`);
     } else if (positiveRate >= 50) {
-      insights.push(`${searchedBrand} has generally positive sentiment with ${positiveRate.toFixed(0)}% endorsement rate`);
+      insights.push(`${subjectLabel} ha${isCategory ? 've' : 's'} generally positive sentiment with ${positiveRate.toFixed(0)}% endorsement rate`);
     } else if (positiveRate >= 30) {
-      insights.push(`${searchedBrand} has mixed sentiment — only ${positiveRate.toFixed(0)}% of mentions are positive endorsements`);
+      insights.push(`${subjectLabel} ha${isCategory ? 've' : 's'} mixed sentiment — only ${positiveRate.toFixed(0)}% of mentions are positive endorsements`);
     } else {
-      insights.push(`${searchedBrand} has challenging sentiment positioning — ${positiveRate.toFixed(0)}% positive endorsements`);
+      insights.push(`${subjectLabel} ha${isCategory ? 've' : 's'} challenging sentiment positioning — ${positiveRate.toFixed(0)}% positive endorsements`);
     }
 
     // 2. Strongest sentiment category
@@ -3089,7 +3165,7 @@ export default function ResultsPage() {
         negative_comparison: 'Negative',
       };
       const percentage = total > 0 ? (topSentiment[1] / total * 100).toFixed(0) : 0;
-      insights.push(`Most common framing: "${labelMap[topSentiment[0]]}" (${percentage}% of responses)`);
+      insights.push(`Most common framing: "${labelMap[topSentiment[0]]}" (${percentage}% of brand mentions)`);
     }
 
     // 3. Caveat/negative analysis
@@ -3102,29 +3178,6 @@ export default function ResultsPage() {
     }
 
     // 4. Provider-specific sentiment patterns
-    const providerSentiments: Record<string, { positive: number; total: number }> = {};
-    resultsWithSentiment.forEach((r: Result) => {
-      if (!providerSentiments[r.provider]) {
-        providerSentiments[r.provider] = { positive: 0, total: 0 };
-      }
-      providerSentiments[r.provider].total++;
-      if (r.brand_sentiment === 'strong_endorsement' || r.brand_sentiment === 'positive_endorsement') {
-        providerSentiments[r.provider].positive++;
-      }
-    });
-
-    const formatProviderName = (p: string) => {
-      switch (p) {
-        case 'openai': return 'GPT-4o';
-        case 'anthropic': return 'Claude';
-        case 'perplexity': return 'Perplexity';
-        case 'ai_overviews': return 'Google AI Overviews';
-        case 'gemini': return 'Gemini';
-        default: return p;
-      }
-    };
-
-    // Find best and worst providers
     const providerRates = Object.entries(providerSentiments)
       .filter(([, data]) => data.total >= 2)
       .map(([provider, data]) => ({
@@ -3142,42 +3195,51 @@ export default function ResultsPage() {
       }
     }
 
-    // 5. Competitor comparison (if available)
-    const competitorSentiments: Record<string, { positive: number; total: number }> = {};
-    globallyFilteredResults
-      .filter((r: Result) => !r.error && r.competitor_sentiments)
-      .forEach((r: Result) => {
-        if (r.competitor_sentiments) {
-          Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
-            if (!sentiment || sentiment === 'not_mentioned') return;
-            if (!competitorSentiments[comp]) {
-              competitorSentiments[comp] = { positive: 0, total: 0 };
-            }
-            competitorSentiments[comp].total++;
-            if (sentiment === 'strong_endorsement' || sentiment === 'positive_endorsement') {
-              competitorSentiments[comp].positive++;
-            }
-          });
+    // 5. Brand comparison
+    if (isCategory) {
+      // For industry: compare top brands against each other
+      const brandRates = Object.entries(perBrandSentiments)
+        .filter(([, data]) => data.total >= 2)
+        .map(([brand, data]) => ({ brand, rate: (data.positive / data.total) * 100, total: data.total }))
+        .sort((a, b) => b.rate - a.rate);
+      if (brandRates.length >= 2) {
+        const best = brandRates[0];
+        const worst = brandRates[brandRates.length - 1];
+        if (best.rate - worst.rate > 15) {
+          insights.push(`${best.brand} has the strongest sentiment (${best.rate.toFixed(0)}% positive) vs ${worst.brand} (${worst.rate.toFixed(0)}%)`);
         }
-      });
+      }
+    } else {
+      // For non-industry: compare searched brand against competitors
+      const competitorSentimentAgg: Record<string, { positive: number; total: number }> = {};
+      globallyFilteredResults
+        .filter((r: Result) => !r.error && r.competitor_sentiments)
+        .forEach((r: Result) => {
+          if (r.competitor_sentiments) {
+            Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
+              if (!sentiment || sentiment === 'not_mentioned') return;
+              if (!competitorSentimentAgg[comp]) competitorSentimentAgg[comp] = { positive: 0, total: 0 };
+              competitorSentimentAgg[comp].total++;
+              if (sentiment === 'strong_endorsement' || sentiment === 'positive_endorsement') competitorSentimentAgg[comp].positive++;
+            });
+          }
+        });
 
-    const competitorsWithBetterSentiment = Object.entries(competitorSentiments)
-      .filter(([, data]) => data.total >= 2)
-      .filter(([, data]) => {
-        const compRate = (data.positive / data.total) * 100;
-        return compRate > positiveRate + 10;
-      });
+      const competitorsWithBetterSentiment = Object.entries(competitorSentimentAgg)
+        .filter(([, data]) => data.total >= 2)
+        .filter(([, data]) => (data.positive / data.total) * 100 > positiveRate + 10);
 
-    if (competitorsWithBetterSentiment.length > 0) {
-      const topComp = competitorsWithBetterSentiment[0];
-      const compRate = (topComp[1].positive / topComp[1].total) * 100;
-      insights.push(`${topComp[0]} has stronger sentiment (${compRate.toFixed(0)}% positive) than ${searchedBrand} (${positiveRate.toFixed(0)}%)`);
-    } else if (Object.keys(competitorSentiments).length > 0) {
-      insights.push(`${searchedBrand} has equal or better sentiment than tracked competitors`);
+      if (competitorsWithBetterSentiment.length > 0) {
+        const topComp = competitorsWithBetterSentiment[0];
+        const compRate = (topComp[1].positive / topComp[1].total) * 100;
+        insights.push(`${topComp[0]} has stronger sentiment (${compRate.toFixed(0)}% positive) than ${searchedBrand} (${positiveRate.toFixed(0)}%)`);
+      } else if (Object.keys(competitorSentimentAgg).length > 0) {
+        insights.push(`${searchedBrand} has equal or better sentiment than tracked competitors`);
+      }
     }
 
     return insights.slice(0, 5);
-  }, [runStatus, globallyFilteredResults]);
+  }, [runStatus, globallyFilteredResults, excludedBrands]);
 
   // Calculate ranking data for scatter plot - one dot per prompt per LLM
   // Centralized rank band constant - used for Y-axis, band rendering, tooltip mapping
@@ -3301,7 +3363,9 @@ export default function ResultsPage() {
         xIndex,
         xIndexWithOffset: xIndex, // Will be adjusted below
         isMentioned: rank > 0,
-        sentiment: result.brand_sentiment || null,
+        sentiment: isCategory
+          ? (result.competitor_sentiments?.[selectedBrand] || null)
+          : (result.brand_sentiment || null),
         originalResult: result,
       });
     }
@@ -4786,11 +4850,13 @@ export default function ResultsPage() {
       if (!result.sources) continue;
 
       // Get all brands mentioned in this result with their sentiments
+      const isCategory = runStatus.search_type === 'category';
       const brandsInResult: Array<{ brand: string; sentiment: string | null }> = [];
-      if (result.brand_mentioned && runStatus.brand) {
+      if (result.brand_mentioned && runStatus.brand && !isCategory) {
         brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
       }
-      const heatmapBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned || [];
+      const heatmapBrands = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [])
+        .filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b));
       heatmapBrands.forEach(comp => {
         brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null });
       });
@@ -4894,7 +4960,7 @@ export default function ResultsPage() {
       searchedBrand,
       sentimentData,
     };
-  }, [runStatus, globallyFilteredResults, heatmapProviderFilter]);
+  }, [runStatus, globallyFilteredResults, heatmapProviderFilter, excludedBrands]);
 
   // Handler for heatmap cell click - find matching results
   const handleHeatmapCellClick = useCallback((domain: string, brand: string) => {

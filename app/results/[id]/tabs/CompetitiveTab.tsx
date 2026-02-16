@@ -704,7 +704,7 @@ export default function CompetitiveTab({
     for (const result of results) {
       if (!result.sources) continue;
       const brandsInResult: Array<{ brand: string; sentiment: string | null }> = [];
-      if (result.brand_mentioned && runStatus.brand) brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
+      if (result.brand_mentioned && runStatus.brand && !isCategory) brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
       const heatmapBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
       heatmapBrands.forEach(comp => { if ((comp !== runStatus.brand || !isCategory) && !excludedBrands.has(comp) && (!isCategory || !isCategoryName(comp, runStatus.brand))) brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null }); });
       brandsInResult.forEach(({ brand }) => { brandTotalMentions[brand] = (brandTotalMentions[brand] || 0) + 1; });

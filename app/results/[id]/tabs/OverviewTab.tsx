@@ -431,7 +431,7 @@ export const OverviewTab = ({
       const allTrackedBrands = new Set<string>();
       results.forEach(r => {
         const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-        rBrands.forEach(c => { if (!isCategoryName(c, runStatus.brand)) allTrackedBrands.add(c); });
+        rBrands.forEach(c => { if (!isCategoryName(c, runStatus.brand) && !excludedBrands.has(c)) allTrackedBrands.add(c); });
       });
       const trackedBrandsList = Array.from(allTrackedBrands);
 
@@ -507,7 +507,7 @@ export const OverviewTab = ({
       grouped[provider][category].push({ sentiment: dp.sentiment, prompt: dp.prompt, rank: dp.rank, label: dp.label, originalResult: dp.originalResult });
     });
     return grouped;
-  }, [scatterPlotData, isCategory, runStatus, globallyFilteredResults, positionChartBrandFilter, positionChartPromptFilter]);
+  }, [scatterPlotData, isCategory, runStatus, globallyFilteredResults, positionChartBrandFilter, positionChartPromptFilter, excludedBrands]);
 
   const filteredResults = useMemo(() => {
     if (!runStatus) return [];
@@ -3131,7 +3131,7 @@ export const OverviewTab = ({
                       )}
                       <td className="w-[14%] py-3 px-4">
                         {isCategory
-                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : ((result.all_brands_mentioned?.length ? result.all_brands_mentioned.find(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned?.[0]) || '\u2014')}</span>
+                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : (((result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || []).find(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b))) || '\u2014')}</span>
                           : isIssue
                           ? (() => {
                               if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;

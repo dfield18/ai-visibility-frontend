@@ -60,6 +60,7 @@ export const SourcesTab = () => {
     isCategory,
     isIssue,
     isPublicFigure,
+    excludedBrands,
   } = useResults();
   const { copied, handleCopyLink, setSelectedResult, setSelectedResultHighlight } = useResultsUI();
 
@@ -187,9 +188,10 @@ export const SourcesTab = () => {
               }
             } else if (isCategory) {
               // "All Brands" filter: average per-brand sentiments only for brands in this result
-              const rBrandsForSent = r.all_brands_mentioned?.length
-                ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase())
-                : r.competitors_mentioned || [];
+              const rBrandsForSent = (r.all_brands_mentioned?.length
+                ? r.all_brands_mentioned
+                : r.competitors_mentioned || [])
+                .filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b));
               const scores: number[] = [];
               rBrandsForSent.forEach(b => {
                 const perSourceSent = r.source_brand_sentiments?.[domain]?.[b];
@@ -261,7 +263,7 @@ export const SourcesTab = () => {
         })
         .sort((a, b) => b.importanceScore - a.importanceScore)
         .slice(0, 20); // Top 20 sources
-    }, [runStatus, globallyFilteredResults, sourcePositioningBrandFilter]);
+    }, [runStatus, globallyFilteredResults, sourcePositioningBrandFilter, excludedBrands]);
 
     // Get list of brands for the source positioning filter
     const sourcePositioningBrandOptions = useMemo(() => {
@@ -875,7 +877,8 @@ export const SourcesTab = () => {
         if (!isCategory && r.brand_mentioned && searchedBrand) {
           brandsInResponse.push(searchedBrand);
         }
-        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => !isCategoryName(b, searchedBrand || '')) : r.competitors_mentioned || [];
+        const rBrands = (r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [])
+          .filter(b => !isCategoryName(b, searchedBrand || '') && !excludedBrands.has(b));
         brandsInResponse.push(...rBrands);
 
         // Track unique domains per response
@@ -913,8 +916,19 @@ export const SourcesTab = () => {
           domainStats[domain].providers.add(r.provider);
           // Track which prompt led to this citation
           if (r.prompt) domainStats[domain].prompts.add(r.prompt);
-          // Use brand sentiment if available (convert to numeric)
-          if (r.brand_sentiment) {
+          // Use sentiment data (convert to numeric)
+          if (isCategory) {
+            // For industry reports, average competitor_sentiments (per-brand sentiments)
+            if (r.competitor_sentiments) {
+              Object.entries(r.competitor_sentiments).forEach(([brand, sentiment]) => {
+                if (!sentiment || sentiment === 'not_mentioned') return;
+                if (isCategoryName(brand, searchedBrand)) return;
+                if (excludedBrands.has(brand)) return;
+                const score = getSentimentScore(sentiment);
+                if (score > 0) domainStats[domain].sentimentScores.push(score);
+              });
+            }
+          } else if (r.brand_sentiment) {
             const sentimentScore = getSentimentScore(r.brand_sentiment);
             if (sentimentScore > 0) {
               domainStats[domain].sentimentScores.push(sentimentScore);
@@ -958,7 +972,7 @@ export const SourcesTab = () => {
           };
         })
         .sort((a, b) => b.usedPercent - a.usedPercent);
-    }, [runStatus, globallyFilteredResults, aiCategorizations]);
+    }, [runStatus, globallyFilteredResults, aiCategorizations, isCategory, excludedBrands]);
 
     // Available prompts for the publisher prompt filter
     const publisherPromptOptions = useMemo(() => {
@@ -1136,7 +1150,8 @@ export const SourcesTab = () => {
       const allBrands = new Set<string>();
 
       filteredResults.forEach((r: Result) => {
-        const brands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
+        const brands = (r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [])
+          .filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b));
         const domains = new Set<string>();
         r.sources!.forEach(s => {
           if (s.url) {
@@ -1209,7 +1224,7 @@ export const SourcesTab = () => {
         sentimentMatrix,
         totals: { bySource: sourceTotals, byBrand: brandTotals, grand },
       };
-    }, [isCategory, runStatus, globallyFilteredResults, sourceBrandHeatmapProviderFilter, sourceBrandHeatmapSort, sourceBrandHeatmapView]);
+    }, [isCategory, runStatus, globallyFilteredResults, sourceBrandHeatmapProviderFilter, sourceBrandHeatmapSort, sourceBrandHeatmapView, excludedBrands]);
 
     // Max cell value for heatmap color scaling
     const heatmapMaxValue = useMemo(() => {
