@@ -949,14 +949,15 @@ export const OverviewTab = ({
           }
 
           if (isCategory) {
-            // Market Leader variant for industry reports — use brandBreakdownStats for consistency with table
+            // Market Leader variant for industry reports — use brandBreakdownStats for consistency
             const leader = brandBreakdownStats[0];
             const leaderName = leader?.brand || overviewMetrics?.selectedBrand || 'N/A';
-            const leaderSov = leader?.shareOfVoice ?? 0;
+            const leaderVisibility = leader?.visibilityScore ?? 0;
             const leaderMentioned = leader?.mentioned ?? 0;
             const leaderTotal = leader?.total ?? 0;
+            const leaderVisTone = getKPIInterpretation('visibility', leaderVisibility).tone;
             return (
-              <div style={{ order: 4 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.shareOfVoice}`}>
+              <div style={{ order: 4 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.visibility}`}>
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Leader</p>
                   <div className="relative group">
@@ -968,20 +969,20 @@ export const OverviewTab = ({
                       <HelpCircle className="w-4 h-4 text-gray-400" />
                     </button>
                     <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                      {leaderName} is mentioned most often across AI responses, accounting for {leaderSov.toFixed(1)}% of all brand mentions ({leaderMentioned} of {leaderTotal} responses).
+                      {leaderName} appears in {leaderVisibility.toFixed(1)}% of AI responses ({leaderMentioned} of {leaderTotal} responses).
                     </div>
                   </div>
                 </div>
                 {/* Brand name as hero element */}
                 <div className="h-[100px] flex flex-col justify-center">
                   <p className="text-2xl font-bold text-gray-900 leading-tight truncate" title={leaderName}>{leaderName}</p>
-                  <p className="text-sm text-gray-500 mt-1">{leaderSov.toFixed(1)}% share of voice</p>
-                  <p className="text-xs text-gray-400 mt-0.5">% of total brand mentions captured</p>
+                  <p className="text-sm text-gray-500 mt-1">{leaderVisibility.toFixed(1)}% visibility score</p>
+                  <p className="text-xs text-gray-400 mt-0.5">% of AI responses that mention this brand</p>
                 </div>
                 {/* Badge */}
                 <div className="h-[28px] flex items-start mt-3">
-                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full cursor-help ${getToneStyles(sovTone)}`} title={getKPIInterpretation('shareOfVoice', leaderSov).tooltip}>
-                    {getKPIInterpretation('shareOfVoice', leaderSov).label}
+                  <span className={`inline-block w-fit px-3 py-1 text-xs font-medium rounded-full cursor-help ${getToneStyles(leaderVisTone)}`} title={getKPIInterpretation('visibility', leaderVisibility).tooltip}>
+                    {getKPIInterpretation('visibility', leaderVisibility).label}
                   </span>
                 </div>
                 {/* Description */}
