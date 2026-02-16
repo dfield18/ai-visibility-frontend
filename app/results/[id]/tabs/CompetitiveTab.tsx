@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   ResponsiveContainer,
   ScatterChart,
@@ -319,22 +319,6 @@ const getSentimentLabelFromScore = (score: number, issueMode = false): string =>
 // Types
 // ---------------------------------------------------------------------------
 
-interface BrandQuote {
-  text: string;
-  summary?: string;
-  provider: string;
-  prompt: string;
-}
-
-interface AllBrandsAnalysisEntry {
-  brand: string;
-  isSearchedBrand: boolean;
-  visibilityScore: number;
-  providerScores: { provider: string; score: number }[];
-  comparisonRatio: number;
-  avgSentimentScore: number | null;
-}
-
 export interface CompetitiveTabProps {
   setSelectedResultHighlight: (val: { brand: string; domain?: string } | null) => void;
   setHeatmapResultsList: (val: { results: Result[]; domain: string; brand: string } | null) => void;
@@ -357,406 +341,50 @@ export default function CompetitiveTab({
   // Section visibility helper — if visibleSections is not set, show all
   const showSection = (id: string) => !visibleSections || visibleSections.includes(id);
 
-  // ---- Context ----
-  const { runStatus, globallyFilteredResults, availableProviders, availablePrompts, brandBreakdownStats, allBrandsAnalysisData, brandQuotesMap, isCategory, isIssue, excludedBrands } = useResults();
+  // ---- Context (data + computed metrics + filter state) ----
+  const {
+    runStatus,
+    globallyFilteredResults,
+    availableProviders,
+    availablePrompts,
+    brandQuotesMap,
+    isCategory,
+    isIssue,
+    // Competitive metrics from context
+    brandBreakdownStats,
+    brandPositioningStats,
+    promptPerformanceMatrix,
+    modelPreferenceData,
+    brandCooccurrence,
+    competitiveInsights,
+    allBrandsAnalysisData,
+    brandSourceHeatmap,
+    // Competitive filters from context
+    brandBreakdownLlmFilter,
+    setBrandBreakdownLlmFilter,
+    brandBreakdownPromptFilter,
+    setBrandBreakdownPromptFilter,
+    brandPositioningLlmFilter,
+    setBrandPositioningLlmFilter,
+    brandPositioningPromptFilter,
+    setBrandPositioningPromptFilter,
+    promptMatrixLlmFilter,
+    setPromptMatrixLlmFilter,
+    cooccurrenceView,
+    setCooccurrenceView,
+    compHeatmapProviderFilter,
+    setCompHeatmapProviderFilter,
+    compHeatmapShowSentiment,
+    setCompHeatmapShowSentiment,
+  } = useResults();
   const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
 
-  // ---- Internalized state ----
-  const [brandBreakdownLlmFilter, setBrandBreakdownLlmFilter] = useState<string>('all');
-  const [brandBreakdownPromptFilter, setBrandBreakdownPromptFilter] = useState<string>('all');
+  // ---- UI-only local state ----
   const [expandedBrandBreakdownRows, setExpandedBrandBreakdownRows] = useState<Set<string>>(new Set());
-  const [brandPositioningLlmFilter, setBrandPositioningLlmFilter] = useState<string>('all');
-  const [brandPositioningPromptFilter, setBrandPositioningPromptFilter] = useState<string>('all');
-  const [promptMatrixLlmFilter, setPromptMatrixLlmFilter] = useState<string>('all');
-  const [cooccurrenceView, setCooccurrenceView] = useState<'pairs' | 'venn'>('venn');
-  const effectiveCooccurrenceView = forceCooccurrenceView || cooccurrenceView;
-  const [heatmapProviderFilter, setHeatmapProviderFilter] = useState<string>('all');
-  const [heatmapShowSentiment, setHeatmapShowSentiment] = useState<boolean>(false);
   const [brandCarouselIndex, setBrandCarouselIndex] = useState(0);
   const [providerScrollIndex, setProviderScrollIndex] = useState<Record<string, number>>({});
 
-  // ---- Internalized useMemos ----
-
-  // Brand Positioning Stats
-  const brandPositioningStats = useMemo(() => {
-    if (!runStatus) return [];
-    const results = globallyFilteredResults.filter((r: Result) => {
-      if (r.error) return false;
-      if (brandPositioningLlmFilter !== 'all' && r.provider !== brandPositioningLlmFilter) return false;
-      if (brandPositioningPromptFilter !== 'all' && r.prompt !== brandPositioningPromptFilter) return false;
-      return true;
-    });
-    const searchedBrand = runStatus.brand;
-    const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
-    results.forEach(r => {
-      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) allBrands.add(c); });
-    });
-    const sentimentScoreMap: Record<string, number> = {
-      'strong_endorsement': 5, 'positive_endorsement': 4, 'neutral_mention': 3, 'conditional': 2, 'negative_comparison': 1, 'not_mentioned': 0,
-    };
-    const brandStats = Array.from(allBrands).map(brand => {
-      const isSearchedBrand = brand === searchedBrand;
-      const total = results.length;
-      const mentioned = results.filter(r => {
-        if (isSearchedBrand) return r.brand_mentioned;
-        return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
-      }).length;
-      const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
-      const sentimentResults = results.filter(r => {
-        if (isSearchedBrand) return r.brand_mentioned && r.brand_sentiment && r.brand_sentiment !== 'not_mentioned';
-        const hasBrand = r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
-        return hasBrand && r.competitor_sentiments?.[brand] && r.competitor_sentiments[brand] !== 'not_mentioned';
-      });
-      let avgSentimentScore: number | null = null;
-      if (sentimentResults.length > 0) {
-        const sentimentSum = sentimentResults.reduce((sum, r) => {
-          if (isSearchedBrand) return sum + (sentimentScoreMap[r.brand_sentiment || ''] || 0);
-          return sum + (sentimentScoreMap[r.competitor_sentiments?.[brand] || ''] || 0);
-        }, 0);
-        avgSentimentScore = sentimentSum / sentimentResults.length;
-      }
-      return { brand, isSearchedBrand, mentioned, visibilityScore, avgSentimentScore };
-    });
-    return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
-  }, [runStatus, globallyFilteredResults, brandPositioningLlmFilter, brandPositioningPromptFilter, excludedBrands]);
-
-  // Prompt Performance Matrix
-  const promptPerformanceMatrix = useMemo(() => {
-    if (!runStatus) return { brands: [] as string[], prompts: [] as string[], matrix: [] as number[][] };
-    const results = globallyFilteredResults.filter((r: Result) => {
-      if (r.error) return false;
-      if (promptMatrixLlmFilter !== 'all' && r.provider !== promptMatrixLlmFilter) return false;
-      return true;
-    });
-    if (results.length === 0) return { brands: [] as string[], prompts: [] as string[], matrix: [] as number[][] };
-    const searchedBrand = runStatus.brand;
-    const prompts = Array.from(new Set(results.map(r => r.prompt)));
-    const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
-    results.forEach(r => {
-      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) allBrands.add(c); });
-    });
-    const brands = Array.from(allBrands);
-    const matrix = brands.map(brand => {
-      const isSearchedBrand = brand === searchedBrand;
-      return prompts.map(prompt => {
-        const promptResults = results.filter(r => r.prompt === prompt);
-        const mentioned = promptResults.filter(r => {
-          if (isSearchedBrand) return r.brand_mentioned;
-          return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand);
-        }).length;
-        return promptResults.length > 0 ? (mentioned / promptResults.length) * 100 : 0;
-      });
-    });
-    return { brands, prompts, matrix };
-  }, [runStatus, globallyFilteredResults, promptMatrixLlmFilter, excludedBrands]);
-
-  // Model Preference Data
-  const modelPreferenceData = useMemo(() => {
-    if (!runStatus) return [];
-    const results = globallyFilteredResults.filter((r: Result) => !r.error);
-    if (results.length === 0) return [];
-    const searchedBrand = runStatus.brand;
-    const providerSet = new Set(results.map(r => r.provider));
-    const providers = PROVIDER_ORDER.filter(p => providerSet.has(p)).concat(
-      Array.from(providerSet).filter(p => !PROVIDER_ORDER.includes(p))
-    );
-    const brandCounts: Record<string, number> = isCategory ? {} : { [searchedBrand]: 0 };
-    results.forEach(r => {
-      if (!isCategory && r.brand_mentioned) brandCounts[searchedBrand]++;
-      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) brandCounts[c] = (brandCounts[c] || 0) + 1; });
-    });
-    const topBrands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([brand]) => brand);
-    return providers.map(provider => {
-      const providerResults = results.filter(r => r.provider === provider);
-      const brandRates: Record<string, number> = {};
-      topBrands.forEach(brand => {
-        const isSearchedBrand = brand === searchedBrand;
-        const mentioned = providerResults.filter(r => { if (isSearchedBrand) return r.brand_mentioned; return r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand); }).length;
-        brandRates[brand] = providerResults.length > 0 ? (mentioned / providerResults.length) * 100 : 0;
-      });
-      return { provider, ...brandRates };
-    });
-  }, [runStatus, globallyFilteredResults, excludedBrands]);
-
-  // Brand Co-occurrence
-  const brandCooccurrence = useMemo(() => {
-    if (!runStatus) return [];
-    const results = globallyFilteredResults.filter((r: Result) => !r.error);
-    if (results.length === 0) return [];
-    const searchedBrand = runStatus.brand;
-    const cooccurrenceCounts: Record<string, { brand1: string; brand2: string; count: number }> = {};
-    results.forEach(r => {
-      const brandsInResponse: string[] = [];
-      if (!isCategory && r.brand_mentioned && !excludedBrands.has(searchedBrand)) brandsInResponse.push(searchedBrand);
-      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => {
-        if (excludedBrands.has(c)) return;
-        if (!isCategory || !isCategoryName(c, searchedBrand)) brandsInResponse.push(c);
-      });
-      // Deduplicate brands within a single response
-      const uniqueBrands = [...new Set(brandsInResponse)];
-      for (let i = 0; i < uniqueBrands.length; i++) {
-        for (let j = i + 1; j < uniqueBrands.length; j++) {
-          const brand1 = uniqueBrands[i];
-          const brand2 = uniqueBrands[j];
-          const key = [brand1, brand2].sort().join('|||');
-          if (!cooccurrenceCounts[key]) cooccurrenceCounts[key] = { brand1, brand2, count: 0 };
-          cooccurrenceCounts[key].count++;
-        }
-      }
-    });
-    return Object.values(cooccurrenceCounts)
-      .map(item => ({ brand1: item.brand1, brand2: item.brand2, count: item.count, percentage: (item.count / results.length) * 100 }))
-      .sort((a, b) => b.count - a.count);
-  }, [runStatus, globallyFilteredResults, excludedBrands]);
-
-  // Competitive Insights
-  const competitiveInsights = useMemo(() => {
-    if (!runStatus || brandBreakdownStats.length === 0) return [];
-    const insights: string[] = [];
-
-    const formatModelName = (provider: string): string => {
-      switch (provider) {
-        case 'openai': return 'GPT-4o';
-        case 'anthropic': return 'Claude';
-        case 'perplexity': return 'Perplexity';
-        case 'ai_overviews': return 'Google AI Overviews';
-        case 'gemini': return 'Gemini';
-        case 'google': return 'Gemini';
-        case 'grok': return 'Grok';
-        case 'llama': return 'Llama';
-        default: return provider;
-      }
-    };
-
-    if (isCategory) {
-      // Industry-framed insights
-      const sorted = [...brandBreakdownStats].sort((a: any, b: any) => b.visibilityScore - a.visibilityScore);
-      const leader = sorted[0];
-      const runner = sorted.length > 1 ? sorted[1] : null;
-
-      if (leader) {
-        const gap = runner ? (leader.visibilityScore - runner.visibilityScore).toFixed(0) : null;
-        if (gap && Number(gap) > 15) {
-          insights.push(`${leader.brand} dominates AI recommendations with ${leader.visibilityScore.toFixed(0)}% visibility, ${gap} points ahead of ${runner!.brand}`);
-        } else if (runner) {
-          insights.push(`${leader.brand} (${leader.visibilityScore.toFixed(0)}%) and ${runner.brand} (${runner.visibilityScore.toFixed(0)}%) are close competitors for the top spot`);
-        } else {
-          insights.push(`${leader.brand} leads AI recommendations with ${leader.visibilityScore.toFixed(0)}% visibility`);
-        }
-      }
-
-      // Sentiment leader
-      const sentimentSorted = [...brandBreakdownStats].filter((s: any) => s.avgSentimentScore !== null).sort((a: any, b: any) => b.avgSentimentScore - a.avgSentimentScore);
-      if (sentimentSorted.length > 0 && sentimentSorted[0].brand !== leader?.brand) {
-        insights.push(`${sentimentSorted[0].brand} has the best sentiment despite not leading in mentions — a potential underdog`);
-      }
-
-      // #1 position leader
-      const topPositionLeader = [...brandBreakdownStats].sort((a: any, b: any) => b.firstPositionRate - a.firstPositionRate)[0];
-      if (topPositionLeader && topPositionLeader.firstPositionRate > 0) {
-        insights.push(`${topPositionLeader.brand} captures the #1 recommendation spot ${topPositionLeader.firstPositionRate.toFixed(0)}% of the time`);
-      }
-
-      // Model preference divergence
-      if (modelPreferenceData.length >= 2 && sorted.length >= 2) {
-        const leaderBrand = leader.brand;
-        let bestModel = '';
-        let bestRate = 0;
-        let worstModel = '';
-        let worstRate = 100;
-        modelPreferenceData.forEach((data: any) => {
-          const rate = (data as Record<string, string | number>)[leaderBrand] as number || 0;
-          if (rate > bestRate) { bestRate = rate; bestModel = data.provider; }
-          if (rate < worstRate) { worstRate = rate; worstModel = data.provider; }
-        });
-        if (bestModel && worstModel && bestModel !== worstModel && (bestRate - worstRate) > 15) {
-          insights.push(`AI platforms disagree: ${formatModelName(bestModel)} favors ${leaderBrand} (${bestRate.toFixed(0)}%) while ${formatModelName(worstModel)} shows it least (${worstRate.toFixed(0)}%)`);
-        }
-      }
-
-      // Co-occurrence
-      if (brandCooccurrence.length > 0) {
-        const top = brandCooccurrence[0];
-        insights.push(`${top.brand1} and ${top.brand2} are most often recommended together (${top.count} times)`);
-      }
-    } else if (isIssue) {
-      // Issue-framed insights
-      const mainIssue = runStatus.brand;
-      const mainIssueStats = brandBreakdownStats.find((s: any) => s.isSearchedBrand);
-      const relatedIssues = brandBreakdownStats.filter((s: any) => !s.isSearchedBrand);
-      const sorted = [...brandBreakdownStats].sort((a: any, b: any) => b.visibilityScore - a.visibilityScore);
-
-      if (mainIssueStats) {
-        insights.push(`${mainIssue} is addressed in ${mainIssueStats.visibilityScore.toFixed(0)}% of AI responses`);
-      }
-
-      // Most covered related issue
-      if (relatedIssues.length > 0) {
-        const topRelated = sorted.find((s: any) => !s.isSearchedBrand);
-        if (topRelated) {
-          insights.push(`${topRelated.brand} is the most frequently mentioned related issue (${topRelated.visibilityScore.toFixed(0)}% coverage)`);
-        }
-      }
-
-      // Framing insight
-      const framingSorted = [...brandBreakdownStats].filter((s: any) => s.avgSentimentScore !== null).sort((a: any, b: any) => b.avgSentimentScore - a.avgSentimentScore);
-      if (framingSorted.length >= 2) {
-        const mostSupportive = framingSorted[0];
-        const mostCritical = framingSorted[framingSorted.length - 1];
-        if (mostSupportive.brand !== mostCritical.brand) {
-          insights.push(`${mostSupportive.brand} receives the most supportive framing while ${mostCritical.brand} is framed most critically`);
-        }
-      }
-
-      // Model divergence
-      if (modelPreferenceData.length >= 2 && mainIssueStats) {
-        let bestModel = '';
-        let bestRate = 0;
-        let worstModel = '';
-        let worstRate = 100;
-        modelPreferenceData.forEach((data: any) => {
-          const rate = (data as Record<string, string | number>)[mainIssue] as number || 0;
-          if (rate > bestRate) { bestRate = rate; bestModel = data.provider; }
-          if (rate < worstRate) { worstRate = rate; worstModel = data.provider; }
-        });
-        if (bestModel && worstModel && bestModel !== worstModel && (bestRate - worstRate) > 10) {
-          insights.push(`${formatModelName(bestModel)} addresses ${mainIssue} most often (${bestRate.toFixed(0)}%) while ${formatModelName(worstModel)} covers it least (${worstRate.toFixed(0)}%)`);
-        }
-      }
-
-      // Co-occurrence
-      if (brandCooccurrence.length > 0) {
-        const top = brandCooccurrence[0];
-        insights.push(`${top.brand1} and ${top.brand2} are most often discussed together (${top.count} times)`);
-      }
-    } else {
-      // Brand-framed insights (original)
-      const searchedBrand = runStatus.brand;
-      const searchedBrandStats = brandBreakdownStats.find((s: any) => s.isSearchedBrand);
-      const competitors = brandBreakdownStats.filter((s: any) => !s.isSearchedBrand);
-      if (!searchedBrandStats) return [];
-      const visibilityRank = brandBreakdownStats.findIndex((s: any) => s.isSearchedBrand) + 1;
-      if (visibilityRank === 1) {
-        insights.push(`${searchedBrand} leads in AI visibility with ${searchedBrandStats.visibilityScore.toFixed(0)}% visibility score`);
-      } else if (visibilityRank <= 3) {
-        const leader = brandBreakdownStats[0];
-        insights.push(`${searchedBrand} ranks #${visibilityRank} in visibility (${searchedBrandStats.visibilityScore.toFixed(0)}%), behind ${leader.brand} (${leader.visibilityScore.toFixed(0)}%)`);
-      } else {
-        insights.push(`${searchedBrand} has low visibility at ${searchedBrandStats.visibilityScore.toFixed(0)}%, ranking #${visibilityRank} of ${brandBreakdownStats.length} brands`);
-      }
-      if (searchedBrandStats.avgSentimentScore !== null) {
-        const betterSentimentCompetitors = competitors.filter((c: any) => c.avgSentimentScore !== null && c.avgSentimentScore > searchedBrandStats.avgSentimentScore!);
-        if (betterSentimentCompetitors.length === 0) {
-          insights.push(`${searchedBrand} has the most positive sentiment among all tracked brands`);
-        } else if (betterSentimentCompetitors.length <= 2) {
-          insights.push(`${betterSentimentCompetitors.map((c: any) => c.brand).join(' and ')} ${betterSentimentCompetitors.length === 1 ? 'has' : 'have'} better sentiment than ${searchedBrand}`);
-        }
-      }
-      if (searchedBrandStats.firstPositionRate > 0) {
-        const topPositionLeader = [...brandBreakdownStats].sort((a: any, b: any) => b.firstPositionRate - a.firstPositionRate)[0];
-        if (topPositionLeader.isSearchedBrand) {
-          insights.push(`${searchedBrand} wins the #1 position ${searchedBrandStats.firstPositionRate.toFixed(0)}% of the time - more than any competitor`);
-        } else {
-          insights.push(`${topPositionLeader.brand} leads in #1 positions (${topPositionLeader.firstPositionRate.toFixed(0)}%) vs ${searchedBrand} (${searchedBrandStats.firstPositionRate.toFixed(0)}%)`);
-        }
-      }
-      if (modelPreferenceData.length > 0) {
-        let bestModel = '';
-        let bestRate = 0;
-        let worstModel = '';
-        let worstRate = 100;
-        modelPreferenceData.forEach((data: any) => {
-          const rate = (data as Record<string, string | number>)[searchedBrand] as number || 0;
-          if (rate > bestRate) { bestRate = rate; bestModel = data.provider; }
-          if (rate < worstRate) { worstRate = rate; worstModel = data.provider; }
-        });
-        if (bestModel && worstModel && bestModel !== worstModel && (bestRate - worstRate) > 10) {
-          insights.push(`${searchedBrand} performs best on ${formatModelName(bestModel)} (${bestRate.toFixed(0)}%) and worst on ${formatModelName(worstModel)} (${worstRate.toFixed(0)}%)`);
-        }
-      }
-      if (brandCooccurrence.length > 0) {
-        const topCooccurrence = brandCooccurrence.find((c: any) => c.brand1 === searchedBrand || c.brand2 === searchedBrand);
-        if (topCooccurrence) {
-          const otherBrand = topCooccurrence.brand1 === searchedBrand ? topCooccurrence.brand2 : topCooccurrence.brand1;
-          insights.push(`${searchedBrand} is most often mentioned alongside ${otherBrand} (${topCooccurrence.count} times)`);
-        }
-      }
-    }
-
-    return insights.slice(0, 5);
-  }, [runStatus, brandBreakdownStats, modelPreferenceData, brandCooccurrence, isCategory, isIssue]);
-
-  // Brand-Source Heatmap
-  const brandSourceHeatmap = useMemo(() => {
-    if (!runStatus) return { brands: [] as string[], sources: [] as string[], data: [] as Array<{ domain: string; total: number; [key: string]: string | number }>, brandTotals: {} as Record<string, number>, searchedBrand: '', sentimentData: {} as Record<string, Record<string, { total: number; sum: number; avg: number }>> };
-    const sourceBrandCounts: Record<string, Record<string, number>> = {};
-    const sourceBrandSentiments: Record<string, Record<string, { total: number; sum: number }>> = {};
-    const brandTotalMentions: Record<string, number> = {};
-    const results = globallyFilteredResults.filter((r: Result) => {
-      if (r.error || !r.sources || r.sources.length === 0) return false;
-      if (heatmapProviderFilter !== 'all' && r.provider !== heatmapProviderFilter) return false;
-      return true;
-    });
-    for (const result of results) {
-      if (!result.sources) continue;
-      const brandsInResult: Array<{ brand: string; sentiment: string | null }> = [];
-      if (result.brand_mentioned && runStatus.brand && !isCategory) brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
-      const heatmapBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
-      heatmapBrands.forEach(comp => { if ((comp !== runStatus.brand || !isCategory) && !excludedBrands.has(comp) && (!isCategory || !isCategoryName(comp, runStatus.brand))) brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null }); });
-      brandsInResult.forEach(({ brand }) => { brandTotalMentions[brand] = (brandTotalMentions[brand] || 0) + 1; });
-      if (brandsInResult.length === 0) continue;
-      const seenDomainBrandPairs = new Set<string>();
-      for (const source of result.sources) {
-        if (!source.url) continue;
-        const domain = getDomain(source.url);
-        if (!sourceBrandCounts[domain]) { sourceBrandCounts[domain] = {}; sourceBrandSentiments[domain] = {}; }
-        brandsInResult.forEach(({ brand, sentiment }) => {
-          const pairKey = `${domain}:${brand}`;
-          if (!seenDomainBrandPairs.has(pairKey)) {
-            seenDomainBrandPairs.add(pairKey);
-            sourceBrandCounts[domain][brand] = (sourceBrandCounts[domain][brand] || 0) + 1;
-            if (!sourceBrandSentiments[domain][brand]) sourceBrandSentiments[domain][brand] = { total: 0, sum: 0 };
-            // Prefer per-source sentiment when available, fall back to response-level
-            // Ignore "not_mentioned" from per-source since the brand IS in this response
-            const perSourceSentiment = result.source_brand_sentiments?.[domain]?.[brand];
-            const effectiveSentiment = (perSourceSentiment && perSourceSentiment !== 'not_mentioned') ? perSourceSentiment : sentiment;
-            if (effectiveSentiment && effectiveSentiment !== 'not_mentioned' && sentimentScores[effectiveSentiment] > 0) {
-              sourceBrandSentiments[domain][brand].total += 1;
-              sourceBrandSentiments[domain][brand].sum += sentimentScores[effectiveSentiment];
-            }
-          }
-        });
-      }
-    }
-    const topSources = Object.entries(sourceBrandCounts)
-      .map(([domain, brands]) => ({ domain, total: Object.values(brands).reduce((sum, count) => sum + count, 0), brands }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 15);
-    const searchedBrand = runStatus.brand;
-    const brandList = Object.keys(brandTotalMentions).sort((a, b) => {
-      if (a === searchedBrand) return -1;
-      if (b === searchedBrand) return 1;
-      return brandTotalMentions[b] - brandTotalMentions[a];
-    });
-    const heatmapData: Array<{ domain: string; total: number; [key: string]: string | number }> = topSources.map(source => ({
-      domain: source.domain, total: source.total,
-      ...brandList.reduce((acc, brand) => { acc[brand] = source.brands[brand] || 0; return acc; }, {} as Record<string, number>),
-    }));
-    const sentimentData: Record<string, Record<string, { total: number; sum: number; avg: number }>> = {};
-    topSources.forEach(source => {
-      sentimentData[source.domain] = {};
-      brandList.forEach(brand => {
-        const data = sourceBrandSentiments[source.domain]?.[brand];
-        if (data && data.total > 0) { sentimentData[source.domain][brand] = { ...data, avg: data.sum / data.total }; }
-        else { sentimentData[source.domain][brand] = { total: 0, sum: 0, avg: 0 }; }
-      });
-    });
-    return { brands: brandList, sources: topSources.map(s => s.domain), data: heatmapData, brandTotals: brandTotalMentions, searchedBrand, sentimentData };
-  }, [runStatus, globallyFilteredResults, heatmapProviderFilter, excludedBrands]);
+  const effectiveCooccurrenceView = forceCooccurrenceView || cooccurrenceView;
 
   // ---- Internalized callbacks ----
 
@@ -764,7 +392,7 @@ export default function CompetitiveTab({
     if (!runStatus) return;
     const matchingResults = globallyFilteredResults.filter((result: Result) => {
       if (result.error || !result.sources || result.sources.length === 0) return false;
-      if (heatmapProviderFilter !== 'all' && result.provider !== heatmapProviderFilter) return false;
+      if (compHeatmapProviderFilter !== 'all' && result.provider !== compHeatmapProviderFilter) return false;
       const brandMentioned = brand === runStatus.brand ? result.brand_mentioned : (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(brand) : result.competitors_mentioned?.includes(brand));
       if (!brandMentioned) return false;
       const hasMatchingSource = result.sources.some((source: Source) => { if (!source.url) return false; return getDomain(source.url) === domain; });
@@ -776,7 +404,7 @@ export default function CompetitiveTab({
     } else if (matchingResults.length > 1) {
       setHeatmapResultsList({ results: matchingResults, domain, brand });
     }
-  }, [runStatus, globallyFilteredResults, heatmapProviderFilter, setSelectedResult, setSelectedResultHighlight, setHeatmapResultsList]);
+  }, [runStatus, globallyFilteredResults, compHeatmapProviderFilter, setSelectedResult, setSelectedResultHighlight, setHeatmapResultsList]);
 
   const handleExportHeatmapCSV = useCallback(() => {
     if (!brandSourceHeatmap.sources.length || !runStatus) return;
@@ -784,7 +412,7 @@ export default function CompetitiveTab({
     // Build headers: Source, then for each brand: count/sentiment + response
     const headers = ['Source'];
     brandSourceHeatmap.brands.forEach(brand => {
-      headers.push(heatmapShowSentiment ? `${brand} (Sentiment)` : `${brand} (Citations)`);
+      headers.push(compHeatmapShowSentiment ? `${brand} (Sentiment)` : `${brand} (Citations)`);
       headers.push(`${brand} (Responses)`);
     });
 
@@ -792,7 +420,7 @@ export default function CompetitiveTab({
     const getResponsesForCell = (domain: string, brand: string): string => {
       const matching = globallyFilteredResults.filter((result: Result) => {
         if (result.error || !result.sources || result.sources.length === 0) return false;
-        if (heatmapProviderFilter !== 'all' && result.provider !== heatmapProviderFilter) return false;
+        if (compHeatmapProviderFilter !== 'all' && result.provider !== compHeatmapProviderFilter) return false;
         const brandMentioned = brand === runStatus.brand ? result.brand_mentioned : (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(brand) : result.competitors_mentioned?.includes(brand));
         if (!brandMentioned) return false;
         return result.sources.some((source: Source) => source.url && getDomain(source.url) === domain);
@@ -806,7 +434,7 @@ export default function CompetitiveTab({
     const rows = brandSourceHeatmap.data.map(row => {
       const values = [row.domain as string];
       brandSourceHeatmap.brands.forEach(brand => {
-        if (heatmapShowSentiment) {
+        if (compHeatmapShowSentiment) {
           const sentimentInfo = brandSourceHeatmap.sentimentData[row.domain as string]?.[brand];
           values.push(sentimentInfo?.avg ? sentimentInfo.avg.toFixed(2) : '0');
         } else {
@@ -825,12 +453,12 @@ export default function CompetitiveTab({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${runStatus?.brand || 'brand'}-source-heatmap-${heatmapShowSentiment ? 'sentiment' : 'citations'}.csv`;
+    a.download = `${runStatus?.brand || 'brand'}-source-heatmap-${compHeatmapShowSentiment ? 'sentiment' : 'citations'}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [brandSourceHeatmap, heatmapShowSentiment, runStatus, globallyFilteredResults, heatmapProviderFilter]);
+  }, [brandSourceHeatmap, compHeatmapShowSentiment, runStatus, globallyFilteredResults, compHeatmapProviderFilter]);
 
   // ---- Render ----
 
@@ -1796,7 +1424,6 @@ export default function CompetitiveTab({
                 {effectiveCooccurrenceView === 'pairs' && (() => {
                   const maxCount = brandCooccurrence[0]?.count || 1;
                   const minCount = brandCooccurrence[brandCooccurrence.length - 1]?.count || 1;
-
                   const getBarColor = (count: number) => {
                     const range = maxCount - minCount || 1;
                     const normalized = (count - minCount) / range;
@@ -1989,16 +1616,16 @@ export default function CompetitiveTab({
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">{isIssue ? 'Which Publishers Cover Which Issues' : 'Which Publishers Mention Which Brands'}</h3>
                     <p className="text-sm text-gray-500">
-                      {heatmapShowSentiment ? (isIssue ? 'Average framing sentiment for each publisher and issue combination' : 'How positively each publisher describes each brand') : (isIssue ? 'See citation patterns across publishers and issues' : 'See citation patterns across publishers and brands')}
+                      {compHeatmapShowSentiment ? (isIssue ? 'Average framing sentiment for each publisher and issue combination' : 'How positively each publisher describes each brand') : (isIssue ? 'See citation patterns across publishers and issues' : 'See citation patterns across publishers and brands')}
                       <span className="ml-2 text-gray-400">Click any cell to view responses</span>
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1 border-b border-gray-200">
                       <button
-                        onClick={() => setHeatmapShowSentiment(false)}
+                        onClick={() => setCompHeatmapShowSentiment(false)}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                          !heatmapShowSentiment
+                          !compHeatmapShowSentiment
                             ? 'border-gray-900 text-gray-900'
                             : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
@@ -2006,9 +1633,9 @@ export default function CompetitiveTab({
                         Citations
                       </button>
                       <button
-                        onClick={() => setHeatmapShowSentiment(true)}
+                        onClick={() => setCompHeatmapShowSentiment(true)}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                          heatmapShowSentiment
+                          compHeatmapShowSentiment
                             ? 'border-gray-900 text-gray-900'
                             : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
@@ -2017,8 +1644,8 @@ export default function CompetitiveTab({
                       </button>
                     </div>
                     <select
-                      value={heatmapProviderFilter}
-                      onChange={(e) => setHeatmapProviderFilter(e.target.value)}
+                      value={compHeatmapProviderFilter}
+                      onChange={(e) => setCompHeatmapProviderFilter(e.target.value)}
                       className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     >
                       <option value="all">All Models</option>
@@ -2031,7 +1658,7 @@ export default function CompetitiveTab({
 
                 {/* Legend - moved to top */}
                 <div className="mb-4 flex items-center gap-4 text-xs text-gray-500">
-                  {heatmapShowSentiment ? (
+                  {compHeatmapShowSentiment ? (
                     <>
                       <span className="text-gray-600 font-medium">{isIssue ? 'Avg Framing:' : 'Sentiment:'}</span>
                       <div className="flex items-center gap-1.5">
@@ -2126,14 +1753,14 @@ export default function CompetitiveTab({
                               const sentimentInfo = brandSourceHeatmap.sentimentData[row.domain as string]?.[brand];
                               const avgSentiment = sentimentInfo?.avg || 0;
 
-                              const intensity = heatmapShowSentiment
+                              const intensity = compHeatmapShowSentiment
                                 ? avgSentiment > 0 ? (avgSentiment - 1) / 4 : 0
                                 : globalMax > 0 ? count / globalMax : 0;
 
                               const isSearchedBrand = brand === brandSourceHeatmap.searchedBrand;
 
                               let barColor: string = '#9ca3af';
-                              if (heatmapShowSentiment && count > 0) {
+                              if (compHeatmapShowSentiment && count > 0) {
                                 if (avgSentiment >= 4.5) {
                                   barColor = '#047857';
                                 } else if (avgSentiment >= 3.5) {
@@ -2145,7 +1772,7 @@ export default function CompetitiveTab({
                                 } else {
                                   barColor = '#ef4444';
                                 }
-                              } else if (!heatmapShowSentiment && count > 0) {
+                              } else if (!compHeatmapShowSentiment && count > 0) {
                                 barColor = isSearchedBrand ? '#22c55e' : '#5ba3c0';
                               }
 
@@ -2155,11 +1782,11 @@ export default function CompetitiveTab({
                                   className={`text-center py-2 px-2 ${count > 0 ? 'cursor-pointer hover:bg-gray-100' : ''}`}
                                   style={{ minWidth: '100px' }}
                                   onClick={() => count > 0 && handleHeatmapCellClick(row.domain as string, brand)}
-                                  title={count > 0 ? (heatmapShowSentiment ? `${isIssue ? 'Avg framing' : 'Sentiment'}: ${getSentimentLabelFromScore(avgSentiment, isIssue)} (${sentimentInfo?.total || 0} responses) - Click to view` : `${count} citations - Click to view`) : undefined}
+                                  title={count > 0 ? (compHeatmapShowSentiment ? `${isIssue ? 'Avg framing' : 'Sentiment'}: ${getSentimentLabelFromScore(avgSentiment, isIssue)} (${sentimentInfo?.total || 0} responses) - Click to view` : `${count} citations - Click to view`) : undefined}
                                 >
                                   {count === 0 ? (
                                     <span className="text-gray-300">{'\u2013'}</span>
-                                  ) : heatmapShowSentiment ? (
+                                  ) : compHeatmapShowSentiment ? (
                                     <div
                                       className="h-7 rounded-md mx-auto hover:opacity-80 transition-opacity flex items-center justify-center"
                                       style={{

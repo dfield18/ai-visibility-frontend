@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   MessageSquare,
   Lightbulb,
@@ -40,18 +40,36 @@ export interface SentimentTabProps {
 export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
   // Section visibility helper — if visibleSections is not set, show all
   const showSection = (id: string) => !visibleSections || visibleSections.includes(id);
-  const { runStatus, globallyFilteredResults, trackedBrands, availableProviders, excludedBrands } = useResults();
+  const {
+    runStatus,
+    globallyFilteredResults,
+    trackedBrands,
+    availableProviders,
+    excludedBrands,
+    // Sentiment metrics from context
+    sentimentInsights,
+    brandSentimentData,
+    sentimentProviderBrandOptions,
+    citationSourceOptions,
+    sentimentByProvider,
+    competitorSentimentData,
+    // Sentiment filters from context
+    sentimentProviderBrandFilter,
+    setSentimentProviderBrandFilter,
+    sentimentProviderCitationFilter,
+    setSentimentProviderCitationFilter,
+    sentimentProviderModelFilter,
+    setSentimentProviderModelFilter,
+  } = useResults();
   const { copied, handleCopyLink, setSelectedResult, setSelectedResultHighlight } = useResultsUI();
 
+  // UI-only state kept local
   const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hoveredCompetitorBadge, setHoveredCompetitorBadge] = useState<{ competitor: string; sentiment: string } | null>(null);
   const competitorHoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [responseSentimentFilter, setResponseSentimentFilter] = useState<string>('all');
   const [responseLlmFilter, setResponseLlmFilter] = useState<string>('all');
-  const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
-  const [sentimentProviderCitationFilter, setSentimentProviderCitationFilter] = useState<string>('all');
-  const [sentimentProviderModelFilter, setSentimentProviderModelFilter] = useState<string>('all');
   const [sentimentByPromptBrandFilter, setSentimentByPromptBrandFilter] = useState<string>('');
   const [sentimentByPromptSourceFilter, setSentimentByPromptSourceFilter] = useState<string>('all');
   const [expandedResponseRows, setExpandedResponseRows] = useState<Set<string>>(new Set());
@@ -133,173 +151,6 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       return !!r.brand_sentiment;
     };
 
-    // Sentiment insights (moved from parent)
-    const sentimentInsights = useMemo(() => {
-      if (!runStatus) return [];
-
-      const insights: string[] = [];
-      const searchedBrand = runStatus.brand;
-      const issueMode = runStatus.search_type === 'issue';
-
-      // Get sentiment data
-      const resultsWithSentiment = globallyFilteredResults.filter(
-        (r: Result) => hasEffectiveSentiment(r)
-      );
-
-      if (resultsWithSentiment.length === 0) return [];
-
-      // Count sentiments
-      const sentimentCounts: Record<string, number> = {
-        strong_endorsement: 0,
-        positive_endorsement: 0,
-        neutral_mention: 0,
-        conditional: 0,
-        negative_comparison: 0,
-      };
-
-      resultsWithSentiment.forEach((r: Result) => {
-        const sentiment = getEffectiveSentiment(r) || '';
-        if (sentimentCounts[sentiment] !== undefined) {
-          sentimentCounts[sentiment]++;
-        }
-      });
-
-      const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0);
-      const positiveCount = sentimentCounts.strong_endorsement + sentimentCounts.positive_endorsement;
-      const positiveRate = total > 0 ? (positiveCount / total) * 100 : 0;
-
-      // 1. Overall sentiment insight
-      if (isIndustryReport) {
-        if (positiveRate >= 70) {
-          insights.push(`Brands in ${searchedBrand} receive highly positive framing — ${positiveRate.toFixed(0)}% of mentions are endorsements`);
-        } else if (positiveRate >= 50) {
-          insights.push(`Brands in ${searchedBrand} have generally positive sentiment with a ${positiveRate.toFixed(0)}% endorsement rate`);
-        } else if (positiveRate >= 30) {
-          insights.push(`Brands in ${searchedBrand} have mixed sentiment — only ${positiveRate.toFixed(0)}% of mentions are positive endorsements`);
-        } else {
-          insights.push(`Brands in ${searchedBrand} have challenging sentiment positioning — ${positiveRate.toFixed(0)}% positive endorsements`);
-        }
-      } else {
-        if (positiveRate >= 70) {
-          insights.push(`${searchedBrand} receives highly positive framing — ${positiveRate.toFixed(0)}% of mentions are endorsements`);
-        } else if (positiveRate >= 50) {
-          insights.push(`${searchedBrand} has generally positive sentiment with ${positiveRate.toFixed(0)}% endorsement rate`);
-        } else if (positiveRate >= 30) {
-          insights.push(`${searchedBrand} has mixed sentiment — only ${positiveRate.toFixed(0)}% of mentions are positive endorsements`);
-        } else {
-          insights.push(`${searchedBrand} has challenging sentiment positioning — ${positiveRate.toFixed(0)}% positive endorsements`);
-        }
-      }
-
-      // 2. Strongest sentiment category
-      const topSentiment = Object.entries(sentimentCounts).sort((a, b) => b[1] - a[1])[0];
-      if (topSentiment && topSentiment[1] > 0) {
-        const labelMap: Record<string, string> = issueMode ? {
-          strong_endorsement: 'Supportive',
-          positive_endorsement: 'Leaning Supportive',
-          neutral_mention: 'Balanced',
-          conditional: 'Mixed',
-          negative_comparison: 'Critical',
-        } : {
-          strong_endorsement: 'Strong',
-          positive_endorsement: 'Positive',
-          neutral_mention: 'Neutral',
-          conditional: 'Conditional',
-          negative_comparison: 'Negative',
-        };
-        const percentage = total > 0 ? (topSentiment[1] / total * 100).toFixed(0) : 0;
-        insights.push(`Most common framing: "${labelMap[topSentiment[0]]}" (${percentage}% of responses)`);
-      }
-
-      // 3. Caveat/negative analysis
-      const negativeCount = sentimentCounts.conditional + sentimentCounts.negative_comparison;
-      if (negativeCount > 0) {
-        const negativeRate = (negativeCount / total) * 100;
-        if (negativeRate > 20) {
-          insights.push(`${negativeRate.toFixed(0)}% of mentions include caveats or negative comparisons — room for improvement`);
-        }
-      }
-
-      // 4. Provider-specific sentiment patterns
-      const providerSentiments: Record<string, { positive: number; total: number }> = {};
-      resultsWithSentiment.forEach((r: Result) => {
-        if (!providerSentiments[r.provider]) {
-          providerSentiments[r.provider] = { positive: 0, total: 0 };
-        }
-        providerSentiments[r.provider].total++;
-        const eSent = getEffectiveSentiment(r);
-        if (eSent === 'strong_endorsement' || eSent === 'positive_endorsement') {
-          providerSentiments[r.provider].positive++;
-        }
-      });
-
-      const formatProviderName = (p: string) => {
-        switch (p) {
-          case 'openai': return 'GPT-4o';
-          case 'anthropic': return 'Claude';
-          case 'perplexity': return 'Perplexity';
-          case 'ai_overviews': return 'Google AI Overviews';
-          case 'gemini': return 'Gemini';
-          default: return p;
-        }
-      };
-
-      // Find best and worst providers
-      const providerRates = Object.entries(providerSentiments)
-        .filter(([, data]) => data.total >= 2)
-        .map(([provider, data]) => ({
-          provider,
-          rate: (data.positive / data.total) * 100,
-          total: data.total,
-        }))
-        .sort((a, b) => b.rate - a.rate);
-
-      if (providerRates.length >= 2) {
-        const best = providerRates[0];
-        const worst = providerRates[providerRates.length - 1];
-        if (best.rate - worst.rate > 20) {
-          insights.push(`${formatProviderName(best.provider)} is most positive (${best.rate.toFixed(0)}% endorsements) vs ${formatProviderName(worst.provider)} (${worst.rate.toFixed(0)}%)`);
-        }
-      }
-
-      // 5. Competitor comparison (if available) — skip for industry reports
-      if (!isIndustryReport) {
-        const competitorSentiments: Record<string, { positive: number; total: number }> = {};
-        globallyFilteredResults
-          .filter((r: Result) => !r.error && r.competitor_sentiments)
-          .forEach((r: Result) => {
-            if (r.competitor_sentiments) {
-              Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
-                if (!competitorSentiments[comp]) {
-                  competitorSentiments[comp] = { positive: 0, total: 0 };
-                }
-                competitorSentiments[comp].total++;
-                if (sentiment === 'strong_endorsement' || sentiment === 'positive_endorsement') {
-                  competitorSentiments[comp].positive++;
-                }
-              });
-            }
-          });
-
-        const competitorsWithBetterSentiment = Object.entries(competitorSentiments)
-          .filter(([, data]) => data.total >= 2)
-          .filter(([, data]) => {
-            const compRate = (data.positive / data.total) * 100;
-            return compRate > positiveRate + 10;
-          });
-
-        if (competitorsWithBetterSentiment.length > 0) {
-          const topComp = competitorsWithBetterSentiment[0];
-          const compRate = (topComp[1].positive / topComp[1].total) * 100;
-          insights.push(`${topComp[0]} has stronger sentiment (${compRate.toFixed(0)}% positive) than ${searchedBrand} (${positiveRate.toFixed(0)}%)`);
-        } else if (Object.keys(competitorSentiments).length > 0) {
-          insights.push(`${searchedBrand} has equal or better sentiment than tracked competitors`);
-        }
-      }
-
-      return insights.slice(0, 5);
-    }, [runStatus, globallyFilteredResults, excludedBrands]);
-
     // Export sentiment CSV handler
     const handleExportSentimentCSV = () => {
       if (!runStatus) return;
@@ -371,74 +222,6 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       URL.revokeObjectURL(url);
     };
 
-    // Calculate brand sentiment distribution
-    const brandSentimentData = useMemo(() => {
-      const sentimentCounts: Record<string, number> = {
-        strong_endorsement: 0,
-        positive_endorsement: 0,
-        neutral_mention: 0,
-        conditional: 0,
-        negative_comparison: 0,
-        not_mentioned: 0,
-      };
-
-      globallyFilteredResults
-        .filter((r: Result) => !r.error)
-        .forEach((r: Result) => {
-          const sentiment = getEffectiveSentiment(r) || 'not_mentioned';
-          if (sentimentCounts[sentiment] !== undefined) {
-            sentimentCounts[sentiment]++;
-          }
-        });
-
-      const total = Object.values(sentimentCounts).reduce((a, b) => a + b, 0);
-
-      return Object.entries(sentimentCounts)
-        .map(([sentiment, count]) => ({
-          sentiment,
-          label: getSentimentLabel(sentiment),
-          count,
-          percentage: total > 0 ? (count / total) * 100 : 0,
-          color: getSentimentBarColor(sentiment),
-        }))
-        .filter(d => d.count > 0);
-    }, [globallyFilteredResults, excludedBrands]);
-
-    // Calculate sentiment by provider
-    // Get list of brands for the sentiment provider filter dropdown
-    const sentimentProviderBrandOptions = useMemo(() => {
-      if (!runStatus) return [];
-      const options: { value: string; label: string; isSearched: boolean }[] = [];
-
-      if (isIndustryReport) {
-        // For industry reports, default to all brands average; exclude category name
-        options.push({ value: '__all__', label: 'All Brands (average sentiment)', isSearched: false });
-      } else if (runStatus.brand) {
-        // For brand reports, show searched brand first
-        options.push({ value: runStatus.brand, label: runStatus.brand, isSearched: true });
-      }
-
-      // Collect all competitors from competitor_sentiments
-      const competitors = new Set<string>();
-      const searchedBrand = runStatus?.brand || '';
-      globallyFilteredResults.forEach((r: Result) => {
-        if (!r.error && r.competitor_sentiments) {
-          Object.keys(r.competitor_sentiments).forEach(comp => {
-            if (!excludedBrands.has(comp) && !isCategoryName(comp, searchedBrand)) {
-              competitors.add(comp);
-            }
-          });
-        }
-      });
-
-      // Add competitors sorted alphabetically
-      Array.from(competitors).sort().forEach(comp => {
-        options.push({ value: comp, label: comp, isSearched: false });
-      });
-
-      return options;
-    }, [runStatus, globallyFilteredResults, isIndustryReport, excludedBrands]);
-
     // Get the effective brand filter
     // For industry reports, default to '__all__' (average across all brands)
     const effectiveSentimentBrand = sentimentProviderBrandFilter || (isIndustryReport ? '__all__' : runStatus?.brand || '');
@@ -446,101 +229,6 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
     const sentimentBrandLabel = effectiveSentimentBrand === '__all__'
       ? (isIndustryReport ? `brands in ${runStatus?.brand}` : (isIssue ? 'this issue' : 'your brand'))
       : effectiveSentimentBrand || (isIssue ? 'this issue' : 'your brand');
-
-    // Get list of unique citation source domains for the filter dropdown
-    const citationSourceOptions = useMemo(() => {
-      const domains = new Set<string>();
-      globallyFilteredResults.forEach((r: Result) => {
-        if (!r.error && r.sources) {
-          r.sources.forEach((source) => {
-            if (source.url) {
-              domains.add(extractDomain(source.url));
-            }
-          });
-        }
-      });
-      return Array.from(domains).sort();
-    }, [globallyFilteredResults]);
-
-    const sentimentByProvider = useMemo(() => {
-      const providerData: Record<string, {
-        strong_endorsement: number;
-        positive_endorsement: number;
-        neutral_mention: number;
-        conditional: number;
-        negative_comparison: number;
-        not_mentioned: number;
-      }> = {};
-
-      const isAllBrands = effectiveSentimentBrand === '__all__';
-      const isSearchedBrand = effectiveSentimentBrand === runStatus?.brand;
-
-      globallyFilteredResults
-        .filter((r: Result) => {
-          if (r.error) return false;
-          // For issues: filter by AI model if not "all"
-          if (isIssue && sentimentProviderModelFilter !== 'all') {
-            if (r.provider !== sentimentProviderModelFilter) return false;
-          }
-          // Filter by citation source domain if not "all"
-          if (!isIssue && sentimentProviderCitationFilter !== 'all') {
-            if (!r.sources || r.sources.length === 0) return false;
-            const hasCitationFromDomain = r.sources.some(
-              (source) => source.url && extractDomain(source.url) === sentimentProviderCitationFilter
-            );
-            if (!hasCitationFromDomain) return false;
-          }
-          return true;
-        })
-        .forEach((r: Result) => {
-          if (!providerData[r.provider]) {
-            providerData[r.provider] = {
-              strong_endorsement: 0,
-              positive_endorsement: 0,
-              neutral_mention: 0,
-              conditional: 0,
-              negative_comparison: 0,
-              not_mentioned: 0,
-            };
-          }
-
-          let sentiment: string;
-          if (isAllBrands) {
-            // Average sentiment across all brands in response
-            sentiment = getEffectiveSentiment(r) || 'not_mentioned';
-          } else if (isSearchedBrand) {
-            sentiment = getEffectiveSentiment(r) || 'not_mentioned';
-          } else {
-            // Use competitor_sentiments for individual competitors
-            sentiment = r.competitor_sentiments?.[effectiveSentimentBrand] || 'not_mentioned';
-          }
-
-          if (sentiment in providerData[r.provider]) {
-            providerData[r.provider][sentiment as keyof typeof providerData[string]]++;
-          }
-        });
-
-      return Object.entries(providerData).map(([provider, counts]) => {
-        const total = Object.values(counts).reduce((a, b) => a + b, 0);
-        const positiveTotal = counts.strong_endorsement + counts.positive_endorsement;
-        return {
-          provider,
-          label: getProviderLabel(provider),
-          strong_endorsement: counts.strong_endorsement,
-          positive_endorsement: counts.positive_endorsement,
-          neutral_mention: counts.neutral_mention,
-          conditional: counts.conditional,
-          negative_comparison: counts.negative_comparison,
-          not_mentioned: counts.not_mentioned,
-          total,
-          strongRate: total > 0 ? (positiveTotal / total) * 100 : 0,
-        };
-      }).sort((a, b) => {
-        const aIdx = PROVIDER_ORDER.indexOf(a.provider);
-        const bIdx = PROVIDER_ORDER.indexOf(b.provider);
-        return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
-      });
-    }, [globallyFilteredResults, effectiveSentimentBrand, runStatus?.brand, sentimentProviderCitationFilter, sentimentProviderModelFilter, isIssue, excludedBrands]);
 
     // Helper to get results for a specific provider and sentiment
     const getResultsForProviderSentiment = (provider: string, sentiment: string): Result[] => {
@@ -889,65 +577,6 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         </div>
       );
     };
-
-    // Calculate competitor sentiment comparison
-    const competitorSentimentData = useMemo(() => {
-      const competitorData: Record<string, {
-        strong_endorsement: number;
-        positive_endorsement: number;
-        neutral_mention: number;
-        conditional: number;
-        negative_comparison: number;
-        not_mentioned: number;
-      }> = {};
-      const trackedComps = trackedBrands;
-
-      const searchedBrandForComp = runStatus?.brand || '';
-      globallyFilteredResults
-        .filter((r: Result) => !r.error && r.competitor_sentiments)
-        .forEach((r: Result) => {
-          if (r.competitor_sentiments) {
-            Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {
-              if (!trackedComps.has(comp.toLowerCase())) return;
-              if (isCategoryName(comp, searchedBrandForComp)) return;
-              if (!competitorData[comp]) {
-                competitorData[comp] = {
-                  strong_endorsement: 0,
-                  positive_endorsement: 0,
-                  neutral_mention: 0,
-                  conditional: 0,
-                  negative_comparison: 0,
-                  not_mentioned: 0,
-                };
-              }
-              if (sentiment in competitorData[comp]) {
-                competitorData[comp][sentiment as keyof typeof competitorData[string]]++;
-              }
-            });
-          }
-        });
-
-      return Object.entries(competitorData)
-        .map(([competitor, counts]) => {
-          const total = Object.values(counts).reduce((a, b) => a + b, 0);
-          const mentionedTotal = total - counts.not_mentioned;
-          const positiveTotal = counts.strong_endorsement + counts.positive_endorsement;
-          return {
-            competitor,
-            strong_endorsement: counts.strong_endorsement,
-            positive_endorsement: counts.positive_endorsement,
-            neutral_mention: counts.neutral_mention,
-            conditional: counts.conditional,
-            negative_comparison: counts.negative_comparison,
-            not_mentioned: counts.not_mentioned,
-            total,
-            mentionedTotal,
-            strongRate: total > 0 ? (positiveTotal / total) * 100 : 0,
-            positiveRate: mentionedTotal > 0 ? (positiveTotal / mentionedTotal) * 100 : 0,
-          };
-        })
-        .sort((a, b) => b.strongRate - a.strongRate);
-    }, [globallyFilteredResults, trackedBrands, excludedBrands]);
 
     // Check if we have any sentiment data
     const hasSentimentData = globallyFilteredResults.some(

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -33,7 +33,6 @@ import {
   metricCardBackgrounds,
   PROVIDER_ORDER,
   POSITION_CATEGORIES,
-  sentimentOrder,
   getTextForRanking,
   isCategoryName,
 } from './shared';
@@ -155,8 +154,6 @@ export interface OverviewTabProps {
   setShowSentimentColors: (val: boolean) => void;
   chartTab: 'allAnswers' | 'performanceRange' | 'shareOfVoice';
   setChartTab: (tab: 'allAnswers' | 'performanceRange' | 'shareOfVoice') => void;
-  providerFilter: string;
-  setProviderFilter: (val: string) => void;
   brandBlurbs: Record<string, string>;
   setCopied: (val: boolean) => void;
   accessLevel?: SectionAccess;
@@ -169,8 +166,6 @@ export const OverviewTab = ({
   setAiSummaryExpanded,
   showSentimentColors,
   setShowSentimentColors,
-  providerFilter,
-  setProviderFilter,
   setCopied,
   accessLevel = 'visible',
   visibleSections,
@@ -188,7 +183,6 @@ export const OverviewTab = ({
     llmBreakdownStats,
     llmBreakdownBrands,
     promptBreakdownStats,
-    scatterPlotData,
     brandQuotesMap,
     isCategory,
     isIssue,
@@ -203,6 +197,29 @@ export const OverviewTab = ({
     setPromptBreakdownLlmFilter,
     brandBreakdownStats,
     excludedBrands,
+    // Overview computed data from context
+    filteredFramingByProvider,
+    framingEvidenceGroups,
+    positionChartBrandOptions,
+    positionByPlatformData,
+    overviewFilteredResults: filteredResults,
+    overviewSortedResults: sortedResults,
+    llmBreakdownTakeaway,
+    // Overview filter state from context
+    tableSortColumn,
+    setTableSortColumn,
+    tableSortDirection,
+    setTableSortDirection,
+    tableBrandFilter,
+    setTableBrandFilter,
+    positionChartBrandFilter,
+    setPositionChartBrandFilter,
+    positionChartPromptFilter,
+    setPositionChartPromptFilter,
+    framingPromptFilter,
+    setFramingPromptFilter,
+    providerFilter,
+    setProviderFilter,
   } = useResults();
 
   const {
@@ -211,126 +228,18 @@ export const OverviewTab = ({
   } = useResultsUI();
 
   // ---------------------------------------------------------------------------
-  // Internalized state
+  // UI-only state (not shared via context)
   // ---------------------------------------------------------------------------
   const [expandedLLMCards, setExpandedLLMCards] = useState<Set<string>>(new Set());
-  const [tableSortColumn, setTableSortColumn] = useState<'default' | 'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('default');
-  const [tableSortDirection, setTableSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [tableBrandFilter, setTableBrandFilter] = useState<string>('all');
-  const [positionChartBrandFilter, setPositionChartBrandFilter] = useState<string>('__all__');
-  const [positionChartPromptFilter, setPositionChartPromptFilter] = useState<string>('__all__');
-  const [framingPromptFilter, setFramingPromptFilter] = useState<string>('all');
   const [framingEvidenceExpanded, setFramingEvidenceExpanded] = useState<Set<string>>(new Set(['Supportive', 'Balanced']));
   const [framingEvidenceShowAll, setFramingEvidenceShowAll] = useState<Set<string>>(new Set());
 
-  // Framing by provider filtered by prompt (issue search type)
   const FRAMING_MAP: Record<string, string> = {
     strong_endorsement: 'Supportive',
     positive_endorsement: 'Leaning Supportive',
     neutral_mention: 'Balanced',
     conditional: 'Mixed',
     negative_comparison: 'Critical',
-  };
-
-  const filteredFramingByProvider = useMemo(() => {
-    if (!isIssue) return overviewMetrics?.framingByProvider || {};
-    const results = globallyFilteredResults.filter((r: Result) => !r.error);
-    const filtered = framingPromptFilter === 'all' ? results : results.filter(r => r.prompt === framingPromptFilter);
-    const providerFramings: Record<string, Record<string, number>> = {};
-    for (const result of filtered) {
-      const provider = result.provider;
-      if (!providerFramings[provider]) providerFramings[provider] = {};
-      const raw = result.brand_sentiment || 'neutral_mention';
-      const label = FRAMING_MAP[raw] || 'Balanced';
-      providerFramings[provider][label] = (providerFramings[provider][label] || 0) + 1;
-    }
-    return providerFramings;
-  }, [isIssue, globallyFilteredResults, framingPromptFilter, overviewMetrics]);
-
-  // Framing evidence: group results by framing bucket with key excerpts
-  type FramingEvidenceItem = { provider: string; prompt: string; excerpt: string; framing: string };
-  const framingEvidenceGroups = useMemo(() => {
-    if (!isIssue || !runStatus) return { Supportive: [], Balanced: [], Critical: [] } as Record<string, FramingEvidenceItem[]>;
-    const results = globallyFilteredResults.filter((r: Result) => !r.error && r.response_text);
-    const issueName = (runStatus.brand || '').toLowerCase();
-    const groups: Record<string, FramingEvidenceItem[]> = { Supportive: [], Balanced: [], Critical: [] };
-
-    // Strip markdown to plain text
-    const stripMd = (text: string) => text
-      .replace(/#{1,6}\s+/g, '')           // headings
-      .replace(/\*\*([^*]+)\*\*/g, '$1')   // bold
-      .replace(/\*([^*]+)\*/g, '$1')       // italic
-      .replace(/__([^_]+)__/g, '$1')       // bold alt
-      .replace(/_([^_]+)_/g, '$1')         // italic alt
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links
-      .replace(/!\[[^\]]*\]\([^)]+\)/g, '') // images
-      .replace(/`{1,3}[^`]*`{1,3}/g, '')  // code
-      .replace(/\[\d+\]/g, '')            // citation markers
-      .replace(/https?:\/\/\S+/g, '')     // URLs
-      .replace(/\|/g, '')                 // table pipes
-      .replace(/---+/g, '')              // horizontal rules
-      .replace(/[•\u2022]/g, '')          // bullets
-      .replace(/\s{2,}/g, ' ')           // collapse whitespace
-      .trim();
-
-    for (const result of results) {
-      const raw = result.brand_sentiment || 'neutral_mention';
-      const label = FRAMING_MAP[raw] || 'Balanced';
-      const bucket = (label === 'Supportive' || label === 'Leaning Supportive') ? 'Supportive'
-        : label === 'Balanced' ? 'Balanced'
-        : 'Critical';
-
-      // Clean the response text first, then split into sentences
-      const cleanText = stripMd(result.response_text!);
-      // Split on sentence boundaries (period/exclamation/question followed by space+capital or end)
-      const sentences = cleanText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
-
-      let bestSentence = '';
-      let bestScore = -1;
-      for (const s of sentences) {
-        const trimmed = s.trim();
-        if (trimmed.length < 30 || trimmed.length > 300) continue;
-        if (/^\s*[-*>]/.test(trimmed)) continue;
-        const mentionsIssue = issueName && trimmed.toLowerCase().includes(issueName);
-        // Prefer sentences mentioning the issue, with moderate length (80-200 chars)
-        const idealLength = trimmed.length >= 80 && trimmed.length <= 200 ? 1 : 0;
-        const score = (mentionsIssue ? 3 : 0) + idealLength + (trimmed.length >= 40 ? 0.5 : 0);
-        if (score > bestScore) {
-          bestScore = score;
-          bestSentence = trimmed;
-        }
-      }
-
-      if (!bestSentence && sentences.length > 0) {
-        bestSentence = sentences.find(s => s.trim().length >= 30 && s.trim().length <= 300)?.trim() || '';
-      }
-
-      // Cap at 250 chars with ellipsis
-      if (bestSentence.length > 250) {
-        bestSentence = bestSentence.slice(0, 247).replace(/\s+\S*$/, '') + '...';
-      }
-
-      if (bestSentence) {
-        groups[bucket].push({
-          provider: result.provider,
-          prompt: result.prompt,
-          excerpt: bestSentence,
-          framing: label,
-        });
-      }
-    }
-
-    return groups;
-  }, [isIssue, runStatus, globallyFilteredResults]);
-
-  // ---------------------------------------------------------------------------
-  // Moved computations
-  // ---------------------------------------------------------------------------
-
-  const providerLabels: Record<string, string> = {
-    openai: 'OpenAI', anthropic: 'Claude', gemini: 'Gemini',
-    perplexity: 'Perplexity', ai_overviews: 'Google AI Overviews',
-    grok: 'Grok', llama: 'Llama',
   };
 
   const handleTableSort = (column: typeof tableSortColumn) => {
@@ -344,286 +253,6 @@ export const OverviewTab = ({
 
   const brandQuotes = brandQuotesMap[runStatus?.brand ?? ''] ?? [];
 
-  const llmBreakdownTakeaway = useMemo(() => {
-    const entries = Object.entries(llmBreakdownStats);
-    if (entries.length === 0) return null;
-    const selectedBrand = llmBreakdownBrandFilter || llmBreakdownBrands[0] || runStatus?.brand || 'your brand';
-    const sorted = [...entries].sort((a, b) => b[1].rate - a[1].rate);
-    const best = sorted[0];
-    const worst = sorted[sorted.length - 1];
-    const allSimilar = sorted.length > 1 && (best[1].rate - worst[1].rate) < 0.10;
-    if (allSimilar) {
-      const avgRate = entries.reduce((sum, [, stats]) => sum + stats.rate, 0) / entries.length;
-      return `${selectedBrand} is mentioned consistently across all Models at around ${Math.round(avgRate * 100)}%.`;
-    }
-    if (sorted.length === 1) {
-      return `${getProviderLabel(best[0])} mentions ${selectedBrand} ${Math.round(best[1].rate * 100)}% of the time.`;
-    }
-    const zeroMentions = sorted.filter(([, stats]) => stats.rate === 0);
-    if (zeroMentions.length > 0 && zeroMentions.length < sorted.length) {
-      const zeroNames = zeroMentions.map(([p]) => getProviderLabel(p)).join(' and ');
-      return `${getProviderLabel(best[0])} mentions ${selectedBrand} most often (${Math.round(best[1].rate * 100)}%), while ${zeroNames} ${zeroMentions.length === 1 ? 'does' : 'do'} not mention it at all.`;
-    }
-    const diff = Math.round((best[1].rate - worst[1].rate) * 100);
-    if (diff >= 20) {
-      return `${getProviderLabel(best[0])} mentions ${selectedBrand} most often (${Math.round(best[1].rate * 100)}%), ${diff} percentage points higher than ${getProviderLabel(worst[0])} (${Math.round(worst[1].rate * 100)}%).`;
-    }
-    return `${getProviderLabel(best[0])} leads with ${Math.round(best[1].rate * 100)}% mentions of ${selectedBrand}, compared to ${Math.round(worst[1].rate * 100)}% from ${getProviderLabel(worst[0])}.`;
-  }, [llmBreakdownStats, llmBreakdownBrandFilter, llmBreakdownBrands, runStatus]);
-
-  // Brand options for position chart dropdown (industry reports only)
-  const positionChartBrandOptions = useMemo(() => {
-    if (!isCategory) return [];
-    const options: { value: string; label: string }[] = [
-      { value: '__all__', label: 'All Brands (average position)' },
-    ];
-    const brands = new Set<string>();
-    globallyFilteredResults.forEach((r: Result) => {
-      if (!r.error) {
-        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-        rBrands.forEach(comp => {
-          if (!excludedBrands.has(comp) && !isCategoryName(comp, runStatus?.brand || '')) {
-            brands.add(comp);
-          }
-        });
-      }
-    });
-    Array.from(brands).sort().forEach(b => {
-      options.push({ value: b, label: b });
-    });
-    return options;
-  }, [isCategory, globallyFilteredResults, excludedBrands, runStatus]);
-
-  // Helper: compute rank for a specific brand within a result
-  const computeBrandRank = (result: Result, brand: string): number => {
-    if (!result.response_text) return 0;
-    const isMentioned = result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(brand) : result.competitors_mentioned?.includes(brand);
-    if (!isMentioned) return 0;
-    const brandLower = brand.toLowerCase();
-    const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
-    const brandTextPos = textLower.indexOf(brandLower);
-    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-      : [...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-    if (brandTextPos >= 0) {
-      let brandsBeforeCount = 0;
-      for (const b of allBrands) {
-        const bLower = b.toLowerCase();
-        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-        const bPos = textLower.indexOf(bLower);
-        if (bPos >= 0 && bPos < brandTextPos) brandsBeforeCount++;
-      }
-      return brandsBeforeCount + 1;
-    }
-    return allBrands.length + 1;
-  };
-
-  const positionByPlatformData = useMemo(() => {
-    // For industry reports with brand filter, compute locally from results
-    if (isCategory && runStatus) {
-      const results = globallyFilteredResults.filter((r: Result) => !r.error);
-      if (results.length === 0) return [];
-
-      const grouped: Record<string, Record<string, { sentiment: string | null; prompt: string; rank: number; label: string; originalResult: Result }[]>> = {};
-      const effectiveBrand = positionChartBrandFilter || '__all__';
-
-      // Get all tracked brands for averaging
-      const allTrackedBrands = new Set<string>();
-      results.forEach(r => {
-        const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-        rBrands.forEach(c => { if (!isCategoryName(c, runStatus.brand) && !excludedBrands.has(c)) allTrackedBrands.add(c); });
-      });
-      const trackedBrandsList = Array.from(allTrackedBrands);
-
-      results.forEach(result => {
-        const provider = providerLabels[result.provider] || result.provider;
-        if (!grouped[provider]) {
-          grouped[provider] = {};
-          POSITION_CATEGORIES.forEach(cat => { grouped[provider][cat] = []; });
-        }
-
-        let rank: number;
-        if (effectiveBrand === '__all__') {
-          // Average rank across all mentioned brands
-          const brandRanks = trackedBrandsList
-            .map(b => computeBrandRank(result, b))
-            .filter(r => r > 0);
-          rank = brandRanks.length > 0 ? Math.round(brandRanks.reduce((a, b) => a + b, 0) / brandRanks.length) : 0;
-        } else {
-          rank = computeBrandRank(result, effectiveBrand);
-        }
-
-        let category: string;
-        if (rank === 0) { category = 'Not Mentioned'; }
-        else if (rank === 1) { category = 'Top'; }
-        else if (rank >= 2 && rank <= 3) { category = '2-3'; }
-        else if (rank >= 4 && rank <= 5) { category = '4-5'; }
-        else if (rank >= 6 && rank <= 10) { category = '6-10'; }
-        else { category = '>10'; }
-
-        // Determine sentiment for this dot
-        let dotSentiment: string | null;
-        if (rank === 0) {
-          // Brand not mentioned in this response — always show as not_mentioned
-          dotSentiment = 'not_mentioned';
-        } else if (effectiveBrand !== '__all__' && result.competitor_sentiments?.[effectiveBrand]) {
-          // Use brand-specific sentiment when filtering by a specific brand
-          dotSentiment = result.competitor_sentiments[effectiveBrand];
-        } else {
-          dotSentiment = result.brand_sentiment || null;
-        }
-
-        grouped[provider][category].push({
-          sentiment: dotSentiment,
-          prompt: truncate(result.prompt, 30),
-          rank,
-          label: provider,
-          originalResult: result,
-        });
-      });
-
-      return grouped;
-    }
-
-    // Default behavior for non-industry reports
-    if (!scatterPlotData.length) return [];
-    const filtered = positionChartPromptFilter === '__all__'
-      ? scatterPlotData
-      : scatterPlotData.filter((dp) => dp.originalResult?.prompt === positionChartPromptFilter);
-    const grouped: Record<string, Record<string, { sentiment: string | null; prompt: string; rank: number; label: string; originalResult: Result }[]>> = {};
-    filtered.forEach((dp) => {
-      const provider = dp.label;
-      if (!grouped[provider]) {
-        grouped[provider] = {};
-        POSITION_CATEGORIES.forEach(cat => { grouped[provider][cat] = []; });
-      }
-      let category: string;
-      if (!dp.isMentioned || dp.rank === 0) { category = 'Not Mentioned'; }
-      else if (dp.rank === 1) { category = 'Top'; }
-      else if (dp.rank >= 2 && dp.rank <= 3) { category = '2-3'; }
-      else if (dp.rank >= 4 && dp.rank <= 5) { category = '4-5'; }
-      else if (dp.rank >= 6 && dp.rank <= 10) { category = '6-10'; }
-      else { category = '>10'; }
-      grouped[provider][category].push({ sentiment: dp.sentiment, prompt: dp.prompt, rank: dp.rank, label: dp.label, originalResult: dp.originalResult });
-    });
-    return grouped;
-  }, [scatterPlotData, isCategory, runStatus, globallyFilteredResults, positionChartBrandFilter, positionChartPromptFilter, excludedBrands]);
-
-  const filteredResults = useMemo(() => {
-    if (!runStatus) return [];
-    return globallyFilteredResults.filter((result: Result) => {
-      const isAiOverviewError = result.provider === 'ai_overviews' && result.error;
-      if (result.error && !isAiOverviewError) return false;
-      if (providerFilter !== 'all' && result.provider !== providerFilter) return false;
-      if (tableBrandFilter !== 'all' && !(result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(tableBrandFilter) : result.competitors_mentioned?.includes(tableBrandFilter))) return false;
-      return true;
-    });
-  }, [globallyFilteredResults, providerFilter, tableBrandFilter, runStatus]);
-
-  // Helper to calculate position for a result based on first appearance in response text
-  const getResultPosition = (result: Result): number | null => {
-    if (!result.response_text || result.error || !runStatus) return null;
-    const selectedBrand = runStatus.search_type === 'category'
-      ? (runStatus.results.find((r: Result) => r.all_brands_mentioned?.length || r.competitors_mentioned?.length)?.all_brands_mentioned?.[0] || runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
-      : runStatus.brand;
-    const brandLower = (selectedBrand || '').toLowerCase();
-    const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
-
-    // Use all detected brands for ranking, fall back to tracked brands if unavailable
-    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-      : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
-    // Find the searched brand's position in the actual text
-    const brandTextPos = textLower.indexOf(brandLower);
-    if (brandTextPos >= 0) {
-      // Count how many OTHER brands appear before the searched brand in the text
-      let brandsBeforeCount = 0;
-      for (const b of allBrands) {
-        const bLower = b.toLowerCase();
-        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-        const bPos = textLower.indexOf(bLower);
-        if (bPos >= 0 && bPos < brandTextPos) {
-          brandsBeforeCount++;
-        }
-      }
-      return brandsBeforeCount + 1;
-    }
-
-    // Brand not found in cleaned text but marked as mentioned — place after known brands
-    if (result.brand_mentioned) return allBrands.length + 1;
-    return null;
-  };
-
-  // Provider popularity order for sorting (ChatGPT first)
-  const PROVIDER_SORT_ORDER: Record<string, number> = {
-    'openai': 1,
-    'ai_overviews': 2,
-    'gemini': 3,
-    'perplexity': 4,
-    'anthropic': 5,
-    'grok': 6,
-    'llama': 7,
-  };
-
-  // Sort filtered results — default: rank, then sentiment, then provider popularity
-  const sortedResults = useMemo(() => {
-    const sorted = [...filteredResults];
-
-    sorted.sort((a, b) => {
-      let comparison = 0;
-
-      switch (tableSortColumn) {
-        case 'prompt':
-          comparison = a.prompt.localeCompare(b.prompt);
-          break;
-        case 'llm':
-          comparison = (PROVIDER_SORT_ORDER[a.provider] ?? 99) - (PROVIDER_SORT_ORDER[b.provider] ?? 99);
-          break;
-        case 'position': {
-          const posA = getResultPosition(a) ?? 999;
-          const posB = getResultPosition(b) ?? 999;
-          comparison = posA - posB;
-          break;
-        }
-        case 'mentioned': {
-          const mentionedA = a.brand_mentioned ? 1 : 0;
-          const mentionedB = b.brand_mentioned ? 1 : 0;
-          comparison = mentionedB - mentionedA; // Yes first
-          break;
-        }
-        case 'sentiment': {
-          const sentA = sentimentOrder[a.brand_sentiment || 'not_mentioned'] || 6;
-          const sentB = sentimentOrder[b.brand_sentiment || 'not_mentioned'] || 6;
-          comparison = sentA - sentB;
-          break;
-        }
-        case 'competitors': {
-          const compA = a.competitors_mentioned?.length || 0;
-          const compB = b.competitors_mentioned?.length || 0;
-          comparison = compB - compA; // More competitors first
-          break;
-        }
-        default: {
-          // Default sort: rank → sentiment → provider popularity
-          const posA = getResultPosition(a) ?? 999;
-          const posB = getResultPosition(b) ?? 999;
-          if (posA !== posB) return posA - posB;
-
-          const sentA = sentimentOrder[a.brand_sentiment || 'not_mentioned'] || 6;
-          const sentB = sentimentOrder[b.brand_sentiment || 'not_mentioned'] || 6;
-          if (sentA !== sentB) return sentA - sentB;
-
-          return (PROVIDER_SORT_ORDER[a.provider] ?? 99) - (PROVIDER_SORT_ORDER[b.provider] ?? 99);
-        }
-      }
-
-      return tableSortDirection === 'asc' ? comparison : -comparison;
-    });
-
-    return sorted;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredResults, tableSortColumn, tableSortDirection, runStatus]);
 
   return (
     <div className="space-y-6">
