@@ -8,10 +8,9 @@ import type { BrandQuote } from '@/hooks/useApi';
 import { categorizeDomain } from '../tabs/shared';
 
 // ---------------------------------------------------------------------------
-// Import ALL compute functions
+// Import ALL compute functions (direct file imports to avoid barrel-export TDZ)
 // ---------------------------------------------------------------------------
 import {
-  // base
   computeAvailablePrompts,
   computeAvailableProviders,
   computeAvailableBrands,
@@ -22,7 +21,8 @@ import {
   computeTrackedBrands,
   computeFilteredAvailableBrands,
   computeFilteredTrackedBrands,
-  // overview
+} from './compute/base';
+import {
   computeFilteredBrandMentions,
   computeShareOfVoiceData,
   computeLlmBreakdownBrands,
@@ -42,7 +42,8 @@ import {
   computePositionByPlatformData,
   computeOverviewFilteredResults,
   computeOverviewSortedResults,
-  // competitive
+} from './compute/overview';
+import {
   computeBrandBreakdownStats,
   computeBrandPositioningStats,
   computePromptPerformanceMatrix,
@@ -52,14 +53,16 @@ import {
   computeCompetitorComparisonRatio,
   computeAllBrandsAnalysisData,
   computeBrandSourceHeatmap,
-  // sentiment
+} from './compute/competitive';
+import {
   computeSentimentInsights,
   computeBrandSentimentData,
   computeSentimentProviderBrandOptions,
   computeCitationSourceOptions,
   computeSentimentByProvider,
   computeCompetitorSentimentData,
-  // sources
+} from './compute/sentiment';
+import {
   computeTopCitedSources,
   computeHasAnySources,
   computeKeyInfluencers,
@@ -75,17 +78,19 @@ import {
   computeSortedDomainTableData,
   computeSourceBrandHeatmapData,
   computeHeatmapMaxValue,
-  // reference
+} from './compute/sources';
+import {
   computeSourceGapAnalysis,
   computeSourceSentimentGapAnalysis,
   computeReferenceFilteredResults,
   computeReferenceAiOverviewUnavailableCount,
-  // recommendations
+} from './compute/reference';
+import {
   computeQuickWins,
   computeAdOpportunities,
   computeSourceOpportunities,
   computeParsedAiRecommendations,
-} from './compute';
+} from './compute/recommendations';
 
 // ---------------------------------------------------------------------------
 // Import metric types
