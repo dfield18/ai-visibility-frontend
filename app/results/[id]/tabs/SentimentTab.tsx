@@ -41,10 +41,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
   // Section visibility helper — if visibleSections is not set, show all
   const showSection = (id: string) => !visibleSections || visibleSections.includes(id);
   const { runStatus, globallyFilteredResults, trackedBrands, availableProviders, excludedBrands } = useResults();
-  const { copied, handleCopyLink, setSelectedResult } = useResultsUI();
+  const { copied, handleCopyLink, setSelectedResult, setSelectedResultHighlight } = useResultsUI();
 
   const [hoveredSentimentBadge, setHoveredSentimentBadge] = useState<{ provider: string; sentiment: string } | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [hoveredCompetitorBadge, setHoveredCompetitorBadge] = useState<{ competitor: string; sentiment: string } | null>(null);
+  const competitorHoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [responseSentimentFilter, setResponseSentimentFilter] = useState<string>('all');
   const [responseLlmFilter, setResponseLlmFilter] = useState<string>('all');
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
@@ -573,6 +575,20 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
       });
     };
 
+    // Helper to get results for a specific competitor and sentiment
+    const getResultsForCompetitorSentiment = (competitor: string, sentiment: string): Result[] => {
+      const searchedBrand = runStatus?.brand || '';
+      const isSearchedBrand = competitor === searchedBrand;
+
+      return globallyFilteredResults.filter((r: Result) => {
+        if (r.error) return false;
+        const resultSentiment = isSearchedBrand
+          ? (getEffectiveSentiment(r) || 'not_mentioned')
+          : (r.competitor_sentiments?.[competitor] || 'not_mentioned');
+        return resultSentiment === sentiment;
+      });
+    };
+
     // Sentiment badge with hover preview component
     const SentimentBadgeWithPreview = ({
       provider,
@@ -747,6 +763,117 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // Competitor sentiment badge with hover preview — mirrors SentimentBadgeWithPreview but keyed by competitor
+    const CompetitorSentimentBadge = ({
+      competitor,
+      sentiment,
+      count,
+      badgeClassName,
+      popupPosition = 'bottom'
+    }: {
+      competitor: string;
+      sentiment: string;
+      count: number;
+      badgeClassName: string;
+      popupPosition?: 'top' | 'bottom';
+    }) => {
+      if (count === 0) return null;
+
+      const isHovered = hoveredCompetitorBadge?.competitor === competitor
+        && hoveredCompetitorBadge?.sentiment === sentiment;
+      const matchingResults = isHovered
+        ? getResultsForCompetitorSentiment(competitor, sentiment)
+        : [];
+
+      const handleMouseEnter = useCallback(() => {
+        if (competitorHoverTimeoutRef.current) {
+          clearTimeout(competitorHoverTimeoutRef.current);
+          competitorHoverTimeoutRef.current = null;
+        }
+        setHoveredCompetitorBadge({ competitor, sentiment });
+      }, [competitor, sentiment]);
+
+      const handleMouseLeave = useCallback(() => {
+        competitorHoverTimeoutRef.current = setTimeout(() => {
+          setHoveredCompetitorBadge(null);
+          competitorHoverTimeoutRef.current = null;
+        }, 300);
+      }, []);
+
+      const handleClick = useCallback(() => {
+        const results = getResultsForCompetitorSentiment(competitor, sentiment);
+        if (results.length === 1) {
+          setSelectedResult(results[0]);
+          setSelectedResultHighlight({ brand: competitor });
+          setHoveredCompetitorBadge(null);
+        }
+      }, [competitor, sentiment]);
+
+      return (
+        <div
+          className="relative inline-block"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <span
+            className={`inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded-lg cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-gray-300 transition-all ${badgeClassName}`}
+            onClick={handleClick}
+          >
+            {count}
+          </span>
+          {count > 1 && (
+            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-gray-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-sm">
+              +
+            </div>
+          )}
+
+          {isHovered && matchingResults.length > 1 && (
+            <div
+              data-sentiment-popup
+              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-xl min-w-[300px] max-w-[380px] text-left ${
+                popupPosition === 'top'
+                  ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
+                  : 'top-full mt-2 left-1/2 -translate-x-1/2'
+              }`}
+              style={{ maxHeight: '280px' }}
+              onMouseEnter={() => {
+                if (competitorHoverTimeoutRef.current) {
+                  clearTimeout(competitorHoverTimeoutRef.current);
+                  competitorHoverTimeoutRef.current = null;
+                }
+              }}
+              onMouseLeave={handleMouseLeave}
+              onWheel={(e) => e.stopPropagation()}
+            >
+              <p className="text-xs font-medium text-gray-500 mb-2 pb-2 border-b border-gray-100">
+                {matchingResults.length} responses — Click to view details
+              </p>
+              <div className="overflow-y-auto space-y-0" style={{ maxHeight: '220px' }}>
+                {matchingResults.map((result, idx) => (
+                  <div
+                    key={result.id}
+                    className={`p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'mt-1' : ''}`}
+                    onClick={() => {
+                      setSelectedResult(result);
+                      setSelectedResultHighlight({ brand: competitor });
+                      setHoveredCompetitorBadge(null);
+                    }}
+                  >
+                    <p className="text-sm font-medium text-gray-900 mb-0.5 leading-snug" title={result.prompt}>
+                      {result.prompt.length > 60 ? result.prompt.substring(0, 60) + '...' : result.prompt}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {getProviderLabel(result.provider)}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -1607,39 +1734,49 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                       <span className="text-sm font-medium text-gray-900">{runStatus?.brand} (Your Brand)</span>
                     </td>
                     <td className="text-center py-3 px-2">
-                      {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0 > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-900 text-sm font-medium rounded-lg">
-                          {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0}
-                        </span>
-                      )}
+                      <CompetitorSentimentBadge
+                        competitor={runStatus?.brand || ''}
+                        sentiment="strong_endorsement"
+                        count={brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0}
+                        badgeClassName="bg-gray-100 text-gray-900"
+                        popupPosition="bottom"
+                      />
                     </td>
                     <td className="text-center py-3 px-2">
-                      {brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.count || 0 > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg">
-                          {brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.count || 0}
-                        </span>
-                      )}
+                      <CompetitorSentimentBadge
+                        competitor={runStatus?.brand || ''}
+                        sentiment="positive_endorsement"
+                        count={brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.count || 0}
+                        badgeClassName="bg-gray-100 text-gray-700"
+                        popupPosition="bottom"
+                      />
                     </td>
                     <td className="text-center py-3 px-2">
-                      {brandSentimentData.find(d => d.sentiment === 'neutral_mention')?.count || 0 > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-lg">
-                          {brandSentimentData.find(d => d.sentiment === 'neutral_mention')?.count || 0}
-                        </span>
-                      )}
+                      <CompetitorSentimentBadge
+                        competitor={runStatus?.brand || ''}
+                        sentiment="neutral_mention"
+                        count={brandSentimentData.find(d => d.sentiment === 'neutral_mention')?.count || 0}
+                        badgeClassName="bg-blue-100 text-blue-800"
+                        popupPosition="bottom"
+                      />
                     </td>
                     <td className="text-center py-3 px-2">
-                      {brandSentimentData.find(d => d.sentiment === 'conditional')?.count || 0 > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-lg">
-                          {brandSentimentData.find(d => d.sentiment === 'conditional')?.count || 0}
-                        </span>
-                      )}
+                      <CompetitorSentimentBadge
+                        competitor={runStatus?.brand || ''}
+                        sentiment="conditional"
+                        count={brandSentimentData.find(d => d.sentiment === 'conditional')?.count || 0}
+                        badgeClassName="bg-yellow-100 text-yellow-800"
+                        popupPosition="bottom"
+                      />
                     </td>
                     <td className="text-center py-3 px-2">
-                      {brandSentimentData.find(d => d.sentiment === 'negative_comparison')?.count || 0 > 0 && (
-                        <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-800 text-sm font-medium rounded-lg">
-                          {brandSentimentData.find(d => d.sentiment === 'negative_comparison')?.count || 0}
-                        </span>
-                      )}
+                      <CompetitorSentimentBadge
+                        competitor={runStatus?.brand || ''}
+                        sentiment="negative_comparison"
+                        count={brandSentimentData.find(d => d.sentiment === 'negative_comparison')?.count || 0}
+                        badgeClassName="bg-red-100 text-red-800"
+                        popupPosition="bottom"
+                      />
                     </td>
                     <td className="text-right py-3 px-4">
                       <span className="text-sm font-medium text-gray-900">
@@ -1647,45 +1784,57 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                       </span>
                     </td>
                   </tr>
-                  {competitorSentimentData.map((row) => (
+                  {competitorSentimentData.map((row, rowIndex) => {
+                    const popupPos = rowIndex >= competitorSentimentData.length - 2 ? 'top' as const : 'bottom' as const;
+                    return (
                     <tr key={row.competitor} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4">
                         <span className="text-sm font-medium text-gray-900">{row.competitor}</span>
                       </td>
                       <td className="text-center py-3 px-2">
-                        {row.strong_endorsement > 0 && (
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-900 text-sm font-medium rounded-lg">
-                            {row.strong_endorsement}
-                          </span>
-                        )}
+                        <CompetitorSentimentBadge
+                          competitor={row.competitor}
+                          sentiment="strong_endorsement"
+                          count={row.strong_endorsement}
+                          badgeClassName="bg-gray-100 text-gray-900"
+                          popupPosition={popupPos}
+                        />
                       </td>
                       <td className="text-center py-3 px-2">
-                        {row.positive_endorsement > 0 && (
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg">
-                            {row.positive_endorsement}
-                          </span>
-                        )}
+                        <CompetitorSentimentBadge
+                          competitor={row.competitor}
+                          sentiment="positive_endorsement"
+                          count={row.positive_endorsement}
+                          badgeClassName="bg-gray-100 text-gray-700"
+                          popupPosition={popupPos}
+                        />
                       </td>
                       <td className="text-center py-3 px-2">
-                        {row.neutral_mention > 0 && (
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 text-sm font-medium rounded-lg">
-                            {row.neutral_mention}
-                          </span>
-                        )}
+                        <CompetitorSentimentBadge
+                          competitor={row.competitor}
+                          sentiment="neutral_mention"
+                          count={row.neutral_mention}
+                          badgeClassName="bg-blue-100 text-blue-800"
+                          popupPosition={popupPos}
+                        />
                       </td>
                       <td className="text-center py-3 px-2">
-                        {row.conditional > 0 && (
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-lg">
-                            {row.conditional}
-                          </span>
-                        )}
+                        <CompetitorSentimentBadge
+                          competitor={row.competitor}
+                          sentiment="conditional"
+                          count={row.conditional}
+                          badgeClassName="bg-yellow-100 text-yellow-800"
+                          popupPosition={popupPos}
+                        />
                       </td>
                       <td className="text-center py-3 px-2">
-                        {row.negative_comparison > 0 && (
-                          <span className="inline-flex items-center justify-center w-8 h-8 bg-red-100 text-red-800 text-sm font-medium rounded-lg">
-                            {row.negative_comparison}
-                          </span>
-                        )}
+                        <CompetitorSentimentBadge
+                          competitor={row.competitor}
+                          sentiment="negative_comparison"
+                          count={row.negative_comparison}
+                          badgeClassName="bg-red-100 text-red-800"
+                          popupPosition={popupPos}
+                        />
                       </td>
                       <td className="text-center py-3 px-4">
                         <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-gray-600' : row.strongRate >= 25 ? 'text-gray-500' : 'text-gray-500'}`}>
@@ -1693,7 +1842,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                         </span>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
