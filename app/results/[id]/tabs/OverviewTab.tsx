@@ -1847,11 +1847,10 @@ export const OverviewTab = ({
           </div>
           <div className="space-y-2.5">
             {brandQuotes.slice(0, isIssue ? 3 : 2).map((quote, idx) => {
-              // Strip citation markers, bare domains, and redundant leading "Brand: " prefix
+              // Strip citation markers and redundant leading "Brand: " prefix
               const brandName = runStatus?.brand || '';
               const cleanedText = quote.text
                 .replace(/\[\d+\]/g, '')
-                .replace(/(?:^|\s)[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\.[a-zA-Z]{2,})?\s*/g, ' ')
                 .replace(/\s{2,}/g, ' ')
                 .trim()
                 .replace(new RegExp('^' + brandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[:–—-]\\s*', 'i'), '');

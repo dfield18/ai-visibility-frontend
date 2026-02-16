@@ -990,11 +990,14 @@ export default function CompetitiveTab({
                                     <p className="text-[9px] text-gray-400 uppercase tracking-widest mb-1">What AI Says</p>
                                     <div className="space-y-1">
                                       {quotes.map((q, qi) => {
-                                        const blurb = q.summary || q.text.replace(/^https?:\/\/\S+\s*/i, '').replace(/^[^a-zA-Z"]*/, '').split(/[.!?]/)[0].split(' ').slice(0, 7).join(' ');
+                                        const blurb = q.text
+                                          .replace(/\[\d+\]/g, '')
+                                          .replace(/\s{2,}/g, ' ')
+                                          .trim();
                                         const shortPrompt = q.prompt.length > 30 ? q.prompt.substring(0, 28) + '...' : q.prompt;
                                         return (
                                           <div key={qi} className="bg-white border border-gray-100 rounded-lg px-2 py-1">
-                                            <p className="text-xs text-gray-700 italic">&ldquo;{blurb}&rdquo;</p>
+                                            <p className="text-xs text-gray-700 italic line-clamp-3">&ldquo;{blurb}&rdquo;</p>
                                             <p className="text-[9px] text-gray-400 mt-0.5">
                                               {getCarouselProviderLabel(q.provider)} · {shortPrompt}
                                             </p>
