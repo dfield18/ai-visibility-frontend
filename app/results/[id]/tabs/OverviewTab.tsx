@@ -140,7 +140,7 @@ function MarketSpreadDonut({
           })}
         </div>
       </div>
-      <p className="text-xs text-gray-500 mt-auto pt-1">{totalBrands} brands by share of voice</p>
+      <p className="text-xs text-gray-500 mt-auto pt-1">{totalBrands} total brands{totalBrands > donutData.length ? ` (top ${donutData.length - (donutData[donutData.length - 1]?.name === 'Other' ? 1 : 0)} shown)` : ''}</p>
     </div>
   );
 }
@@ -843,7 +843,9 @@ export const OverviewTab = ({
 
         {/* Share of Voice / Market Leader / Dominant Framing Card */}
         {(() => {
-          const sovTone = getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tone;
+          const sovTone = isCategory && brandBreakdownStats.length > 0
+            ? getKPIInterpretation('shareOfVoice', brandBreakdownStats[0].shareOfVoice).tone
+            : getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tone;
 
           if (isIssue) {
             // Dominant Framing — hero text showing the most common framing label

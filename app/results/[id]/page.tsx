@@ -1695,12 +1695,20 @@ export default function ResultsPage() {
       const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
 
       // Share of Voice: this brand's mentions / total brand mentions across all results
+      // For industry reports, exclude category mentions (r.brand_mentioned) from denominator
+      // so that all brands' share of voice sums to 100%
       let totalBrandMentions = 0;
       let thisBrandMentions = 0;
       results.forEach(r => {
-        if (r.brand_mentioned) totalBrandMentions++;
+        if (!isCategory && r.brand_mentioned) totalBrandMentions++;
         const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-        totalBrandMentions += rBrands.length;
+        if (isCategory) {
+          // For industry: only count actual brands, not the category name
+          const filteredBrands = rBrands.filter(b => !isCategoryName(b, searchedBrand));
+          totalBrandMentions += filteredBrands.length;
+        } else {
+          totalBrandMentions += rBrands.length;
+        }
 
         if (isSearchedBrand && r.brand_mentioned) {
           thisBrandMentions++;
