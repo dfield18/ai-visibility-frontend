@@ -686,12 +686,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           {isHovered && matchingResults.length > 0 && (
             <div
               data-sentiment-popup
-              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-xl min-w-[300px] max-w-[380px] text-left ${
+              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-xl min-w-[400px] max-w-[520px] text-left ${
                 popupPosition === 'top'
                   ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
                   : 'top-full mt-2 left-1/2 -translate-x-1/2'
               }`}
-              style={{ maxHeight: '280px' }}
+              style={{ maxHeight: '500px' }}
               onMouseEnter={() => {
                 if (hoverTimeoutRef.current) {
                   clearTimeout(hoverTimeoutRef.current);
@@ -704,12 +704,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                 <p className="text-xs font-medium text-gray-500 mb-2 pb-2 border-b border-gray-100">
                 {matchingResults.length} {matchingResults.length === 1 ? 'response' : 'responses'} - Click to view details
               </p>
-              <div className="overflow-y-auto space-y-0" style={{ maxHeight: '220px' }}>
+              <div className="overflow-y-auto space-y-0" style={{ maxHeight: '400px' }}>
                 {matchingResults.map((result, idx) => {
-                  const truncatedPrompt = result.prompt.length > 60
-                    ? result.prompt.substring(0, 60) + '...'
-                    : result.prompt;
-
                   // Calculate rank using same logic as All Answers chart
                   let rank = 0;
                   const brandLower = (runStatus?.brand || '').toLowerCase();
@@ -736,30 +732,35 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                     }
                   }
 
+                  const responsePreview = (result.response_text || '').length > 10000
+                    ? (result.response_text || '').substring(0, 10000) + '...'
+                    : (result.response_text || '');
+
                   return (
                     <div
                       key={result.id}
-                      className={`p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'mt-2' : ''}`}
+                      className={`p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'mt-2 border-t border-gray-100 pt-2' : ''}`}
                       onClick={() => {
                         setSelectedResult(result);
                         setHoveredSentimentBadge(null);
                       }}
                     >
-                      <p className="text-sm font-medium text-gray-900 mb-1 leading-snug" title={result.prompt}>
-                        {truncatedPrompt}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-600">
-                          {rank === 0
-                            ? 'Not shown'
-                            : rank === 1
-                              ? 'Shown as: #1 (Top result)'
-                              : `Shown as: #${rank}`}
-                        </p>
-                        <p className="text-xs text-gray-400">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-gray-700">{result.prompt}</p>
+                        <p className="text-xs text-gray-400 ml-2 flex-shrink-0">
                           {getProviderLabel(result.provider)}
                         </p>
                       </div>
+                      <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                        {responsePreview}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {rank === 0
+                          ? 'Not shown'
+                          : rank === 1
+                            ? '#1 (Top result)'
+                            : `#${rank}`}
+                      </p>
                     </div>
                   );
                 })}
@@ -837,12 +838,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           {isHovered && matchingResults.length > 1 && (
             <div
               data-sentiment-popup
-              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-xl min-w-[300px] max-w-[380px] text-left ${
+              className={`absolute z-50 bg-white border border-gray-200 rounded-lg p-3 shadow-xl min-w-[400px] max-w-[520px] text-left ${
                 popupPosition === 'top'
                   ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
                   : 'top-full mt-2 left-1/2 -translate-x-1/2'
               }`}
-              style={{ maxHeight: '280px' }}
+              style={{ maxHeight: '500px' }}
               onMouseEnter={() => {
                 if (competitorHoverTimeoutRef.current) {
                   clearTimeout(competitorHoverTimeoutRef.current);
@@ -855,25 +856,33 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
               <p className="text-xs font-medium text-gray-500 mb-2 pb-2 border-b border-gray-100">
                 {matchingResults.length} responses — Click to view details
               </p>
-              <div className="overflow-y-auto space-y-0" style={{ maxHeight: '220px' }}>
-                {matchingResults.map((result, idx) => (
+              <div className="overflow-y-auto space-y-0" style={{ maxHeight: '400px' }}>
+                {matchingResults.map((result, idx) => {
+                  const responsePreview = (result.response_text || '').length > 10000
+                    ? (result.response_text || '').substring(0, 10000) + '...'
+                    : (result.response_text || '');
+                  return (
                   <div
                     key={result.id}
-                    className={`p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'mt-1' : ''}`}
+                    className={`p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer ${idx > 0 ? 'mt-1 border-t border-gray-100 pt-2' : ''}`}
                     onClick={() => {
                       setSelectedResult(result);
                       setSelectedResultHighlight({ brand: competitor });
                       setHoveredCompetitorBadge(null);
                     }}
                   >
-                    <p className="text-sm font-medium text-gray-900 mb-0.5 leading-snug" title={result.prompt}>
-                      {result.prompt.length > 60 ? result.prompt.substring(0, 60) + '...' : result.prompt}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {getProviderLabel(result.provider)}
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-semibold text-gray-700">{result.prompt}</p>
+                      <p className="text-xs text-gray-400 ml-2 flex-shrink-0">
+                        {getProviderLabel(result.provider)}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                      {responsePreview}
                     </p>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
