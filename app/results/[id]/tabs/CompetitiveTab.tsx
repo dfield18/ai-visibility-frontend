@@ -390,7 +390,7 @@ export default function CompetitiveTab({
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) allBrands.add(c); });
+      rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) allBrands.add(c); });
     });
     const sentimentScoreMap: Record<string, number> = {
       'strong_endorsement': 5, 'positive_endorsement': 4, 'neutral_mention': 3, 'conditional': 2, 'negative_comparison': 1, 'not_mentioned': 0,
@@ -419,7 +419,7 @@ export default function CompetitiveTab({
       return { brand, isSearchedBrand, mentioned, visibilityScore, avgSentimentScore };
     });
     return brandStats.sort((a, b) => b.visibilityScore - a.visibilityScore);
-  }, [runStatus, globallyFilteredResults, brandPositioningLlmFilter, brandPositioningPromptFilter]);
+  }, [runStatus, globallyFilteredResults, brandPositioningLlmFilter, brandPositioningPromptFilter, excludedBrands]);
 
   // Prompt Performance Matrix
   const promptPerformanceMatrix = useMemo(() => {
@@ -435,7 +435,7 @@ export default function CompetitiveTab({
     const allBrands = new Set<string>(isCategory ? [] : [searchedBrand]);
     results.forEach(r => {
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) allBrands.add(c); });
+      rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) allBrands.add(c); });
     });
     const brands = Array.from(allBrands);
     const matrix = brands.map(brand => {
@@ -450,7 +450,7 @@ export default function CompetitiveTab({
       });
     });
     return { brands, prompts, matrix };
-  }, [runStatus, globallyFilteredResults, promptMatrixLlmFilter]);
+  }, [runStatus, globallyFilteredResults, promptMatrixLlmFilter, excludedBrands]);
 
   // Model Preference Data
   const modelPreferenceData = useMemo(() => {
@@ -466,7 +466,7 @@ export default function CompetitiveTab({
     results.forEach(r => {
       if (!isCategory && r.brand_mentioned) brandCounts[searchedBrand]++;
       const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      rBrands.forEach(c => { if (!isCategory || !isCategoryName(c, searchedBrand)) brandCounts[c] = (brandCounts[c] || 0) + 1; });
+      rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) brandCounts[c] = (brandCounts[c] || 0) + 1; });
     });
     const topBrands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([brand]) => brand);
     return providers.map(provider => {
@@ -479,7 +479,7 @@ export default function CompetitiveTab({
       });
       return { provider, ...brandRates };
     });
-  }, [runStatus, globallyFilteredResults]);
+  }, [runStatus, globallyFilteredResults, excludedBrands]);
 
   // Brand Co-occurrence
   const brandCooccurrence = useMemo(() => {
@@ -706,7 +706,7 @@ export default function CompetitiveTab({
       const brandsInResult: Array<{ brand: string; sentiment: string | null }> = [];
       if (result.brand_mentioned && runStatus.brand) brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
       const heatmapBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
-      heatmapBrands.forEach(comp => { if (comp !== runStatus.brand || !isCategory) brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null }); });
+      heatmapBrands.forEach(comp => { if ((comp !== runStatus.brand || !isCategory) && !excludedBrands.has(comp) && (!isCategory || !isCategoryName(comp, runStatus.brand))) brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null }); });
       brandsInResult.forEach(({ brand }) => { brandTotalMentions[brand] = (brandTotalMentions[brand] || 0) + 1; });
       if (brandsInResult.length === 0) continue;
       const seenDomainBrandPairs = new Set<string>();
@@ -756,7 +756,7 @@ export default function CompetitiveTab({
       });
     });
     return { brands: brandList, sources: topSources.map(s => s.domain), data: heatmapData, brandTotals: brandTotalMentions, searchedBrand, sentimentData };
-  }, [runStatus, globallyFilteredResults, heatmapProviderFilter]);
+  }, [runStatus, globallyFilteredResults, heatmapProviderFilter, excludedBrands]);
 
   // ---- Internalized callbacks ----
 
