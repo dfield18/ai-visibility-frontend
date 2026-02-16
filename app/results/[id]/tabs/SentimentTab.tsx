@@ -1643,7 +1643,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                     </td>
                     <td className="text-right py-3 px-4">
                       <span className="text-sm font-medium text-gray-900">
-                        {brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.percentage.toFixed(0) || 0}%
+                        {(((brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.percentage || 0) + (brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.percentage || 0))).toFixed(0)}%
                       </span>
                     </td>
                   </tr>

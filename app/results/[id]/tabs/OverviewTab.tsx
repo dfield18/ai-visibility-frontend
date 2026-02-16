@@ -3247,11 +3247,12 @@ export const OverviewTab = ({
                 }
 
                 if (isIssue) {
+                  const framingLabel = FRAMING_MAP[result.brand_sentiment || ''] || 'Unknown';
                   return [
                     `"${result.prompt.replace(/"/g, '""')}"`,
                     getProviderLabel(result.provider),
                     position,
-                    sentimentLabel,
+                    framingLabel,
                     `"${(result.competitors_mentioned || []).join(', ')}"`,
                     responseText,
                   ].join(',');

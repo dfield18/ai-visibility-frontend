@@ -1874,7 +1874,7 @@ export const SourcesTab = () => {
                             if (score >= 4.5) return 'Strong';
                             if (score >= 3.5) return 'Positive';
                             if (score >= 2.5) return 'Neutral';
-                            if (score >= 1.5) return 'Mixed';
+                            if (score >= 1.5) return 'Conditional';
                             return 'Negative';
                           };
                           return (
