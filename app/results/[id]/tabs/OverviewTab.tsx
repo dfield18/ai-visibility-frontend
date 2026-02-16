@@ -1505,21 +1505,32 @@ export const OverviewTab = ({
                 text = text.replace(/(Market leader\s*[-–—]\s*[^.]+)(\.)/i, `$1${stats}$2`);
 
                 // Replace backend-generated percentages for known brands with frontend values
-                // Matches patterns like "BrandName (45.0%)" or "BrandName: 45.0%" or "BrandName at 45.0%"
                 const brandStatsMap = new Map(brandBreakdownStats.map(b => [b.brand.toLowerCase(), b]));
-                for (const [brandLower, bStat] of brandStatsMap) {
+                for (const [, bStat] of brandStatsMap) {
                   const brandEscaped = bStat.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                  // "Brand (XX.X%)" or "Brand: XX/YY (XX.X%)"
+                  // "Brand: X/Y (Z%)" or "Brand X/Y (Z%)"
                   text = text.replace(
                     new RegExp(`(${brandEscaped})([:\\s]+)\\d+/\\d+\\s*\\(\\d+\\.?\\d*%\\)`, 'gi'),
                     `$1$2${bStat.mentioned}/${bStat.total} (${bStat.visibilityScore.toFixed(1)}%)`
                   );
-                  // "Brand (XX.X% mention rate/visibility score)"
+                  // "Brand (Z% ...)" — percentage inside parens right after brand
                   text = text.replace(
-                    new RegExp(`(${brandEscaped}\\s*\\()\\d+\\.?\\d*(%\\s*(?:mention rate|visibility score))`, 'gi'),
+                    new RegExp(`(${brandEscaped}\\s*\\()\\d+\\.?\\d*(%)`, 'gi'),
+                    `$1${bStat.visibilityScore.toFixed(1)}$2`
+                  );
+                  // "Brand ...with/at/has a Z%" — percentage near brand in flowing text
+                  text = text.replace(
+                    new RegExp(`(${brandEscaped}[^.]*?(?:with|at|has|leads?|captures?|achieves?|shows?|reaches?|holds?|commands?)[^.]*?)\\b\\d+\\.?\\d*(%\\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))`, 'gi'),
                     `$1${bStat.visibilityScore.toFixed(1)}$2`
                   );
                 }
+
+                // Replace "Total Unique Brands Mentioned: X" or "X unique brands" with frontend count
+                text = text.replace(/\b\d+\s+unique\s+brands?\b/gi, `${brandBreakdownStats.length} unique brands`);
+                text = text.replace(/(Total\s+Unique\s+Brands?\s*(?:Mentioned)?[:\s]+)\d+/gi, `$1${brandBreakdownStats.length}`);
+
+                // Also replace any "mention rate" from backend-generated text with "visibility score"
+                text = text.replace(/mention rates?/gi, 'visibility score');
 
                 // Add definition for only the first "visibility score" not already followed by a parenthetical
                 let visibilityScoreDefined = false;
@@ -1530,8 +1541,6 @@ export const OverviewTab = ({
                   }
                   return 'visibility score';
                 });
-                // Also replace any "mention rate" from backend-generated text with "visibility score"
-                text = text.replace(/mention rates?/gi, 'visibility score');
               }
               // Vary repeated "suggest/suggests" usage
               const alternatives = ['indicates', 'points to', 'reflects'];
