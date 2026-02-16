@@ -24,6 +24,7 @@ import {
   Sparkles,
   Tag,
   TrendingUp,
+  HelpCircle,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/Spinner';
@@ -2176,6 +2177,10 @@ export const SourcesTab = () => {
                     >
                       <span className="flex items-center gap-1">
                         Website
+                        <span className="relative group/tip">
+                          <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 cursor-help" />
+                          <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-[11px] rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg leading-relaxed normal-case tracking-normal font-normal pointer-events-none">The source domain cited by AI models in their responses</span>
+                        </span>
                         {domainSortColumn === 'domain' && (
                           <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
@@ -2187,6 +2192,10 @@ export const SourcesTab = () => {
                     >
                       <span className="flex items-center justify-center gap-1">
                         Publisher Type
+                        <span className="relative group/tip">
+                          <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 cursor-help" />
+                          <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-[11px] rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg leading-relaxed normal-case tracking-normal font-normal pointer-events-none">Category of the publisher (e.g., News, Blog, Review Site, E-Commerce)</span>
+                        </span>
                         {domainSortColumn === 'category' && (
                           <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
@@ -2199,6 +2208,10 @@ export const SourcesTab = () => {
                       <span className="flex flex-col items-center">
                         <span className="flex items-center gap-1">
                           Cited In
+                          <span className="relative group/tip">
+                            <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 cursor-help" />
+                            <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-[11px] rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg leading-relaxed normal-case tracking-normal font-normal pointer-events-none">Percentage of all AI responses that reference this source as a citation</span>
+                          </span>
                           {domainSortColumn === 'usedPercent' && (
                             <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                           )}
@@ -2212,6 +2225,10 @@ export const SourcesTab = () => {
                     >
                       <span className="flex items-center justify-center gap-1">
                         Avg Citations
+                        <span className="relative group/tip">
+                          <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 cursor-help" />
+                          <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-[11px] rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg leading-relaxed normal-case tracking-normal font-normal pointer-events-none">Average number of times this source is cited per AI response when it appears</span>
+                        </span>
                         {domainSortColumn === 'avgCitation' && (
                           <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                         )}
@@ -2223,7 +2240,11 @@ export const SourcesTab = () => {
                     >
                       <span className="flex flex-col items-center">
                         <span className="flex items-center gap-1">
-                          {isIssue ? 'Framing' : isCategory ? 'Sentiment' : 'Sentiment'}
+                          {isIssue ? 'Framing' : 'Sentiment'}
+                          <span className="relative group/tip">
+                            <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 cursor-help" />
+                            <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-[11px] rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg leading-relaxed normal-case tracking-normal font-normal pointer-events-none">{isCategory ? 'Average sentiment of AI responses that cite this source, measured across all brands' : 'Average sentiment of AI responses that cite this source'}</span>
+                          </span>
                           {domainSortColumn === 'avgSentiment' && (
                             <span className="text-gray-900">{domainSortDirection === 'asc' ? '↑' : '↓'}</span>
                           )}
@@ -2231,10 +2252,34 @@ export const SourcesTab = () => {
                         {isCategory && <span className="text-[10px] text-gray-400 font-normal normal-case tracking-normal">avg across brands</span>}
                       </span>
                     </th>
-                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>Models</th>
-                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>{isIssue ? 'Issues' : isPublicFigure ? 'Figures' : 'Brands'}</th>
+                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>
+                      <span className="flex items-center gap-1">
+                        Models
+                        <span className="relative group/tip">
+                          <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 cursor-help" />
+                          <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-[11px] rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg leading-relaxed normal-case tracking-normal font-normal pointer-events-none">Which AI models cite this publisher in their responses</span>
+                        </span>
+                      </span>
+                    </th>
+                    <th className={`${isCategory ? 'w-[12%]' : 'w-[15%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider`}>
+                      <span className="flex items-center gap-1">
+                        {isIssue ? 'Issues' : isPublicFigure ? 'Figures' : 'Brands'}
+                        <span className="relative group/tip">
+                          <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 cursor-help" />
+                          <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-[11px] rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg leading-relaxed normal-case tracking-normal font-normal pointer-events-none">{isIssue ? 'Related issues mentioned alongside this source' : isPublicFigure ? 'Public figures mentioned alongside this source' : 'Brands mentioned in AI responses that cite this source'}</span>
+                        </span>
+                      </span>
+                    </th>
                     {isCategory && (
-                      <th className="w-[22%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Prompts</th>
+                      <th className="w-[22%] text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <span className="flex items-center gap-1">
+                          Prompts
+                          <span className="relative group/tip">
+                            <HelpCircle className="w-3 h-3 text-gray-300 hover:text-gray-500 cursor-help" />
+                            <span className="absolute left-1/2 -translate-x-1/2 top-full mt-1 w-48 p-2 bg-gray-900 text-white text-[11px] rounded-lg opacity-0 invisible group-hover/tip:opacity-100 group-hover/tip:visible transition-all z-50 shadow-lg leading-relaxed normal-case tracking-normal font-normal pointer-events-none">Which prompts generated AI responses that cite this source</span>
+                          </span>
+                        </span>
+                      </th>
                     )}
                   </tr>
                 </thead>

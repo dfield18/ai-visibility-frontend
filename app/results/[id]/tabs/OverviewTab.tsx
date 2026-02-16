@@ -57,7 +57,10 @@ function MarketSpreadDonut({
   return (
     <div style={{ order: 3 }} className={`rounded-2xl shadow-sm border p-4 flex flex-col h-[270px] ${cardClassName}`}>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Spread</p>
+        <div>
+          <p className="text-sm font-semibold text-gray-800 tracking-wide uppercase">Market Spread</p>
+          <p className="text-[11px] text-gray-400 leading-tight">% of total mentions across all prompts</p>
+        </div>
         <div className="relative group">
           <button
             className="p-1 rounded-full hover:bg-gray-100 transition-colors"

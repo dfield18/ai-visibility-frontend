@@ -26,6 +26,7 @@ import {
   getProviderIcon,
   getDomain,
   getTextForRanking,
+  isCategoryName,
 } from './shared';
 import { useResults, useResultsUI } from './ResultsContext';
 
@@ -1351,7 +1352,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
               <h3 className="text-lg font-semibold text-gray-900">{isIssue ? 'Framing by AI Platform' : 'Sentiment by AI Platform'}</h3>
               <p className="text-sm text-gray-500 mt-0.5">
                 {isIndustryReport
-                  ? 'Average sentiment across all brands by platform. Filter by brand or source to see individual breakdowns.'
+                  ? <>Average sentiment across all brands by platform.<br />Filter by brand or source to see individual breakdowns.</>
+
                   : isIssue
                   ? `How each AI platform frames ${sentimentBrandLabel}`
                   : `How each AI platform describes ${sentimentBrandLabel}`}
@@ -1742,7 +1744,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                       <tr className="border-b border-gray-200">
                         <th className="w-[30%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Question</th>
                         <th className="w-[14%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Model</th>
-                        <th className="w-[8%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                        <th className="w-[8%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isIndustryReport ? '# Brands' : 'Rank'}</th>
                         <th className="w-[16%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Sentiment</th>
                         <th className="w-[22%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">{isIndustryReport ? 'Brands' : 'Competitors'}</th>
                         <th className="w-[10%] text-left py-2.5 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
@@ -1853,7 +1855,9 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                               </span>
                             </td>
                             <td className="py-3 px-4">
-                              {getPositionBadge()}
+                              {isIndustryReport
+                                ? <span className="text-xs font-medium text-gray-700">{(result.all_brands_mentioned || result.competitors_mentioned || []).filter(b => !isCategoryName(b, runStatus?.brand || '')).length}</span>
+                                : getPositionBadge()}
                             </td>
                             <td className="py-3 px-4">
                               {getSentimentBadge()}

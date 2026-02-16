@@ -188,9 +188,9 @@ export const getKPIInterpretation = (
       return { label: 'Low share of voice', tone: 'warn', tooltip: 'Leading: 30%+  |  Competitive: 15-29%  |  Low: under 15%' };
 
     case 'top1Rate':
-      if (value >= 50) return { label: 'Strong top ranking', tone: 'success', tooltip: 'Strong: 50%+  |  Competitive: 25-49%  |  Room to grow: under 25%' };
-      if (value >= 25) return { label: 'Competitive', tone: 'neutral', tooltip: 'Strong: 50%+  |  Competitive: 25-49%  |  Room to grow: under 25%' };
-      return { label: 'Room to grow', tone: 'warn', tooltip: 'Strong: 50%+  |  Competitive: 25-49%  |  Room to grow: under 25%' };
+      if (value >= 20) return { label: 'Strong top ranking', tone: 'success', tooltip: 'Strong: 20%+  |  Competitive: 10-19%  |  Room to grow: under 10%' };
+      if (value >= 10) return { label: 'Competitive', tone: 'neutral', tooltip: 'Strong: 20%+  |  Competitive: 10-19%  |  Room to grow: under 10%' };
+      return { label: 'Room to grow', tone: 'warn', tooltip: 'Strong: 20%+  |  Competitive: 10-19%  |  Room to grow: under 10%' };
 
     case 'avgPosition':
       if (value <= 1.5) return { label: 'Excellent', tone: 'success', tooltip: 'Excellent: #1-1.5  |  Competitive: #1.5-3  |  Room to grow: #3+' };

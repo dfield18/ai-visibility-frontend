@@ -1266,7 +1266,23 @@ export default function CompetitiveTab({
                                       {stat.promptsWithStats.map((promptStat: any, promptIdx: number) => (
                                         <div
                                           key={promptIdx}
-                                          className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 last:border-0"
+                                          className="flex items-start justify-between gap-4 py-2 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1 transition-colors"
+                                          onClick={() => {
+                                            const matchingResults = globallyFilteredResults.filter((r: Result) => {
+                                              if (r.error || r.prompt !== promptStat.prompt) return false;
+                                              if (brandBreakdownLlmFilter !== 'all' && r.provider !== brandBreakdownLlmFilter) return false;
+                                              const isMentioned = stat.isSearchedBrand
+                                                ? r.brand_mentioned
+                                                : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(stat.brand) : r.competitors_mentioned?.includes(stat.brand));
+                                              return isMentioned;
+                                            });
+                                            if (matchingResults.length === 1) {
+                                              setSelectedResult(matchingResults[0]);
+                                              setSelectedResultHighlight({ brand: stat.brand });
+                                            } else if (matchingResults.length > 1) {
+                                              setHeatmapResultsList({ results: matchingResults, domain: promptStat.prompt, brand: stat.brand });
+                                            }
+                                          }}
                                         >
                                           <p className="text-sm text-gray-700 flex-1">
                                             {promptStat.prompt}

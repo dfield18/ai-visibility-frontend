@@ -1467,7 +1467,7 @@ export default function ResultsPage() {
         }
       });
 
-      const firstPositionRate = mentioned > 0 ? (firstPositionCount / mentioned) * 100 : 0;
+      const firstPositionRate = total > 0 ? (firstPositionCount / total) * 100 : 0;
       const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
 
       // Average sentiment
@@ -1751,7 +1751,7 @@ export default function ResultsPage() {
         }
       });
 
-      const firstPositionRate = mentioned > 0 ? (firstPositionCount / mentioned) * 100 : 0;
+      const firstPositionRate = total > 0 ? (firstPositionCount / total) * 100 : 0;
       const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
 
       // Average sentiment
@@ -3560,9 +3560,8 @@ export default function ResultsPage() {
       }
     }
 
-    // Calculate #1 rate
-    const responsesWhereMentioned = mentionedCount;
-    const top1Rate = responsesWhereMentioned > 0 ? (topPositionCount / responsesWhereMentioned) * 100 : 0;
+    // Calculate #1 rate (out of ALL responses, not just ones where brand is mentioned)
+    const top1Rate = results.length > 0 ? (topPositionCount / results.length) * 100 : 0;
 
     // Average brands surfaced per query (for industry reports)
     let totalBrandsAcrossResults = 0;
@@ -3808,7 +3807,7 @@ export default function ResultsPage() {
       mentionedCount,
       selectedBrandMentions,
       totalBrandMentions,
-      responsesWhereMentioned,
+      responsesWhereMentioned: mentionedCount,
       top1Rate,
       ranksCount: ranks.length,
       avgBrandsPerQuery,
@@ -4328,9 +4327,9 @@ export default function ResultsPage() {
         return { label: 'Low share of voice', tone: 'warn', tooltip: 'Leading: 30%+  |  Competitive: 15-29%  |  Low: under 15%' };
 
       case 'top1Rate':
-        if (value >= 50) return { label: 'Strong top ranking', tone: 'success', tooltip: 'Strong: 50%+  |  Competitive: 25-49%  |  Room to grow: under 25%' };
-        if (value >= 25) return { label: 'Competitive', tone: 'neutral', tooltip: 'Strong: 50%+  |  Competitive: 25-49%  |  Room to grow: under 25%' };
-        return { label: 'Room to grow', tone: 'warn', tooltip: 'Strong: 50%+  |  Competitive: 25-49%  |  Room to grow: under 25%' };
+        if (value >= 20) return { label: 'Strong top ranking', tone: 'success', tooltip: 'Strong: 20%+  |  Competitive: 10-19%  |  Room to grow: under 10%' };
+        if (value >= 10) return { label: 'Competitive', tone: 'neutral', tooltip: 'Strong: 20%+  |  Competitive: 10-19%  |  Room to grow: under 10%' };
+        return { label: 'Room to grow', tone: 'warn', tooltip: 'Strong: 20%+  |  Competitive: 10-19%  |  Room to grow: under 10%' };
 
       case 'avgPosition':
         if (value <= 1.5) return { label: 'Excellent', tone: 'success', tooltip: 'Excellent: #1-1.5  |  Competitive: #1.5-3  |  Room to grow: #3+' };
@@ -5442,18 +5441,17 @@ export default function ResultsPage() {
                   <span className="flex-shrink-0">{getProviderIcon(selectedResult.provider)}</span>
                   {getProviderLabel(selectedResult.provider)}
                 </h2>
-                <p className="text-sm text-gray-500">
-                  {selectedResultHighlight && (
-                    <span className="ml-2 text-gray-900">
-                      • Highlighting {selectedResultHighlight.domain && selectedResultHighlight.brand
-                        ? <>references to <span className="font-medium">{selectedResultHighlight.domain}</span> + <span className="font-medium">{selectedResultHighlight.brand}</span></>
-                        : selectedResultHighlight.domain
-                        ? <>references to <span className="font-medium">{selectedResultHighlight.domain}</span></>
-                        : <>mentions of <span className="font-medium">{selectedResultHighlight.brand}</span></>
-                      }
-                    </span>
-                  )}
-                </p>
+                {selectedResultHighlight && (
+                  <p className="text-sm font-medium text-gray-900 mt-1 flex items-center gap-1.5">
+                    <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0"></span>
+                    Highlighting {selectedResultHighlight.domain && selectedResultHighlight.brand
+                      ? <>references to <span className="font-semibold">{selectedResultHighlight.domain}</span> + <span className="font-semibold">{selectedResultHighlight.brand}</span></>
+                      : selectedResultHighlight.domain
+                      ? <>references to <span className="font-semibold">{selectedResultHighlight.domain}</span></>
+                      : <>mentions of <span className="font-semibold">{selectedResultHighlight.brand}</span></>
+                    }
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => { setSelectedResult(null); setSelectedResultHighlight(null); }}
