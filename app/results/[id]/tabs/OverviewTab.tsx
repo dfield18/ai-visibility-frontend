@@ -3148,8 +3148,12 @@ export const OverviewTab = ({
         <div className="flex items-center justify-end gap-3 p-4 bg-gray-50/50 border-t border-gray-100 rounded-b-2xl">
           <button
             onClick={() => {
-              // Generate CSV content
-              const headers = ['Question', 'AI Model', 'Position', 'Brand Mentioned', 'Sentiment', 'Competitors', 'Response'];
+              // Generate CSV content — match table column names per search type
+              const headers = isCategory
+                ? ['Question', 'Model', '# Brands', 'First Brand', 'All Brands', 'Response']
+                : isIssue
+                ? ['Question', 'Model', 'Depth', 'Framing', 'Related Issues', 'Response']
+                : ['Question', 'Model', 'Rank', 'Mentioned', 'Sentiment', 'Competitors', 'Response'];
               const rows = sortedResults.map((result: Result) => {
                 // Calculate position based on first text appearance
                 let position: number | string = '-';
@@ -3191,14 +3195,41 @@ export const OverviewTab = ({
                   result.brand_sentiment === 'negative_comparison' ? 'Negative' :
                   result.brand_sentiment === 'neutral_mention' ? 'Neutral' : 'Not mentioned';
 
+                const allBrandsList = (result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => !isCategoryName(b, runStatus?.brand || '')) : result.competitors_mentioned || []);
+                const responseText = `"${(result.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""')}"`;
+
+                if (isCategory) {
+                  const brandCount = allBrandsList.length;
+                  const firstBrand = allBrandsList[0] || '-';
+                  return [
+                    `"${result.prompt.replace(/"/g, '""')}"`,
+                    getProviderLabel(result.provider),
+                    brandCount,
+                    `"${firstBrand}"`,
+                    `"${allBrandsList.join(', ')}"`,
+                    responseText,
+                  ].join(',');
+                }
+
+                if (isIssue) {
+                  return [
+                    `"${result.prompt.replace(/"/g, '""')}"`,
+                    getProviderLabel(result.provider),
+                    position,
+                    sentimentLabel,
+                    `"${(result.competitors_mentioned || []).join(', ')}"`,
+                    responseText,
+                  ].join(',');
+                }
+
                 return [
                   `"${result.prompt.replace(/"/g, '""')}"`,
                   getProviderLabel(result.provider),
                   position,
                   result.error ? 'Error' : result.brand_mentioned ? 'Yes' : 'No',
                   sentimentLabel,
-                  `"${(result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned || []).join(', ')}"`,
-                  `"${(result.response_text || '').replace(/\*?\*?\[People Also Ask\]\*?\*?/g, '').replace(/[\r\n]+/g, ' ').replace(/"/g, '""')}"`
+                  `"${allBrandsList.join(', ')}"`,
+                  responseText,
                 ].join(',');
               });
 

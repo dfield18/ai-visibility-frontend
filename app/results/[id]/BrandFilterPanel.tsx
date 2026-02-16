@@ -50,7 +50,7 @@ export function BrandFilterPanel({ allBrands, excludedBrands, setExcludedBrands 
   };
 
   return (
-    <div className="mt-6">
+    <div className="mt-[5vh]">
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Filter Brands</p>
 
       {/* Select / Deselect all — larger, purple accent */}
@@ -68,7 +68,7 @@ export function BrandFilterPanel({ allBrands, excludedBrands, setExcludedBrands 
           {allChecked && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
           {indeterminate && <Minus className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
         </button>
-        <span className="text-sm font-medium text-gray-600">{allChecked ? 'Deselect all' : 'Select all'}</span>
+        <span className="text-sm font-medium text-gray-600">Select all</span>
       </label>
 
       {/* Brand list */}
