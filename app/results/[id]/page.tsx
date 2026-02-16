@@ -1679,6 +1679,16 @@ export default function ResultsPage() {
       'not_mentioned': 0,
     };
 
+    // Count responses where any (non-excluded) brand was ranked #1 — denominator so top result rates sum to 100%
+    const responsesWithAnyBrand = results.filter(r => {
+      if (!r.response_text) return false;
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      const filteredBrands = isCategory
+        ? rBrands.filter(b => !isCategoryName(b, searchedBrand) && !excludedBrands.has(b))
+        : rBrands.filter(b => !excludedBrands.has(b));
+      return filteredBrands.length > 0 || (!isCategory && r.brand_mentioned && !excludedBrands.has(searchedBrand));
+    }).length;
+
     const brandStats = Array.from(allBrands).map(brand => {
       const isSearchedBrand = brand === searchedBrand;
       const total = results.length;
@@ -1751,7 +1761,7 @@ export default function ResultsPage() {
         }
       });
 
-      const firstPositionRate = total > 0 ? (firstPositionCount / total) * 100 : 0;
+      const firstPositionRate = responsesWithAnyBrand > 0 ? (firstPositionCount / responsesWithAnyBrand) * 100 : 0;
       const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
 
       // Average sentiment

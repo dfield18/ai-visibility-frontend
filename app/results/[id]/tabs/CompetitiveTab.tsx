@@ -1116,7 +1116,7 @@ export default function CompetitiveTab({
                         </th>
                         <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                           <div className="whitespace-nowrap">{isIssue ? 'Top Focus Rate' : 'Top Result Rate'}</div>
-                          <div className="text-xs text-gray-400 font-normal">{isIssue ? 'How often issue is primary focus' : 'How often brand is #1'}</div>
+                          <div className="text-xs text-gray-400 font-normal">{isIssue ? 'How often issue is primary focus' : 'Share of #1 positions'}</div>
                         </th>
                         <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
                           <div className="whitespace-nowrap">Avg. Position</div>
