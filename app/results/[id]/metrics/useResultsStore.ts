@@ -526,6 +526,7 @@ export function useResultsStore(params: UseResultsStoreParams) {
   const [sentimentProviderBrandFilter, setSentimentProviderBrandFilter] = useState<string>('');
   const [sentimentProviderCitationFilter, setSentimentProviderCitationFilter] = useState<string>('all');
   const [sentimentProviderModelFilter, setSentimentProviderModelFilter] = useState<string>('all');
+  const [competitorSentimentModelFilter, setCompetitorSentimentModelFilter] = useState<string>('all');
 
   // =========================================================================
   // Sentiment computations
@@ -575,8 +576,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   );
 
   const competitorSentimentData = useMemo(
-    () => computeCompetitorSentimentData(globallyFilteredResults, trackedBrands, runStatus?.brand || ''),
-    [globallyFilteredResults, trackedBrands, runStatus?.brand],
+    () => computeCompetitorSentimentData(globallyFilteredResults, trackedBrands, runStatus?.brand || '', competitorSentimentModelFilter),
+    [globallyFilteredResults, trackedBrands, runStatus?.brand, competitorSentimentModelFilter],
   );
 
   // =========================================================================
@@ -872,6 +873,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
     setSentimentProviderCitationFilter,
     sentimentProviderModelFilter,
     setSentimentProviderModelFilter,
+    competitorSentimentModelFilter,
+    setCompetitorSentimentModelFilter,
 
     // -- Sources metrics --
     topCitedSources,

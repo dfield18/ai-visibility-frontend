@@ -181,6 +181,8 @@ export interface ResultsContextValue {
   setSentimentProviderCitationFilter: (v: string) => void;
   sentimentProviderModelFilter: string;
   setSentimentProviderModelFilter: (v: string) => void;
+  competitorSentimentModelFilter: string;
+  setCompetitorSentimentModelFilter: (v: string) => void;
 
   // =========================================================================
   // Source Metrics

@@ -485,6 +485,7 @@ export function computeCompetitorSentimentData(
   globallyFilteredResults: Result[],
   trackedBrands: Set<string>,
   searchedBrand: string,
+  competitorSentimentModelFilter?: string,
 ): CompetitorSentimentRow[] {
   const competitorData: Record<string, {
     strong_endorsement: number;
@@ -499,6 +500,7 @@ export function computeCompetitorSentimentData(
   const searchedBrandForComp = searchedBrand;
   globallyFilteredResults
     .filter((r: Result) => !r.error && r.competitor_sentiments)
+    .filter((r: Result) => !competitorSentimentModelFilter || competitorSentimentModelFilter === 'all' || r.provider === competitorSentimentModelFilter)
     .forEach((r: Result) => {
       if (r.competitor_sentiments) {
         Object.entries(r.competitor_sentiments).forEach(([comp, sentiment]) => {

@@ -45,7 +45,9 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
     globallyFilteredResults,
     trackedBrands,
     availableProviders,
+    availableBrands,
     excludedBrands,
+    isCategory,
     // Sentiment metrics from context
     sentimentInsights,
     brandSentimentData,
@@ -60,6 +62,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
     setSentimentProviderCitationFilter,
     sentimentProviderModelFilter,
     setSentimentProviderModelFilter,
+    competitorSentimentModelFilter,
+    setCompetitorSentimentModelFilter,
   } = useResults();
   const { copied, handleCopyLink, setSelectedResult, setSelectedResultHighlight } = useResultsUI();
 
@@ -69,6 +73,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
   const [hoveredCompetitorBadge, setHoveredCompetitorBadge] = useState<{ competitor: string; sentiment: string } | null>(null);
   const competitorHoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [responseSentimentFilter, setResponseSentimentFilter] = useState<string>('all');
+  const [responseBrandFilter, setResponseBrandFilter] = useState<string>('all');
   const [responseLlmFilter, setResponseLlmFilter] = useState<string>('all');
   const [sentimentByPromptBrandFilter, setSentimentByPromptBrandFilter] = useState<string>('');
   const [sentimentByPromptSourceFilter, setSentimentByPromptSourceFilter] = useState<string>('all');
@@ -1345,10 +1350,23 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
         {/* Competitor Sentiment Comparison */}
         {showSection('sentiment-competitor') && competitorSentimentData.length > 0 && (
           <div id="sentiment-competitor" className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">Competitor Sentiment Comparison</h3>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="text-lg font-semibold text-gray-900">Competitor Sentiment Comparison</h3>
+              <select
+                value={competitorSentimentModelFilter}
+                onChange={(e) => setCompetitorSentimentModelFilter(e.target.value)}
+                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+              >
+                <option value="all">All Models</option>
+                {availableProviders.map((provider) => (
+                  <option key={provider} value={provider}>{getProviderLabel(provider)}</option>
+                ))}
+              </select>
+            </div>
             <p className="text-sm text-gray-500 mb-6">How AI models describe competitors in the same responses</p>
 
             <div className="overflow-x-auto">
+              {/* Fixed header + "Your Brand" row */}
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
@@ -1366,7 +1384,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Add the brand first for comparison */}
+                  {/* Add the brand first for comparison — always visible */}
                   <tr className="border-b border-gray-200 bg-gray-100/30">
                     <td className="py-3 px-4">
                       <span className="text-sm font-medium text-gray-900">{runStatus?.brand} (Your Brand)</span>
@@ -1422,68 +1440,78 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                       </span>
                     </td>
                   </tr>
-                  {competitorSentimentData.map((row, rowIndex) => {
-                    const popupPos = rowIndex >= competitorSentimentData.length - 2 ? 'top' as const : 'bottom' as const;
-                    return (
-                    <tr key={row.competitor} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <span className="text-sm font-medium text-gray-900">{row.competitor}</span>
-                      </td>
-                      <td className="text-center py-3 px-2">
-                        <CompetitorSentimentBadge
-                          competitor={row.competitor}
-                          sentiment="strong_endorsement"
-                          count={row.strong_endorsement}
-                          badgeClassName="bg-gray-100 text-gray-900"
-                          popupPosition={popupPos}
-                        />
-                      </td>
-                      <td className="text-center py-3 px-2">
-                        <CompetitorSentimentBadge
-                          competitor={row.competitor}
-                          sentiment="positive_endorsement"
-                          count={row.positive_endorsement}
-                          badgeClassName="bg-gray-100 text-gray-700"
-                          popupPosition={popupPos}
-                        />
-                      </td>
-                      <td className="text-center py-3 px-2">
-                        <CompetitorSentimentBadge
-                          competitor={row.competitor}
-                          sentiment="neutral_mention"
-                          count={row.neutral_mention}
-                          badgeClassName="bg-blue-100 text-blue-800"
-                          popupPosition={popupPos}
-                        />
-                      </td>
-                      <td className="text-center py-3 px-2">
-                        <CompetitorSentimentBadge
-                          competitor={row.competitor}
-                          sentiment="conditional"
-                          count={row.conditional}
-                          badgeClassName="bg-yellow-100 text-yellow-800"
-                          popupPosition={popupPos}
-                        />
-                      </td>
-                      <td className="text-center py-3 px-2">
-                        <CompetitorSentimentBadge
-                          competitor={row.competitor}
-                          sentiment="negative_comparison"
-                          count={row.negative_comparison}
-                          badgeClassName="bg-red-100 text-red-800"
-                          popupPosition={popupPos}
-                        />
-                      </td>
-                      <td className="text-center py-3 px-4">
-                        <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-gray-600' : row.strongRate >= 25 ? 'text-gray-500' : 'text-gray-500'}`}>
-                          {row.strongRate.toFixed(0)}%
-                        </span>
-                      </td>
-                    </tr>
-                    );
-                  })}
                 </tbody>
               </table>
+              {/* Scrollable competitor rows */}
+              <div style={{ maxHeight: '480px' }} className="overflow-y-auto overscroll-contain">
+                <table className="w-full">
+                  <tbody>
+                    {competitorSentimentData.map((row, rowIndex) => {
+                      const popupPos = rowIndex >= competitorSentimentData.length - 2 ? 'top' as const : 'bottom' as const;
+                      return (
+                      <tr key={row.competitor} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <span className="text-sm font-medium text-gray-900">{row.competitor}</span>
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <CompetitorSentimentBadge
+                            competitor={row.competitor}
+                            sentiment="strong_endorsement"
+                            count={row.strong_endorsement}
+                            badgeClassName="bg-gray-100 text-gray-900"
+                            popupPosition={popupPos}
+                          />
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <CompetitorSentimentBadge
+                            competitor={row.competitor}
+                            sentiment="positive_endorsement"
+                            count={row.positive_endorsement}
+                            badgeClassName="bg-gray-100 text-gray-700"
+                            popupPosition={popupPos}
+                          />
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <CompetitorSentimentBadge
+                            competitor={row.competitor}
+                            sentiment="neutral_mention"
+                            count={row.neutral_mention}
+                            badgeClassName="bg-blue-100 text-blue-800"
+                            popupPosition={popupPos}
+                          />
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <CompetitorSentimentBadge
+                            competitor={row.competitor}
+                            sentiment="conditional"
+                            count={row.conditional}
+                            badgeClassName="bg-yellow-100 text-yellow-800"
+                            popupPosition={popupPos}
+                          />
+                        </td>
+                        <td className="text-center py-3 px-2">
+                          <CompetitorSentimentBadge
+                            competitor={row.competitor}
+                            sentiment="negative_comparison"
+                            count={row.negative_comparison}
+                            badgeClassName="bg-red-100 text-red-800"
+                            popupPosition={popupPos}
+                          />
+                        </td>
+                        <td className="text-center py-3 px-4">
+                          <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-gray-600' : row.strongRate >= 25 ? 'text-gray-500' : 'text-gray-500'}`}>
+                            {row.strongRate.toFixed(0)}%
+                          </span>
+                        </td>
+                      </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {competitorSentimentData.length > 10 && (
+                <p className="text-xs text-gray-400 text-center pt-2">Scroll down to see all {competitorSentimentData.length} brands</p>
+              )}
             </div>
           </div>
         )}
@@ -1495,24 +1523,37 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Sentiment Details</h3>
               <p className="text-sm text-gray-500 mt-0.5">
-                {isIndustryReport
-                  ? 'Sentiment shown is the average across all brands in each response. Filter by sentiment or model to narrow results.'
+                {isCategory
+                  ? 'Sentiment shown per brand in each response. Filter by brand or model to narrow results.'
                   : 'How each AI response describes your brand'}
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <select
-                value={responseSentimentFilter}
-                onChange={(e) => setResponseSentimentFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-              >
-                <option value="all">{isIndustryReport ? 'All Brands' : 'All Sentiments'}</option>
-                <option value="strong_endorsement">Strong</option>
-                <option value="positive_endorsement">Positive</option>
-                <option value="neutral_mention">Neutral</option>
-                <option value="conditional">Conditional</option>
-                <option value="negative_comparison">Negative</option>
-              </select>
+              {isCategory ? (
+                <select
+                  value={responseBrandFilter}
+                  onChange={(e) => setResponseBrandFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                >
+                  <option value="all">All Brands</option>
+                  {availableBrands.map((brand) => (
+                    <option key={brand} value={brand}>{brand}</option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  value={responseSentimentFilter}
+                  onChange={(e) => setResponseSentimentFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                >
+                  <option value="all">All Sentiments</option>
+                  <option value="strong_endorsement">Strong</option>
+                  <option value="positive_endorsement">Positive</option>
+                  <option value="neutral_mention">Neutral</option>
+                  <option value="conditional">Conditional</option>
+                  <option value="negative_comparison">Negative</option>
+                </select>
+              )}
               <select
                 value={responseLlmFilter}
                 onChange={(e) => setResponseLlmFilter(e.target.value)}
@@ -1529,7 +1570,16 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
           {(() => {
             const filteredSentimentResults = globallyFilteredResults
               .filter((r: Result) => hasEffectiveSentiment(r))
-              .filter((r: Result) => responseSentimentFilter === 'all' || getEffectiveSentiment(r) === responseSentimentFilter)
+              .filter((r: Result) => {
+                if (isCategory) {
+                  // For industry reports: filter by brand presence in competitor_sentiments
+                  if (responseBrandFilter === 'all') return true;
+                  return r.competitor_sentiments && responseBrandFilter in r.competitor_sentiments
+                    && r.competitor_sentiments[responseBrandFilter] !== 'not_mentioned';
+                }
+                // For other types: filter by sentiment
+                return responseSentimentFilter === 'all' || getEffectiveSentiment(r) === responseSentimentFilter;
+              })
               .filter((r: Result) => responseLlmFilter === 'all' || r.provider === responseLlmFilter);
 
             const totalWithSentiment = globallyFilteredResults.filter((r: Result) => hasEffectiveSentiment(r)).length;
@@ -1610,9 +1660,11 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                           );
                         };
 
-                        // Sentiment badge — for industry reports, average across brand sentiments
+                        // Sentiment badge — for industry reports, show per-brand sentiment when filtered
                         const getSentimentBadge = () => {
-                          const sentiment = getEffectiveSentiment(result);
+                          const sentiment = (isCategory && responseBrandFilter !== 'all' && result.competitor_sentiments)
+                            ? (result.competitor_sentiments[responseBrandFilter] || null)
+                            : getEffectiveSentiment(result);
                           if (!sentiment || sentiment === 'not_mentioned') {
                             return <span className="text-xs text-gray-400">—</span>;
                           }
