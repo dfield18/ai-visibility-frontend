@@ -522,6 +522,25 @@ export default function ResultsPage() {
   );
   const brandBlurbs = brandBlurbsData?.blurbs ?? {};
 
+  // Strip markdown formatting from text (declared before candidateQuotesMap which uses it)
+  const stripMarkdown = (text: string): string => {
+    return text
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/^[\s]*[-*+]\s+/gm, '')
+      .replace(/^[\s]*\d+\.\s+/gm, '')
+      .replace(/^#+\s+/gm, '')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/\(\[([^\]]+)\]\([^)]+\)\)/g, '$1')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/https?:\/\/[^\s)\]]+/g, '')
+      .replace(/\(\)/g, '')
+      .replace(/\s*\(\s*\)/g, '')
+      .replace(/\n+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
   // Extract candidate quotes mentioning each brand from LLM responses
   const candidateQuotesMap = useMemo(() => {
     if (!runStatus) return {} as Record<string, BrandQuote[]>;
@@ -772,25 +791,6 @@ export default function ResultsPage() {
       case 'llama': return 'Meta Llama';
       default: return provider;
     }
-  };
-
-  // Strip markdown formatting from text for preview display
-  const stripMarkdown = (text: string): string => {
-    return text
-      .replace(/\*\*([^*]+)\*\*/g, '$1')
-      .replace(/\*([^*]+)\*/g, '$1')
-      .replace(/^[\s]*[-*+]\s+/gm, '')
-      .replace(/^[\s]*\d+\.\s+/gm, '')
-      .replace(/^#+\s+/gm, '')
-      .replace(/`([^`]+)`/g, '$1')
-      .replace(/\(\[([^\]]+)\]\([^)]+\)\)/g, '$1')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .replace(/https?:\/\/[^\s)\]]+/g, '')
-      .replace(/\(\)/g, '')
-      .replace(/\s*\(\s*\)/g, '')
-      .replace(/\n+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
   };
 
   // Get platform brand color
