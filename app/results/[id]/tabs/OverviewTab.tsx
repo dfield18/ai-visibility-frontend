@@ -1243,9 +1243,14 @@ export const OverviewTab = ({
                   },
                 );
 
-                // Replace unique brand counts
-                text = text.replace(/\b\d+\s+unique\s+brands?\b/gi, `${unfilteredBrandBreakdownStats.length} unique brands`);
-                text = text.replace(/(Total\s+Unique\s+Brands?\s*(?:Mentioned)?[:\s]+)\d+/gi, `$1${unfilteredBrandBreakdownStats.length}`);
+                // Replace brand counts — catch all variations GPT might use
+                const correctBrandCount = unfilteredBrandBreakdownStats.length;
+                // "23 unique/different/distinct brands"
+                text = text.replace(/\b\d+\s+(?:unique|different|distinct)\s+brands?\b/gi, `${correctBrandCount} unique brands`);
+                // "23 brands were mentioned/identified/found/recommended/analyzed"
+                text = text.replace(/\b\d+\s+brands?\s+(?:were\s+)?(?:mentioned|identified|found|recommended|detected|analyzed|tracked)\b/gi, `${correctBrandCount} brands mentioned`);
+                // "Total Unique Brands (Mentioned): 23"
+                text = text.replace(/(Total\s+(?:Unique\s+)?Brands?\s*(?:Mentioned)?[:\s]+)\d+/gi, `$1${correctBrandCount}`);
 
                 // Terminology: "mention rate" → "visibility score"
                 text = text.replace(/mention rates?/gi, 'visibility score');
