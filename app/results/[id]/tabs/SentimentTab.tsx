@@ -1384,8 +1384,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Add the brand first for comparison — always visible */}
-                  <tr className="border-b border-gray-200 bg-gray-100/30">
+                  {/* Add the brand first for comparison — skip for industry reports where brand is category name */}
+                  {!isCategory && <tr className="border-b border-gray-200 bg-gray-100/30">
                     <td className="py-3 px-4">
                       <span className="text-sm font-medium text-gray-900">{runStatus?.brand} (Your Brand)</span>
                     </td>
@@ -1439,7 +1439,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                         {(((brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.percentage || 0) + (brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.percentage || 0))).toFixed(0)}%
                       </span>
                     </td>
-                  </tr>
+                  </tr>}
                 </tbody>
               </table>
               {/* Scrollable competitor rows */}
