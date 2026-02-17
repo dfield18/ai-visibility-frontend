@@ -1131,10 +1131,10 @@ export const OverviewTab = ({
               // which breaks word boundaries and suffix matching.
               text = text.replace(/\*\*/g, '');
               if (isCategory && unfilteredBrandBreakdownStats.length > 0) {
-                // --- Market Leader injection (unchanged) ---
+                // --- Market Leader injection ---
                 const leader = unfilteredBrandBreakdownStats[0];
-                const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
-                text = text.replace(/(Market leader\s*[-–—]\s*[\s\S]+?)\.(?!\d)/i, `$1${stats}.`);
+                const mlStats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
+                text = text.replace(/(Market leader\s*[-–—]\s*[\s\S]+?)\.(?!\d)/i, `$1${mlStats}.`);
 
                 // --- Replace backend-generated percentages with correct frontend values ---
                 // Sort brands longest-name-first so "Nike Air" matches before "Nike"
@@ -1146,7 +1146,7 @@ export const OverviewTab = ({
                   escaped: b.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
                 }));
 
-                // Pass 1: "Brand: X/Y (Z%)" or "Brand X/Y (Z%)"
+                // Pass 1: "Brand: X/Y (Z%)" — replace with correct values
                 for (const { stat, escaped } of brandRegexes) {
                   text = text.replace(
                     new RegExp(`(${escaped})([:\\s]+)\\d+/\\d+\\s*\\(\\d+\\.?\\d*%\\)`, 'gi'),
@@ -1154,7 +1154,7 @@ export const OverviewTab = ({
                   );
                 }
 
-                // Pass 2: "Brand (XX%)" — percentage in parens right after brand name
+                // Pass 2: "Brand (XX%)" — replace percentage in parens after brand name
                 for (const { stat, escaped } of brandRegexes) {
                   text = text.replace(
                     new RegExp(`(${escaped}\\s*\\()\\d+\\.?\\d*(%)`, 'gi'),
@@ -1162,17 +1162,31 @@ export const OverviewTab = ({
                   );
                 }
 
-                // Pass 3: "XX% visibility/mention/responses" — find nearest preceding brand.
-                // For each percentage with visibility context, look backwards for the closest
-                // brand name. Only replace when that brand is unambiguous (no other brand
-                // within 40 chars of it, which would indicate a multi-brand clause).
+                // Pass 3: Annotate each brand's first occurrence with its correct
+                // visibility score. This ensures every brand always shows its own
+                // correct number — even in multi-brand groupings where GPT assigns
+                // one (possibly wrong) number to several brands at once.
+                const annotated = new Set<string>();
+                for (const { stat, escaped } of brandRegexes) {
+                  const key = stat.brand.toLowerCase();
+                  if (annotated.has(key)) continue;
+                  // Match first occurrence not already followed by a parenthetical
+                  text = text.replace(
+                    new RegExp(`\\b(${escaped})\\b(?!\\s*\\()`, 'i'),
+                    `$1 (${stat.visibilityScore.toFixed(1)}%)`
+                  );
+                  annotated.add(key);
+                }
+
+                // Pass 4: Fix standalone "XX% visibility/mention" percentages.
+                // For each, find the closest preceding brand and replace if unambiguous.
+                // Ambiguous cases (multiple brands nearby) are left as-is — the
+                // per-brand annotations from Pass 3 already show the correct values.
                 text = text.replace(
                   /\b(\d+\.?\d*)(%\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))/gi,
                   (match: string, _num: string, suffix: string, offset: number) => {
                     const start = Math.max(0, offset - 150);
                     const before = text.slice(start, offset);
-
-                    // Find all brand occurrences in the preceding window
                     const hits: { stat: typeof leader; pos: number }[] = [];
                     for (const { stat, escaped } of brandRegexes) {
                       const re = new RegExp(escaped, 'gi');
@@ -1182,20 +1196,13 @@ export const OverviewTab = ({
                       }
                     }
                     if (hits.length === 0) return match;
-
-                    // Closest brand to the percentage (highest position = nearest)
                     hits.sort((a, b) => b.pos - a.pos);
                     const closest = hits[0];
-
-                    // If another brand appears within 40 chars of the closest, this is
-                    // a multi-brand clause (e.g. "Nike and Adidas each achieve X%") —
-                    // we cannot attribute the percentage to one brand, so leave it.
                     const isAmbiguous = hits.some(h =>
                       h.stat.brand !== closest.stat.brand &&
                       Math.abs(h.pos - closest.pos) < 40
                     );
                     if (isAmbiguous) return match;
-
                     return `${closest.stat.visibilityScore.toFixed(1)}${suffix}`;
                   },
                 );
