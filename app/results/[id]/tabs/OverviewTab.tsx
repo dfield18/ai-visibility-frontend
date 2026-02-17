@@ -582,7 +582,7 @@ export const OverviewTab = ({
             // Market Leader variant for industry reports — use unfilteredBrandBreakdownStats for consistency
             const leader = unfilteredBrandBreakdownStats[0];
             const leaderName = leader?.brand || overviewMetrics?.selectedBrand || 'N/A';
-            const leaderVisibility = leader?.visibilityScore ?? 0;
+            const leaderVisibility = leader ? (leader.total > 0 ? (leader.mentioned / leader.total) * 100 : 0) : 0;
             const leaderMentioned = leader?.mentioned ?? 0;
             const leaderTotal = leader?.total ?? 0;
             const leaderVisTone = getKPIInterpretation('visibility', leaderVisibility).tone;
@@ -599,7 +599,7 @@ export const OverviewTab = ({
                       <HelpCircle className="w-4 h-4 text-gray-400" />
                     </button>
                     <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                      {leaderName} appears in {leaderVisibility.toFixed(1)}% of AI responses (averaged across providers).
+                      {leaderName} appears in {leaderVisibility.toFixed(1)}% of AI responses ({leaderMentioned} of {leaderTotal}).
                     </div>
                   </div>
                 </div>
@@ -1131,9 +1131,13 @@ export const OverviewTab = ({
               // which breaks word boundaries and suffix matching.
               text = text.replace(/\*\*/g, '');
               if (isCategory && unfilteredBrandBreakdownStats.length > 0) {
+                // Simple visibility: mentioned / total * 100 (matches overviewMetrics.overallVisibility)
+                const simpleVis = (stat: { mentioned: number; total: number }) =>
+                  stat.total > 0 ? (stat.mentioned / stat.total) * 100 : 0;
+
                 // --- Market Leader injection ---
                 const leader = unfilteredBrandBreakdownStats[0];
-                const mlStats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
+                const mlStats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${simpleVis(leader).toFixed(1)}% visibility score`;
                 text = text.replace(/(Market leader\s*[-–—]\s*[\s\S]+?)\.(?!\d)/i, `$1${mlStats}.`);
 
                 // --- Replace "Competitive landscape" paragraph with deterministic text ---
@@ -1142,7 +1146,7 @@ export const OverviewTab = ({
                 const scoreGroups = new Map<string, string[]>();
                 const scoreOrder: string[] = [];
                 for (const b of unfilteredBrandBreakdownStats) {
-                  const key = b.visibilityScore.toFixed(1);
+                  const key = simpleVis(b).toFixed(1);
                   if (!scoreGroups.has(key)) { scoreGroups.set(key, []); scoreOrder.push(key); }
                   scoreGroups.get(key)!.push(b.brand);
                 }
@@ -1186,7 +1190,7 @@ export const OverviewTab = ({
                 for (const { stat, escaped } of brandRegexes) {
                   text = text.replace(
                     new RegExp(`(${escaped})([:\\s]+)\\d+/\\d+\\s*\\(\\d+\\.?\\d*%\\)`, 'gi'),
-                    `$1$2${stat.mentioned}/${stat.total} (${stat.visibilityScore.toFixed(1)}%)`
+                    `$1$2${stat.mentioned}/${stat.total} (${simpleVis(stat).toFixed(1)}%)`
                   );
                 }
 
@@ -1194,7 +1198,7 @@ export const OverviewTab = ({
                 for (const { stat, escaped } of brandRegexes) {
                   text = text.replace(
                     new RegExp(`(${escaped}\\s*\\()\\d+\\.?\\d*(%)`, 'gi'),
-                    `$1${stat.visibilityScore.toFixed(1)}$2`
+                    `$1${simpleVis(stat).toFixed(1)}$2`
                   );
                 }
 
@@ -1207,7 +1211,7 @@ export const OverviewTab = ({
                   if (annotated.has(key)) continue;
                   text = text.replace(
                     new RegExp(`\\b(${escaped})\\b(?!\\s*\\()`, 'i'),
-                    `$1 (${stat.visibilityScore.toFixed(1)}%)`
+                    `$1 (${simpleVis(stat).toFixed(1)}%)`
                   );
                   annotated.add(key);
                 }
@@ -1235,7 +1239,7 @@ export const OverviewTab = ({
                       Math.abs(h.pos - closest.pos) < 40
                     );
                     if (isAmbiguous) return suffix.replace(/^%\s*/, '');
-                    return `${closest.stat.visibilityScore.toFixed(1)}${suffix}`;
+                    return `${simpleVis(closest.stat).toFixed(1)}${suffix}`;
                   },
                 );
 
