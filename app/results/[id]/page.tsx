@@ -1518,7 +1518,9 @@ export default function ResultsPage() {
                       </span>
                     )}
                     {selectedResult.brand_sentiment && selectedResult.brand_sentiment !== 'not_mentioned' && (
-                      <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg ${
+                      <span
+                        title={`Sentiment: how this AI response characterizes ${runStatus?.brand || 'the brand'} (based on this individual response, not an average)`}
+                        className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-lg cursor-help ${
                         selectedResult.brand_sentiment === 'strong_endorsement' ? 'bg-emerald-50 text-emerald-700' :
                         selectedResult.brand_sentiment === 'positive_endorsement' ? 'bg-green-50 text-green-700' :
                         selectedResult.brand_sentiment === 'neutral_mention' ? 'bg-blue-100 text-blue-800' :
@@ -1531,7 +1533,7 @@ export default function ResultsPage() {
                          selectedResult.brand_sentiment === 'neutral_mention' ? 'Neutral' :
                          selectedResult.brand_sentiment === 'conditional' ? 'Conditional' :
                          selectedResult.brand_sentiment === 'negative_comparison' ? 'Negative' :
-                         'Unknown'}
+                         'Unknown'} Sentiment
                       </span>
                     )}
                   </div>
