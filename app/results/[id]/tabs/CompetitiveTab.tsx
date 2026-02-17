@@ -974,13 +974,20 @@ export default function CompetitiveTab({
                   isSearchedBrand: stat.isSearchedBrand,
                 }));
 
-              // Calculate dynamic x-axis range based on actual sentiment values
-              const sentimentData = rawData.map(d => d.sentiment);
-              const minSentiment = sentimentData.length > 0 ? Math.min(...sentimentData) : 1;
-              const maxSentiment = sentimentData.length > 0 ? Math.max(...sentimentData) : 5;
-              const xMin = Math.max(0, Math.floor(minSentiment) - 0.5);
-              const xMax = Math.min(5.5, Math.ceil(maxSentiment) + 0.5);
-              const xTicks = [1, 2, 3, 4, 5].filter(t => t >= xMin && t <= xMax);
+              // Calculate x-axis range based on which sentiment categories have brands classified in them
+              const getSentimentCategory = (s: number): number => {
+                if (s >= 4.5) return 5; // Strong
+                if (s >= 3.5) return 4; // Positive
+                if (s >= 2.5) return 3; // Neutral
+                if (s >= 1.5) return 2; // Conditional
+                return 1; // Negative
+              };
+              const sentimentCategories = new Set(rawData.map(d => getSentimentCategory(d.sentiment)));
+              const minCategory = sentimentCategories.size > 0 ? Math.min(...sentimentCategories) : 1;
+              const maxCategory = sentimentCategories.size > 0 ? Math.max(...sentimentCategories) : 5;
+              const xMin = minCategory - 0.5;
+              const xMax = maxCategory + 0.5;
+              const xTicks = [1, 2, 3, 4, 5].filter(t => t >= minCategory && t <= maxCategory);
 
               const getClusterKey = (mentions: number, sentiment: number) => {
                 const mentionBucket = Math.round(mentions);
