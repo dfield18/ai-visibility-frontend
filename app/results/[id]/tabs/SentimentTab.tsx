@@ -1366,149 +1366,235 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             <p className="text-sm text-gray-500 mb-6">How AI models describe competitors in the same responses</p>
 
             <div className="overflow-x-auto">
-              {/* Fixed header + "Your Brand" row */}
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-900">Strong</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Positive</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Neutral</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">Conditional</th>
-                    <th className="text-center py-3 px-2 text-sm font-medium text-red-500">Negative</th>
-                    <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">
-                      <div>Endorsement</div>
-                      <div>Rate</div>
-                      <div className="text-[10px] text-gray-400 font-normal">(% positive or strong endorsement)</div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Add the brand first for comparison — skip for industry reports where brand is category name */}
-                  {!isCategory && <tr className="border-b border-gray-200 bg-gray-100/30">
-                    <td className="py-3 px-4">
-                      <span className="text-sm font-medium text-gray-900">{runStatus?.brand} (Your Brand)</span>
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <CompetitorSentimentBadge
-                        competitor={runStatus?.brand || ''}
-                        sentiment="strong_endorsement"
-                        count={brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0}
-                        badgeClassName="bg-gray-100 text-gray-900"
-                        popupPosition="bottom"
-                      />
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <CompetitorSentimentBadge
-                        competitor={runStatus?.brand || ''}
-                        sentiment="positive_endorsement"
-                        count={brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.count || 0}
-                        badgeClassName="bg-gray-100 text-gray-700"
-                        popupPosition="bottom"
-                      />
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <CompetitorSentimentBadge
-                        competitor={runStatus?.brand || ''}
-                        sentiment="neutral_mention"
-                        count={brandSentimentData.find(d => d.sentiment === 'neutral_mention')?.count || 0}
-                        badgeClassName="bg-blue-100 text-blue-800"
-                        popupPosition="bottom"
-                      />
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <CompetitorSentimentBadge
-                        competitor={runStatus?.brand || ''}
-                        sentiment="conditional"
-                        count={brandSentimentData.find(d => d.sentiment === 'conditional')?.count || 0}
-                        badgeClassName="bg-yellow-100 text-yellow-800"
-                        popupPosition="bottom"
-                      />
-                    </td>
-                    <td className="text-center py-3 px-2">
-                      <CompetitorSentimentBadge
-                        competitor={runStatus?.brand || ''}
-                        sentiment="negative_comparison"
-                        count={brandSentimentData.find(d => d.sentiment === 'negative_comparison')?.count || 0}
-                        badgeClassName="bg-red-100 text-red-800"
-                        popupPosition="bottom"
-                      />
-                    </td>
-                    <td className="text-right py-3 px-4">
-                      <span className="text-sm font-medium text-gray-900">
-                        {(((brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.percentage || 0) + (brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.percentage || 0))).toFixed(0)}%
-                      </span>
-                    </td>
-                  </tr>}
-                </tbody>
-              </table>
-              {/* Scrollable competitor rows */}
-              <div style={{ maxHeight: '480px' }} className="overflow-y-auto overscroll-contain">
-                <table className="w-full">
-                  <tbody>
-                    {competitorSentimentData.map((row, rowIndex) => {
-                      const popupPos = rowIndex >= competitorSentimentData.length - 2 ? 'top' as const : 'bottom' as const;
-                      return (
-                      <tr key={row.competitor} className="border-b border-gray-100 hover:bg-gray-50">
+              {isCategory ? (
+                /* Industry reports: single table (no "Your Brand" row) to avoid column misalignment */
+                <div style={{ maxHeight: '540px' }} className="overflow-y-auto overscroll-contain">
+                  <table className="w-full">
+                    <thead className="sticky top-0 bg-white z-10">
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Brand</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-900">Strong</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Positive</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Neutral</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">Conditional</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-red-500">Negative</th>
+                        <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">
+                          <div>Endorsement</div>
+                          <div>Rate</div>
+                          <div className="text-[10px] text-gray-400 font-normal">(% positive or strong endorsement)</div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {competitorSentimentData.map((row, rowIndex) => {
+                        const popupPos = rowIndex >= competitorSentimentData.length - 2 ? 'top' as const : 'bottom' as const;
+                        return (
+                        <tr key={row.competitor} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <span className="text-sm font-medium text-gray-900">{row.competitor}</span>
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <CompetitorSentimentBadge
+                              competitor={row.competitor}
+                              sentiment="strong_endorsement"
+                              count={row.strong_endorsement}
+                              badgeClassName="bg-gray-100 text-gray-900"
+                              popupPosition={popupPos}
+                            />
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <CompetitorSentimentBadge
+                              competitor={row.competitor}
+                              sentiment="positive_endorsement"
+                              count={row.positive_endorsement}
+                              badgeClassName="bg-gray-100 text-gray-700"
+                              popupPosition={popupPos}
+                            />
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <CompetitorSentimentBadge
+                              competitor={row.competitor}
+                              sentiment="neutral_mention"
+                              count={row.neutral_mention}
+                              badgeClassName="bg-blue-100 text-blue-800"
+                              popupPosition={popupPos}
+                            />
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <CompetitorSentimentBadge
+                              competitor={row.competitor}
+                              sentiment="conditional"
+                              count={row.conditional}
+                              badgeClassName="bg-yellow-100 text-yellow-800"
+                              popupPosition={popupPos}
+                            />
+                          </td>
+                          <td className="text-center py-3 px-2">
+                            <CompetitorSentimentBadge
+                              competitor={row.competitor}
+                              sentiment="negative_comparison"
+                              count={row.negative_comparison}
+                              badgeClassName="bg-red-100 text-red-800"
+                              popupPosition={popupPos}
+                            />
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-gray-600' : row.strongRate >= 25 ? 'text-gray-500' : 'text-gray-500'}`}>
+                              {row.strongRate.toFixed(0)}%
+                            </span>
+                          </td>
+                        </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                /* Brand reports: split tables — fixed header + "Your Brand" row, scrollable competitors */
+                <>
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Competitor</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-900">Strong</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Positive</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-gray-500">Neutral</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-amber-500">Conditional</th>
+                        <th className="text-center py-3 px-2 text-sm font-medium text-red-500">Negative</th>
+                        <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">
+                          <div>Endorsement</div>
+                          <div>Rate</div>
+                          <div className="text-[10px] text-gray-400 font-normal">(% positive or strong endorsement)</div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-gray-200 bg-gray-100/30">
                         <td className="py-3 px-4">
-                          <span className="text-sm font-medium text-gray-900">{row.competitor}</span>
+                          <span className="text-sm font-medium text-gray-900">{runStatus?.brand} (Your Brand)</span>
                         </td>
                         <td className="text-center py-3 px-2">
                           <CompetitorSentimentBadge
-                            competitor={row.competitor}
+                            competitor={runStatus?.brand || ''}
                             sentiment="strong_endorsement"
-                            count={row.strong_endorsement}
+                            count={brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.count || 0}
                             badgeClassName="bg-gray-100 text-gray-900"
-                            popupPosition={popupPos}
+                            popupPosition="bottom"
                           />
                         </td>
                         <td className="text-center py-3 px-2">
                           <CompetitorSentimentBadge
-                            competitor={row.competitor}
+                            competitor={runStatus?.brand || ''}
                             sentiment="positive_endorsement"
-                            count={row.positive_endorsement}
+                            count={brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.count || 0}
                             badgeClassName="bg-gray-100 text-gray-700"
-                            popupPosition={popupPos}
+                            popupPosition="bottom"
                           />
                         </td>
                         <td className="text-center py-3 px-2">
                           <CompetitorSentimentBadge
-                            competitor={row.competitor}
+                            competitor={runStatus?.brand || ''}
                             sentiment="neutral_mention"
-                            count={row.neutral_mention}
+                            count={brandSentimentData.find(d => d.sentiment === 'neutral_mention')?.count || 0}
                             badgeClassName="bg-blue-100 text-blue-800"
-                            popupPosition={popupPos}
+                            popupPosition="bottom"
                           />
                         </td>
                         <td className="text-center py-3 px-2">
                           <CompetitorSentimentBadge
-                            competitor={row.competitor}
+                            competitor={runStatus?.brand || ''}
                             sentiment="conditional"
-                            count={row.conditional}
+                            count={brandSentimentData.find(d => d.sentiment === 'conditional')?.count || 0}
                             badgeClassName="bg-yellow-100 text-yellow-800"
-                            popupPosition={popupPos}
+                            popupPosition="bottom"
                           />
                         </td>
                         <td className="text-center py-3 px-2">
                           <CompetitorSentimentBadge
-                            competitor={row.competitor}
+                            competitor={runStatus?.brand || ''}
                             sentiment="negative_comparison"
-                            count={row.negative_comparison}
+                            count={brandSentimentData.find(d => d.sentiment === 'negative_comparison')?.count || 0}
                             badgeClassName="bg-red-100 text-red-800"
-                            popupPosition={popupPos}
+                            popupPosition="bottom"
                           />
                         </td>
-                        <td className="text-center py-3 px-4">
-                          <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-gray-600' : row.strongRate >= 25 ? 'text-gray-500' : 'text-gray-500'}`}>
-                            {row.strongRate.toFixed(0)}%
+                        <td className="text-right py-3 px-4">
+                          <span className="text-sm font-medium text-gray-900">
+                            {(((brandSentimentData.find(d => d.sentiment === 'strong_endorsement')?.percentage || 0) + (brandSentimentData.find(d => d.sentiment === 'positive_endorsement')?.percentage || 0))).toFixed(0)}%
                           </span>
                         </td>
                       </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
+                  {/* Scrollable competitor rows */}
+                  <div style={{ maxHeight: '480px' }} className="overflow-y-auto overscroll-contain">
+                    <table className="w-full">
+                      <tbody>
+                        {competitorSentimentData.map((row, rowIndex) => {
+                          const popupPos = rowIndex >= competitorSentimentData.length - 2 ? 'top' as const : 'bottom' as const;
+                          return (
+                          <tr key={row.competitor} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-3 px-4">
+                              <span className="text-sm font-medium text-gray-900">{row.competitor}</span>
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <CompetitorSentimentBadge
+                                competitor={row.competitor}
+                                sentiment="strong_endorsement"
+                                count={row.strong_endorsement}
+                                badgeClassName="bg-gray-100 text-gray-900"
+                                popupPosition={popupPos}
+                              />
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <CompetitorSentimentBadge
+                                competitor={row.competitor}
+                                sentiment="positive_endorsement"
+                                count={row.positive_endorsement}
+                                badgeClassName="bg-gray-100 text-gray-700"
+                                popupPosition={popupPos}
+                              />
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <CompetitorSentimentBadge
+                                competitor={row.competitor}
+                                sentiment="neutral_mention"
+                                count={row.neutral_mention}
+                                badgeClassName="bg-blue-100 text-blue-800"
+                                popupPosition={popupPos}
+                              />
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <CompetitorSentimentBadge
+                                competitor={row.competitor}
+                                sentiment="conditional"
+                                count={row.conditional}
+                                badgeClassName="bg-yellow-100 text-yellow-800"
+                                popupPosition={popupPos}
+                              />
+                            </td>
+                            <td className="text-center py-3 px-2">
+                              <CompetitorSentimentBadge
+                                competitor={row.competitor}
+                                sentiment="negative_comparison"
+                                count={row.negative_comparison}
+                                badgeClassName="bg-red-100 text-red-800"
+                                popupPosition={popupPos}
+                              />
+                            </td>
+                            <td className="text-center py-3 px-4">
+                              <span className={`text-sm font-semibold ${row.strongRate >= 50 ? 'text-gray-600' : row.strongRate >= 25 ? 'text-gray-500' : 'text-gray-500'}`}>
+                                {row.strongRate.toFixed(0)}%
+                              </span>
+                            </td>
+                          </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
               {competitorSentimentData.length > 10 && (
                 <p className="text-xs text-gray-400 text-center pt-2">Scroll down to see all {competitorSentimentData.length} brands</p>
               )}
