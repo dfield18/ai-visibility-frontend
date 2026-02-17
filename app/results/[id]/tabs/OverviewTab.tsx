@@ -1153,37 +1153,27 @@ export const OverviewTab = ({
                   );
                 }
 
-                // Step 2: Replace ANY percentage followed by "visibility score" or "mention rate"
-                // by looking at which brands appear in the same sentence.
-                // Uses the callback's `offset` param (not text.indexOf) for correct multi-match handling.
-                // Handles comma-separated brand lists like "Brand1, Brand2 each achieving a X%"
-                // where per-brand regex would incorrectly overwrite the same number multiple times.
+                // Step 2: Replace generic percentages followed by "visibility score" / "mention rate"
+                // ONLY when exactly one brand can be matched in a tight window around the number.
+                // If multiple or zero brands are nearby, keep the original number unchanged.
+                const brandPatterns = unfilteredBrandBreakdownStats.map(b => ({
+                  brand: b,
+                  regex: new RegExp(`\\b${b.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'),
+                }));
                 text = text.replace(
                   /\b(\d+\.?\d*)(%\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))/gi,
                   (match: string, num: string, suffix: string, offset: number) => {
-                    // Find sentence boundaries around this match.
-                    // Use a sentence-ending period (period followed by space/newline or end),
-                    // NOT decimal points inside numbers like "83.3%".
-                    const textBefore = text.slice(0, offset);
-                    const textAfter = text.slice(offset + match.length);
-                    const beforeMatch = textBefore.match(/[\s\S]*\.(?=\s)/); // last period+space before
-                    const afterMatch = textAfter.match(/\.(?=\s|$)/);    // first period+space after
-                    const sentenceStart = beforeMatch ? beforeMatch[0].length : 0;
-                    const sentenceEnd = afterMatch
-                      ? offset + match.length + (afterMatch.index ?? 0)
-                      : text.length;
-                    const sentence = text.slice(sentenceStart, sentenceEnd).toLowerCase();
-                    // Find which known brands appear in this sentence
-                    const mentionedBrands = unfilteredBrandBreakdownStats.filter(b =>
-                      sentence.includes(b.brand.toLowerCase())
+                    // Look at a tight window: up to 120 chars before the number
+                    const windowStart = Math.max(0, offset - 120);
+                    // Find which known brands appear in this local window
+                    const nearbyBrands = brandPatterns.filter(bp =>
+                      bp.regex.test(text.slice(windowStart, offset))
                     );
-                    if (mentionedBrands.length === 1) {
-                      return `${mentionedBrands[0].visibilityScore.toFixed(1)}${suffix}`;
+                    // Only replace when exactly one brand is deterministically matched
+                    if (nearbyBrands.length === 1) {
+                      return `${nearbyBrands[0].brand.visibilityScore.toFixed(1)}${suffix}`;
                     }
-                    if (mentionedBrands.length > 1) {
-                      const avg = mentionedBrands.reduce((sum, b) => sum + b.visibilityScore, 0) / mentionedBrands.length;
-                      return `${avg.toFixed(1)}${suffix}`;
-                    }
+                    // Multiple or zero brands — keep original number unchanged
                     return match;
                   },
                 );
@@ -1204,6 +1194,18 @@ export const OverviewTab = ({
                   }
                   return 'visibility score';
                 });
+
+                // Append deterministic visibility scores block so users always see
+                // authoritative frontend-computed numbers regardless of LLM prose accuracy.
+                const visLines = unfilteredBrandBreakdownStats
+                  .slice(0, 10)
+                  .map(b => `- **${b.brand}**: ${b.visibilityScore.toFixed(1)}%`);
+                if (visLines.length > 0) {
+                  text += `\n\n**Visibility Scores (averaged across providers):**\n${visLines.join('\n')}`;
+                  if (unfilteredBrandBreakdownStats.length > 10) {
+                    text += `\n- *and ${unfilteredBrandBreakdownStats.length - 10} more brands…*`;
+                  }
+                }
               }
               // Vary repeated "suggest/suggests" usage
               const alternatives = ['indicates', 'points to', 'reflects'];
