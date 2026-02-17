@@ -1133,7 +1133,9 @@ export const OverviewTab = ({
               if (isCategory && brandBreakdownStats.length > 0) {
                 const leader = brandBreakdownStats[0];
                 const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
-                text = text.replace(/(Market leader\s*[-–—]\s*[^.]+)(\.)/i, `$1${stats}$2`);
+                // Match up to the first sentence-ending period (period NOT followed by a digit,
+                // so decimal points like "83.3%" are not treated as sentence boundaries).
+                text = text.replace(/(Market leader\s*[-–—]\s*[\s\S]+?)\.(?!\d)/i, `$1${stats}.`);
 
                 // Replace backend-generated percentages for known brands with frontend values
                 // Step 1: Per-brand replacements for structured formats ("Brand: X/Y (Z%)" and "Brand (Z%)")
@@ -1159,13 +1161,18 @@ export const OverviewTab = ({
                 text = text.replace(
                   /\b(\d+\.?\d*)(%\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))/gi,
                   (match: string, num: string, suffix: string, offset: number) => {
-                    // Find sentence boundaries around this match
-                    const before = text.lastIndexOf('.', offset);
-                    const after = text.indexOf('.', offset + match.length);
-                    const sentence = text.slice(
-                      before >= 0 ? before + 1 : 0,
-                      after >= 0 ? after : text.length,
-                    ).toLowerCase();
+                    // Find sentence boundaries around this match.
+                    // Use a sentence-ending period (period followed by space/newline or end),
+                    // NOT decimal points inside numbers like "83.3%".
+                    const textBefore = text.slice(0, offset);
+                    const textAfter = text.slice(offset + match.length);
+                    const beforeMatch = textBefore.match(/[\s\S]*\.(?=\s)/); // last period+space before
+                    const afterMatch = textAfter.match(/\.(?=\s|$)/);    // first period+space after
+                    const sentenceStart = beforeMatch ? beforeMatch[0].length : 0;
+                    const sentenceEnd = afterMatch
+                      ? offset + match.length + (afterMatch.index ?? 0)
+                      : text.length;
+                    const sentence = text.slice(sentenceStart, sentenceEnd).toLowerCase();
                     // Find which known brands appear in this sentence
                     const mentionedBrands = brandBreakdownStats.filter(b =>
                       sentence.includes(b.brand.toLowerCase())
