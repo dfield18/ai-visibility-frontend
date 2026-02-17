@@ -480,6 +480,13 @@ export function useResultsStore(params: UseResultsStoreParams) {
     [runStatus, globallyFilteredResults, brandBreakdownLlmFilter, brandBreakdownPromptFilter, excludedBrands],
   );
 
+  // Unfiltered brand breakdown for the AI Analysis section (Industry Overview).
+  // Uses 'all' for LLM/prompt filters so it's not affected by Competitive tab filter state.
+  const unfilteredBrandBreakdownStats = useMemo(
+    () => computeBrandBreakdownStats(runStatus, globallyFilteredResults, 'all', 'all', excludedBrands),
+    [runStatus, globallyFilteredResults, excludedBrands],
+  );
+
   const brandPositioningStats = useMemo(
     () => computeBrandPositioningStats(runStatus, globallyFilteredResults, brandPositioningLlmFilter, brandPositioningPromptFilter, excludedBrands),
     [runStatus, globallyFilteredResults, brandPositioningLlmFilter, brandPositioningPromptFilter, excludedBrands],
@@ -831,6 +838,7 @@ export function useResultsStore(params: UseResultsStoreParams) {
 
     // -- Competitive metrics --
     brandBreakdownStats,
+    unfilteredBrandBreakdownStats,
     brandPositioningStats,
     promptPerformanceMatrix,
     modelPreferenceData,

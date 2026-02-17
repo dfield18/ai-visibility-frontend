@@ -137,6 +137,7 @@ export interface ResultsContextValue {
   // Competitive Metrics
   // =========================================================================
   brandBreakdownStats: BrandBreakdownRow[];
+  unfilteredBrandBreakdownStats: BrandBreakdownRow[];
   brandPositioningStats: BrandPositioningRow[];
   promptPerformanceMatrix: PromptPerformanceMatrix;
   modelPreferenceData: ModelPreferenceEntry[];

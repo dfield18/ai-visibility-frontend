@@ -195,7 +195,7 @@ export const OverviewTab = ({
     setLlmBreakdownBrandFilter,
     promptBreakdownLlmFilter,
     setPromptBreakdownLlmFilter,
-    brandBreakdownStats,
+    unfilteredBrandBreakdownStats,
     excludedBrands,
     // Overview computed data from context
     filteredFramingByProvider,
@@ -364,8 +364,8 @@ export const OverviewTab = ({
           }
 
           if (isCategory) {
-            // Competitive Depth Score for industry reports — use brandBreakdownStats for consistency
-            const allowedBrands = new Set(brandBreakdownStats.map(s => s.brand));
+            // Competitive Depth Score for industry reports — use unfilteredBrandBreakdownStats for consistency
+            const allowedBrands = new Set(unfilteredBrandBreakdownStats.map(s => s.brand));
             let totalBrandsAcrossResults = 0;
             let resultsWithBrands = 0;
             for (const r of globallyFilteredResults) {
@@ -473,8 +473,8 @@ export const OverviewTab = ({
 
         {/* Share of Voice / Market Leader / Dominant Framing Card */}
         {(() => {
-          const sovTone = isCategory && brandBreakdownStats.length > 0
-            ? getKPIInterpretation('shareOfVoice', brandBreakdownStats[0].shareOfVoice).tone
+          const sovTone = isCategory && unfilteredBrandBreakdownStats.length > 0
+            ? getKPIInterpretation('shareOfVoice', unfilteredBrandBreakdownStats[0].shareOfVoice).tone
             : getKPIInterpretation('shareOfVoice', overviewMetrics?.shareOfVoice ?? null).tone;
 
           if (isIssue) {
@@ -579,8 +579,8 @@ export const OverviewTab = ({
           }
 
           if (isCategory) {
-            // Market Leader variant for industry reports — use brandBreakdownStats for consistency
-            const leader = brandBreakdownStats[0];
+            // Market Leader variant for industry reports — use unfilteredBrandBreakdownStats for consistency
+            const leader = unfilteredBrandBreakdownStats[0];
             const leaderName = leader?.brand || overviewMetrics?.selectedBrand || 'N/A';
             const leaderVisibility = leader?.visibilityScore ?? 0;
             const leaderMentioned = leader?.mentioned ?? 0;
@@ -797,8 +797,8 @@ export const OverviewTab = ({
           }
 
           if (isCategory) {
-            // Brand mention donut chart for industry reports — use brandBreakdownStats for consistency
-            const sorted = [...brandBreakdownStats].sort((a, b) => b.shareOfVoice - a.shareOfVoice);
+            // Brand mention donut chart for industry reports — use unfilteredBrandBreakdownStats for consistency
+            const sorted = [...unfilteredBrandBreakdownStats].sort((a, b) => b.shareOfVoice - a.shareOfVoice);
             const MAX_SLICES = 6;
             const topBrands = sorted.slice(0, MAX_SLICES);
             const otherSov = sorted.slice(MAX_SLICES).reduce((sum, s) => sum + s.shareOfVoice, 0);
@@ -988,8 +988,8 @@ export const OverviewTab = ({
           }
 
           if (isCategory) {
-            // Use brandBreakdownStats for consistency (already filters excluded brands)
-            const totalBrands = brandBreakdownStats.length;
+            // Use unfilteredBrandBreakdownStats for consistency (already filters excluded brands)
+            const totalBrands = unfilteredBrandBreakdownStats.length;
             const brandsTone: 'success' | 'neutral' | 'warn' = totalBrands >= 8 ? 'success' : totalBrands >= 4 ? 'neutral' : 'warn';
             return (
               <div style={{ order: 1 }} className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
@@ -1130,8 +1130,8 @@ export const OverviewTab = ({
               // numbers, percentages, and brand names. GPT wraps values in ** **
               // which breaks word boundaries and suffix matching.
               text = text.replace(/\*\*/g, '');
-              if (isCategory && brandBreakdownStats.length > 0) {
-                const leader = brandBreakdownStats[0];
+              if (isCategory && unfilteredBrandBreakdownStats.length > 0) {
+                const leader = unfilteredBrandBreakdownStats[0];
                 const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
                 // Match up to the first sentence-ending period (period NOT followed by a digit,
                 // so decimal points like "83.3%" are not treated as sentence boundaries).
@@ -1139,7 +1139,7 @@ export const OverviewTab = ({
 
                 // Replace backend-generated percentages for known brands with frontend values
                 // Step 1: Per-brand replacements for structured formats ("Brand: X/Y (Z%)" and "Brand (Z%)")
-                for (const bStat of brandBreakdownStats) {
+                for (const bStat of unfilteredBrandBreakdownStats) {
                   const brandEscaped = bStat.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                   // "Brand: X/Y (Z%)" or "Brand X/Y (Z%)"
                   text = text.replace(
@@ -1174,7 +1174,7 @@ export const OverviewTab = ({
                       : text.length;
                     const sentence = text.slice(sentenceStart, sentenceEnd).toLowerCase();
                     // Find which known brands appear in this sentence
-                    const mentionedBrands = brandBreakdownStats.filter(b =>
+                    const mentionedBrands = unfilteredBrandBreakdownStats.filter(b =>
                       sentence.includes(b.brand.toLowerCase())
                     );
                     if (mentionedBrands.length === 1) {
@@ -1189,8 +1189,8 @@ export const OverviewTab = ({
                 );
 
                 // Replace "Total Unique Brands Mentioned: X" or "X unique brands" with frontend count
-                text = text.replace(/\b\d+\s+unique\s+brands?\b/gi, `${brandBreakdownStats.length} unique brands`);
-                text = text.replace(/(Total\s+Unique\s+Brands?\s*(?:Mentioned)?[:\s]+)\d+/gi, `$1${brandBreakdownStats.length}`);
+                text = text.replace(/\b\d+\s+unique\s+brands?\b/gi, `${unfilteredBrandBreakdownStats.length} unique brands`);
+                text = text.replace(/(Total\s+Unique\s+Brands?\s*(?:Mentioned)?[:\s]+)\d+/gi, `$1${unfilteredBrandBreakdownStats.length}`);
 
                 // Also replace any "mention rate" from backend-generated text with "visibility score"
                 text = text.replace(/mention rates?/gi, 'visibility score');

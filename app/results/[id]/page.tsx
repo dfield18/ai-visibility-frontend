@@ -546,7 +546,7 @@ export default function ResultsPage() {
     if (!runStatus) return {} as Record<string, BrandQuote[]>;
     const results = storeData.globallyFilteredResults.filter((r: Result) => r.response_text && !r.error);
     const searchedBrand = runStatus.brand;
-    const allBrands = storeData.brandBreakdownStats.map((b: { brand: string }) => b.brand);
+    const allBrands = storeData.unfilteredBrandBreakdownStats.map((b: { brand: string }) => b.brand);
 
     const map: Record<string, BrandQuote[]> = {};
 
@@ -606,7 +606,7 @@ export default function ResultsPage() {
     }
 
     return map;
-  }, [runStatus, storeData.globallyFilteredResults, storeData.brandBreakdownStats]);
+  }, [runStatus, storeData.globallyFilteredResults, storeData.unfilteredBrandBreakdownStats]);
 
   // Use GPT to filter candidates down to the best 1-2 quotes per brand
   const hasCandidates = Object.values(candidateQuotesMap).some(q => q.length > 0);
