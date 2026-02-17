@@ -370,7 +370,8 @@ export function computeParsedAiRecommendations(
 
     // If no bullets found, try to extract actionable sentences
     if (tactics.length === 0) {
-      const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 15);
+      // Split on sentence-ending punctuation but NOT on decimal points (e.g. "58.3%")
+      const sentences = content.split(/(?<!\d)\.(?!\d)|[!?]+/).filter(s => s.trim().length > 15);
       sentences.slice(0, 3).forEach(sentence => {
         const cleaned = sentence.trim().replace(/[*_]/g, '');
         if (cleaned.length > 10 && cleaned.length < 150) {
