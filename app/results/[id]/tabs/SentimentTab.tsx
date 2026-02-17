@@ -1214,7 +1214,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                   </th>
                   <th className="text-left py-2.5 px-3" style={{ width: '22%' }}>
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{isIssue ? 'Supportive Rate' : 'Endorsement Rate'}</span>
-                    <div className="text-[10px] text-gray-400 font-normal normal-case tracking-normal">{isIssue ? '% supportive or leaning' : '% positive or strong'}</div>
+                    <div className="text-[10px] text-gray-400 font-normal normal-case tracking-normal">{isIssue ? '(% supportive or leaning)' : '(% positive or strong endorsement)'}</div>
                   </th>
                   <th className="text-center py-2.5 px-2">
                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">{isIssue ? 'Supportive' : 'Strong'}</span>
@@ -1379,7 +1379,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                     <th className="text-center py-3 px-4 text-sm font-medium text-gray-500">
                       <div>Endorsement</div>
                       <div>Rate</div>
-                      <div className="text-[10px] text-gray-400 font-normal">% positive or strong</div>
+                      <div className="text-[10px] text-gray-400 font-normal">(% positive or strong endorsement)</div>
                     </th>
                   </tr>
                 </thead>
