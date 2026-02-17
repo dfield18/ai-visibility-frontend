@@ -1136,8 +1136,44 @@ export const OverviewTab = ({
                 const mlStats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
                 text = text.replace(/(Market leader\s*[-–—]\s*[\s\S]+?)\.(?!\d)/i, `$1${mlStats}.`);
 
-                // --- Replace backend-generated percentages with correct frontend values ---
-                // Sort brands longest-name-first so "Nike Air" matches before "Nike"
+                // --- Replace "Competitive landscape" paragraph with deterministic text ---
+                // GPT groups brands incorrectly (e.g. a 100% brand listed with 75% brands).
+                // Build a new paragraph that groups brands by their actual visibility scores.
+                const scoreGroups = new Map<string, string[]>();
+                const scoreOrder: string[] = [];
+                for (const b of unfilteredBrandBreakdownStats) {
+                  const key = b.visibilityScore.toFixed(1);
+                  if (!scoreGroups.has(key)) { scoreGroups.set(key, []); scoreOrder.push(key); }
+                  scoreGroups.get(key)!.push(b.brand);
+                }
+                const compSentences: string[] = [];
+                for (const key of scoreOrder) {
+                  const brands = scoreGroups.get(key)!;
+                  const score = parseFloat(key);
+                  if (score <= 0) continue;
+                  const list = brands.length <= 2
+                    ? brands.map(b => `${b} (${key}%)`).join(' and ')
+                    : brands.slice(0, -1).map(b => `${b} (${key}%)`).join(', ') + ', and ' + `${brands[brands.length - 1]} (${key}%)`;
+                  if (score >= 99.9) {
+                    compSentences.push(`${list} ${brands.length === 1 ? 'leads' : 'lead'} with perfect visibility across all AI platforms`);
+                  } else if (score >= 75) {
+                    compSentences.push(`${list} ${brands.length === 1 ? 'follows' : 'follow'} with strong visibility`);
+                  } else if (score >= 50) {
+                    compSentences.push(`${list} ${brands.length === 1 ? 'maintains' : 'maintain'} moderate visibility`);
+                  } else if (score >= 25) {
+                    compSentences.push(`${list} ${brands.length === 1 ? 'shows' : 'show'} limited visibility`);
+                  } else {
+                    compSentences.push(`${list} ${brands.length === 1 ? 'has' : 'have'} minimal visibility`);
+                  }
+                }
+                if (compSentences.length > 0) {
+                  text = text.replace(
+                    /Competitive landscape\s*[-–—]\s*[\s\S]*?(?=\n\n|$)/i,
+                    `Competitive landscape – ${compSentences.join('. ')}.`
+                  );
+                }
+
+                // --- Fix remaining percentages in other paragraphs ---
                 const sortedBrands = [...unfilteredBrandBreakdownStats].sort(
                   (a, b) => b.brand.length - a.brand.length
                 );
@@ -1146,7 +1182,7 @@ export const OverviewTab = ({
                   escaped: b.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
                 }));
 
-                // Pass 1: "Brand: X/Y (Z%)" — replace with correct values
+                // "Brand: X/Y (Z%)" — replace with correct values
                 for (const { stat, escaped } of brandRegexes) {
                   text = text.replace(
                     new RegExp(`(${escaped})([:\\s]+)\\d+/\\d+\\s*\\(\\d+\\.?\\d*%\\)`, 'gi'),
@@ -1154,7 +1190,7 @@ export const OverviewTab = ({
                   );
                 }
 
-                // Pass 2: "Brand (XX%)" — replace percentage in parens after brand name
+                // "Brand (XX%)" — replace percentage in parens after brand name
                 for (const { stat, escaped } of brandRegexes) {
                   text = text.replace(
                     new RegExp(`(${escaped}\\s*\\()\\d+\\.?\\d*(%)`, 'gi'),
@@ -1162,15 +1198,13 @@ export const OverviewTab = ({
                   );
                 }
 
-                // Pass 3: Annotate each brand's first occurrence with its correct
-                // visibility score. This ensures every brand always shows its own
-                // correct number — even in multi-brand groupings where GPT assigns
-                // one (possibly wrong) number to several brands at once.
+                // Annotate each brand's first occurrence (outside the competitive
+                // landscape paragraph, which already has per-brand scores) with
+                // its correct visibility score.
                 const annotated = new Set<string>();
                 for (const { stat, escaped } of brandRegexes) {
                   const key = stat.brand.toLowerCase();
                   if (annotated.has(key)) continue;
-                  // Match first occurrence not already followed by a parenthetical
                   text = text.replace(
                     new RegExp(`\\b(${escaped})\\b(?!\\s*\\()`, 'i'),
                     `$1 (${stat.visibilityScore.toFixed(1)}%)`
@@ -1178,10 +1212,8 @@ export const OverviewTab = ({
                   annotated.add(key);
                 }
 
-                // Pass 4: Fix standalone "XX% visibility/mention" percentages.
-                // For each, find the closest preceding brand and replace if unambiguous.
-                // Ambiguous cases (multiple brands nearby) are left as-is — the
-                // per-brand annotations from Pass 3 already show the correct values.
+                // Fix standalone "XX% visibility/mention" in remaining paragraphs.
+                // Find nearest preceding brand; if ambiguous, strip the number.
                 text = text.replace(
                   /\b(\d+\.?\d*)(%\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))/gi,
                   (match: string, _num: string, suffix: string, offset: number) => {
@@ -1202,7 +1234,7 @@ export const OverviewTab = ({
                       h.stat.brand !== closest.stat.brand &&
                       Math.abs(h.pos - closest.pos) < 40
                     );
-                    if (isAmbiguous) return match;
+                    if (isAmbiguous) return suffix.replace(/^%\s*/, '');
                     return `${closest.stat.visibilityScore.toFixed(1)}${suffix}`;
                   },
                 );
