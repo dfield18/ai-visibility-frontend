@@ -2844,7 +2844,21 @@ export const OverviewTab = ({
                       )}
                       <td className="w-[14%] py-3 px-4">
                         {isCategory
-                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : (((result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || []).find(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b))) || '\u2014')}</span>
+                          ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : (() => {
+                              // Use text-position ranking (same as Market Share Breakdown)
+                              // to determine which brand appears first in the response
+                              const brands = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [])
+                                .filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b));
+                              if (brands.length === 0 || !result.response_text) return '\u2014';
+                              const rankText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+                              let firstBrand: string | null = null;
+                              let firstPos = Infinity;
+                              for (const b of brands) {
+                                const pos = rankText.indexOf(b.toLowerCase());
+                                if (pos >= 0 && pos < firstPos) { firstPos = pos; firstBrand = b; }
+                              }
+                              return firstBrand || brands[0] || '\u2014';
+                            })()}</span>
                           : isIssue
                           ? (() => {
                               if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
