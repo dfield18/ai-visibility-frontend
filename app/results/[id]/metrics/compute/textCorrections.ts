@@ -71,8 +71,18 @@ export function correctBrandMetricsInText(
     annotated.add(key);
   }
 
+  // --- Fix market-dominance statements that refer to the leader without naming a brand ---
+  // e.g. "no single brand dominating more than 58.3% of AI responses"
+  // e.g. "the leading brand captures 58.3% of responses"
+  const leaderVis = simpleVis(leader).toFixed(1);
+  text = text.replace(
+    /(?:more than|captures?|dominat(?:es?|ing)|leads? with|reaching)\s+(\d+\.?\d*)(%\s*(?:of (?:all )?(?:AI )?responses))/gi,
+    (_match: string, _num: string, suffix: string) => `more than ${leaderVis}${suffix}`
+  );
+
   // --- Fix standalone "XX% visibility/mention" in remaining paragraphs ---
   // Find nearest preceding brand; if ambiguous, strip the number.
+  // Falls back to market leader when no brand is found nearby.
   text = text.replace(
     /\b(\d+\.?\d*)(%\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))/gi,
     (match: string, _num: string, suffix: string, offset: number) => {
@@ -86,7 +96,10 @@ export function correctBrandMetricsInText(
           hits.push({ stat, pos: m.index });
         }
       }
-      if (hits.length === 0) return match;
+      if (hits.length === 0) {
+        // No brand nearby — use market leader as fallback
+        return `${leaderVis}${suffix}`;
+      }
       hits.sort((a, b) => b.pos - a.pos);
       const closest = hits[0];
       const isAmbiguous = hits.some(h =>
