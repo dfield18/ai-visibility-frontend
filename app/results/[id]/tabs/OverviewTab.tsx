@@ -2855,16 +2855,15 @@ export const OverviewTab = ({
                       <td className="w-[14%] py-3 px-4">
                         {isCategory
                           ? <span className="text-xs text-gray-600">{result.error ? '\u2014' : (() => {
-                              // Use text-position ranking (same as Market Share Breakdown)
-                              // to determine which brand appears first in the response
+                              // Find the very first brand mentioned anywhere in the full response text
                               const brands = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [])
                                 .filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b));
                               if (brands.length === 0 || !result.response_text) return '\u2014';
-                              const rankText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+                              const fullText = stripDiacritics(result.response_text).toLowerCase();
                               let firstBrand: string | null = null;
                               let firstPos = Infinity;
                               for (const b of brands) {
-                                const pos = rankText.indexOf(stripDiacritics(b).toLowerCase());
+                                const pos = fullText.indexOf(stripDiacritics(b).toLowerCase());
                                 if (pos >= 0 && pos < firstPos) { firstPos = pos; firstBrand = b; }
                               }
                               return firstBrand || brands[0] || '\u2014';
@@ -2972,13 +2971,13 @@ export const OverviewTab = ({
 
                 if (isCategory) {
                   const brandCount = allBrandsList.length;
-                  // Use text-position ranking (same as table display)
+                  // Find the very first brand mentioned anywhere in the full response text
                   let firstBrand = allBrandsList[0] || '-';
                   if (result.response_text && allBrandsList.length > 0) {
-                    const rankText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+                    const fullText = stripDiacritics(result.response_text).toLowerCase();
                     let firstPos = Infinity;
                     for (const b of allBrandsList) {
-                      const pos = rankText.indexOf(stripDiacritics(b).toLowerCase());
+                      const pos = fullText.indexOf(stripDiacritics(b).toLowerCase());
                       if (pos >= 0 && pos < firstPos) { firstPos = pos; firstBrand = b; }
                     }
                   }
