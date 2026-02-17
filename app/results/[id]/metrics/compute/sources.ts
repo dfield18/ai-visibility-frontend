@@ -582,11 +582,14 @@ export function computeBrandWebsiteCitations(
         // Check each brand (including searched brand and competitors)
         allBrandsToTrack.forEach((brand) => {
           const brandDomainCheck = brand.toLowerCase().replace(/\s+/g, '');
+          const brandHyphenated = brand.toLowerCase().replace(/\s+/g, '-');
           // Match only if the brand owns this domain:
           // 1. SLD matches brand exactly: nike.com → "nike" === "nike"
-          // 2. SLD without hyphens matches brand: new-balance.com → "newbalance" === "newbalance"
-          // 3. Brand is a hyphen-segment of SLD: on-running.com → ["on","running"] includes "on"
+          // 2. SLD matches brand with hyphens: new-balance.com → "new-balance" === "new-balance"
+          // 3. SLD without hyphens matches brand without spaces: new-balance.com → "newbalance" === "newbalance"
+          // 4. Brand is a hyphen-segment of SLD: on-running.com → ["on","running"] includes "on"
           const isBrandWebsite = sld === brandDomainCheck
+            || sld === brandHyphenated
             || sldNoHyphens === brandDomainCheck
             || sldSegments.includes(brandDomainCheck);
           if (isBrandWebsite) {
