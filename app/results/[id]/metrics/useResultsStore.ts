@@ -805,8 +805,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   );
 
   const parsedAiRecommendations = useMemo(
-    () => computeParsedAiRecommendations(aiSummary?.recommendations, isCategory),
-    [aiSummary?.recommendations, isCategory],
+    () => computeParsedAiRecommendations(aiSummary?.recommendations, isCategory, unfilteredBrandBreakdownStats),
+    [aiSummary?.recommendations, isCategory, unfilteredBrandBreakdownStats],
   );
 
   // =========================================================================

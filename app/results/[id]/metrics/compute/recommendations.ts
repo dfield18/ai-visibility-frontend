@@ -15,6 +15,7 @@ import type {
   LlmBreakdownRow,
 } from '../types';
 import { truncate } from '@/lib/utils';
+import { correctBrandMetricsInText } from './textCorrections';
 
 // ---------------------------------------------------------------------------
 // quickWins  (RecommendationsTab.tsx line 219)
@@ -307,6 +308,7 @@ export function computeSourceOpportunities(
 export function computeParsedAiRecommendations(
   aiRecommendations: string | Array<{ title: string; description: string; tactics?: string[] }> | undefined,
   isCategory: boolean,
+  brandBreakdownStats: BrandBreakdownRow[] = [],
 ): ParsedRecommendation[] {
   if (!aiRecommendations) return [];
 
@@ -380,7 +382,19 @@ export function computeParsedAiRecommendations(
     return tactics.slice(0, 4); // Limit to 4 tactics per recommendation
   };
 
-  const recsContent = aiRecommendations;
+  // Apply metric corrections for industry reports before parsing
+  let recsContent: typeof aiRecommendations = aiRecommendations;
+  if (isCategory && brandBreakdownStats.length > 0) {
+    if (typeof recsContent === 'string') {
+      recsContent = correctBrandMetricsInText(recsContent.replace(/\*\*/g, ''), brandBreakdownStats);
+    } else if (Array.isArray(recsContent)) {
+      recsContent = recsContent.map(rec => ({
+        ...rec,
+        title: correctBrandMetricsInText(rec.title.replace(/\*\*/g, ''), brandBreakdownStats),
+        description: correctBrandMetricsInText(rec.description.replace(/\*\*/g, ''), brandBreakdownStats),
+      }));
+    }
+  }
 
   if (typeof recsContent === 'string') {
     // Parse markdown text - split by numbered items, bullet points, or double newlines
