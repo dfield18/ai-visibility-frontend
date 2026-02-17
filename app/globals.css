@@ -62,6 +62,11 @@ body {
   transition-duration: 150ms;
 }
 
+/* Hide blinking text cursor on non-editable elements */
+*:not(input):not(textarea):not(select):not([contenteditable="true"]) {
+  caret-color: transparent;
+}
+
 /* Focus visible styles */
 :focus-visible {
   outline: 2px solid #3b82f6;
