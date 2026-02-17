@@ -588,10 +588,13 @@ export function computeBrandWebsiteCitations(
           // 2. SLD matches brand with hyphens: new-balance.com → "new-balance" === "new-balance"
           // 3. SLD without hyphens matches brand without spaces: new-balance.com → "newbalance" === "newbalance"
           // 4. Brand is a hyphen-segment of SLD: on-running.com → ["on","running"] includes "on"
+          // 5. SLD starts with brand name (4+ chars only to avoid false positives from short words like "on"):
+          //    brooksrunning.com → "brooksrunning" starts with "brooks"
           const isBrandWebsite = sld === brandDomainCheck
             || sld === brandHyphenated
             || sldNoHyphens === brandDomainCheck
-            || sldSegments.includes(brandDomainCheck);
+            || sldSegments.includes(brandDomainCheck)
+            || (brandDomainCheck.length >= 4 && sld.startsWith(brandDomainCheck));
           if (isBrandWebsite) {
             if (!brandCitationData[brand]) {
               brandCitationData[brand] = { count: 0, urls: [], providers: new Set(), snippets: [], seenResultIds: new Set() };
