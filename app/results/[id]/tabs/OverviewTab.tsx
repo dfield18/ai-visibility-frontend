@@ -1126,14 +1126,18 @@ export const OverviewTab = ({
           <div className={`text-sm text-gray-700 leading-relaxed space-y-3 [&_strong]:font-semibold [&_strong]:text-gray-900 [&_p]:my-0 overflow-hidden transition-all ${aiSummaryExpanded ? '' : 'max-h-24'}`}>
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{(() => {
               let text = removeActionableTakeaway(aiSummary.summary).replace(/\bai_overviews\b/gi, 'Google AI Overviews');
+              // Strip markdown bold markers so regex patterns can reliably match
+              // numbers, percentages, and brand names. GPT wraps values in ** **
+              // which breaks word boundaries and suffix matching.
+              text = text.replace(/\*\*/g, '');
               if (isCategory && brandBreakdownStats.length > 0) {
                 const leader = brandBreakdownStats[0];
                 const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
                 text = text.replace(/(Market leader\s*[-–—]\s*[^.]+)(\.)/i, `$1${stats}$2`);
 
                 // Replace backend-generated percentages for known brands with frontend values
-                const brandStatsMap = new Map(brandBreakdownStats.map(b => [b.brand.toLowerCase(), b]));
-                for (const [, bStat] of brandStatsMap) {
+                // Step 1: Per-brand replacements for structured formats ("Brand: X/Y (Z%)" and "Brand (Z%)")
+                for (const bStat of brandBreakdownStats) {
                   const brandEscaped = bStat.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                   // "Brand: X/Y (Z%)" or "Brand X/Y (Z%)"
                   text = text.replace(
@@ -1145,44 +1149,37 @@ export const OverviewTab = ({
                     new RegExp(`(${brandEscaped}\\s*\\()\\d+\\.?\\d*(%)`, 'gi'),
                     `$1${bStat.visibilityScore.toFixed(1)}$2`
                   );
-                  // "Brand ...with/at/has/achieving a Z%" — percentage near brand in flowing text
-                  text = text.replace(
-                    new RegExp(`(${brandEscaped}[^.]*?(?:with|at|has|leads?|leading|captures?|capturing|achiev(?:es?|ing)|shows?|showing|reaches?|reaching|holds?|holding|commands?|commanding|earn(?:s|ing)?|scor(?:es?|ing)|getting|having)[^.]*?)\\b\\d+\\.?\\d*(%\\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))`, 'gi'),
-                    `$1${bStat.visibilityScore.toFixed(1)}$2`
-                  );
                 }
 
-                // Catch-all: replace any "X% visibility score" that doesn't match frontend values.
-                // This handles comma-separated brand lists like "Brand1, Brand2, and Brand3 each achieving a X%"
-                // where per-brand regex only patches the first brand's occurrence.
-                if (brandBreakdownStats.length > 0) {
-                  // Find the most common visibility score among top brands to use as replacement
-                  const scoreCounts = new Map<string, number>();
-                  brandBreakdownStats.forEach(b => {
-                    const key = b.visibilityScore.toFixed(1);
-                    scoreCounts.set(key, (scoreCounts.get(key) || 0) + 1);
-                  });
-                  // Replace any bare "X% visibility score" where X doesn't match any known brand's score
-                  const knownScores = new Set(brandBreakdownStats.map(b => b.visibilityScore.toFixed(1)));
-                  text = text.replace(/\b(\d+\.?\d*)(%\s*visibility score)/gi, (match, num, suffix) => {
-                    const rounded = parseFloat(num).toFixed(1);
-                    if (knownScores.has(rounded)) return match; // already correct
-                    // Find the brand(s) mentioned closest before this percentage in the same sentence
-                    const idx = text.indexOf(match);
-                    const sentenceStart = text.lastIndexOf('.', idx);
-                    const sentence = text.slice(sentenceStart + 1, idx + match.length);
-                    // Check which brands appear in this sentence fragment
+                // Step 2: Replace ANY percentage followed by "visibility score" or "mention rate"
+                // by looking at which brands appear in the same sentence.
+                // Uses the callback's `offset` param (not text.indexOf) for correct multi-match handling.
+                // Handles comma-separated brand lists like "Brand1, Brand2 each achieving a X%"
+                // where per-brand regex would incorrectly overwrite the same number multiple times.
+                text = text.replace(
+                  /\b(\d+\.?\d*)(%\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))/gi,
+                  (match: string, num: string, suffix: string, offset: number) => {
+                    // Find sentence boundaries around this match
+                    const before = text.lastIndexOf('.', offset);
+                    const after = text.indexOf('.', offset + match.length);
+                    const sentence = text.slice(
+                      before >= 0 ? before + 1 : 0,
+                      after >= 0 ? after : text.length,
+                    ).toLowerCase();
+                    // Find which known brands appear in this sentence
                     const mentionedBrands = brandBreakdownStats.filter(b =>
-                      sentence.toLowerCase().includes(b.brand.toLowerCase())
+                      sentence.includes(b.brand.toLowerCase())
                     );
-                    if (mentionedBrands.length > 0) {
-                      // Use the average visibility of mentioned brands
+                    if (mentionedBrands.length === 1) {
+                      return `${mentionedBrands[0].visibilityScore.toFixed(1)}${suffix}`;
+                    }
+                    if (mentionedBrands.length > 1) {
                       const avg = mentionedBrands.reduce((sum, b) => sum + b.visibilityScore, 0) / mentionedBrands.length;
                       return `${avg.toFixed(1)}${suffix}`;
                     }
                     return match;
-                  });
-                }
+                  },
+                );
 
                 // Replace "Total Unique Brands Mentioned: X" or "X unique brands" with frontend count
                 text = text.replace(/\b\d+\s+unique\s+brands?\b/gi, `${brandBreakdownStats.length} unique brands`);
