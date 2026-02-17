@@ -599,7 +599,7 @@ export const OverviewTab = ({
                       <HelpCircle className="w-4 h-4 text-gray-400" />
                     </button>
                     <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                      {leaderName} appears in {leaderVisibility.toFixed(1)}% of AI responses ({leaderMentioned} of {leaderTotal} responses).
+                      {leaderName} appears in {leaderVisibility.toFixed(1)}% of AI responses (averaged across providers).
                     </div>
                   </div>
                 </div>

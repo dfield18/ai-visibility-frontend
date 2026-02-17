@@ -88,7 +88,7 @@ export function computeBrandBreakdownStats(
     const isSearchedBrand = brand === searchedBrand;
     const total = results.length;
 
-    // Count mentions for this brand
+    // Count mentions for this brand (flat count for display purposes)
     const mentioned = results.filter(r => {
       if (isSearchedBrand) {
         return r.brand_mentioned;
@@ -97,7 +97,25 @@ export function computeBrandBreakdownStats(
       }
     }).length;
 
-    const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
+    // Compute visibility score as average of per-provider rates.
+    // This weights each provider equally regardless of how many responses it has.
+    const providerMentions: Record<string, { mentioned: number; total: number }> = {};
+    for (const r of results) {
+      if (!providerMentions[r.provider]) {
+        providerMentions[r.provider] = { mentioned: 0, total: 0 };
+      }
+      providerMentions[r.provider].total++;
+      const isMentioned = isSearchedBrand
+        ? r.brand_mentioned
+        : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand));
+      if (isMentioned) {
+        providerMentions[r.provider].mentioned++;
+      }
+    }
+    const providerRates = Object.values(providerMentions).map(p => p.total > 0 ? (p.mentioned / p.total) * 100 : 0);
+    const visibilityScore = providerRates.length > 0
+      ? providerRates.reduce((sum, rate) => sum + rate, 0) / providerRates.length
+      : 0;
 
     // Share of Voice: this brand's mentions / total brand mentions across all results
     // For industry reports, exclude category mentions (r.brand_mentioned) from denominator
@@ -270,7 +288,7 @@ export function computeBrandPositioningStats(
     const isSearchedBrand = brand === searchedBrand;
     const total = results.length;
 
-    // Count mentions for this brand
+    // Count mentions for this brand (flat count for display purposes)
     const mentioned = results.filter(r => {
       if (isSearchedBrand) {
         return r.brand_mentioned;
@@ -279,7 +297,24 @@ export function computeBrandPositioningStats(
       }
     }).length;
 
-    const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
+    // Compute visibility score as average of per-provider rates.
+    const providerMentions: Record<string, { mentioned: number; total: number }> = {};
+    for (const r of results) {
+      if (!providerMentions[r.provider]) {
+        providerMentions[r.provider] = { mentioned: 0, total: 0 };
+      }
+      providerMentions[r.provider].total++;
+      const isMentioned = isSearchedBrand
+        ? r.brand_mentioned
+        : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand));
+      if (isMentioned) {
+        providerMentions[r.provider].mentioned++;
+      }
+    }
+    const providerRates = Object.values(providerMentions).map(p => p.total > 0 ? (p.mentioned / p.total) * 100 : 0);
+    const visibilityScore = providerRates.length > 0
+      ? providerRates.reduce((sum, rate) => sum + rate, 0) / providerRates.length
+      : 0;
 
     // Average sentiment
     const sentimentResults = results.filter(r => {
