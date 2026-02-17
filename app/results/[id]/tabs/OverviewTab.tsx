@@ -1131,70 +1131,88 @@ export const OverviewTab = ({
               // which breaks word boundaries and suffix matching.
               text = text.replace(/\*\*/g, '');
               if (isCategory && unfilteredBrandBreakdownStats.length > 0) {
+                // --- Market Leader injection (unchanged) ---
                 const leader = unfilteredBrandBreakdownStats[0];
                 const stats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${leader.visibilityScore.toFixed(1)}% visibility score`;
-                // Match up to the first sentence-ending period (period NOT followed by a digit,
-                // so decimal points like "83.3%" are not treated as sentence boundaries).
                 text = text.replace(/(Market leader\s*[-–—]\s*[\s\S]+?)\.(?!\d)/i, `$1${stats}.`);
 
-                // Replace backend-generated percentages for known brands with frontend values
-                // Step 1: Per-brand replacements for structured formats ("Brand: X/Y (Z%)" and "Brand (Z%)")
-                for (const bStat of unfilteredBrandBreakdownStats) {
-                  const brandEscaped = bStat.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                  // "Brand: X/Y (Z%)" or "Brand X/Y (Z%)"
+                // --- Replace backend-generated percentages with correct frontend values ---
+                // Sort brands longest-name-first so "Nike Air" matches before "Nike"
+                const sortedBrands = [...unfilteredBrandBreakdownStats].sort(
+                  (a, b) => b.brand.length - a.brand.length
+                );
+                const brandRegexes = sortedBrands.map(b => ({
+                  stat: b,
+                  escaped: b.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+                }));
+
+                // Pass 1: "Brand: X/Y (Z%)" or "Brand X/Y (Z%)"
+                for (const { stat, escaped } of brandRegexes) {
                   text = text.replace(
-                    new RegExp(`(${brandEscaped})([:\\s]+)\\d+/\\d+\\s*\\(\\d+\\.?\\d*%\\)`, 'gi'),
-                    `$1$2${bStat.mentioned}/${bStat.total} (${bStat.visibilityScore.toFixed(1)}%)`
-                  );
-                  // "Brand (Z% ...)" — percentage inside parens right after brand
-                  text = text.replace(
-                    new RegExp(`(${brandEscaped}\\s*\\()\\d+\\.?\\d*(%)`, 'gi'),
-                    `$1${bStat.visibilityScore.toFixed(1)}$2`
+                    new RegExp(`(${escaped})([:\\s]+)\\d+/\\d+\\s*\\(\\d+\\.?\\d*%\\)`, 'gi'),
+                    `$1$2${stat.mentioned}/${stat.total} (${stat.visibilityScore.toFixed(1)}%)`
                   );
                 }
 
-                // Step 2: Replace generic percentages followed by "visibility score" / "mention rate"
-                // ONLY when exactly one brand can be matched in a tight window around the number.
-                // If multiple or zero brands are nearby, keep the original number unchanged.
-                const brandPatterns = unfilteredBrandBreakdownStats.map(b => ({
-                  brand: b,
-                  regex: new RegExp(`\\b${b.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i'),
-                }));
+                // Pass 2: "Brand (XX%)" — percentage in parens right after brand name
+                for (const { stat, escaped } of brandRegexes) {
+                  text = text.replace(
+                    new RegExp(`(${escaped}\\s*\\()\\d+\\.?\\d*(%)`, 'gi'),
+                    `$1${stat.visibilityScore.toFixed(1)}$2`
+                  );
+                }
+
+                // Pass 3: "XX% visibility/mention/responses" — find nearest preceding brand.
+                // For each percentage with visibility context, look backwards for the closest
+                // brand name. Only replace when that brand is unambiguous (no other brand
+                // within 40 chars of it, which would indicate a multi-brand clause).
                 text = text.replace(
                   /\b(\d+\.?\d*)(%\s*(?:mention rate|visibility score|of (?:all )?(?:AI )?responses))/gi,
-                  (match: string, num: string, suffix: string, offset: number) => {
-                    // Look at a tight window: up to 120 chars before the number
-                    const windowStart = Math.max(0, offset - 120);
-                    // Find which known brands appear in this local window
-                    const nearbyBrands = brandPatterns.filter(bp =>
-                      bp.regex.test(text.slice(windowStart, offset))
-                    );
-                    // Only replace when exactly one brand is deterministically matched
-                    if (nearbyBrands.length === 1) {
-                      return `${nearbyBrands[0].brand.visibilityScore.toFixed(1)}${suffix}`;
+                  (match: string, _num: string, suffix: string, offset: number) => {
+                    const start = Math.max(0, offset - 150);
+                    const before = text.slice(start, offset);
+
+                    // Find all brand occurrences in the preceding window
+                    const hits: { stat: typeof leader; pos: number }[] = [];
+                    for (const { stat, escaped } of brandRegexes) {
+                      const re = new RegExp(escaped, 'gi');
+                      let m;
+                      while ((m = re.exec(before)) !== null) {
+                        hits.push({ stat, pos: m.index });
+                      }
                     }
-                    // Multiple or zero brands — keep original number unchanged
-                    return match;
+                    if (hits.length === 0) return match;
+
+                    // Closest brand to the percentage (highest position = nearest)
+                    hits.sort((a, b) => b.pos - a.pos);
+                    const closest = hits[0];
+
+                    // If another brand appears within 40 chars of the closest, this is
+                    // a multi-brand clause (e.g. "Nike and Adidas each achieve X%") —
+                    // we cannot attribute the percentage to one brand, so leave it.
+                    const isAmbiguous = hits.some(h =>
+                      h.stat.brand !== closest.stat.brand &&
+                      Math.abs(h.pos - closest.pos) < 40
+                    );
+                    if (isAmbiguous) return match;
+
+                    return `${closest.stat.visibilityScore.toFixed(1)}${suffix}`;
                   },
                 );
 
-                // Replace "Total Unique Brands Mentioned: X" or "X unique brands" with frontend count
+                // Replace unique brand counts
                 text = text.replace(/\b\d+\s+unique\s+brands?\b/gi, `${unfilteredBrandBreakdownStats.length} unique brands`);
                 text = text.replace(/(Total\s+Unique\s+Brands?\s*(?:Mentioned)?[:\s]+)\d+/gi, `$1${unfilteredBrandBreakdownStats.length}`);
 
-                // Also replace any "mention rate" from backend-generated text with "visibility score"
+                // Terminology: "mention rate" → "visibility score"
                 text = text.replace(/mention rates?/gi, 'visibility score');
 
-                // Add definition for only the first "visibility score" not already followed by a parenthetical
-                let visibilityScoreDefined = false;
+                // Add parenthetical definition on first "visibility score" only
+                let vsDefined = false;
                 text = text.replace(/visibility scores?(?!\s*\()/gi, () => {
-                  if (!visibilityScoreDefined) {
-                    visibilityScoreDefined = true;
-                    return 'visibility score (% of AI responses that mention the brand)';
-                  }
+                  if (!vsDefined) { vsDefined = true; return 'visibility score (% of AI responses that mention the brand)'; }
                   return 'visibility score';
                 });
-
               }
               // Vary repeated "suggest/suggests" usage
               const alternatives = ['indicates', 'points to', 'reflects'];
