@@ -178,7 +178,7 @@ export function computeBrandBreakdownStats(
       }
     });
 
-    const firstPositionRate = responsesWithAnyBrand > 0 ? (firstPositionCount / responsesWithAnyBrand) * 100 : 0;
+    const firstPositionRate = results.length > 0 ? (firstPositionCount / results.length) * 100 : 0;
     const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
 
     // Average sentiment

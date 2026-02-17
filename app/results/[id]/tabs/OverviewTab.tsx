@@ -834,7 +834,7 @@ export const OverviewTab = ({
                     <HelpCircle className="w-4 h-4 text-gray-400" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-64 p-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all z-50 shadow-lg">
-                    Ranked #1 in {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.responsesWhereMentioned || 0} AI answers where {overviewMetrics?.selectedBrand || 'your brand'} appears.
+                    Ranked #1 in {overviewMetrics?.topPositionCount || 0} of {overviewMetrics?.totalResponses || 0} total AI responses.
                   </div>
                 </div>
               </div>

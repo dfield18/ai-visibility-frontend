@@ -991,11 +991,14 @@ export function computeOverviewMetrics(
   }
   const overallVisibility = results.length > 0 ? (mentionedCount / results.length) * 100 : 0;
 
-  // Average rank and top position count — only for results where brand is actually mentioned
+  // Average rank and top position count
+  // For industry reports, process ALL responses (brand_mentioned is category-mention, not individual brand)
+  // For other reports, only process responses where the brand is actually mentioned
   const ranks: number[] = [];
   let topPositionCount = 0;
   for (const result of results) {
-    if (!result.response_text || !result.brand_mentioned) continue;
+    if (!result.response_text) continue;
+    if (!isCategory && !result.brand_mentioned) continue;
 
     const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
       ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
