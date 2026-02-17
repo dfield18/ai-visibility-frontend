@@ -14,6 +14,7 @@ import {
   Building2,
 } from 'lucide-react';
 import { Result, RunStatusResponse, Source } from '@/lib/types';
+import { stripDiacritics } from '../metrics/compute/normalization';
 
 // Re-export types used across tabs
 export type { Result, Source, RunStatusResponse };
@@ -280,8 +281,11 @@ export const getSentimentDotColor = (sentiment: string | null): string => {
   }
 };
 
-// Strip preamble/advice sections so ranking uses only the recommendation list portion
+// Strip preamble/advice sections so ranking uses only the recommendation list portion.
+// Also strips diacritical marks so that "Condé" and "Conde" match in indexOf comparisons.
 export const getTextForRanking = (text: string, provider: string): string => {
+  let result: string;
+
   // AI Overviews: strip question headers and [Top Search Results] section
   if (provider === 'ai_overviews') {
     const separatorIdx = text.indexOf('---');
@@ -291,35 +295,34 @@ export const getTextForRanking = (text: string, provider: string): string => {
     // Remove bold question headers (e.g. "**What shoes are best?**") — brands in questions
     // are not recommendations, so excluding them from ranking is correct
     cleaned = cleaned.replace(/\*\*[^*]*\?[^*]*\*\*/g, '');
-    return cleaned;
-  }
-
-  // All providers: if a recommendation list section exists, use only that portion
-  // Match common list headers and markdown headings (##/###) containing recommendation keywords
-  const listHeaderPattern = /(?:^|\n)\s*(?:\*{0,2}(?:#+\s*)?(?:Top|Best|Recommended|Here (?:are|is)|Our (?:Top|Pick)|(?:\d+)\s+Best)[^\n]*)/im;
-  const match = text.match(listHeaderPattern);
-  if (match && match.index !== undefined && match.index > 100) {
-    return text.substring(match.index);
-  }
-
-  // Also match markdown headings (##/###) that aren't "Key Factors"/"Considerations"/etc.
-  // Find the LAST heading section that likely contains the actual recommendations
-  const headingPattern = /(?:^|\n)\s*#{2,4}\s+[^\n]*/gm;
-  let lastProductHeading: { index: number } | null = null;
-  let headingMatch;
-  while ((headingMatch = headingPattern.exec(text)) !== null) {
-    const heading = headingMatch[0].toLowerCase();
-    // Skip headings that are clearly preamble or post-recommendation sections
-    if (/factor|consider|tip|guide|intro|key |how to|what to|why |feature|conclusion|summary|source|reference|disclaim|note|faq|related/.test(heading)) continue;
-    if (headingMatch.index > 100) {
-      lastProductHeading = { index: headingMatch.index };
+    result = cleaned;
+  } else {
+    // All providers: if a recommendation list section exists, use only that portion
+    // Match common list headers and markdown headings (##/###) containing recommendation keywords
+    const listHeaderPattern = /(?:^|\n)\s*(?:\*{0,2}(?:#+\s*)?(?:Top|Best|Recommended|Here (?:are|is)|Our (?:Top|Pick)|(?:\d+)\s+Best)[^\n]*)/im;
+    const match = text.match(listHeaderPattern);
+    if (match && match.index !== undefined && match.index > 100) {
+      result = text.substring(match.index);
+    } else {
+      // Also match markdown headings (##/###) that aren't "Key Factors"/"Considerations"/etc.
+      // Find the LAST heading section that likely contains the actual recommendations
+      const headingPattern = /(?:^|\n)\s*#{2,4}\s+[^\n]*/gm;
+      let lastProductHeading: { index: number } | null = null;
+      let headingMatch;
+      while ((headingMatch = headingPattern.exec(text)) !== null) {
+        const heading = headingMatch[0].toLowerCase();
+        // Skip headings that are clearly preamble or post-recommendation sections
+        if (/factor|consider|tip|guide|intro|key |how to|what to|why |feature|conclusion|summary|source|reference|disclaim|note|faq|related/.test(heading)) continue;
+        if (headingMatch.index > 100) {
+          lastProductHeading = { index: headingMatch.index };
+        }
+      }
+      result = lastProductHeading ? text.substring(lastProductHeading.index) : text;
     }
   }
-  if (lastProductHeading) {
-    return text.substring(lastProductHeading.index);
-  }
 
-  return text;
+  // Strip diacritics so "Condé Nast" matches "Conde Nast" in indexOf comparisons
+  return stripDiacritics(result);
 };
 
 export const getResultPosition = (result: Result, runStatus: RunStatusResponse): number | null => {
@@ -327,7 +330,7 @@ export const getResultPosition = (result: Result, runStatus: RunStatusResponse):
   const selectedBrand = runStatus.search_type === 'category'
     ? (runStatus.results.find((r: Result) => r.all_brands_mentioned?.length || r.competitors_mentioned?.length)?.all_brands_mentioned?.[0] || runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
     : runStatus.brand;
-  const brandLower = (selectedBrand || '').toLowerCase();
+  const brandLower = stripDiacritics(selectedBrand || '').toLowerCase();
   if (!brandLower) return null;
   // Use all detected brands for ranking, fall back to tracked brands if unavailable
   const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
@@ -340,7 +343,7 @@ export const getResultPosition = (result: Result, runStatus: RunStatusResponse):
   if (brandPos >= 0) {
     let brandsBeforeCount = 0;
     for (const b of allBrands) {
-      const bLower = b.toLowerCase();
+      const bLower = stripDiacritics(b).toLowerCase();
       if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
       const bPos = rankingText.indexOf(bLower);
       if (bPos >= 0 && bPos < brandPos) {

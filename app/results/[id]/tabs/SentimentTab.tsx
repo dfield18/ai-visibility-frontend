@@ -28,6 +28,7 @@ import {
   getTextForRanking,
   isCategoryName,
 } from './shared';
+import { stripDiacritics } from '../metrics/compute/normalization';
 import { useResults, useResultsUI } from './ResultsContext';
 
 // No props needed - all data comes from context
@@ -183,7 +184,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
 
           // Calculate position/rank
           let rank = 0;
-          const brandLower = runStatus.brand.toLowerCase();
+          const brandLower = stripDiacritics(runStatus.brand).toLowerCase();
           if (r.brand_mentioned && r.response_text) {
             const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
               ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
@@ -194,7 +195,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
             if (brandPos >= 0) {
               let brandsBeforeCount = 0;
               for (const b of allBrands) {
-                const bLower = b.toLowerCase();
+                const bLower = stripDiacritics(b).toLowerCase();
                 if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
                 const bPos = rankingText.indexOf(bLower);
                 if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
@@ -401,7 +402,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                 {matchingResults.map((result, idx) => {
                   // Calculate rank using same logic as All Answers chart
                   let rank = 0;
-                  const brandLower = (runStatus?.brand || '').toLowerCase();
+                  const brandLower = stripDiacritics(runStatus?.brand || '').toLowerCase();
                   const isMentioned = result.brand_mentioned;
 
                   if (isMentioned && result.response_text) {
@@ -414,7 +415,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                     if (brandPos >= 0) {
                       let brandsBeforeCount = 0;
                       for (const b of allBrands) {
-                        const bLower = b.toLowerCase();
+                        const bLower = stripDiacritics(b).toLowerCase();
                         if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
                         const bPos = rankingText.indexOf(bLower);
                         if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
@@ -1707,7 +1708,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                         {filteredSentimentResults.map((result: Result) => {
                         // Calculate rank
                         let rank = 0;
-                        const brandLower = (runStatus?.brand || '').toLowerCase();
+                        const brandLower = stripDiacritics(runStatus?.brand || '').toLowerCase();
                         if (result.brand_mentioned && result.response_text) {
                           const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
                             ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
@@ -1718,7 +1719,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                           if (brandPos >= 0) {
                             let brandsBeforeCount = 0;
                             for (const b of allBrands) {
-                              const bLower = b.toLowerCase();
+                              const bLower = stripDiacritics(b).toLowerCase();
                               if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
                               const bPos = rankingText.indexOf(bLower);
                               if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;

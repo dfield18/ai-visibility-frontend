@@ -18,6 +18,7 @@ import type {
   ProviderVisibilityScore,
 } from '../types';
 import { isCategoryName, getTextForRanking, getDomain } from '../../tabs/shared';
+import { stripDiacritics } from './normalization';
 
 // ---------------------------------------------------------------------------
 // Local constants (mirrors page.tsx local PROVIDER_ORDER)
@@ -157,14 +158,14 @@ export function computeBrandBreakdownStats(
         ? allBrandsInResponseRaw.filter(b => !isCategoryName(b, searchedBrand) && !excludedBrands.has(b))
         : allBrandsInResponseRaw.filter(b => !excludedBrands.has(b));
 
-      const brandLower = brand.toLowerCase();
+      const brandLower = stripDiacritics(brand).toLowerCase();
       const rankingText = r.response_text ? getTextForRanking(r.response_text, r.provider).toLowerCase() : '';
       const brandPos = rankingText.indexOf(brandLower);
       let rank = allBrandsInResponse.length + 1;
       if (brandPos >= 0) {
         let brandsBeforeCount = 0;
         for (const b of allBrandsInResponse) {
-          const bLower = b.toLowerCase();
+          const bLower = stripDiacritics(b).toLowerCase();
           if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
           const bPos = rankingText.indexOf(bLower);
           if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;

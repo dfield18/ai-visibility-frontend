@@ -36,6 +36,7 @@ import {
   getTextForRanking,
   isCategoryName,
 } from './shared';
+import { stripDiacritics } from '../metrics/compute/normalization';
 import { useResults, useResultsUI } from './ResultsContext';
 
 function MarketSpreadDonut({
@@ -2346,7 +2347,7 @@ export const OverviewTab = ({
                           // Calculate position for this result
                           let position: number | null = null;
                           if (result.response_text && selectedBrand && isMentioned) {
-                            const brandLower = selectedBrand.toLowerCase();
+                            const brandLower = stripDiacritics(selectedBrand).toLowerCase();
                             const allBrandsRaw: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
                               ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
                               : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
@@ -2359,7 +2360,7 @@ export const OverviewTab = ({
                             if (brandPos >= 0) {
                               let brandsBeforeCount = 0;
                               for (const b of allBrands) {
-                                const bLower = b.toLowerCase();
+                                const bLower = stripDiacritics(b).toLowerCase();
                                 if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
                                 const bPos = rankingText.indexOf(bLower);
                                 if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
@@ -2615,7 +2616,7 @@ export const OverviewTab = ({
                 let position: number | null = null;
                 if (result.response_text && !result.error) {
                   const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
-                  const brandLower = (selectedBrand || '').toLowerCase();
+                  const brandLower = stripDiacritics(selectedBrand || '').toLowerCase();
                   const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
 
                   const isMentioned = isCategory
@@ -2631,7 +2632,7 @@ export const OverviewTab = ({
                     if (brandTextPos >= 0) {
                       let brandsBeforeCount = 0;
                       for (const b of allBrands) {
-                        const bLower = b.toLowerCase();
+                        const bLower = stripDiacritics(b).toLowerCase();
                         if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
                         const bPos = textLower.indexOf(bLower);
                         if (bPos >= 0 && bPos < brandTextPos) {
@@ -2675,8 +2676,8 @@ export const OverviewTab = ({
 
                 // Sentiment badge with reason — interprets WHY the sentiment was classified
                 const getSentimentReason = (sentiment: string, text: string, brand: string): string => {
-                  const brandLower = brand.toLowerCase();
-                  const plain = text.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1');
+                  const brandLower = stripDiacritics(brand).toLowerCase();
+                  const plain = stripDiacritics(text.replace(/\*{1,2}([^*]+)\*{1,2}/g, '$1'));
                   const sentences = plain.split(/(?<=[.!?])\s+/);
 
                   // Collect sentences mentioning the brand (+ following sentence for context)
@@ -2863,7 +2864,7 @@ export const OverviewTab = ({
                               let firstBrand: string | null = null;
                               let firstPos = Infinity;
                               for (const b of brands) {
-                                const pos = rankText.indexOf(b.toLowerCase());
+                                const pos = rankText.indexOf(stripDiacritics(b).toLowerCase());
                                 if (pos >= 0 && pos < firstPos) { firstPos = pos; firstBrand = b; }
                               }
                               return firstBrand || brands[0] || '\u2014';
@@ -2930,7 +2931,7 @@ export const OverviewTab = ({
                 let position: number | string = '-';
                 if (result.response_text && !result.error) {
                   const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
-                  const brandLower = (selectedBrand || '').toLowerCase();
+                  const brandLower = stripDiacritics(selectedBrand || '').toLowerCase();
                   const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
                   const isMentioned = isCategory
                     ? (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand || '') : result.competitors_mentioned?.includes(selectedBrand || ''))
@@ -2945,7 +2946,7 @@ export const OverviewTab = ({
                     if (brandTextPos >= 0) {
                       let brandsBeforeCount = 0;
                       for (const b of allBrands) {
-                        const bLower = b.toLowerCase();
+                        const bLower = stripDiacritics(b).toLowerCase();
                         if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
                         const bPos = textLower.indexOf(bLower);
                         if (bPos >= 0 && bPos < brandTextPos) {
@@ -2977,7 +2978,7 @@ export const OverviewTab = ({
                     const rankText = getTextForRanking(result.response_text, result.provider).toLowerCase();
                     let firstPos = Infinity;
                     for (const b of allBrandsList) {
-                      const pos = rankText.indexOf(b.toLowerCase());
+                      const pos = rankText.indexOf(stripDiacritics(b).toLowerCase());
                       if (pos >= 0 && pos < firstPos) { firstPos = pos; firstBrand = b; }
                     }
                   }

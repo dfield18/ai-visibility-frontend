@@ -22,7 +22,7 @@ const SENTIMENT_PRIORITY: Record<string, number> = {
 };
 
 /** Strip diacritical marks using Unicode NFD decomposition. "Condé" → "Conde" */
-function stripDiacritics(str: string): string {
+export function stripDiacritics(str: string): string {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 

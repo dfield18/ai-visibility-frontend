@@ -87,6 +87,7 @@ import { ReferenceTab } from './tabs/ReferenceTab';
 import { ChatGPTAdsTab } from './tabs/ChatGPTAdsTab';
 import { ResultsProvider } from './tabs/ResultsContext';
 import { BrandFilterPanel } from './BrandFilterPanel';
+import { stripDiacritics } from './metrics/compute/normalization';
 import { getTextForRanking, isCategoryName } from './tabs/shared';
 import { getSearchTypeConfig, type TabId } from '@/lib/searchTypeConfig';
 import { PaywallOverlay } from '@/components/PaywallOverlay';
@@ -911,7 +912,7 @@ export default function ResultsPage() {
       .map((r: Result) => {
         let rank = '';
         if (r.response_text && r.brand_mentioned) {
-          const brandLower = runStatus.brand.toLowerCase();
+          const brandLower = stripDiacritics(runStatus.brand).toLowerCase();
           const textLower = getTextForRanking(r.response_text, r.provider).toLowerCase();
           const brandTextPos = textLower.indexOf(brandLower);
           const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
@@ -921,7 +922,7 @@ export default function ResultsPage() {
           if (brandTextPos >= 0) {
             let brandsBeforeCount = 0;
             for (const b of allBrands) {
-              const bLower = b.toLowerCase();
+              const bLower = stripDiacritics(b).toLowerCase();
               if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
               const bPos = textLower.indexOf(bLower);
               if (bPos >= 0 && bPos < brandTextPos) {

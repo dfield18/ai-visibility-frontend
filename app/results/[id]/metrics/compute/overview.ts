@@ -32,6 +32,7 @@ import {
   POSITION_CATEGORIES,
   sentimentOrder,
 } from '../../tabs/shared';
+import { stripDiacritics } from './normalization';
 
 import { truncate } from '@/lib/utils';
 
@@ -355,7 +356,7 @@ export function computeLlmBreakdownStats(
       providerStats[provider].mentioned += 1;
 
       if (result.response_text) {
-        const brandLower = selectedBrand.toLowerCase();
+        const brandLower = stripDiacritics(selectedBrand).toLowerCase();
 
         const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
           ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
@@ -368,7 +369,7 @@ export function computeLlmBreakdownStats(
         if (brandPos >= 0) {
           let brandsBeforeCount = 0;
           for (const b of allBrands) {
-            const bLower = b.toLowerCase();
+            const bLower = stripDiacritics(b).toLowerCase();
             if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
             const bPos = rankingText.indexOf(bLower);
             if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
@@ -466,14 +467,14 @@ export function computePromptBreakdownStats(
         ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
         : [searchedBrand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
-      const brandLower = searchedBrand.toLowerCase();
+      const brandLower = stripDiacritics(searchedBrand).toLowerCase();
       const rankingText = r.response_text ? getTextForRanking(r.response_text, r.provider).toLowerCase() : '';
       const brandPos = rankingText.indexOf(brandLower);
       let rank = allBrands.length + 1;
       if (brandPos >= 0) {
         let brandsBeforeCount = 0;
         for (const b of allBrands) {
-          const bLower = b.toLowerCase();
+          const bLower = stripDiacritics(b).toLowerCase();
           if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
           const bPos = rankingText.indexOf(bLower);
           if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
@@ -713,7 +714,7 @@ export function computeScatterPlotData(
     let rank = 0; // 0 means not mentioned
 
     if (result.response_text) {
-      const brandLower = selectedBrand.toLowerCase();
+      const brandLower = stripDiacritics(selectedBrand).toLowerCase();
 
       // Check if brand is mentioned
       const isMentioned = isCategory
@@ -731,7 +732,7 @@ export function computeScatterPlotData(
           // Count how many other brands appear before the searched brand in the text
           let brandsBeforeCount = 0;
           for (const b of allBrands) {
-            const bLower = b.toLowerCase();
+            const bLower = stripDiacritics(b).toLowerCase();
             if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
             const bPos = textLower.indexOf(bLower);
             if (bPos >= 0 && bPos < brandTextPos) {
@@ -1005,13 +1006,13 @@ export function computeOverviewMetrics(
       : [...(runStatus.search_type === 'category' ? [] : [runStatus.brand]), ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
     if (selectedBrand) {
-      const brandLower = selectedBrand.toLowerCase();
+      const brandLower = stripDiacritics(selectedBrand).toLowerCase();
       const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
       const brandPos = rankingText.indexOf(brandLower);
       if (brandPos >= 0) {
         let brandsBeforeCount = 0;
         for (const b of allBrands) {
-          const bLower = b.toLowerCase();
+          const bLower = stripDiacritics(b).toLowerCase();
           if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
           const bPos = rankingText.indexOf(bLower);
           if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
@@ -1031,10 +1032,10 @@ export function computeOverviewMetrics(
   let selectedBrandMentions = 0;
   for (const result of results) {
     if (!result.response_text) continue;
-    const responseText = result.response_text.toLowerCase();
+    const responseText = stripDiacritics(result.response_text).toLowerCase();
 
     // Check if selected brand is mentioned
-    if (selectedBrand && responseText.includes(selectedBrand.toLowerCase())) {
+    if (selectedBrand && responseText.includes(stripDiacritics(selectedBrand).toLowerCase())) {
       selectedBrandMentions++;
       totalBrandMentions++;
     }
@@ -1042,8 +1043,8 @@ export function computeOverviewMetrics(
     // Count competitor mentions
     const competitors = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
     for (const competitor of competitors) {
-      if (competitor && competitor.toLowerCase() !== selectedBrand?.toLowerCase()) {
-        if (responseText.includes(competitor.toLowerCase())) {
+      if (competitor && stripDiacritics(competitor).toLowerCase() !== stripDiacritics(selectedBrand ?? '').toLowerCase()) {
+        if (responseText.includes(stripDiacritics(competitor).toLowerCase())) {
           totalBrandMentions++;
         }
       }
@@ -1562,7 +1563,7 @@ function computeBrandRank(result: Result, brand: string): number {
   if (!result.response_text) return 0;
   const isMentioned = result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(brand) : result.competitors_mentioned?.includes(brand);
   if (!isMentioned) return 0;
-  const brandLower = brand.toLowerCase();
+  const brandLower = stripDiacritics(brand).toLowerCase();
   const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
   const brandTextPos = textLower.indexOf(brandLower);
   const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
@@ -1571,7 +1572,7 @@ function computeBrandRank(result: Result, brand: string): number {
   if (brandTextPos >= 0) {
     let brandsBeforeCount = 0;
     for (const b of allBrands) {
-      const bLower = b.toLowerCase();
+      const bLower = stripDiacritics(b).toLowerCase();
       if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
       const bPos = textLower.indexOf(bLower);
       if (bPos >= 0 && bPos < brandTextPos) brandsBeforeCount++;
@@ -1733,7 +1734,7 @@ export function computeOverviewSortedResults(
     const selectedBrand = runStatus.search_type === 'category'
       ? (runStatus.results.find((r: Result) => r.all_brands_mentioned?.length || r.competitors_mentioned?.length)?.all_brands_mentioned?.[0] || runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
       : runStatus.brand;
-    const brandLower = (selectedBrand || '').toLowerCase();
+    const brandLower = stripDiacritics(selectedBrand || '').toLowerCase();
     const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
 
     // Use all detected brands for ranking, fall back to tracked brands if unavailable
@@ -1747,7 +1748,7 @@ export function computeOverviewSortedResults(
       // Count how many OTHER brands appear before the searched brand in the text
       let brandsBeforeCount = 0;
       for (const b of allBrands) {
-        const bLower = b.toLowerCase();
+        const bLower = stripDiacritics(b).toLowerCase();
         if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
         const bPos = textLower.indexOf(bLower);
         if (bPos >= 0 && bPos < brandTextPos) {

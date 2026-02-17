@@ -4,6 +4,7 @@
  */
 
 import type { Result, RunStatusResponse } from '../../tabs/shared';
+import { stripDiacritics } from './normalization';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -80,10 +81,10 @@ export function computeAvailableBrands(runStatus: RunStatusResponse | null): str
  */
 export function computeCorrectedResults(runStatus: RunStatusResponse | null): Result[] {
   if (!runStatus) return [];
-  const brandLower = runStatus.brand.toLowerCase();
+  const brandLower = stripDiacritics(runStatus.brand).toLowerCase();
   return runStatus.results.map((result: Result) => {
     if (!result.brand_mentioned && result.response_text && !result.error) {
-      if (result.response_text.toLowerCase().includes(brandLower)) {
+      if (stripDiacritics(result.response_text).toLowerCase().includes(brandLower)) {
         return { ...result, brand_mentioned: true };
       }
     }
