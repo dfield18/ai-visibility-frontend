@@ -1195,17 +1195,6 @@ export const OverviewTab = ({
                   return 'visibility score';
                 });
 
-                // Append deterministic visibility scores block so users always see
-                // authoritative frontend-computed numbers regardless of LLM prose accuracy.
-                const visLines = unfilteredBrandBreakdownStats
-                  .slice(0, 10)
-                  .map(b => `- **${b.brand}**: ${b.visibilityScore.toFixed(1)}%`);
-                if (visLines.length > 0) {
-                  text += `\n\n**Visibility Scores (averaged across providers):**\n${visLines.join('\n')}`;
-                  if (unfilteredBrandBreakdownStats.length > 10) {
-                    text += `\n- *and ${unfilteredBrandBreakdownStats.length - 10} more brands…*`;
-                  }
-                }
               }
               // Vary repeated "suggest/suggests" usage
               const alternatives = ['indicates', 'points to', 'reflects'];
