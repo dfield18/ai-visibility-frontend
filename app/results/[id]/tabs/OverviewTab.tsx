@@ -2971,7 +2971,16 @@ export const OverviewTab = ({
 
                 if (isCategory) {
                   const brandCount = allBrandsList.length;
-                  const firstBrand = allBrandsList[0] || '-';
+                  // Use text-position ranking (same as table display)
+                  let firstBrand = allBrandsList[0] || '-';
+                  if (result.response_text && allBrandsList.length > 0) {
+                    const rankText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+                    let firstPos = Infinity;
+                    for (const b of allBrandsList) {
+                      const pos = rankText.indexOf(b.toLowerCase());
+                      if (pos >= 0 && pos < firstPos) { firstPos = pos; firstBrand = b; }
+                    }
+                  }
                   return [
                     `"${result.prompt.replace(/"/g, '""')}"`,
                     getProviderLabel(result.provider),
