@@ -257,33 +257,33 @@ export function computeSourcesInsights(
 
   if (resultsWithSources.length === 0) return [];
 
-  // 1. Top cited source insight
+  // 1. Top referenced source
   if (topCitedSources.length > 0) {
     const topSource = topCitedSources[0];
-    insights.push(`${formatDomainName(topSource.domain)} is the most frequently cited source (${topSource.count} citations across ${topSource.providers.length} ${topSource.providers.length === 1 ? 'model' : 'models'})`);
+    insights.push(`${formatDomainName(topSource.domain)} is the most frequently referenced source (${topSource.count} references across ${topSource.providers.length} ${topSource.providers.length === 1 ? 'model' : 'models'})`);
   }
 
-  // 2. Key influencer insight (sources cited by multiple providers)
+  // 2. Key influencer insight (sources used by multiple providers)
   if (keyInfluencers.length > 0) {
-    insights.push(`${keyInfluencers.length} source${keyInfluencers.length === 1 ? '' : 's'} ${keyInfluencers.length === 1 ? 'is' : 'are'} cited by multiple AI models, indicating high authority`);
+    insights.push(`${keyInfluencers.length} source${keyInfluencers.length === 1 ? '' : 's'} ${keyInfluencers.length === 1 ? 'is' : 'are'} used by multiple AI models, indicating high authority`);
   }
 
-  // 3. Brand website citation rate
+  // 3. Brand website usage
   const brandDomain = searchedBrand.toLowerCase().replace(/\s+/g, '');
   const brandCitations = topCitedSources.filter(s =>
     s.domain.toLowerCase().includes(brandDomain) || brandDomain.includes(s.domain.toLowerCase().replace('.com', '').replace('.org', ''))
   );
   if (brandCitations.length > 0) {
     const totalBrandCitations = brandCitations.reduce((sum, s) => sum + s.count, 0);
-    insights.push(`${searchedBrand}'s website is cited ${totalBrandCitations} time${totalBrandCitations === 1 ? '' : 's'} as a source`);
+    insights.push(`${searchedBrand}'s website appears ${totalBrandCitations} time${totalBrandCitations === 1 ? '' : 's'} as a source in AI responses`);
   } else {
-    insights.push(`${searchedBrand}'s website is not currently cited as a source by AI models — an opportunity for improvement`);
+    insights.push(`${searchedBrand}'s website is not currently linked as a source by AI models — an opportunity for improvement`);
   }
 
   // 4. Source diversity
   const uniqueDomains = new Set(topCitedSources.map(s => s.domain));
   if (uniqueDomains.size > 5) {
-    insights.push(`AI models cite ${uniqueDomains.size} different sources, showing diverse information gathering`);
+    insights.push(`AI models draw from ${uniqueDomains.size} different sources, showing diverse information gathering`);
   }
 
   // 5. Provider with most sources
@@ -305,7 +305,7 @@ export function computeSourcesInsights(
         default: return p;
       }
     };
-    insights.push(`${formatProviderName(topProvider[0])} provides the most source citations (${topProvider[1]} total)`);
+    insights.push(`${formatProviderName(topProvider[0])} provides the most source references (${topProvider[1]} total)`);
   }
 
   return insights.slice(0, 5);
