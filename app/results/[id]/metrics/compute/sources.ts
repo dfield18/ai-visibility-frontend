@@ -569,10 +569,27 @@ export function computeBrandWebsiteCitations(
       if (source.url) {
         const domain = extractDomain(source.url).toLowerCase();
 
+        // Extract second-level domain (SLD) for brand matching
+        // e.g., "shop.nike.com" → "nike", "on-running.co.uk" → "on-running"
+        const domainParts = domain.split('.');
+        const tlds = new Set(['com', 'org', 'net', 'io', 'co', 'uk', 'au', 'jp', 'de', 'fr', 'ca', 'edu', 'gov', 'us', 'eu', 'info', 'biz', 'me', 'tv', 'cc', 'in', 'nz', 'br', 'kr', 'ru', 'ch', 'nl', 'se', 'no', 'fi', 'dk', 'it', 'es', 'pt', 'pl', 'at', 'be', 'ie']);
+        let sldIdx = domainParts.length - 1;
+        while (sldIdx > 0 && tlds.has(domainParts[sldIdx])) sldIdx--;
+        const sld = domainParts[sldIdx] || '';
+        const sldSegments = sld.split('-');
+        const sldNoHyphens = sld.replace(/-/g, '');
+
         // Check each brand (including searched brand and competitors)
         allBrandsToTrack.forEach((brand) => {
           const brandDomainCheck = brand.toLowerCase().replace(/\s+/g, '');
-          if (domain.includes(brandDomainCheck) || brandDomainCheck.includes(domain.replace('.com', '').replace('.org', '').replace('.net', ''))) {
+          // Match only if the brand owns this domain:
+          // 1. SLD matches brand exactly: nike.com → "nike" === "nike"
+          // 2. SLD without hyphens matches brand: new-balance.com → "newbalance" === "newbalance"
+          // 3. Brand is a hyphen-segment of SLD: on-running.com → ["on","running"] includes "on"
+          const isBrandWebsite = sld === brandDomainCheck
+            || sldNoHyphens === brandDomainCheck
+            || sldSegments.includes(brandDomainCheck);
+          if (isBrandWebsite) {
             if (!brandCitationData[brand]) {
               brandCitationData[brand] = { count: 0, urls: [], providers: new Set(), snippets: [], seenResultIds: new Set() };
             }
