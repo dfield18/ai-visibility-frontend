@@ -382,19 +382,7 @@ export function computeParsedAiRecommendations(
     return tactics.slice(0, 4); // Limit to 4 tactics per recommendation
   };
 
-  // Apply metric corrections for industry reports before parsing
-  let recsContent: typeof aiRecommendations = aiRecommendations;
-  if (isCategory && brandBreakdownStats.length > 0) {
-    if (typeof recsContent === 'string') {
-      recsContent = correctBrandMetricsInText(recsContent.replace(/\*\*/g, ''), brandBreakdownStats);
-    } else if (Array.isArray(recsContent)) {
-      recsContent = recsContent.map(rec => ({
-        ...rec,
-        title: correctBrandMetricsInText(rec.title.replace(/\*\*/g, ''), brandBreakdownStats),
-        description: correctBrandMetricsInText(rec.description.replace(/\*\*/g, ''), brandBreakdownStats),
-      }));
-    }
-  }
+  const recsContent = aiRecommendations;
 
   if (typeof recsContent === 'string') {
     // Parse markdown text - split by numbered items, bullet points, or double newlines
@@ -466,5 +454,17 @@ export function computeParsedAiRecommendations(
     });
   }
 
-  return recs.slice(0, isCategory ? 8 : 6);
+  const sliced = recs.slice(0, isCategory ? 8 : 6);
+
+  // Apply metric corrections AFTER parsing so decimal percentages (e.g. "75.0%")
+  // don't break the title/sentence parser which splits on periods.
+  if (isCategory && brandBreakdownStats.length > 0) {
+    for (const rec of sliced) {
+      rec.title = correctBrandMetricsInText(rec.title, brandBreakdownStats);
+      rec.description = correctBrandMetricsInText(rec.description, brandBreakdownStats);
+      rec.tactics = rec.tactics.map(t => correctBrandMetricsInText(t, brandBreakdownStats));
+    }
+  }
+
+  return sliced;
 }
