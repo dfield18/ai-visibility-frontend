@@ -9,3 +9,4 @@ export * from './sentiment';
 export * from './sources';
 export * from './reference';
 export * from './recommendations';
+export * from './normalization';

@@ -23,6 +23,10 @@ import {
   computeFilteredTrackedBrands,
 } from './compute/base';
 import {
+  buildBrandNormalizationMap,
+  applyBrandNormalization,
+} from './compute/normalization';
+import {
   computeFilteredBrandMentions,
   computeShareOfVoiceData,
   computeLlmBreakdownBrands,
@@ -267,7 +271,7 @@ export function useResultsStore(params: UseResultsStoreParams) {
     [runStatus],
   );
 
-  const allAvailableBrands = useMemo(
+  const allAvailableBrandsRaw = useMemo(
     () => computeAvailableBrands(runStatus),
     [runStatus],
   );
@@ -277,15 +281,44 @@ export function useResultsStore(params: UseResultsStoreParams) {
     [runStatus],
   );
 
+  // Brand name normalization: merge diacritical variants ("Condé" / "Conde")
+  // and prefix variants ("National Geographic" / "National Geographic Traveler")
+  const brandNormMap = useMemo(
+    () => buildBrandNormalizationMap(correctedResults),
+    [correctedResults],
+  );
+
+  const normalizedResults = useMemo(
+    () => brandNormMap.size > 0
+      ? applyBrandNormalization(correctedResults, brandNormMap)
+      : correctedResults,
+    [correctedResults, brandNormMap],
+  );
+
+  // Post-process available brands with normalization map
+  const allAvailableBrands = useMemo(() => {
+    if (brandNormMap.size === 0) return allAvailableBrandsRaw;
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const b of allAvailableBrandsRaw) {
+      const canonical = brandNormMap.get(b) ?? b;
+      if (!seen.has(canonical)) {
+        seen.add(canonical);
+        result.push(canonical);
+      }
+    }
+    return result.sort();
+  }, [allAvailableBrandsRaw, brandNormMap]);
+
   const globallyFilteredResults = useMemo(
     () => computeGloballyFilteredResults(
       runStatus,
-      correctedResults,
+      normalizedResults,
       globalLlmFilter,
       globalPromptFilter,
       globalBrandFilter,
     ),
-    [runStatus, correctedResults, globalLlmFilter, globalPromptFilter, globalBrandFilter],
+    [runStatus, normalizedResults, globalLlmFilter, globalPromptFilter, globalBrandFilter],
   );
 
   const promptCost = useMemo(
@@ -301,10 +334,26 @@ export function useResultsStore(params: UseResultsStoreParams) {
     [runStatus, globallyFilteredResults],
   );
 
-  const trackedBrands = useMemo(
+  // Post-process tracked brands with normalization map
+  const trackedBrandsRaw = useMemo(
     () => computeTrackedBrands(runStatus),
     [runStatus],
   );
+
+  const trackedBrands = useMemo(() => {
+    if (brandNormMap.size === 0) return trackedBrandsRaw;
+    // trackedBrands stores lowercase; normMap uses original case
+    // Build a lowercase lookup from the normMap
+    const lcMap = new Map<string, string>();
+    for (const [variant, canonical] of brandNormMap) {
+      lcMap.set(variant.toLowerCase(), canonical.toLowerCase());
+    }
+    const normalized = new Set<string>();
+    for (const b of trackedBrandsRaw) {
+      normalized.add(lcMap.get(b) ?? b);
+    }
+    return normalized;
+  }, [trackedBrandsRaw, brandNormMap]);
 
   const filteredAvailableBrands = useMemo(
     () => computeFilteredAvailableBrands(allAvailableBrands, excludedBrands),
