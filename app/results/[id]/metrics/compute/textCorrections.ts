@@ -101,11 +101,11 @@ export function correctBrandMetricsInText(
     },
   );
 
-  // --- 4. Fix "<metric term> of XX%" (number AFTER metric term) ---
-  // e.g. "visibility score of 41.7%", "mention rate of 58%", "visibility of 50%"
+  // --- 4. Fix "<metric term> <connector> XX%" (number AFTER metric term) ---
+  // e.g. "visibility score of 41.7%", "visibility score at 58%", "score is 75%"
   // Finds nearest brand before the metric term; falls back to leader.
   text = text.replace(
-    /((?:mention rates?|visibility scores?|visibility)\s+of\s+)(\d+\.?\d*)(%)/gi,
+    /((?:mention rates?|visibility scores?|visibility)\s+(?:of|at|is|around|approximately|:)\s*)(\d+\.?\d*)(%)/gi,
     (_match: string, prefix: string, _num: string, pctSign: string, offset: number) => {
       const nearest = findNearestBrand(text, offset, sortedStats);
       const vis = nearest ? simpleVis(nearest).toFixed(1) : leaderVis;
