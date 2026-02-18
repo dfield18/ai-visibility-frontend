@@ -90,7 +90,28 @@ export function correctBrandMetricsInText(
     );
   }
 
-  // --- 3. Fix "XX% <metric term>" (number BEFORE metric term) ---
+  // --- 3a. Fix "XX% share of voice" — replace with correct share of voice ---
+  // GPT may write share-of-voice numbers; replace with the correct SoV from stats.
+  text = text.replace(
+    /\b(\d+\.?\d*)(%\s*(?:share of (?:voice|all mentions|total (?:brand )?mentions|mentions)))/gi,
+    (_match: string, _num: string, suffix: string, offset: number) => {
+      const nearest = findNearestBrand(text, offset, sortedStats);
+      const stat = nearest || leader;
+      return `${stat.shareOfVoice.toFixed(1)}${suffix}`;
+    },
+  );
+
+  // --- 3b. Fix "share of voice of/at/is XX%" (number AFTER term) ---
+  text = text.replace(
+    /((?:share of (?:voice|all mentions|total (?:brand )?mentions|mentions))\s+(?:of|at|is|around|approximately|:)\s*)(\d+\.?\d*)(%)/gi,
+    (_match: string, prefix: string, _num: string, pctSign: string, offset: number) => {
+      const nearest = findNearestBrand(text, offset, sortedStats);
+      const stat = nearest || leader;
+      return `${prefix}${stat.shareOfVoice.toFixed(1)}${pctSign}`;
+    },
+  );
+
+  // --- 3c. Fix "XX% <visibility metric term>" (number BEFORE metric term) ---
   // Catches: "58% of AI responses", "58% visibility score", "58% visibility",
   //          "58% mention rate", "58% of results", "58% of queries", etc.
   // Finds nearest brand in preceding text; falls back to leader.
@@ -103,7 +124,7 @@ export function correctBrandMetricsInText(
     },
   );
 
-  // --- 4. Fix "<metric term> <connector> XX%" (number AFTER metric term) ---
+  // --- 4. Fix "<visibility metric term> <connector> XX%" (number AFTER metric term) ---
   // e.g. "visibility score of 41.7%", "visibility score at 58%", "score is 75%"
   // Finds nearest brand before the metric term; falls back to leader.
   text = text.replace(
@@ -161,7 +182,9 @@ export function correctIndustryAISummary(
   const leader = brandBreakdownStats[0];
 
   // --- Market Leader injection ---
-  const mlStats = `, with a ${leader.shareOfVoice.toFixed(1)}% share of all mentions (% of total brand mentions captured by this brand) and a ${simpleVis(leader).toFixed(1)}% visibility score`;
+  // Put visibility score FIRST with its definition inline so the correct number
+  // is always associated with the label, even if GPT wrote a wrong number earlier.
+  const mlStats = `, with a ${simpleVis(leader).toFixed(1)}% visibility score (% of AI responses that mention the brand) and a ${leader.shareOfVoice.toFixed(1)}% share of voice (% of total brand mentions captured)`;
   text = text.replace(/(Market leader\s*[-–—]\s*[\s\S]+?)\.(?!\d)/i, `$1${mlStats}.`);
 
   // --- Replace "Competitive landscape" paragraph with deterministic text ---
@@ -218,12 +241,17 @@ export function correctIndustryAISummary(
   }
 
   // --- Add "visibility score" definition on first occurrence ---
-  // Skip if followed by "(" (already defined) or "of <digit>" (would break sentence)
-  let vsDefined = false;
-  text = text.replace(/visibility scores?(?!\s*\(|\s+of\s+\d)/gi, () => {
-    if (!vsDefined) { vsDefined = true; return 'visibility score (% of AI responses that mention the brand)'; }
-    return 'visibility score';
-  });
+  // Skip if followed by "(" (already defined) or "of <digit>" (would break sentence).
+  // The ML injection above already includes the definition inline, so check if it's
+  // already present before adding it again.
+  const hasVsDefinition = /visibility score\s*\(\s*%\s*of\s*AI\s*responses/i.test(text);
+  if (!hasVsDefinition) {
+    let vsDefined = false;
+    text = text.replace(/visibility scores?(?!\s*\(|\s+of\s+\d)/gi, () => {
+      if (!vsDefined) { vsDefined = true; return 'visibility score (% of AI responses that mention the brand)'; }
+      return 'visibility score';
+    });
+  }
 
   // --- Vary repeated "suggest/suggests" usage ---
   const alternatives = ['indicates', 'points to', 'reflects'];
