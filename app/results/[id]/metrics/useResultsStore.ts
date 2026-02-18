@@ -393,8 +393,9 @@ export function useResultsStore(params: UseResultsStoreParams) {
       brandMentionsTrackingFilter,
       trackedBrands,
       extractUntrackedBrands,
+      excludedBrands,
     ),
-    [runStatus, globallyFilteredResults, brandMentionsProviderFilter, brandMentionsTrackingFilter, trackedBrands],
+    [runStatus, globallyFilteredResults, brandMentionsProviderFilter, brandMentionsTrackingFilter, trackedBrands, excludedBrands],
   );
 
   const shareOfVoiceData = useMemo(
@@ -421,8 +422,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   );
 
   const promptBreakdownStats = useMemo(
-    () => computePromptBreakdownStats(runStatus, globallyFilteredResults, promptBreakdownLlmFilter, excludedBrands),
-    [runStatus, globallyFilteredResults, promptBreakdownLlmFilter, excludedBrands],
+    () => computePromptBreakdownStats(runStatus, globallyFilteredResults, promptBreakdownLlmFilter, excludedBrands, llmBreakdownBrands),
+    [runStatus, globallyFilteredResults, promptBreakdownLlmFilter, excludedBrands, llmBreakdownBrands],
   );
 
   const scatterProviderOrder = useMemo(
@@ -451,8 +452,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   );
 
   const overviewMetrics = useMemo(
-    () => computeOverviewMetrics(runStatus, globallyFilteredResults, llmBreakdownBrands),
-    [runStatus, globallyFilteredResults, llmBreakdownBrands],
+    () => computeOverviewMetrics(runStatus, globallyFilteredResults, llmBreakdownBrands, excludedBrands),
+    [runStatus, globallyFilteredResults, llmBreakdownBrands, excludedBrands],
   );
 
   const llmBreakdownTakeaway = useMemo(
@@ -461,8 +462,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   );
 
   const providerVisibilityScores = useMemo(
-    () => computeProviderVisibilityScores(runStatus, globallyFilteredResults),
-    [runStatus, globallyFilteredResults],
+    () => computeProviderVisibilityScores(runStatus, globallyFilteredResults, llmBreakdownBrands),
+    [runStatus, globallyFilteredResults, llmBreakdownBrands],
   );
 
   const filteredFramingByProvider = useMemo(
@@ -760,8 +761,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   // Reference computations
   // =========================================================================
   const sourceGapAnalysis = useMemo(
-    () => computeSourceGapAnalysis(runStatus, globallyFilteredResults, sourceGapProviderFilter, sourceGapPromptFilter),
-    [runStatus, globallyFilteredResults, sourceGapProviderFilter, sourceGapPromptFilter],
+    () => computeSourceGapAnalysis(runStatus, globallyFilteredResults, sourceGapProviderFilter, sourceGapPromptFilter, excludedBrands),
+    [runStatus, globallyFilteredResults, sourceGapProviderFilter, sourceGapPromptFilter, excludedBrands],
   );
 
   const sourceSentimentGapAnalysis = useMemo(

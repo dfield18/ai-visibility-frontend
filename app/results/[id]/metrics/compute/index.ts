@@ -3,6 +3,7 @@
  */
 
 export * from './base';
+export * from './brandHelpers';
 export * from './overview';
 export * from './competitive';
 export * from './sentiment';

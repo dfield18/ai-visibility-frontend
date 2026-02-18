@@ -95,6 +95,15 @@ import { PlaceholderChart } from '@/components/PlaceholderChart';
 import { PlaceholderTable } from '@/components/PlaceholderTable';
 import { useSectionAccess } from '@/hooks/useBilling';
 import { useResultsStore, type UseResultsStoreParams } from './metrics/useResultsStore';
+import {
+  computeCorrectedResults,
+  computeGloballyFilteredResults,
+} from './metrics/compute/base';
+import {
+  buildBrandNormalizationMap,
+  applyBrandNormalization,
+} from './metrics/compute/normalization';
+import { computeBrandBreakdownStats } from './metrics/compute/competitive';
 
 type FilterType = 'all' | 'mentioned' | 'not_mentioned';
 type TabType = 'overview' | 'reference' | 'competitive' | 'sentiment' | 'sources' | 'recommendations' | 'reports' | 'site-audit' | 'chatgpt-ads' | 'industry-overview';
@@ -491,35 +500,38 @@ export default function ResultsPage() {
   }, [snippetDetailModal]);
 
   // -------------------------------------------------------------------------
-  // Brand blurbs & quotes hooks (require data from store computations)
+  // Lightweight pre-computations for brand blurbs & quotes hooks
   // -------------------------------------------------------------------------
+  // These hooks need brand names and globallyFilteredResults, but the full store
+  // also needs brandQuotesMap from the hooks. To avoid calling useResultsStore
+  // twice, we compute only the minimal data needed by hooks here.
 
-  // We need brandBreakdownStats and globallyFilteredResults for the brand blurbs/quotes hooks.
-  // These are computed inside the store, but the hooks need to run at the top level.
-  // We compute a lightweight "allBrandsAnalysisData" list of brand names here for the hook,
-  // and the full store will provide the complete data.
+  const preFilteredResults = useMemo(() => {
+    if (!runStatus) return [];
+    const corrected = computeCorrectedResults(runStatus);
+    const normMap = buildBrandNormalizationMap(corrected);
+    const normalized = normMap.size > 0 ? applyBrandNormalization(corrected, normMap) : corrected;
+    return computeGloballyFilteredResults(runStatus, normalized, globalLlmFilter, globalPromptFilter, globalBrandFilter);
+  }, [runStatus, globalLlmFilter, globalPromptFilter, globalBrandFilter]);
 
-  // First, compute a temporary store to get the data needed by hooks
-  const storeData = useResultsStore({
-    runStatus: runStatus ?? null,
-    aiSummary,
-    isSummaryLoading,
-    excludedBrands,
-    setExcludedBrands,
-    brandQuotesMap: {}, // placeholder - will be overridden below
-    globalLlmFilter,
-    globalPromptFilter,
-    globalBrandFilter,
-  });
+  const preBrandBreakdownStats = useMemo(
+    () => computeBrandBreakdownStats(runStatus ?? null, preFilteredResults, 'all', 'all', excludedBrands),
+    [runStatus, preFilteredResults, excludedBrands],
+  );
+
+  const brandNamesForHooks = useMemo(
+    () => preBrandBreakdownStats.map(b => b.brand),
+    [preBrandBreakdownStats],
+  );
 
   // Fetch AI-generated brand characterization blurbs
   const brandBlurbsContext = runStatus
     ? `${runStatus.search_type === 'category' ? 'category' : 'brand'} analysis for ${runStatus.brand}`
     : '';
   const { data: brandBlurbsData } = useBrandBlurbs(
-    storeData.allBrandsAnalysisData.map((b: { brand: string }) => b.brand),
+    brandNamesForHooks,
     brandBlurbsContext,
-    storeData.allBrandsAnalysisData.length > 0 && runStatus?.status === 'complete'
+    brandNamesForHooks.length > 0 && runStatus?.status === 'complete'
   );
   const brandBlurbs = brandBlurbsData?.blurbs ?? {};
 
@@ -545,13 +557,12 @@ export default function ResultsPage() {
   // Extract candidate quotes mentioning each brand from LLM responses
   const candidateQuotesMap = useMemo(() => {
     if (!runStatus) return {} as Record<string, BrandQuote[]>;
-    const results = storeData.globallyFilteredResults.filter((r: Result) => r.response_text && !r.error);
+    const results = preFilteredResults.filter((r: Result) => r.response_text && !r.error);
     const searchedBrand = runStatus.brand;
-    const allBrands = storeData.unfilteredBrandBreakdownStats.map((b: { brand: string }) => b.brand);
 
     const map: Record<string, BrandQuote[]> = {};
 
-    for (const brand of allBrands) {
+    for (const brand of brandNamesForHooks) {
       const isSearched = brand === searchedBrand;
       const relevant = results.filter((r: Result) =>
         isSearched ? r.brand_mentioned : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand))
@@ -607,7 +618,7 @@ export default function ResultsPage() {
     }
 
     return map;
-  }, [runStatus, storeData.globallyFilteredResults, storeData.unfilteredBrandBreakdownStats]);
+  }, [runStatus, preFilteredResults, brandNamesForHooks]);
 
   // Use GPT to filter candidates down to the best 1-2 quotes per brand
   const hasCandidates = Object.values(candidateQuotesMap).some(q => q.length > 0);
@@ -624,10 +635,10 @@ export default function ResultsPage() {
 
   // Frontend insights costs (brand blurbs + quote filtering via gpt-4o-mini)
   const frontendInsightsCost = (brandBlurbsData?.cost ?? 0) + (filteredQuotesData?.cost ?? 0);
-  const totalCost = storeData.totalBackendCost + frontendInsightsCost;
+  const totalCost = (runStatus?.actual_cost ?? 0) + frontendInsightsCost;
 
   // -------------------------------------------------------------------------
-  // Now call the store again with the real brandQuotesMap
+  // Single store call with the real brandQuotesMap
   // -------------------------------------------------------------------------
   const storeDataFinal = useResultsStore({
     runStatus: runStatus ?? null,

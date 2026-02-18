@@ -504,11 +504,14 @@ export function computeSourcePositioningBrandOptions(
     options.push({ value: runStatus.brand, label: `${runStatus.brand} (searched)` });
   }
 
-  // Add competitors / related issues
+  // Add competitors / related issues (filter category name for industry reports)
   const competitors = new Set<string>();
   globallyFilteredResults.forEach((r: Result) => {
     const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-    rBrands.forEach(comp => competitors.add(comp));
+    rBrands.forEach(comp => {
+      if (isCategory && isCategoryName(comp, runStatus?.brand || '')) return;
+      competitors.add(comp);
+    });
   });
   Array.from(competitors).sort().forEach(comp => {
     options.push({ value: comp, label: comp });

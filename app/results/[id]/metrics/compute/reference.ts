@@ -16,6 +16,7 @@ export function computeSourceGapAnalysis(
   globallyFilteredResults: Result[],
   sourceGapProviderFilter: string,
   sourceGapPromptFilter: string,
+  excludedBrands: Set<string>,
 ): SourceGapRow[] {
   if (!runStatus) return [];
 
@@ -121,7 +122,9 @@ export function computeSourceGapAnalysis(
       }
 
       // Check competitors mentioned and extract snippets
-      const rCompBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : r.competitors_mentioned || [];
+      const isCategory = runStatus.search_type === 'category';
+      const rCompBrands = (r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [])
+        .filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase() && !excludedBrands.has(b) && !(isCategory && isCategoryName(b, runStatus?.brand || '')));
       if (rCompBrands.length > 0 && r.response_text) {
         const responseText = r.response_text; // Capture for TypeScript narrowing
         rCompBrands.forEach(competitor => {

@@ -19,6 +19,7 @@ import type {
 } from '../types';
 import { isCategoryName, getTextForRanking, getDomain } from '../../tabs/shared';
 import { stripDiacritics } from './normalization';
+import { countTotalBrandMentionSlots, countBrandMentions } from './brandHelpers';
 
 // ---------------------------------------------------------------------------
 // Local constants (mirrors page.tsx local PROVIDER_ORDER)
@@ -103,27 +104,9 @@ export function computeBrandBreakdownStats(
     const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
 
     // Share of Voice: this brand's mentions / total brand mentions across all results
-    // For industry reports, exclude category mentions (r.brand_mentioned) from denominator
-    // so that all brands' share of voice sums to 100%
-    let totalBrandMentions = 0;
-    let thisBrandMentions = 0;
-    results.forEach(r => {
-      if (!isCategory && r.brand_mentioned) totalBrandMentions++;
-      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      if (isCategory) {
-        // For industry: only count actual brands, not the category name
-        const filteredBrands = rBrands.filter(b => !isCategoryName(b, searchedBrand));
-        totalBrandMentions += filteredBrands.length;
-      } else {
-        totalBrandMentions += rBrands.length;
-      }
-
-      if (isSearchedBrand && r.brand_mentioned) {
-        thisBrandMentions++;
-      } else if (!isSearchedBrand && (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand))) {
-        thisBrandMentions++;
-      }
-    });
+    // Uses canonical helpers so SoV is consistent across all tabs
+    const totalBrandMentions = countTotalBrandMentionSlots(results, searchedBrand, isCategory, excludedBrands);
+    const thisBrandMentions = countBrandMentions(results, brand, searchedBrand, isCategory);
     const shareOfVoice = totalBrandMentions > 0 ? (thisBrandMentions / totalBrandMentions) * 100 : 0;
 
     // First Position and Avg Rank
@@ -282,24 +265,9 @@ export function computeBrandPositioningStats(
       }
     }).length;
 
-    // Compute visibility score as average of per-provider rates.
-    const providerMentions: Record<string, { mentioned: number; total: number }> = {};
-    for (const r of results) {
-      if (!providerMentions[r.provider]) {
-        providerMentions[r.provider] = { mentioned: 0, total: 0 };
-      }
-      providerMentions[r.provider].total++;
-      const isMentioned = isSearchedBrand
-        ? r.brand_mentioned
-        : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand));
-      if (isMentioned) {
-        providerMentions[r.provider].mentioned++;
-      }
-    }
-    const providerRates = Object.values(providerMentions).map(p => p.total > 0 ? (p.mentioned / p.total) * 100 : 0);
-    const visibilityScore = providerRates.length > 0
-      ? providerRates.reduce((sum, rate) => sum + rate, 0) / providerRates.length
-      : 0;
+    // Visibility score: simple percentage of responses that mention the brand.
+    // Matches computeBrandBreakdownStats formula (flat count, not average of per-provider rates).
+    const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
 
     // Average sentiment
     const sentimentResults = results.filter(r => {
@@ -408,7 +376,7 @@ export function computeModelPreferenceData(
   results.forEach(r => {
     if (!isCategory && r.brand_mentioned) brandCounts[searchedBrand]++;
     const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-    rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c)) brandCounts[c] = (brandCounts[c] || 0) + 1; });
+    rBrands.forEach(c => { if ((!isCategory || !isCategoryName(c, searchedBrand)) && !excludedBrands.has(c) && (isCategory || c !== searchedBrand)) brandCounts[c] = (brandCounts[c] || 0) + 1; });
   });
   const topBrands = Object.entries(brandCounts)
     .sort((a, b) => b[1] - a[1])
@@ -720,7 +688,7 @@ export function computeBrandSourceHeatmap(
       brandsInResult.push({ brand: runStatus.brand, sentiment: result.brand_sentiment });
     }
     const heatmapBrands = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [])
-      .filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b));
+      .filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b) && (isCategory || b !== runStatus.brand));
     heatmapBrands.forEach(comp => {
       brandsInResult.push({ brand: comp, sentiment: result.competitor_sentiments?.[comp] || null });
     });

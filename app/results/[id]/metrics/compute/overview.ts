@@ -33,6 +33,13 @@ import {
   sentimentOrder,
 } from '../../tabs/shared';
 import { stripDiacritics } from './normalization';
+import {
+  computeBrandShareOfVoice,
+  countTotalBrandMentionSlots,
+  countBrandMentions,
+  isBrandMentionedInResult,
+  getResultBrands,
+} from './brandHelpers';
 
 import { truncate } from '@/lib/utils';
 
@@ -60,6 +67,7 @@ export function computeFilteredBrandMentions(
   brandMentionsTrackingFilter: string,
   trackedBrands: Set<string>,
   extractUntrackedBrands: (text: string, trackedSet: Set<string>, categoryName: string) => string[],
+  excludedBrands: Set<string>,
 ): Record<string, BrandMentionEntry> {
   if (!runStatus) return {};
 
@@ -88,6 +96,10 @@ export function computeFilteredBrandMentions(
   for (const result of results) {
     const rBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
     for (const comp of rBrands) {
+      // Filter out category name, excluded brands, and searched brand (already counted above via brand_mentioned)
+      if (isCategory && isCategoryName(comp, runStatus.brand)) continue;
+      if (excludedBrands.has(comp)) continue;
+      if (!isCategory && comp === runStatus.brand) continue;
       if (!mentions[comp]) {
         mentions[comp] = { count: 0, total: 0, isTracked: true };
       }
@@ -104,6 +116,7 @@ export function computeFilteredBrandMentions(
         runStatus.brand || ''
       );
       for (const brand of untrackedBrands) {
+        if (excludedBrands.has(brand)) continue;
         untrackedMentions[brand] = (untrackedMentions[brand] || 0) + 1;
       }
     }
@@ -171,16 +184,15 @@ export function computeShareOfVoiceData(
   for (const result of results) {
     const rBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
     for (const comp of rBrands) {
+      // Filter out category name, excluded brands, and searched brand (already counted above via brand_mentioned)
+      if (isCategory && isCategoryName(comp, runStatus.brand)) continue;
+      if (excludedBrands.has(comp)) continue;
+      if (!isCategory && comp === runStatus.brand) continue;
       if (!mentions[comp]) {
         mentions[comp] = { count: 0, isTracked: true };
       }
       mentions[comp].count += 1;
     }
-  }
-
-  // Remove excluded brands
-  for (const eb of excludedBrands) {
-    delete mentions[eb];
   }
 
   let otherCount = 0;
@@ -410,6 +422,7 @@ export function computePromptBreakdownStats(
   globallyFilteredResults: Result[],
   promptBreakdownLlmFilter: string,
   excludedBrands: Set<string>,
+  llmBreakdownBrands: string[] = [],
 ): PromptBreakdownRow[] {
   if (!runStatus) return [];
 
@@ -438,36 +451,52 @@ export function computePromptBreakdownStats(
     'not_mentioned': 0,
   };
 
+  const isCategory = runStatus.search_type === 'category';
+  // For category reports, use the top brand (same as computeOverviewMetrics).
+  // For other reports, use the searched brand.
+  const selectedBrand = isCategory ? llmBreakdownBrands[0] || searchedBrand : searchedBrand;
+
   const promptStats = Object.entries(promptGroups).map(([prompt, promptResults]) => {
     const total = promptResults.length;
-    const mentioned = promptResults.filter(r => r.brand_mentioned).length;
+    // Visibility: % of responses that mention the selected brand.
+    // For category, checks array fields; for non-category, checks brand_mentioned.
+    const mentioned = promptResults.filter(r => {
+      if (isCategory) {
+        return r.all_brands_mentioned?.length
+          ? r.all_brands_mentioned.includes(selectedBrand)
+          : !!r.competitors_mentioned?.includes(selectedBrand);
+      }
+      return r.brand_mentioned;
+    }).length;
     const visibilityScore = total > 0 ? (mentioned / total) * 100 : 0;
 
-    // Share of Voice: brand mentions / total brand mentions (including competitors)
-    let totalBrandMentions = 0;
-    let searchedBrandMentions = 0;
-    promptResults.forEach(r => {
-      if (r.brand_mentioned) {
-        searchedBrandMentions++;
-        totalBrandMentions++;
-      }
-      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-      totalBrandMentions += rBrands.length;
-    });
-    const shareOfVoice = totalBrandMentions > 0 ? (searchedBrandMentions / totalBrandMentions) * 100 : 0;
+    // Share of Voice: uses canonical helpers for consistency with competitive tab
+    const shareOfVoice = computeBrandShareOfVoice(
+      selectedBrand,
+      promptResults,
+      searchedBrand,
+      isCategory,
+      excludedBrands,
+    );
 
-    // First Position: how often brand appears first
+    // First Position: how often the selected brand appears first
     let firstPositionCount = 0;
     const ranks: number[] = [];
 
     promptResults.forEach(r => {
-      if (!r.brand_mentioned) return;
+      // Check if selected brand is mentioned in this result
+      const isMentioned = isCategory
+        ? (r.all_brands_mentioned?.length
+            ? r.all_brands_mentioned.includes(selectedBrand)
+            : !!r.competitors_mentioned?.includes(selectedBrand))
+        : r.brand_mentioned;
+      if (!isMentioned) return;
 
       const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
         ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
         : [searchedBrand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
 
-      const brandLower = stripDiacritics(searchedBrand).toLowerCase();
+      const brandLower = stripDiacritics(selectedBrand).toLowerCase();
       const rankingText = r.response_text ? getTextForRanking(r.response_text, r.provider).toLowerCase() : '';
       const brandPos = rankingText.indexOf(brandLower);
       let rank = allBrands.length + 1;
@@ -492,7 +521,6 @@ export function computePromptBreakdownStats(
     const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
 
     // Average sentiment
-    const isCategory = runStatus.search_type === 'category';
     let avgSentimentScore: number | null = null;
     if (isCategory) {
       // For industry reports, average competitor_sentiments across all brands (excluding category name and excluded brands)
@@ -975,6 +1003,7 @@ export function computeOverviewMetrics(
   runStatus: RunStatusResponse | null,
   globallyFilteredResults: Result[],
   llmBreakdownBrands: string[],
+  excludedBrands: Set<string>,
 ): OverviewMetrics | null {
   if (!runStatus) return null;
 
@@ -993,13 +1022,19 @@ export function computeOverviewMetrics(
   const overallVisibility = results.length > 0 ? (mentionedCount / results.length) * 100 : 0;
 
   // Average rank and top position count
-  // For industry reports, process ALL responses (brand_mentioned is category-mention, not individual brand)
-  // For other reports, only process responses where the brand is actually mentioned
+  // Only process responses where the brand is actually mentioned.
+  // For category reports, check array fields for the selected brand.
+  // For other reports, check brand_mentioned flag.
   const ranks: number[] = [];
   let topPositionCount = 0;
   for (const result of results) {
     if (!result.response_text) continue;
-    if (!isCategory && !result.brand_mentioned) continue;
+    const isMentionedForRank = isCategory
+      ? (result.all_brands_mentioned?.length
+          ? result.all_brands_mentioned.includes(selectedBrand || '')
+          : !!result.competitors_mentioned?.includes(selectedBrand || ''))
+      : result.brand_mentioned;
+    if (!isMentionedForRank) continue;
 
     const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
       ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
@@ -1027,29 +1062,12 @@ export function computeOverviewMetrics(
   }
   const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
 
-  // Share of voice - what percent of all brand mentions are for this brand
-  let totalBrandMentions = 0;
-  let selectedBrandMentions = 0;
-  for (const result of results) {
-    if (!result.response_text) continue;
-    const responseText = stripDiacritics(result.response_text).toLowerCase();
-
-    // Check if selected brand is mentioned
-    if (selectedBrand && responseText.includes(stripDiacritics(selectedBrand).toLowerCase())) {
-      selectedBrandMentions++;
-      totalBrandMentions++;
-    }
-
-    // Count competitor mentions
-    const competitors = result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [];
-    for (const competitor of competitors) {
-      if (competitor && stripDiacritics(competitor).toLowerCase() !== stripDiacritics(selectedBrand ?? '').toLowerCase()) {
-        if (responseText.includes(stripDiacritics(competitor).toLowerCase())) {
-          totalBrandMentions++;
-        }
-      }
-    }
-  }
+  // Share of voice - what percent of all brand mention slots are for this brand
+  // Uses canonical helpers (array fields, never text search) for consistency with competitive tab
+  const totalBrandMentions = countTotalBrandMentionSlots(results, runStatus.brand, isCategory, excludedBrands);
+  const selectedBrandMentions = selectedBrand
+    ? countBrandMentions(results, selectedBrand, runStatus.brand, isCategory)
+    : 0;
   const shareOfVoice = totalBrandMentions > 0 ? (selectedBrandMentions / totalBrandMentions) * 100 : 0;
 
   // Unique sources count
@@ -1083,7 +1101,8 @@ export function computeOverviewMetrics(
   let fragmentationScore = 5; // default mid-range
   const brandMentionCounts: Record<string, number> = {};
   for (const result of results) {
-    const fragBrands = result.all_brands_mentioned?.length ? result.all_brands_mentioned.filter(b => b.toLowerCase() !== (runStatus?.brand || '').toLowerCase()) : result.competitors_mentioned || [];
+    const fragBrands = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [])
+      .filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b) && b.toLowerCase() !== (runStatus?.brand || '').toLowerCase());
     for (const comp of fragBrands) {
       brandMentionCounts[comp] = (brandMentionCounts[comp] || 0) + 1;
     }
@@ -1386,9 +1405,13 @@ export function computeLlmBreakdownTakeaway(
 export function computeProviderVisibilityScores(
   runStatus: RunStatusResponse | null,
   globallyFilteredResults: Result[],
+  llmBreakdownBrands: string[] = [],
 ): ProviderVisibilityScore[] {
   if (!runStatus) return [];
 
+  const isCategory = runStatus.search_type === 'category';
+  // For category reports, show per-provider visibility for the top brand (same as overview KPI).
+  const selectedBrand = isCategory ? llmBreakdownBrands[0] || runStatus.brand : runStatus.brand;
   const results = globallyFilteredResults.filter((r: Result) => !r.error);
   const providerStats: Record<string, { mentioned: number; total: number }> = {};
 
@@ -1397,7 +1420,12 @@ export function computeProviderVisibilityScores(
       providerStats[r.provider] = { mentioned: 0, total: 0 };
     }
     providerStats[r.provider].total++;
-    if (r.brand_mentioned) {
+    const isMentioned = isCategory
+      ? (r.all_brands_mentioned?.length
+          ? r.all_brands_mentioned.includes(selectedBrand || '')
+          : !!r.competitors_mentioned?.includes(selectedBrand || ''))
+      : r.brand_mentioned;
+    if (isMentioned) {
       providerStats[r.provider].mentioned++;
     }
   });
