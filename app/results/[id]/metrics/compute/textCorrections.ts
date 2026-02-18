@@ -267,14 +267,17 @@ export function correctIndustryAISummary(
 
   // --- Annotate first occurrence of each brand with visibility % ---
   // (appropriate for the long-form AI summary, NOT for recommendation cards)
+  // For short brands (≤3 chars like "On"), use case-sensitive matching to avoid
+  // annotating common words like "on", "in", "be" (same guard as findNearestBrand).
   const sortedStats = [...brandBreakdownStats].sort((a, b) => b.brand.length - a.brand.length);
   const annotated = new Set<string>();
   for (const stat of sortedStats) {
     const key = stat.brand.toLowerCase();
     if (annotated.has(key)) continue;
     const escaped = stat.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const flags = stat.brand.length <= 3 ? '' : 'i';
     text = text.replace(
-      new RegExp(`\\b(${escaped})\\b(?!\\s*\\()`, 'i'),
+      new RegExp(`\\b(${escaped})\\b(?!\\s*\\()`, flags),
       `$1 (${simpleVis(stat).toFixed(1)}%)`
     );
     annotated.add(key);
