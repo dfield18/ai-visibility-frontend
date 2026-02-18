@@ -16,7 +16,10 @@ const simpleVis = (stat: { mentioned: number; total: number }) =>
 
 /**
  * Find the brand mentioned closest (and before) a given offset in the text.
- * Uses plain string indexOf — no regex.  Returns null if no brand found.
+ * Uses word-boundary regex to avoid matching brand names that are substrings
+ * of other words (e.g., brand "On" inside "recommendations").
+ * For short brand names (≤ 3 chars), also requires the match to be capitalized
+ * in the original text to skip common words like "on", "be", "it".
  */
 function findNearestBrand(
   text: string,
@@ -25,16 +28,30 @@ function findNearestBrand(
   windowSize = 200,
 ): BrandBreakdownRow | null {
   const start = Math.max(0, offset - windowSize);
-  const window = text.slice(start, offset).toLowerCase();
+  const window = text.slice(start, offset);
+  const windowLower = window.toLowerCase();
 
   let nearest: BrandBreakdownRow | null = null;
   let nearestPos = -1;
 
   for (const stat of sortedStats) {
-    const pos = window.lastIndexOf(stat.brand.toLowerCase());
-    if (pos !== -1 && (pos > nearestPos || (pos === nearestPos && stat.brand.length > (nearest?.brand.length ?? 0)))) {
+    const brandLower = stat.brand.toLowerCase();
+    const escaped = brandLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escaped}\\b`, 'g');
+    let match: RegExpExecArray | null;
+    let lastPos = -1;
+    while ((match = regex.exec(windowLower)) !== null) {
+      // For short brand names (≤ 3 chars), require capitalization in the
+      // original text to avoid matching common words like "on", "in", "be"
+      if (brandLower.length <= 3) {
+        const originalChar = window[match.index];
+        if (originalChar !== originalChar.toUpperCase()) continue;
+      }
+      lastPos = match.index;
+    }
+    if (lastPos !== -1 && (lastPos > nearestPos || (lastPos === nearestPos && stat.brand.length > (nearest?.brand.length ?? 0)))) {
       nearest = stat;
-      nearestPos = pos;
+      nearestPos = lastPos;
     }
   }
 
@@ -181,6 +198,12 @@ export function correctIndustryAISummary(
 
   const leader = brandBreakdownStats[0];
 
+  // --- Apply shared metric corrections FIRST on GPT's raw text ---
+  // This must run before ML injection and competitive landscape rebuild so those
+  // deterministic (already-correct) sections aren't re-processed by the regex
+  // number-replacement logic.
+  text = correctBrandMetricsInText(text, brandBreakdownStats);
+
   // --- Market Leader injection ---
   // Put visibility score FIRST with its definition inline so the correct number
   // is always associated with the label, even if GPT wrote a wrong number earlier.
@@ -221,9 +244,6 @@ export function correctIndustryAISummary(
       `Competitive landscape – ${compSentences.join('. ')}.`
     );
   }
-
-  // --- Apply shared metric corrections (number fixes, brand counts, terminology) ---
-  text = correctBrandMetricsInText(text, brandBreakdownStats);
 
   // --- Annotate first occurrence of each brand with visibility % ---
   // (appropriate for the long-form AI summary, NOT for recommendation cards)
