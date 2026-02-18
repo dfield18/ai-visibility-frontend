@@ -14,6 +14,20 @@ import type { BrandBreakdownRow } from '../types';
 const simpleVis = (stat: { mentioned: number; total: number }) =>
   stat.total > 0 ? (stat.mentioned / stat.total) * 100 : 0;
 
+/** Provider name variants — used to detect per-provider context in GPT text. */
+const PROVIDER_PATTERNS = /\b(?:chatgpt|gpt[-‑ ]?4|openai|claude|anthropic|gemini|google|perplexity|grok|llama|meta|ai\s*overviews?)\b/i;
+
+/**
+ * Check if a provider name appears in the text window before the given offset.
+ * When a provider name is nearby, the percentage is likely a per-provider stat
+ * (from real backend data) and should NOT be replaced with the overall visibility.
+ */
+function isNearProvider(text: string, offset: number, windowSize = 120): boolean {
+  const start = Math.max(0, offset - windowSize);
+  const window = text.slice(start, offset);
+  return PROVIDER_PATTERNS.test(window);
+}
+
 /**
  * Find the brand mentioned closest (and before) a given offset in the text.
  * Uses word-boundary regex to avoid matching brand names that are substrings
@@ -132,9 +146,11 @@ export function correctBrandMetricsInText(
   // Catches: "58% of AI responses", "58% visibility score", "58% visibility",
   //          "58% mention rate", "58% of results", "58% of queries", etc.
   // Finds nearest brand in preceding text; falls back to leader.
+  // Skips replacement when a provider name is nearby (per-provider stats are correct).
   text = text.replace(
     /\b(\d+\.?\d*)(%\s*(?:mention rates?|visibility scores?|visibility|of (?:all )?(?:AI )?(?:responses?|results|queries|answers|platforms|models)))/gi,
-    (_match: string, _num: string, suffix: string, offset: number) => {
+    (match: string, _num: string, suffix: string, offset: number) => {
+      if (isNearProvider(text, offset)) return match;
       const nearest = findNearestBrand(text, offset, sortedStats);
       const vis = nearest ? simpleVis(nearest).toFixed(1) : leaderVis;
       return `${vis}${suffix}`;
@@ -144,9 +160,11 @@ export function correctBrandMetricsInText(
   // --- 4. Fix "<visibility metric term> <connector> XX%" (number AFTER metric term) ---
   // e.g. "visibility score of 41.7%", "visibility score at 58%", "score is 75%"
   // Finds nearest brand before the metric term; falls back to leader.
+  // Skips replacement when a provider name is nearby (per-provider stats are correct).
   text = text.replace(
     /((?:mention rates?|visibility scores?|visibility)\s+(?:of|at|is|around|approximately|:)\s*)(\d+\.?\d*)(%)/gi,
-    (_match: string, prefix: string, _num: string, pctSign: string, offset: number) => {
+    (match: string, prefix: string, _num: string, pctSign: string, offset: number) => {
+      if (isNearProvider(text, offset)) return match;
       const nearest = findNearestBrand(text, offset, sortedStats);
       const vis = nearest ? simpleVis(nearest).toFixed(1) : leaderVis;
       return `${prefix}${vis}${pctSign}`;
@@ -156,9 +174,11 @@ export function correctBrandMetricsInText(
   // --- 5. Fix "in XX% of" patterns (appears in / mentioned in / found in) ---
   // e.g. "appears in 58% of AI-generated responses", "mentioned in 75% of answers"
   // Finds nearest brand; falls back to leader.
+  // Skips replacement when a provider name is nearby (per-provider stats are correct).
   text = text.replace(
     /(\bin\s+)(\d+\.?\d*)(%)(\s+of\b)/gi,
-    (_match: string, inWord: string, _num: string, pctSign: string, ofWord: string, offset: number) => {
+    (match: string, inWord: string, _num: string, pctSign: string, ofWord: string, offset: number) => {
+      if (isNearProvider(text, offset)) return match;
       const nearest = findNearestBrand(text, offset, sortedStats);
       const vis = nearest ? simpleVis(nearest).toFixed(1) : leaderVis;
       return `${inWord}${vis}${pctSign}${ofWord}`;
