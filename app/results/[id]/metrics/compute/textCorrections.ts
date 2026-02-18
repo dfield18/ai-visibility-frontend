@@ -56,9 +56,10 @@ function findNearestBrand(
  *   1. "Brand: X/Y (Z%)" patterns — replace with computed values
  *   2. "Brand (XX%)" patterns — replace percentage with correct visibility
  *   3. "XX% <metric term>" — find nearest brand, replace percentage
- *   4. "<metric term> of XX%" — find nearest brand, replace percentage
- *   5. Brand counts ("N unique brands", etc.)
- *   6. Terminology: "mention rate" → "visibility score"
+ *   4. "<metric term> <connector> XX%" — find nearest brand, replace percentage
+ *   5. "in XX% of" — find nearest brand, replace percentage
+ *   6. Brand counts ("N unique brands", etc.)
+ *   7. Terminology: "mention rate" → "visibility score"
  */
 export function correctBrandMetricsInText(
   text: string,
@@ -90,10 +91,11 @@ export function correctBrandMetricsInText(
   }
 
   // --- 3. Fix "XX% <metric term>" (number BEFORE metric term) ---
-  // e.g. "58.3% of AI responses", "41% visibility score", "75% mention rate"
+  // Catches: "58% of AI responses", "58% visibility score", "58% visibility",
+  //          "58% mention rate", "58% of results", "58% of queries", etc.
   // Finds nearest brand in preceding text; falls back to leader.
   text = text.replace(
-    /\b(\d+\.?\d*)(%\s*(?:mention rates?|visibility scores?|of (?:all )?(?:AI )?responses?))/gi,
+    /\b(\d+\.?\d*)(%\s*(?:mention rates?|visibility scores?|visibility|of (?:all )?(?:AI )?(?:responses?|results|queries|answers|platforms|models)))/gi,
     (_match: string, _num: string, suffix: string, offset: number) => {
       const nearest = findNearestBrand(text, offset, sortedStats);
       const vis = nearest ? simpleVis(nearest).toFixed(1) : leaderVis;
@@ -113,13 +115,25 @@ export function correctBrandMetricsInText(
     },
   );
 
-  // --- 5. Fix brand counts ---
+  // --- 5. Fix "in XX% of" patterns (appears in / mentioned in / found in) ---
+  // e.g. "appears in 58% of AI-generated responses", "mentioned in 75% of answers"
+  // Finds nearest brand; falls back to leader.
+  text = text.replace(
+    /(\bin\s+)(\d+\.?\d*)(%)(\s+of\b)/gi,
+    (_match: string, inWord: string, _num: string, pctSign: string, ofWord: string, offset: number) => {
+      const nearest = findNearestBrand(text, offset, sortedStats);
+      const vis = nearest ? simpleVis(nearest).toFixed(1) : leaderVis;
+      return `${inWord}${vis}${pctSign}${ofWord}`;
+    },
+  );
+
+  // --- 6. Fix brand counts ---
   const correctBrandCount = brandBreakdownStats.length;
   text = text.replace(/\b\d+\s+(?:unique|different|distinct)\s+brands?\b/gi, `${correctBrandCount} unique brands`);
   text = text.replace(/\b\d+\s+brands?\s+(?:were\s+)?(?:mentioned|identified|found|recommended|detected|analyzed|tracked)\b/gi, `${correctBrandCount} brands mentioned`);
   text = text.replace(/(Total\s+(?:Unique\s+)?Brands?\s*(?:Mentioned)?[:\s]+)\d+/gi, `$1${correctBrandCount}`);
 
-  // --- 6. Terminology ---
+  // --- 7. Terminology ---
   text = text.replace(/mention rates?/gi, 'visibility score');
 
   return text;
