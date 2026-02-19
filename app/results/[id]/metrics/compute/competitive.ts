@@ -109,21 +109,12 @@ export function computeBrandBreakdownStats(
     const shareOfVoice = totalBrandMentions > 0 ? (thisBrandMentions / totalBrandMentions) * 100 : 0;
 
     // First Position and Avg Rank
+    // Call getBrandRank on ALL results (no isMentioned guard) to match the
+    // All Results table's Rank column, which also calls getBrandRank directly.
     let firstPositionCount = 0;
     const ranks: number[] = [];
 
     results.forEach(r => {
-      const isMentioned = isSearchedBrand ? r.brand_mentioned : (r.all_brands_mentioned?.length ? r.all_brands_mentioned.includes(brand) : r.competitors_mentioned?.includes(brand));
-      if (!isMentioned) return;
-
-      const allBrandsInResponseRaw: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
-        ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-        : [searchedBrand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-      // For industry reports, filter out category name and excluded brands from ranking comparison
-      const allBrandsInResponse = isCategory
-        ? allBrandsInResponseRaw.filter(b => !isCategoryName(b, searchedBrand) && !excludedBrands.has(b))
-        : allBrandsInResponseRaw.filter(b => !excludedBrands.has(b));
-
       const rank = getBrandRank(r, brand);
       if (rank !== null) {
         ranks.push(rank);
