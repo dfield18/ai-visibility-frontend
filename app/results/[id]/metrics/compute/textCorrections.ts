@@ -202,13 +202,14 @@ export function correctBrandMetricsInText(
 // ---------------------------------------------------------------------------
 
 /**
- * Full correction function used only by OverviewTab's AI Analysis section.
- * Calls correctBrandMetricsInText AND also handles:
- * - Market Leader stats injection
- * - Competitive Landscape paragraph rebuild
- * - First-occurrence brand annotation (appropriate for long-form summary)
- * - Visibility score definition (first occurrence only)
- * - "suggest/suggests" variation
+ * Correction function for OverviewTab's AI Analysis section.
+ *
+ * The GPT prompt is instructed to NOT include percentages or numbers.
+ * This function:
+ *   1. Prepends a short stats header with top brands + visibility scores
+ *      (derived from the same BrandBreakdownRow[] data used everywhere else)
+ *   2. Strips any stray percentages GPT may have included (safety net)
+ *   3. Normalises terminology ("mention rate" → "visibility score")
  */
 export function correctIndustryAISummary(
   text: string,
@@ -216,95 +217,23 @@ export function correctIndustryAISummary(
 ): string {
   if (brandBreakdownStats.length === 0) return text;
 
-  const leader = brandBreakdownStats[0];
+  // --- Build deterministic stats header from computed data ---
+  const topN = brandBreakdownStats.filter(b => simpleVis(b) > 0).slice(0, 5);
+  const topList = topN.map(b => `${b.brand} (${simpleVis(b).toFixed(1)}%)`).join(', ');
+  const totalBrands = brandBreakdownStats.length;
+  const totalResponses = brandBreakdownStats[0]?.total ?? 0;
+  const statsHeader = `**Top brands**: ${topList} | ${totalBrands} brands across ${totalResponses} responses\n\n`;
 
-  // --- Apply shared metric corrections FIRST on GPT's raw text ---
-  // This must run before ML injection and competitive landscape rebuild so those
-  // deterministic (already-correct) sections aren't re-processed by the regex
-  // number-replacement logic.
-  text = correctBrandMetricsInText(text, brandBreakdownStats);
+  // --- Safety net: strip stray percentages GPT included despite instructions ---
+  text = text.replace(/\s*\(\d+\.?\d*%\)/g, '');  // "(XX%)" parenthetical annotations
+  text = text.replace(
+    /\b\d+\.?\d*%\s*(?=visibility|mention|of (?:AI |all )?responses|of (?:all )?(?:results|queries|answers|platforms))/gi,
+    '',
+  );  // "XX% visibility …" or "XX% of responses …"
+  text = text.replace(/  +/g, ' ');
 
-  // --- Market Leader injection ---
-  // Put visibility score FIRST with its definition inline so the correct number
-  // is always associated with the label, even if GPT wrote a wrong number earlier.
-  const mlStats = `, with a ${simpleVis(leader).toFixed(1)}% visibility score (% of AI responses that mention the brand) and a ${leader.shareOfVoice.toFixed(1)}% share of voice (% of total brand mentions captured)`;
-  text = text.replace(/(Market leader\s*[-–—]\s*[\s\S]+?)\.(?!\d)/i, `$1${mlStats}.`);
+  // --- Terminology ---
+  text = text.replace(/mention rates?/gi, 'visibility score');
 
-  // --- Replace "Competitive landscape" paragraph with deterministic text ---
-  const scoreGroups = new Map<string, string[]>();
-  const scoreOrder: string[] = [];
-  for (const b of brandBreakdownStats) {
-    const key = simpleVis(b).toFixed(1);
-    if (!scoreGroups.has(key)) { scoreGroups.set(key, []); scoreOrder.push(key); }
-    scoreGroups.get(key)!.push(b.brand);
-  }
-  const compSentences: string[] = [];
-  for (const key of scoreOrder) {
-    const brands = scoreGroups.get(key)!;
-    const score = parseFloat(key);
-    if (score <= 0) continue;
-    const list = brands.length <= 2
-      ? brands.map(b => `${b} (${key}%)`).join(' and ')
-      : brands.slice(0, -1).map(b => `${b} (${key}%)`).join(', ') + ', and ' + `${brands[brands.length - 1]} (${key}%)`;
-    if (score >= 99.9) {
-      compSentences.push(`${list} ${brands.length === 1 ? 'leads' : 'lead'} with perfect visibility across all AI platforms`);
-    } else if (score >= 75) {
-      compSentences.push(`${list} ${brands.length === 1 ? 'follows' : 'follow'} with strong visibility`);
-    } else if (score >= 50) {
-      compSentences.push(`${list} ${brands.length === 1 ? 'maintains' : 'maintain'} moderate visibility`);
-    } else if (score >= 25) {
-      compSentences.push(`${list} ${brands.length === 1 ? 'shows' : 'show'} limited visibility`);
-    } else {
-      compSentences.push(`${list} ${brands.length === 1 ? 'has' : 'have'} minimal visibility`);
-    }
-  }
-  if (compSentences.length > 0) {
-    text = text.replace(
-      /Competitive landscape\s*[-–—]\s*[\s\S]*?(?=\n\n|$)/i,
-      `Competitive landscape – ${compSentences.join('. ')}.`
-    );
-  }
-
-  // --- Annotate first occurrence of each brand with visibility % ---
-  // (appropriate for the long-form AI summary, NOT for recommendation cards)
-  // For short brands (≤3 chars like "On"), use case-sensitive matching to avoid
-  // annotating common words like "on", "in", "be" (same guard as findNearestBrand).
-  const sortedStats = [...brandBreakdownStats].sort((a, b) => b.brand.length - a.brand.length);
-  const annotated = new Set<string>();
-  for (const stat of sortedStats) {
-    const key = stat.brand.toLowerCase();
-    if (annotated.has(key)) continue;
-    const escaped = stat.brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const flags = stat.brand.length <= 3 ? '' : 'i';
-    text = text.replace(
-      new RegExp(`\\b(${escaped})\\b(?!\\s*\\()`, flags),
-      `$1 (${simpleVis(stat).toFixed(1)}%)`
-    );
-    annotated.add(key);
-  }
-
-  // --- Add "visibility score" definition on first occurrence ---
-  // Skip if followed by "(" (already defined) or "of <digit>" (would break sentence).
-  // The ML injection above already includes the definition inline, so check if it's
-  // already present before adding it again.
-  const hasVsDefinition = /visibility score\s*\(\s*%\s*of\s*AI\s*responses/i.test(text);
-  if (!hasVsDefinition) {
-    let vsDefined = false;
-    text = text.replace(/visibility scores?(?!\s*\(|\s+of\s+\d)/gi, () => {
-      if (!vsDefined) { vsDefined = true; return 'visibility score (% of AI responses that mention the brand)'; }
-      return 'visibility score';
-    });
-  }
-
-  // --- Vary repeated "suggest/suggests" usage ---
-  const alternatives = ['indicates', 'points to', 'reflects'];
-  let altIdx = 0;
-  let count = 0;
-  text = text.replace(/\b(suggests?)\b/gi, (match) => {
-    count++;
-    if (count === 1) return match;
-    return alternatives[(altIdx++) % alternatives.length];
-  });
-
-  return text;
+  return statsHeader + text;
 }
