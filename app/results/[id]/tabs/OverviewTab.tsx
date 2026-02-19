@@ -2205,14 +2205,13 @@ export const OverviewTab = ({
                       <p className="text-xs text-gray-500 mb-3">{providerResults.length} responses from {getProviderLabel(provider)}</p>
                       <div className="space-y-2">
                         {providerResults.map((result: Result) => {
-                          const isMentioned = isCategory
-                            ? (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand || '') : result.competitors_mentioned?.includes(selectedBrand || ''))
-                            : result.brand_mentioned;
-
-                          // Calculate position from all_brands_mentioned array order
-                          const position = (isMentioned && selectedBrand)
+                          // Calculate position by scanning full response text
+                          const position = (!result.error && selectedBrand)
                             ? getBrandRank(result, selectedBrand)
                             : null;
+                          const isMentioned = position !== null || (isCategory
+                            ? (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand || '') : result.competitors_mentioned?.includes(selectedBrand || ''))
+                            : result.brand_mentioned);
 
                           return (
                             <div
@@ -2479,10 +2478,12 @@ export const OverviewTab = ({
                   );
                 };
 
-                // Mentioned badge
+                // Mentioned badge — consistent with rank: if brand is found in
+                // the response text (position !== null) OR backend flagged it,
+                // show as mentioned.
                 const getMentionedBadge = () => {
                   if (result.error) return <span className="text-xs text-gray-400">{'\u2014'}</span>;
-                  if (result.brand_mentioned) {
+                  if (result.brand_mentioned || position !== null) {
                     return <span className="text-xs font-medium text-emerald-600">Yes</span>;
                   }
                   return <span className="text-xs text-gray-400">No</span>;

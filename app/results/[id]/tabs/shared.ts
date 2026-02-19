@@ -281,60 +281,16 @@ export const getSentimentDotColor = (sentiment: string | null): string => {
   }
 };
 
-// Strip preamble/advice sections so ranking uses only the recommendation list portion.
-// Also strips diacritical marks so that "Condé" and "Conde" match in indexOf comparisons.
-export const getTextForRanking = (text: string, provider: string): string => {
-  let result: string;
-
-  // AI Overviews: strip question headers and [Top Search Results] section
-  if (provider === 'ai_overviews') {
-    const separatorIdx = text.indexOf('---');
-    let cleaned = separatorIdx >= 0 ? text.substring(0, separatorIdx) : text;
-    const searchResultsIdx = cleaned.indexOf('[Top Search Results]');
-    if (searchResultsIdx >= 0) cleaned = cleaned.substring(0, searchResultsIdx);
-    // Remove bold question headers (e.g. "**What shoes are best?**") — brands in questions
-    // are not recommendations, so excluding them from ranking is correct
-    cleaned = cleaned.replace(/\*\*[^*]*\?[^*]*\*\*/g, '');
-    result = cleaned;
-  } else {
-    // All providers: if a recommendation list section exists, use only that portion
-    // Match common list headers and markdown headings (##/###) containing recommendation keywords
-    const listHeaderPattern = /(?:^|\n)\s*(?:\*{0,2}(?:#+\s*)?(?:Top|Best|Recommended|Here (?:are|is)|Our (?:Top|Pick)|(?:\d+)\s+Best)[^\n]*)/im;
-    const match = text.match(listHeaderPattern);
-    if (match && match.index !== undefined && match.index > 100) {
-      result = text.substring(match.index);
-    } else {
-      // Also match markdown headings (##/###) that aren't "Key Factors"/"Considerations"/etc.
-      // Find the LAST heading section that likely contains the actual recommendations
-      const headingPattern = /(?:^|\n)\s*#{2,4}\s+[^\n]*/gm;
-      let lastProductHeading: { index: number } | null = null;
-      let headingMatch;
-      while ((headingMatch = headingPattern.exec(text)) !== null) {
-        const heading = headingMatch[0].toLowerCase();
-        // Skip headings that are clearly preamble or post-recommendation sections
-        if (/factor|consider|tip|guide|intro|key |how to|what to|why |feature|conclusion|summary|source|reference|disclaim|note|faq|related/.test(heading)) continue;
-        if (headingMatch.index > 100) {
-          lastProductHeading = { index: headingMatch.index };
-        }
-      }
-      result = lastProductHeading ? text.substring(lastProductHeading.index) : text;
-    }
-  }
-
-  // Strip diacritics so "Condé Nast" matches "Conde Nast" in indexOf comparisons
-  return stripDiacritics(result);
-};
-
 /**
- * Get the rank of a brand within a single result by scanning the response text
- * and finding where each known brand first appears. Rank = how many other brands
- * appear before the searched brand + 1.
+ * Get the rank of a brand within a single result by scanning the full response
+ * text and finding where each known brand first appears. Rank = how many other
+ * brands appear before the searched brand + 1.
  *
- * First tries `getTextForRanking` (strips preambles/headers) for accurate list-based
- * ranking. Falls back to the full response text if the brand isn't found in the
- * cleaned version (e.g. AI Overviews stripping sections where the brand appears).
+ * Uses the full response text (not cleaned/stripped text) so the rank matches
+ * exactly what the user sees in the response — the order brands appear relative
+ * to other brands.
  *
- * Returns 1-indexed rank, or null if the brand is not found in either text.
+ * Returns 1-indexed rank, or null if the brand is not found in the text.
  */
 export function getBrandRank(
   result: Result,
@@ -342,22 +298,15 @@ export function getBrandRank(
 ): number | null {
   if (!brand || !result.response_text) return null;
   const brandLower = stripDiacritics(brand).toLowerCase();
+  const fullText = stripDiacritics(result.response_text).toLowerCase();
+
+  const brandPos = fullText.indexOf(brandLower);
+  if (brandPos < 0) return null;
 
   // Get the list of all brands in this response
   const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
     ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
     : (result.competitors_mentioned || []).filter((b): b is string => typeof b === 'string');
-
-  if (allBrands.length === 0) return null;
-
-  // Try cleaned text first (strips preambles for accurate list-based ranking),
-  // then fall back to full text if the brand isn't found in the cleaned version.
-  const cleanedText = getTextForRanking(result.response_text, result.provider).toLowerCase();
-  const fullText = stripDiacritics(result.response_text).toLowerCase();
-  const rankingText = cleanedText.indexOf(brandLower) >= 0 ? cleanedText : fullText;
-
-  const brandPos = rankingText.indexOf(brandLower);
-  if (brandPos < 0) return null;
 
   // Count how many other brands appear before the searched brand
   let brandsBeforeCount = 0;
@@ -365,7 +314,7 @@ export function getBrandRank(
     const bLower = stripDiacritics(b).toLowerCase();
     // Skip the brand itself and name overlaps (e.g. "Nike" inside "Nike Air Max")
     if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-    const bPos = rankingText.indexOf(bLower);
+    const bPos = fullText.indexOf(bLower);
     if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
   }
 
