@@ -666,7 +666,7 @@ export const ReferenceTab = ({
                                       Best position shown: {bestPos}
                                     </p>
                                     <p className="text-sm text-gray-700">
-                                      Average position: {avgPos}
+                                      Avg. position (all responses): {avgPos}
                                     </p>
                                     <p className="text-sm text-gray-700">
                                       Worst position shown: {worstDisplay}
@@ -879,7 +879,7 @@ export const ReferenceTab = ({
                                   <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
                                     <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-lg whitespace-nowrap">
                                       <p className="text-xs text-gray-600">
-                                        Avg: {data.avgRanking.toFixed(1)}
+                                        Avg (all): {data.avgRanking.toFixed(1)}
                                       </p>
                                     </div>
                                   </div>

@@ -28,7 +28,6 @@ import {
 } from './compute/normalization';
 import {
   computeFilteredBrandMentions,
-  computeShareOfVoiceData,
   computeLlmBreakdownBrands,
   computeLlmBreakdownStats,
   computePromptBreakdownStats,
@@ -106,7 +105,7 @@ import type {
   RangeViewDot,
   LlmBreakdownRow,
   PromptBreakdownRow,
-  ShareOfVoiceEntry,
+
   BrandMentionEntry,
   ProviderVisibilityScore,
   FramingEvidenceItem,
@@ -370,7 +369,6 @@ export function useResultsStore(params: UseResultsStoreParams) {
   // =========================================================================
   const [brandMentionsProviderFilter, setBrandMentionsProviderFilter] = useState<string>('all');
   const [brandMentionsTrackingFilter, setBrandMentionsTrackingFilter] = useState<'all' | 'tracked'>('all');
-  const [shareOfVoiceFilter, setShareOfVoiceFilter] = useState<'all' | 'tracked'>('tracked');
   const [llmBreakdownBrandFilter, setLlmBreakdownBrandFilter] = useState<string>('');
   const [promptBreakdownLlmFilter, setPromptBreakdownLlmFilter] = useState<string>('all');
   const [tableSortColumn, setTableSortColumn] = useState<'default' | 'prompt' | 'llm' | 'position' | 'mentioned' | 'sentiment' | 'competitors'>('default');
@@ -396,19 +394,6 @@ export function useResultsStore(params: UseResultsStoreParams) {
       excludedBrands,
     ),
     [runStatus, globallyFilteredResults, brandMentionsProviderFilter, brandMentionsTrackingFilter, trackedBrands, excludedBrands],
-  );
-
-  const shareOfVoiceData = useMemo(
-    () => computeShareOfVoiceData(
-      runStatus,
-      globallyFilteredResults,
-      brandMentionsProviderFilter,
-      trackedBrands,
-      shareOfVoiceFilter,
-      excludedBrands,
-      extractUntrackedBrands,
-    ),
-    [runStatus, globallyFilteredResults, brandMentionsProviderFilter, trackedBrands, shareOfVoiceFilter, excludedBrands],
   );
 
   const llmBreakdownBrands = useMemo(
@@ -841,7 +826,6 @@ export function useResultsStore(params: UseResultsStoreParams) {
 
     // -- Overview metrics --
     filteredBrandMentions,
-    shareOfVoiceData,
     llmBreakdownBrands,
     llmBreakdownStats,
     promptBreakdownStats,
@@ -865,8 +849,6 @@ export function useResultsStore(params: UseResultsStoreParams) {
     setBrandMentionsProviderFilter,
     brandMentionsTrackingFilter,
     setBrandMentionsTrackingFilter,
-    shareOfVoiceFilter,
-    setShareOfVoiceFilter,
     llmBreakdownBrandFilter,
     setLlmBreakdownBrandFilter,
     promptBreakdownLlmFilter,

@@ -810,6 +810,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
               total: results.length,
               mentioned,
               avgSentimentScore,
+              // In __all__ mode this is sentiment coverage, not brand visibility
               visibilityScore: results.length > 0 ? (mentioned / results.length) * 100 : 0,
             };
           }).filter(p => p.avgSentimentScore !== null && p.mentioned > 0);
@@ -993,7 +994,7 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                               <div className="space-y-1 text-gray-600">
                                 <p>{isIssue ? 'Framing' : 'Sentiment'}: <span className="font-medium">{sentimentLabels[Math.round(data.avgSentimentScore)] || 'N/A'}</span></p>
                                 <p>Mentions: <span className="font-medium">{data.mentioned}</span> of {data.total} responses</p>
-                                <p>{isIssue ? 'Coverage' : 'Visibility'}: <span className="font-medium">{data.visibilityScore.toFixed(0)}%</span></p>
+                                <p>{isIssue ? 'Coverage' : effectiveBrand === '__all__' ? 'Sentiment Coverage' : 'Visibility'}: <span className="font-medium">{data.visibilityScore.toFixed(0)}%</span></p>
                                 {data.avgRank && (
                                   <p>Avg. Position: <span className="font-medium">#{data.avgRank.toFixed(1)}</span></p>
                                 )}

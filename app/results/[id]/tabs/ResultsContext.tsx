@@ -13,7 +13,7 @@ import type {
   RangeViewDot,
   LlmBreakdownRow,
   PromptBreakdownRow,
-  ShareOfVoiceEntry,
+
   BrandMentionEntry,
   ProviderVisibilityScore,
   FramingEvidenceItem,
@@ -96,7 +96,6 @@ export interface ResultsContextValue {
   llmBreakdownStats: Record<string, LlmBreakdownRow>;
   llmBreakdownBrands: string[];
   promptBreakdownStats: PromptBreakdownRow[];
-  shareOfVoiceData: ShareOfVoiceEntry[];
   filteredBrandMentions: Record<string, BrandMentionEntry>;
   llmBreakdownTakeaway: string | null;
   providerVisibilityScores: ProviderVisibilityScore[];
@@ -116,8 +115,6 @@ export interface ResultsContextValue {
   setBrandMentionsProviderFilter: (v: string) => void;
   brandMentionsTrackingFilter: 'all' | 'tracked';
   setBrandMentionsTrackingFilter: (v: 'all' | 'tracked') => void;
-  shareOfVoiceFilter: 'all' | 'tracked';
-  setShareOfVoiceFilter: (v: 'all' | 'tracked') => void;
   positionChartBrandFilter: string;
   setPositionChartBrandFilter: (v: string) => void;
   positionChartPromptFilter: string;

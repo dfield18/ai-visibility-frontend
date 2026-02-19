@@ -122,15 +122,6 @@ export interface PromptBreakdownRow {
   pfPlatformAgreement: number;
 }
 
-export interface ShareOfVoiceEntry {
-  name: string;
-  value: number;
-  percentage: number;
-  color: string;
-  isSelected: boolean;
-  isOther: boolean;
-}
-
 export interface BrandMentionEntry {
   count: number;
   rate: number;
