@@ -330,10 +330,11 @@ export const getTextForRanking = (text: string, provider: string): string => {
  * and finding where each known brand first appears. Rank = how many other brands
  * appear before the searched brand + 1.
  *
- * Uses `getTextForRanking` to strip preambles/headers so ranking reflects the
- * actual recommendation list, not introductory text.
+ * First tries `getTextForRanking` (strips preambles/headers) for accurate list-based
+ * ranking. Falls back to the full response text if the brand isn't found in the
+ * cleaned version (e.g. AI Overviews stripping sections where the brand appears).
  *
- * Returns 1-indexed rank, or null if the brand is not found.
+ * Returns 1-indexed rank, or null if the brand is not found in either text.
  */
 export function getBrandRank(
   result: Result,
@@ -349,8 +350,12 @@ export function getBrandRank(
 
   if (allBrands.length === 0) return null;
 
-  // Scan text to find where each brand first appears
-  const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+  // Try cleaned text first (strips preambles for accurate list-based ranking),
+  // then fall back to full text if the brand isn't found in the cleaned version.
+  const cleanedText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+  const fullText = stripDiacritics(result.response_text).toLowerCase();
+  const rankingText = cleanedText.indexOf(brandLower) >= 0 ? cleanedText : fullText;
+
   const brandPos = rankingText.indexOf(brandLower);
   if (brandPos < 0) return null;
 
