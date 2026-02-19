@@ -87,8 +87,7 @@ import { ReferenceTab } from './tabs/ReferenceTab';
 import { ChatGPTAdsTab } from './tabs/ChatGPTAdsTab';
 import { ResultsProvider } from './tabs/ResultsContext';
 import { BrandFilterPanel } from './BrandFilterPanel';
-import { stripDiacritics } from './metrics/compute/normalization';
-import { getTextForRanking, isCategoryName } from './tabs/shared';
+import { getBrandRank, isCategoryName } from './tabs/shared';
 import { getSearchTypeConfig, type TabId } from '@/lib/searchTypeConfig';
 import { PaywallOverlay } from '@/components/PaywallOverlay';
 import { PlaceholderChart } from '@/components/PlaceholderChart';
@@ -921,30 +920,8 @@ export default function ResultsPage() {
     const rows = globallyFilteredResults
       .filter((r: Result) => !r.error || r.provider === 'ai_overviews')
       .map((r: Result) => {
-        let rank = '';
-        if (r.response_text && r.brand_mentioned) {
-          const brandLower = stripDiacritics(runStatus.brand).toLowerCase();
-          const textLower = getTextForRanking(r.response_text, r.provider).toLowerCase();
-          const brandTextPos = textLower.indexOf(brandLower);
-          const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
-            ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-            : [runStatus.brand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
-          if (brandTextPos >= 0) {
-            let brandsBeforeCount = 0;
-            for (const b of allBrands) {
-              const bLower = stripDiacritics(b).toLowerCase();
-              if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-              const bPos = textLower.indexOf(bLower);
-              if (bPos >= 0 && bPos < brandTextPos) {
-                brandsBeforeCount++;
-              }
-            }
-            rank = String(brandsBeforeCount + 1);
-          } else {
-            rank = String(allBrands.length + 1);
-          }
-        }
+        const rankNum = getBrandRank(r, runStatus.brand);
+        const rank = rankNum !== null ? String(rankNum) : '';
 
         return [
           `"${r.prompt.replace(/"/g, '""')}"`,

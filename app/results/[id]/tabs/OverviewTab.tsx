@@ -33,7 +33,7 @@ import {
   metricCardBackgrounds,
   PROVIDER_ORDER,
   POSITION_CATEGORIES,
-  getTextForRanking,
+  getBrandRank,
   isCategoryName,
 } from './shared';
 import { stripDiacritics } from '../metrics/compute/normalization';
@@ -2207,32 +2207,10 @@ export const OverviewTab = ({
                             ? (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand || '') : result.competitors_mentioned?.includes(selectedBrand || ''))
                             : result.brand_mentioned;
 
-                          // Calculate position for this result
-                          let position: number | null = null;
-                          if (result.response_text && selectedBrand && isMentioned) {
-                            const brandLower = stripDiacritics(selectedBrand).toLowerCase();
-                            const allBrandsRaw: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                              ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                              : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-                            const allBrands = isCategory
-                              ? allBrandsRaw.filter(b => !isCategoryName(b, runStatus?.brand || '') && !excludedBrands.has(b))
-                              : allBrandsRaw.filter(b => !excludedBrands.has(b));
-
-                            const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
-                            const brandPos = rankingText.indexOf(brandLower);
-                            if (brandPos >= 0) {
-                              let brandsBeforeCount = 0;
-                              for (const b of allBrands) {
-                                const bLower = stripDiacritics(b).toLowerCase();
-                                if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-                                const bPos = rankingText.indexOf(bLower);
-                                if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
-                              }
-                              position = brandsBeforeCount + 1;
-                            } else {
-                              position = allBrands.length + 1;
-                            }
-                          }
+                          // Calculate position from all_brands_mentioned array order
+                          const position = (isMentioned && selectedBrand)
+                            ? getBrandRank(result, selectedBrand)
+                            : null;
 
                           return (
                             <div
@@ -2475,40 +2453,11 @@ export const OverviewTab = ({
             <table className="w-full table-fixed">
               <tbody>
               {sortedResults.map((result: Result, resultIdx: number) => {
-                // Calculate position for this result based on first text appearance
-                let position: number | null = null;
-                if (result.response_text && !result.error) {
-                  const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
-                  const brandLower = stripDiacritics(selectedBrand || '').toLowerCase();
-                  const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
-
-                  const isMentioned = isCategory
-                    ? (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand || '') : result.competitors_mentioned?.includes(selectedBrand || ''))
-                    : result.brand_mentioned;
-
-                  if (isMentioned && brandLower) {
-                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
-                    const brandTextPos = textLower.indexOf(brandLower);
-                    if (brandTextPos >= 0) {
-                      let brandsBeforeCount = 0;
-                      for (const b of allBrands) {
-                        const bLower = stripDiacritics(b).toLowerCase();
-                        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-                        const bPos = textLower.indexOf(bLower);
-                        if (bPos >= 0 && bPos < brandTextPos) {
-                          brandsBeforeCount++;
-                        }
-                      }
-                      position = brandsBeforeCount + 1;
-                    } else {
-                      // Brand not found in cleaned text but marked as mentioned
-                      position = allBrands.length + 1;
-                    }
-                  }
-                }
+                // Calculate position from all_brands_mentioned array order
+                const rankBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
+                const position = (!result.error && rankBrand)
+                  ? getBrandRank(result, rankBrand)
+                  : null;
 
                 // Position badge styling
                 const getPositionBadge = () => {
@@ -2789,39 +2738,11 @@ export const OverviewTab = ({
                 ? ['Question', 'Model', 'Depth', 'Framing', 'Related Issues', 'Response']
                 : ['Question', 'Model', 'Rank', 'Mentioned', 'Sentiment', 'Competitors', 'Response'];
               const rows = sortedResults.map((result: Result) => {
-                // Calculate position based on first text appearance
-                let position: number | string = '-';
-                if (result.response_text && !result.error) {
-                  const selectedBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
-                  const brandLower = stripDiacritics(selectedBrand || '').toLowerCase();
-                  const textLower = getTextForRanking(result.response_text, result.provider).toLowerCase();
-                  const isMentioned = isCategory
-                    ? (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand || '') : result.competitors_mentioned?.includes(selectedBrand || ''))
-                    : result.brand_mentioned;
-
-                  if (isMentioned && brandLower) {
-                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
-                    const brandTextPos = textLower.indexOf(brandLower);
-                    if (brandTextPos >= 0) {
-                      let brandsBeforeCount = 0;
-                      for (const b of allBrands) {
-                        const bLower = stripDiacritics(b).toLowerCase();
-                        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-                        const bPos = textLower.indexOf(bLower);
-                        if (bPos >= 0 && bPos < brandTextPos) {
-                          brandsBeforeCount++;
-                        }
-                      }
-                      position = brandsBeforeCount + 1;
-                    } else {
-                      // Brand not found in cleaned text but marked as mentioned
-                      position = allBrands.length + 1;
-                    }
-                  }
-                }
+                // Calculate position from all_brands_mentioned array order
+                const csvRankBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
+                const position: number | string = (!result.error && csvRankBrand)
+                  ? (getBrandRank(result, csvRankBrand) ?? '-')
+                  : '-';
 
                 const sentimentLabel = result.brand_sentiment === 'strong_endorsement' ? 'Strong' :
                   result.brand_sentiment === 'positive_endorsement' ? 'Positive' :

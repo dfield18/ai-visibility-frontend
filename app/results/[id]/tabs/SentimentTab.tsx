@@ -25,10 +25,9 @@ import {
   getProviderBrandColor,
   getProviderIcon,
   getDomain,
-  getTextForRanking,
+  getBrandRank,
   isCategoryName,
 } from './shared';
-import { stripDiacritics } from '../metrics/compute/normalization';
 import { useResults, useResultsUI } from './ResultsContext';
 
 // No props needed - all data comes from context
@@ -182,29 +181,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                 .join('; ')
             : '';
 
-          // Calculate position/rank
-          let rank = 0;
-          const brandLower = stripDiacritics(runStatus.brand).toLowerCase();
-          if (r.brand_mentioned && r.response_text) {
-            const allBrands: string[] = r.all_brands_mentioned && r.all_brands_mentioned.length > 0
-              ? r.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-              : [runStatus.brand, ...(r.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
-            const rankingText = getTextForRanking(r.response_text, r.provider).toLowerCase();
-            const brandPos = rankingText.indexOf(brandLower);
-            if (brandPos >= 0) {
-              let brandsBeforeCount = 0;
-              for (const b of allBrands) {
-                const bLower = stripDiacritics(b).toLowerCase();
-                if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-                const bPos = rankingText.indexOf(bLower);
-                if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
-              }
-              rank = brandsBeforeCount + 1;
-            } else {
-              rank = allBrands.length + 1;
-            }
-          }
+          // Calculate position/rank from all_brands_mentioned array order
+          const rank = getBrandRank(r, runStatus.brand) ?? 0;
 
           return [
             `"${r.prompt.replace(/"/g, '""')}"`,
@@ -400,31 +378,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
               </p>
               <div className="overflow-y-auto space-y-0" style={{ maxHeight: '400px' }}>
                 {matchingResults.map((result, idx) => {
-                  // Calculate rank using same logic as All Answers chart
-                  let rank = 0;
-                  const brandLower = stripDiacritics(runStatus?.brand || '').toLowerCase();
-                  const isMentioned = result.brand_mentioned;
-
-                  if (isMentioned && result.response_text) {
-                    const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                      ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                      : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
-                    const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
-                    const brandPos = rankingText.indexOf(brandLower);
-                    if (brandPos >= 0) {
-                      let brandsBeforeCount = 0;
-                      for (const b of allBrands) {
-                        const bLower = stripDiacritics(b).toLowerCase();
-                        if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-                        const bPos = rankingText.indexOf(bLower);
-                        if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
-                      }
-                      rank = brandsBeforeCount + 1;
-                    } else {
-                      rank = allBrands.length + 1;
-                    }
-                  }
+                  // Calculate rank from all_brands_mentioned array order
+                  const rank = getBrandRank(result, runStatus?.brand || '') ?? 0;
 
                   const responsePreview = (result.response_text || '').length > 10000
                     ? (result.response_text || '').substring(0, 10000) + '...'
@@ -1706,29 +1661,8 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
                       </colgroup>
                       <tbody>
                         {filteredSentimentResults.map((result: Result) => {
-                        // Calculate rank
-                        let rank = 0;
-                        const brandLower = stripDiacritics(runStatus?.brand || '').toLowerCase();
-                        if (result.brand_mentioned && result.response_text) {
-                          const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-                            ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-                            : [runStatus?.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
-
-                          const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
-                          const brandPos = rankingText.indexOf(brandLower);
-                          if (brandPos >= 0) {
-                            let brandsBeforeCount = 0;
-                            for (const b of allBrands) {
-                              const bLower = stripDiacritics(b).toLowerCase();
-                              if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-                              const bPos = rankingText.indexOf(bLower);
-                              if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
-                            }
-                            rank = brandsBeforeCount + 1;
-                          } else {
-                            rank = allBrands.length + 1;
-                          }
-                        }
+                        // Calculate rank from all_brands_mentioned array order
+                        const rank = getBrandRank(result, runStatus?.brand || '') ?? 0;
 
                         // Position badge styling
                         const getPositionBadge = () => {

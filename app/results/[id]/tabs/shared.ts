@@ -325,36 +325,54 @@ export const getTextForRanking = (text: string, provider: string): string => {
   return stripDiacritics(result);
 };
 
+/**
+ * Get the rank of a brand within a single result based on its position in
+ * `all_brands_mentioned` (ordered by first appearance in the AI response).
+ * Returns 1-indexed rank, or null if the brand is not found.
+ */
+export function getBrandRank(
+  result: Result,
+  brand: string,
+): number | null {
+  if (!brand) return null;
+  const brandLower = stripDiacritics(brand).toLowerCase();
+
+  // Use all_brands_mentioned (ordered by first appearance) when available
+  const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
+    ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
+    : [];
+
+  if (allBrands.length > 0) {
+    const idx = allBrands.findIndex(b => stripDiacritics(b).toLowerCase() === brandLower);
+    if (idx >= 0) return idx + 1;
+    return null;
+  }
+
+  // Fallback: check competitors_mentioned array (also ordered)
+  const competitors = result.competitors_mentioned || [];
+  if (competitors.length > 0) {
+    const idx = competitors.findIndex(b => stripDiacritics(b).toLowerCase() === brandLower);
+    if (idx >= 0) return idx + 1;
+  }
+
+  return null;
+}
+
 export const getResultPosition = (result: Result, runStatus: RunStatusResponse): number | null => {
   if (!result.response_text || result.error || !runStatus) return null;
   const selectedBrand = runStatus.search_type === 'category'
     ? (runStatus.results.find((r: Result) => r.all_brands_mentioned?.length || r.competitors_mentioned?.length)?.all_brands_mentioned?.[0] || runStatus.results.find((r: Result) => r.competitors_mentioned?.length)?.competitors_mentioned?.[0] || '')
     : runStatus.brand;
-  const brandLower = stripDiacritics(selectedBrand || '').toLowerCase();
-  if (!brandLower) return null;
-  // Use all detected brands for ranking, fall back to tracked brands if unavailable
-  const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
-    ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-    : [runStatus.brand, ...(result.competitors_mentioned || [])].filter((b): b is string => typeof b === 'string');
+  if (!selectedBrand) return null;
 
-  // Always rank by text position — array order from backend is not reliable
-  const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
-  const brandPos = rankingText.indexOf(brandLower);
-  if (brandPos >= 0) {
-    let brandsBeforeCount = 0;
-    for (const b of allBrands) {
-      const bLower = stripDiacritics(b).toLowerCase();
-      if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
-      const bPos = rankingText.indexOf(bLower);
-      if (bPos >= 0 && bPos < brandPos) {
-        brandsBeforeCount++;
-      }
-    }
-    return brandsBeforeCount + 1;
+  const rank = getBrandRank(result, selectedBrand);
+  if (rank !== null) return rank;
+
+  // Brand not found in arrays but marked as mentioned — place after known brands
+  if (result.brand_mentioned) {
+    const allBrands = result.all_brands_mentioned?.length || (result.competitors_mentioned?.length ?? 0);
+    return allBrands + 1;
   }
-
-  // Brand not found in text but marked as mentioned — place after known brands
-  if (result.brand_mentioned) return allBrands.length + 1;
   return null;
 };
 
