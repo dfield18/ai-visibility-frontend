@@ -40,6 +40,7 @@ import {
   getResultBrands,
 } from './brandHelpers';
 
+import { stripDiacritics } from './normalization';
 import { truncate } from '@/lib/utils';
 
 // ---------------------------------------------------------------------------
@@ -455,15 +456,34 @@ export function computePromptBreakdownStats(
       excludedBrands,
     );
 
-    // First Position: how often the selected brand appears first
+    // First Position: how often the selected brand is the first brand mentioned
+    // Uses full-text scanning to match the All Results table's First Brand column.
+    const selectedBrandLower = selectedBrand.toLowerCase();
     let firstPositionCount = 0;
     const ranks: number[] = [];
 
     promptResults.forEach(r => {
       const rank = getBrandRank(r, selectedBrand);
-      if (rank !== null) {
-        ranks.push(rank);
-        if (rank === 1) firstPositionCount++;
+      if (rank !== null) ranks.push(rank);
+
+      if (!r.response_text) return;
+      const rBrands = (r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [])
+        .filter((b): b is string => typeof b === 'string')
+        .filter(b => isCategory ? !isCategoryName(b, searchedBrand) && !excludedBrands.has(b) : !excludedBrands.has(b));
+      if (!isCategory && !excludedBrands.has(selectedBrand) && !rBrands.some(b => b.toLowerCase() === selectedBrandLower)) {
+        rBrands.push(selectedBrand);
+      }
+      if (rBrands.length > 0) {
+        const fullText = stripDiacritics(r.response_text).toLowerCase();
+        let firstBrand: string | null = null;
+        let firstPos = Infinity;
+        for (const b of rBrands) {
+          const pos = fullText.indexOf(stripDiacritics(b).toLowerCase());
+          if (pos >= 0 && pos < firstPos) { firstPos = pos; firstBrand = b; }
+        }
+        if (firstBrand && firstBrand.toLowerCase() === selectedBrandLower) {
+          firstPositionCount++;
+        }
       }
     });
 
@@ -941,16 +961,35 @@ export function computeOverviewMetrics(
   const overallVisibility = results.length > 0 ? (mentionedCount / results.length) * 100 : 0;
 
   // Average rank and top position count
-  // Rank = position in all_brands_mentioned array (ordered by first appearance)
+  // Top position uses full-text scanning to match the All Results table's
+  // First Brand column: find which brand appears earliest in the full response.
   const ranks: number[] = [];
   let topPositionCount = 0;
   if (selectedBrand) {
+    const selectedBrandLower = selectedBrand.toLowerCase();
     for (const result of results) {
       if (!result.response_text) continue;
       const rank = getBrandRank(result, selectedBrand);
-      if (rank !== null) {
-        ranks.push(rank);
-        if (rank === 1) topPositionCount++;
+      if (rank !== null) ranks.push(rank);
+
+      // Determine "first brand" via full-text scan (same as All Results table)
+      const rBrands = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [])
+        .filter((b): b is string => typeof b === 'string')
+        .filter(b => isCategory ? !isCategoryName(b, runStatus.brand) && !excludedBrands.has(b) : !excludedBrands.has(b));
+      if (!isCategory && !excludedBrands.has(selectedBrand) && !rBrands.some(b => b.toLowerCase() === selectedBrandLower)) {
+        rBrands.push(selectedBrand);
+      }
+      if (rBrands.length > 0) {
+        const fullText = stripDiacritics(result.response_text).toLowerCase();
+        let firstBrand: string | null = null;
+        let firstPos = Infinity;
+        for (const b of rBrands) {
+          const pos = fullText.indexOf(stripDiacritics(b).toLowerCase());
+          if (pos >= 0 && pos < firstPos) { firstPos = pos; firstBrand = b; }
+        }
+        if (firstBrand && firstBrand.toLowerCase() === selectedBrandLower) {
+          topPositionCount++;
+        }
       }
     }
   }

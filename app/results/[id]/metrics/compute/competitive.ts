@@ -18,6 +18,7 @@ import type {
   ProviderVisibilityScore,
 } from '../types';
 import { isCategoryName, getBrandRank, getDomain } from '../../tabs/shared';
+import { stripDiacritics } from './normalization';
 import { countTotalBrandMentionSlots, countBrandMentions } from './brandHelpers';
 
 // ---------------------------------------------------------------------------
@@ -75,15 +76,28 @@ export function computeBrandBreakdownStats(
 
   const sentimentScoreMap = SENTIMENT_SCORE_MAP;
 
-  // Count responses where any (non-excluded) brand was ranked #1 — denominator so top result rates sum to 100%
-  const responsesWithAnyBrand = results.filter(r => {
-    if (!r.response_text) return false;
-    const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-    const filteredBrands = isCategory
-      ? rBrands.filter(b => !isCategoryName(b, searchedBrand) && !excludedBrands.has(b))
-      : rBrands.filter(b => !excludedBrands.has(b));
-    return filteredBrands.length > 0 || (!isCategory && r.brand_mentioned && !excludedBrands.has(searchedBrand));
-  }).length;
+  // Pre-compute the "first brand" for each result by scanning the full response
+  // text. This matches the All Results table's "First Brand" column logic exactly.
+  const firstBrandPerResult = new Map<Result, string | null>();
+  results.forEach(r => {
+    if (!r.response_text) { firstBrandPerResult.set(r, null); return; }
+    const rBrands = (r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [])
+      .filter((b): b is string => typeof b === 'string')
+      .filter(b => isCategory ? !isCategoryName(b, searchedBrand) && !excludedBrands.has(b) : !excludedBrands.has(b));
+    // For brand reports, include the searched brand in the candidate list
+    if (!isCategory && !excludedBrands.has(searchedBrand) && !rBrands.some(b => b.toLowerCase() === searchedBrand.toLowerCase())) {
+      rBrands.push(searchedBrand);
+    }
+    if (rBrands.length === 0) { firstBrandPerResult.set(r, null); return; }
+    const fullText = stripDiacritics(r.response_text).toLowerCase();
+    let firstBrand: string | null = null;
+    let firstPos = Infinity;
+    for (const b of rBrands) {
+      const pos = fullText.indexOf(stripDiacritics(b).toLowerCase());
+      if (pos >= 0 && pos < firstPos) { firstPos = pos; firstBrand = b; }
+    }
+    firstBrandPerResult.set(r, firstBrand || null);
+  });
 
   const brandStats = Array.from(allBrands).map(brand => {
     const isSearchedBrand = brand === searchedBrand;
@@ -108,21 +122,21 @@ export function computeBrandBreakdownStats(
     const thisBrandMentions = countBrandMentions(results, brand, searchedBrand, isCategory);
     const shareOfVoice = totalBrandMentions > 0 ? (thisBrandMentions / totalBrandMentions) * 100 : 0;
 
-    // First Position and Avg Rank
-    // Call getBrandRank on ALL results (no isMentioned guard) to match the
-    // All Results table's Rank column, which also calls getBrandRank directly.
-    let firstPositionCount = 0;
-    const ranks: number[] = [];
+    // First Position: count results where this brand is the "first brand" —
+    // matches the All Results table's First Brand column (full-text scan).
+    const brandLower = brand.toLowerCase();
+    const firstPositionCount = results.filter(r => {
+      const fb = firstBrandPerResult.get(r);
+      return fb !== null && fb !== undefined && fb.toLowerCase() === brandLower;
+    }).length;
+    const firstPositionRate = results.length > 0 ? (firstPositionCount / results.length) * 100 : 0;
 
+    // Avg Rank (still uses getBrandRank for positional ranking)
+    const ranks: number[] = [];
     results.forEach(r => {
       const rank = getBrandRank(r, brand);
-      if (rank !== null) {
-        ranks.push(rank);
-        if (rank === 1) firstPositionCount++;
-      }
+      if (rank !== null) ranks.push(rank);
     });
-
-    const firstPositionRate = results.length > 0 ? (firstPositionCount / results.length) * 100 : 0;
     const avgRank = ranks.length > 0 ? ranks.reduce((a, b) => a + b, 0) / ranks.length : null;
 
     // Average sentiment
