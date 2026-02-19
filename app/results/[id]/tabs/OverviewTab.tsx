@@ -37,7 +37,7 @@ import {
   isCategoryName,
 } from './shared';
 import { stripDiacritics } from '../metrics/compute/normalization';
-import { correctIndustryAISummary } from '../metrics/compute/textCorrections';
+import { correctBrandMetricsInText, correctIndustryAISummary } from '../metrics/compute/textCorrections';
 import { useResults, useResultsUI } from './ResultsContext';
 
 function MarketSpreadDonut({
@@ -1134,6 +1134,8 @@ export const OverviewTab = ({
               text = text.replace(/\*\*/g, '');
               if (isCategory && unfilteredBrandBreakdownStats.length > 0) {
                 text = correctIndustryAISummary(text, unfilteredBrandBreakdownStats);
+              } else if (!isCategory && unfilteredBrandBreakdownStats.length > 0) {
+                text = correctBrandMetricsInText(text, unfilteredBrandBreakdownStats);
               }
               return text;
             })()}</ReactMarkdown>
