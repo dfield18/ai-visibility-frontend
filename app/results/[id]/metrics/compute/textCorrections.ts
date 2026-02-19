@@ -89,8 +89,7 @@ function findNearestBrand(
  *   3. "XX% <metric term>" — find nearest brand, replace percentage
  *   4. "<metric term> <connector> XX%" — find nearest brand, replace percentage
  *   5. "in XX% of" — find nearest brand, replace percentage
- *   6. Brand counts ("N unique brands", etc.)
- *   7. Terminology: "mention rate" → "visibility score"
+ *   6. Brand counts ("N unique brands", etc.) — with global-scope guard
  */
 export function correctBrandMetricsInText(
   text: string,
@@ -121,24 +120,31 @@ export function correctBrandMetricsInText(
     );
   }
 
+  // "visibility score" = brand mention rate (% of responses that mention the brand)
+  // "share of voice" = slot share (brand mentions / total brand mention slots)
+
   // --- 3a. Fix "XX% share of voice" — replace with correct share of voice ---
   // GPT may write share-of-voice numbers; replace with the correct SoV from stats.
+  // Do not infer SoV brand from weak context.
   text = text.replace(
     /\b(\d+\.?\d*)(%\s*(?:share of (?:voice|all mentions|total (?:brand )?mentions|mentions)))/gi,
-    (_match: string, _num: string, suffix: string, offset: number) => {
+    (match: string, _num: string, suffix: string, offset: number) => {
+      if (isNearProvider(text, offset)) return match;
       const nearest = findNearestBrand(text, offset, sortedStats);
-      const stat = nearest || leader;
-      return `${stat.shareOfVoice.toFixed(1)}${suffix}`;
+      if (!nearest) return match;
+      return `${nearest.shareOfVoice.toFixed(1)}${suffix}`;
     },
   );
 
   // --- 3b. Fix "share of voice of/at/is XX%" (number AFTER term) ---
+  // Do not infer SoV brand from weak context.
   text = text.replace(
     /((?:share of (?:voice|all mentions|total (?:brand )?mentions|mentions))\s+(?:of|at|is|around|approximately|:)\s*)(\d+\.?\d*)(%)/gi,
-    (_match: string, prefix: string, _num: string, pctSign: string, offset: number) => {
+    (match: string, prefix: string, _num: string, pctSign: string, offset: number) => {
+      if (isNearProvider(text, offset)) return match;
       const nearest = findNearestBrand(text, offset, sortedStats);
-      const stat = nearest || leader;
-      return `${prefix}${stat.shareOfVoice.toFixed(1)}${pctSign}`;
+      if (!nearest) return match;
+      return `${prefix}${nearest.shareOfVoice.toFixed(1)}${pctSign}`;
     },
   );
 
@@ -187,12 +193,35 @@ export function correctBrandMetricsInText(
 
   // --- 6. Fix brand counts ---
   const correctBrandCount = brandBreakdownStats.length;
-  text = text.replace(/\b\d+\s+(?:unique|different|distinct)\s+brands?\b/gi, `${correctBrandCount} unique brands`);
-  text = text.replace(/\b\d+\s+brands?\s+(?:were\s+)?(?:mentioned|identified|found|recommended|detected|analyzed|tracked)\b/gi, `${correctBrandCount} brands mentioned`);
+  const GLOBAL_CUE = /overall|across all|total brands|entire dataset|in total|combined|altogether/i;
+
+  // 6a. "N unique/different/distinct brands" — only in global-scope sentences
+  text = text.replace(
+    /\b\d+\s+(?:unique|different|distinct)\s+brands?\b/gi,
+    (match: string, offset: number) => {
+      if (isNearProvider(text, offset)) return match;
+      const sentence = text.slice(Math.max(0, text.lastIndexOf('.', offset) + 1), text.indexOf('.', offset + match.length) + 1 || text.length);
+      if (!GLOBAL_CUE.test(sentence)) return match;
+      return `${correctBrandCount} unique brands`;
+    },
+  );
+
+  // 6b. "N brands mentioned/identified/found/…" — only in global-scope sentences
+  text = text.replace(
+    /\b\d+\s+brands?\s+(?:were\s+)?(?:mentioned|identified|found|recommended|detected|analyzed|tracked)\b/gi,
+    (match: string, offset: number) => {
+      if (isNearProvider(text, offset)) return match;
+      const sentence = text.slice(Math.max(0, text.lastIndexOf('.', offset) + 1), text.indexOf('.', offset + match.length) + 1 || text.length);
+      if (!GLOBAL_CUE.test(sentence)) return match;
+      return `${correctBrandCount} brands mentioned`;
+    },
+  );
+
+  // 6c. "Total Brands: N" — explicit label, always replace
   text = text.replace(/(Total\s+(?:Unique\s+)?Brands?\s*(?:Mentioned)?[:\s]+)\d+/gi, `$1${correctBrandCount}`);
 
-  // --- 7. Terminology ---
-  text = text.replace(/mention rates?/gi, 'visibility score');
+  // Rule 7 (blanket "mention rate" → "visibility score" rename) removed.
+  // GPT's original wording is acceptable when numbers are already corrected.
 
   return text;
 }
@@ -209,7 +238,6 @@ export function correctBrandMetricsInText(
  *   1. Prepends a short stats header with top brands + visibility scores
  *      (derived from the same BrandBreakdownRow[] data used everywhere else)
  *   2. Strips any stray percentages GPT may have included (safety net)
- *   3. Normalises terminology ("mention rate" → "visibility score")
  */
 export function correctIndustryAISummary(
   text: string,
@@ -232,8 +260,8 @@ export function correctIndustryAISummary(
   );  // "XX% visibility …" or "XX% of responses …"
   text = text.replace(/  +/g, ' ');
 
-  // --- Terminology ---
-  text = text.replace(/mention rates?/gi, 'visibility score');
+  // Rule 7 (blanket "mention rate" → "visibility score" rename) removed.
+  // GPT's original wording is acceptable when numbers are already corrected.
 
   return statsHeader + text;
 }

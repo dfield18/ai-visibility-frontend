@@ -198,6 +198,9 @@ export const OverviewTab = ({
     promptBreakdownLlmFilter,
     setPromptBreakdownLlmFilter,
     unfilteredBrandBreakdownStats,
+    brandBreakdownStats,
+    brandBreakdownLlmFilter,
+    brandBreakdownPromptFilter,
     excludedBrands,
     // Overview computed data from context
     filteredFramingByProvider,
@@ -1132,10 +1135,14 @@ export const OverviewTab = ({
               // numbers, percentages, and brand names. GPT wraps values in ** **
               // which breaks word boundaries and suffix matching.
               text = text.replace(/\*\*/g, '');
-              if (isCategory && unfilteredBrandBreakdownStats.length > 0) {
-                text = correctIndustryAISummary(text, unfilteredBrandBreakdownStats);
-              } else if (!isCategory && unfilteredBrandBreakdownStats.length > 0) {
-                text = correctBrandMetricsInText(text, unfilteredBrandBreakdownStats);
+              const effectiveStats = (brandBreakdownLlmFilter !== '' && brandBreakdownLlmFilter !== 'all')
+                || (brandBreakdownPromptFilter !== '' && brandBreakdownPromptFilter !== 'all')
+                ? brandBreakdownStats
+                : unfilteredBrandBreakdownStats;
+              if (isCategory && effectiveStats.length > 0) {
+                text = correctIndustryAISummary(text, effectiveStats);
+              } else if (!isCategory && effectiveStats.length > 0) {
+                text = correctBrandMetricsInText(text, effectiveStats);
               }
               return text;
             })()}</ReactMarkdown>

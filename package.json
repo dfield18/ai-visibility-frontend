@@ -6,10 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.1",
+    "@stripe/stripe-js": "^7.0.0",
     "@tanstack/react-query": "^5.60.0",
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^0.460.0",
@@ -20,7 +22,6 @@
     "react-markdown": "^10.1.0",
     "recharts": "^3.7.0",
     "remark-gfm": "^4.0.1",
-    "@stripe/stripe-js": "^7.0.0",
     "stripe": "^17.0.0",
     "zustand": "^5.0.1"
   },
@@ -33,6 +34,7 @@
     "eslint-config-next": "14.2.18",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^4.0.18"
   }
 }
