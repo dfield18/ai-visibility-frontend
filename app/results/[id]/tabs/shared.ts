@@ -326,36 +326,45 @@ export const getTextForRanking = (text: string, provider: string): string => {
 };
 
 /**
- * Get the rank of a brand within a single result based on its position in
- * `all_brands_mentioned` (ordered by first appearance in the AI response).
+ * Get the rank of a brand within a single result by scanning the response text
+ * and finding where each known brand first appears. Rank = how many other brands
+ * appear before the searched brand + 1.
+ *
+ * Uses `getTextForRanking` to strip preambles/headers so ranking reflects the
+ * actual recommendation list, not introductory text.
+ *
  * Returns 1-indexed rank, or null if the brand is not found.
  */
 export function getBrandRank(
   result: Result,
   brand: string,
 ): number | null {
-  if (!brand) return null;
+  if (!brand || !result.response_text) return null;
   const brandLower = stripDiacritics(brand).toLowerCase();
 
-  // Use all_brands_mentioned (ordered by first appearance) when available
+  // Get the list of all brands in this response
   const allBrands: string[] = result.all_brands_mentioned && result.all_brands_mentioned.length > 0
     ? result.all_brands_mentioned.filter((b): b is string => typeof b === 'string')
-    : [];
+    : (result.competitors_mentioned || []).filter((b): b is string => typeof b === 'string');
 
-  if (allBrands.length > 0) {
-    const idx = allBrands.findIndex(b => stripDiacritics(b).toLowerCase() === brandLower);
-    if (idx >= 0) return idx + 1;
-    return null;
+  if (allBrands.length === 0) return null;
+
+  // Scan text to find where each brand first appears
+  const rankingText = getTextForRanking(result.response_text, result.provider).toLowerCase();
+  const brandPos = rankingText.indexOf(brandLower);
+  if (brandPos < 0) return null;
+
+  // Count how many other brands appear before the searched brand
+  let brandsBeforeCount = 0;
+  for (const b of allBrands) {
+    const bLower = stripDiacritics(b).toLowerCase();
+    // Skip the brand itself and name overlaps (e.g. "Nike" inside "Nike Air Max")
+    if (bLower === brandLower || bLower.includes(brandLower) || brandLower.includes(bLower)) continue;
+    const bPos = rankingText.indexOf(bLower);
+    if (bPos >= 0 && bPos < brandPos) brandsBeforeCount++;
   }
 
-  // Fallback: check competitors_mentioned array (also ordered)
-  const competitors = result.competitors_mentioned || [];
-  if (competitors.length > 0) {
-    const idx = competitors.findIndex(b => stripDiacritics(b).toLowerCase() === brandLower);
-    if (idx >= 0) return idx + 1;
-  }
-
-  return null;
+  return brandsBeforeCount + 1;
 }
 
 export const getResultPosition = (result: Result, runStatus: RunStatusResponse): number | null => {
