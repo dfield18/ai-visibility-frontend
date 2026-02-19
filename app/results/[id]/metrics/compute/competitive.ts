@@ -119,7 +119,7 @@ export function computeBrandBreakdownStats(
     // Share of Voice: this brand's mentions / total brand mentions across all results
     // Uses canonical helpers so SoV is consistent across all tabs
     const totalBrandMentions = countTotalBrandMentionSlots(results, searchedBrand, isCategory, excludedBrands);
-    const thisBrandMentions = countBrandMentions(results, brand, searchedBrand, isCategory);
+    const thisBrandMentions = countBrandMentions(results, brand, searchedBrand, isCategory, excludedBrands);
     const shareOfVoice = totalBrandMentions > 0 ? (thisBrandMentions / totalBrandMentions) * 100 : 0;
 
     // First Position: count results where this brand is the "first brand" —

@@ -999,7 +999,7 @@ export function computeOverviewMetrics(
   // Uses canonical helpers (array fields, never text search) for consistency with competitive tab
   const totalBrandMentions = countTotalBrandMentionSlots(results, runStatus.brand, isCategory, excludedBrands);
   const selectedBrandMentions = selectedBrand
-    ? countBrandMentions(results, selectedBrand, runStatus.brand, isCategory)
+    ? countBrandMentions(results, selectedBrand, runStatus.brand, isCategory, excludedBrands)
     : 0;
   const shareOfVoice = totalBrandMentions > 0 ? (selectedBrandMentions / totalBrandMentions) * 100 : 0;
 

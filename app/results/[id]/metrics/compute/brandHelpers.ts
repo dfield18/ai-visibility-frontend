@@ -172,13 +172,19 @@ export function countTotalBrandMentionSlots(
 
 /**
  * Count how many results mention a specific brand. Uses array fields only.
+ * Applies the same exclusion guards as the SoV denominator so numerator
+ * and denominator use identical filtering semantics.
  */
 export function countBrandMentions(
   results: Result[],
   brand: string,
   searchedBrand: string,
   isCategory: boolean,
+  excludedBrands: Set<string> = new Set(),
 ): number {
+  if (excludedBrands.has(brand)) return 0;
+  if (isCategory && isCategoryName(brand, searchedBrand)) return 0;
+
   let count = 0;
 
   for (const result of results) {
@@ -209,6 +215,6 @@ export function computeBrandShareOfVoice(
   const totalSlots = countTotalBrandMentionSlots(results, searchedBrand, isCategory, excludedBrands);
   if (totalSlots === 0) return 0;
 
-  const brandMentions = countBrandMentions(results, brand, searchedBrand, isCategory);
+  const brandMentions = countBrandMentions(results, brand, searchedBrand, isCategory, excludedBrands);
   return (brandMentions / totalSlots) * 100;
 }
