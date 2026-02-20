@@ -76,7 +76,7 @@ export const SEARCH_TYPE_CONFIGS: Record<SearchType, SearchTypeConfig> = {
     brandMentionLabel: 'Brand Mention Rate',
     competitorColumnLabel: 'Competitors',
     sentimentLabel: 'Brand Sentiment',
-    tabs: makeTabs(),
+    tabs: makeTabs({ reference: { enabled: false } }),
     recommendationContext: 'brand optimization and AI visibility improvement',
   },
 
