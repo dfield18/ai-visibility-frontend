@@ -1712,9 +1712,9 @@ export default function CompetitiveTab({
                   )}
                 </div>
 
-                <div className="overflow-x-auto">
+                <div className={`overflow-x-auto ${brandSourceHeatmap.data.length > 10 ? 'max-h-[480px] overflow-y-auto' : ''}`}>
                   <table className="w-full text-sm">
-                    <thead>
+                    <thead className={brandSourceHeatmap.data.length > 10 ? 'sticky top-0 bg-white z-10' : ''}>
                       <tr>
                         <th className="text-left py-2 px-3 text-sm font-medium text-gray-600 border-b border-gray-200 sticky left-0 bg-white z-10">Source</th>
                         {brandSourceHeatmap.brands.map(brand => (

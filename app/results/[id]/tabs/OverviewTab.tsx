@@ -1515,9 +1515,9 @@ export const OverviewTab = ({
             </select>
           </div>
           {isPublicFigure ? (
-          <div className="overflow-x-auto">
+          <div className={`overflow-x-auto ${promptBreakdownStats.length > 10 ? 'max-h-[480px] overflow-y-auto' : ''}`}>
             <table className="w-full text-sm">
-              <thead>
+              <thead className={promptBreakdownStats.length > 10 ? 'sticky top-0 bg-white z-10' : ''}>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
@@ -1618,9 +1618,9 @@ export const OverviewTab = ({
             </table>
           </div>
           ) : isIssue ? (
-          <div>
+          <div className={promptBreakdownStats.length > 10 ? 'max-h-[480px] overflow-y-auto' : ''}>
             <table className="w-full text-sm">
-              <thead>
+              <thead className={promptBreakdownStats.length > 10 ? 'sticky top-0 bg-white z-10' : ''}>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">
@@ -1756,9 +1756,9 @@ export const OverviewTab = ({
             </table>
           </div>
           ) : (
-          <div>
+          <div className={promptBreakdownStats.length > 10 ? 'max-h-[480px] overflow-y-auto' : ''}>
             <table className="w-full text-sm">
-              <thead>
+              <thead className={promptBreakdownStats.length > 10 ? 'sticky top-0 bg-white z-10' : ''}>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-3 text-sm font-medium text-gray-600">Question</th>
                   <th className="text-center py-3 px-3 text-sm font-medium text-gray-600">

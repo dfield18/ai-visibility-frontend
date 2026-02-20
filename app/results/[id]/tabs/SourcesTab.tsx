@@ -1552,9 +1552,9 @@ export const SourcesTab = () => {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto min-h-0">
+            <div className={`overflow-x-auto min-h-0 ${sortedDomainTableData.length > 10 ? 'max-h-[480px] overflow-y-auto' : ''}`}>
               <table className="w-full table-fixed">
-                <thead>
+                <thead className={sortedDomainTableData.length > 10 ? 'sticky top-0 z-10' : ''}>
                   <tr className="border-b border-gray-200 bg-gray-50">
                     <th
                       className={`${isCategory ? 'w-[15%]' : 'w-[18%]'} text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 select-none`}
