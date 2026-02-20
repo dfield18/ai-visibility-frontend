@@ -218,8 +218,7 @@ export function computeRelatedIssues(
   const counts: Record<string, number> = {};
   for (const r of globallyFilteredResults) {
     if (r.error) continue;
-    const rIssues = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
-    for (const issue of rIssues) {
+    for (const issue of r.competitors_mentioned || []) {
       if (issue.toLowerCase() === searchedLower) continue;
       counts[issue] = (counts[issue] || 0) + 1;
     }
