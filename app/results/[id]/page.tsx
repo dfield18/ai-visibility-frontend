@@ -415,6 +415,9 @@ export default function ResultsPage() {
     return defaultTabs.some(t => t.id === tab) ? tab : 'overview';
   });
 
+  // Site Audit state - persisted across tab switches
+  const [siteAuditId, setSiteAuditId] = useState<string | null>(null);
+
   // Global filters - persisted in URL
   const [globalBrandFilter, setGlobalBrandFilter] = useState<string>(() =>
     searchParams.get('brand') || 'all'
@@ -1354,7 +1357,7 @@ export default function ResultsPage() {
             )}
           </PaywallOverlay>
         )}
-        {activeTab === 'site-audit' && <SiteAuditTab brand={runStatus?.brand || ''} />}
+        {activeTab === 'site-audit' && <SiteAuditTab brand={runStatus?.brand || ''} selectedAuditId={siteAuditId} setSelectedAuditId={setSiteAuditId} />}
         {activeTab === 'chatgpt-ads' && (
           <PaywallOverlay locked={sectionAccess['chatgpt-ads'] === 'locked'}>
             <ChatGPTAdsTab />

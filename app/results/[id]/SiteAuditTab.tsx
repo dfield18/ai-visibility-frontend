@@ -27,6 +27,8 @@ import { CrawlerStatus, Recommendation } from '@/lib/types';
 
 interface SiteAuditTabProps {
   brand: string;
+  selectedAuditId: string | null;
+  setSelectedAuditId: (id: string | null) => void;
 }
 
 // Score color helpers
@@ -588,12 +590,11 @@ const AuditResultsView: React.FC<{
 };
 
 // Main component
-export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand }) => {
+export const SiteAuditTab: React.FC<SiteAuditTabProps> = ({ brand, selectedAuditId, setSelectedAuditId }) => {
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoadingWebsite, setIsLoadingWebsite] = useState(false);
   const [websiteLoaded, setWebsiteLoaded] = useState(false);
-  const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
 
   const createAudit = useCreateSiteAudit();
   const sessionId = getSessionId();
