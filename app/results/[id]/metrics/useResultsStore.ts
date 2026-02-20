@@ -21,6 +21,7 @@ import {
   computeTrackedBrands,
   computeFilteredAvailableBrands,
   computeFilteredTrackedBrands,
+  computeRelatedIssues,
 } from './compute/base';
 import {
   buildBrandNormalizationMap,
@@ -320,6 +321,11 @@ export function useResultsStore(params: UseResultsStoreParams) {
     [runStatus, normalizedResults, globalLlmFilter, globalPromptFilter, globalBrandFilter],
   );
 
+  const relatedIssues = useMemo(
+    () => computeRelatedIssues(runStatus, globallyFilteredResults),
+    [runStatus, globallyFilteredResults],
+  );
+
   const promptCost = useMemo(
     () => computePromptCost(runStatus),
     [runStatus],
@@ -437,8 +443,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   );
 
   const overviewMetrics = useMemo(
-    () => computeOverviewMetrics(runStatus, globallyFilteredResults, llmBreakdownBrands, excludedBrands),
-    [runStatus, globallyFilteredResults, llmBreakdownBrands, excludedBrands],
+    () => computeOverviewMetrics(runStatus, globallyFilteredResults, llmBreakdownBrands, excludedBrands, relatedIssues),
+    [runStatus, globallyFilteredResults, llmBreakdownBrands, excludedBrands, relatedIssues],
   );
 
   const llmBreakdownTakeaway = useMemo(
@@ -813,6 +819,7 @@ export function useResultsStore(params: UseResultsStoreParams) {
     isCategory,
     isIssue,
     isPublicFigure,
+    relatedIssues,
     searchType,
     searchTypeConfig,
     brandMentionRate,

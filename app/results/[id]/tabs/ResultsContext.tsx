@@ -73,6 +73,7 @@ export interface ResultsContextValue {
   isCategory: boolean;
   isIssue: boolean;
   isPublicFigure: boolean;
+  relatedIssues: string[];
   searchType: SearchType;
   searchTypeConfig: SearchTypeConfig;
   brandMentionRate: number;

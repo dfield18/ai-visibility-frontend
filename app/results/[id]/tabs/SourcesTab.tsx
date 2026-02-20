@@ -55,6 +55,7 @@ export const SourcesTab = () => {
     isCategory,
     isIssue,
     isPublicFigure,
+    relatedIssues,
     // Computed metrics from context
     sourcePositioningData,
     sourcePositioningBrandOptions,
@@ -740,10 +741,10 @@ export const SourcesTab = () => {
                     className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                   >
                     <option value="all">{isIssue ? 'All Issues' : isPublicFigure ? 'All Figures' : 'All Brands'}</option>
-                    {!isCategory && runStatus?.brand && availableBrands.includes(runStatus.brand) && (
+                    {!isCategory && !isIssue && runStatus?.brand && availableBrands.includes(runStatus.brand) && (
                       <option value={runStatus.brand}>{runStatus.brand} (searched)</option>
                     )}
-                    {availableBrands.filter(brand => isCategory ? true : brand !== runStatus?.brand).map((brand) => (
+                    {(isIssue ? relatedIssues : availableBrands.filter(brand => isCategory ? true : brand !== runStatus?.brand)).map((brand) => (
                       <option key={brand} value={brand}>{brand}</option>
                     ))}
                   </select>
@@ -1524,13 +1525,13 @@ export const SourcesTab = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {isCategory && publisherBrandOptions.length > 1 && (
+                {(isCategory || isIssue) && publisherBrandOptions.length > 1 && (
                   <select
                     value={publisherBrandFilter}
                     onChange={(e) => setPublisherBrandFilter(e.target.value)}
                     className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent max-w-[200px]"
                   >
-                    <option value="all">All Brands</option>
+                    <option value="all">{isIssue ? 'All Issues' : 'All Brands'}</option>
                     {publisherBrandOptions.map((brand) => (
                       <option key={brand} value={brand}>{brand}</option>
                     ))}

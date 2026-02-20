@@ -188,6 +188,7 @@ export const OverviewTab = ({
     isCategory,
     isIssue,
     isPublicFigure,
+    relatedIssues,
     availableProviders,
     availablePrompts,
     globallyFilteredResults,
@@ -921,8 +922,8 @@ export const OverviewTab = ({
         {(() => {
           if (isIssue) {
             // Related Issues — show top 3 most mentioned related issues
-            const relatedCount = overviewMetrics?.relatedIssuesCount || 0;
-            const topIssues: string[] = overviewMetrics?.topRelatedIssues || [];
+            const relatedCount = relatedIssues.length;
+            const topIssues = relatedIssues.slice(0, 3);
             const relatedTone: 'success' | 'neutral' | 'warn' = relatedCount >= 5 ? 'success' : relatedCount >= 2 ? 'neutral' : 'warn';
             return (
               <div className={`rounded-2xl shadow-sm border p-5 flex flex-col h-[270px] ${metricCardBackgrounds.avgPosition}`}>
@@ -2301,15 +2302,15 @@ export const OverviewTab = ({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {isCategory && (
+            {(isCategory || isIssue) && (
               <select
                 value={tableBrandFilter}
                 onChange={(e) => setTableBrandFilter(e.target.value)}
                 className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
               >
-                <option value="all">All Brands</option>
-                {availableBrands.map((brand) => (
-                  <option key={brand} value={brand}>{brand}</option>
+                <option value="all">{isIssue ? 'All Issues' : 'All Brands'}</option>
+                {(isIssue ? relatedIssues : availableBrands).map((item) => (
+                  <option key={item} value={item}>{item}</option>
                 ))}
               </select>
             )}

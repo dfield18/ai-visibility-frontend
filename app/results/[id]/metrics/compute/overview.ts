@@ -837,6 +837,7 @@ export function computeOverviewMetrics(
   globallyFilteredResults: Result[],
   llmBreakdownBrands: string[],
   excludedBrands: Set<string>,
+  relatedIssues: string[] = [],
 ): OverviewMetrics | null {
   if (!runStatus) return null;
 
@@ -1038,20 +1039,9 @@ export function computeOverviewMetrics(
       platformConsensus = Math.max(1, Math.min(10, Math.round((maxAgreement / providerCount) * 10)));
     }
 
-    // Related issues from competitors_mentioned, ranked by mention frequency
-    const relatedIssueCounts: Record<string, number> = {};
-    for (const result of results) {
-      if (result.competitors_mentioned) {
-        for (const comp of result.competitors_mentioned) {
-          relatedIssueCounts[comp] = (relatedIssueCounts[comp] || 0) + 1;
-        }
-      }
-    }
-    relatedIssuesCount = Object.keys(relatedIssueCounts).length;
-    topRelatedIssues = Object.entries(relatedIssueCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([name]) => name);
+    // Related issues from centralized computeRelatedIssues list
+    relatedIssuesCount = relatedIssues.length;
+    topRelatedIssues = relatedIssues.slice(0, 3);
   }
 
   if (runStatus.search_type === 'public_figure') {

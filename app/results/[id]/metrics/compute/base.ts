@@ -199,3 +199,31 @@ export function computeFilteredTrackedBrands(
 ): Set<string> {
   return new Set([...trackedBrands].filter(b => !Array.from(excludedBrands).some(eb => eb.toLowerCase() === b)));
 }
+
+// ---------------------------------------------------------------------------
+// relatedIssues (issue reports only)
+// ---------------------------------------------------------------------------
+
+/**
+ * For issue search types, extract related issues from competitors_mentioned,
+ * excluding the searched issue itself. Sorted by frequency desc, then alphabetically.
+ * Returns empty array for non-issue types.
+ */
+export function computeRelatedIssues(
+  runStatus: RunStatusResponse | null,
+  globallyFilteredResults: Result[],
+): string[] {
+  if (!runStatus || runStatus.search_type !== 'issue') return [];
+  const searchedLower = (runStatus.brand || '').toLowerCase();
+  const counts: Record<string, number> = {};
+  for (const r of globallyFilteredResults) {
+    if (r.error) continue;
+    for (const issue of r.competitors_mentioned || []) {
+      if (issue.toLowerCase() === searchedLower) continue;
+      counts[issue] = (counts[issue] || 0) + 1;
+    }
+  }
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([name]) => name);
+}
