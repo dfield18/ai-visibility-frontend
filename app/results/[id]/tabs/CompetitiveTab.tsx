@@ -18,21 +18,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Lightbulb,
-  AtSign,
-  Film,
-  Rss,
-  Tag,
-  Award,
-  MessagesSquare,
-  Feather,
-  MapPin,
-  Circle,
-  TrendingUp,
-  FileText,
-  Building2,
 } from 'lucide-react';
 import { Result, Source } from '@/lib/types';
-import { isCategoryName } from './shared';
+import { isCategoryName, categorizeDomain, CATEGORY_COLORS, getCategoryIcon } from './shared';
 import { useResults, useResultsUI } from './ResultsContext';
 
 // ---------------------------------------------------------------------------
@@ -41,168 +29,7 @@ import { useResults, useResultsUI } from './ResultsContext';
 
 const PROVIDER_ORDER = ['openai', 'ai_overviews', 'gemini', 'perplexity', 'anthropic', 'grok', 'llama'];
 
-const CATEGORY_COLORS: Record<string, string> = {
-  'Social Media': '#111827',
-  'Video': '#374151',
-  'Reference': '#1f2937',
-  'News & Media': '#5BA3C0',
-  'E-commerce': '#6b7280',
-  'Reviews': '#7FBCD4',
-  'Forums & Q&A': '#4b5563',
-  'Government': '#4A90A4',
-  'Blogs': '#9ca3af',
-  'Travel': '#6BA3A0',
-  'Finance': '#5B8FA8',
-  'Other': '#d1d5db',
-};
 
-// ---------------------------------------------------------------------------
-// Helpers (duplicated from page.tsx since they are not yet in a shared module)
-// ---------------------------------------------------------------------------
-
-const categorizeDomain = (domain: string): string => {
-  const d = domain.toLowerCase();
-  const socialMediaSites = [
-    'reddit.com', 'twitter.com', 'x.com', 'facebook.com', 'fb.com', 'instagram.com', 'tiktok.com',
-    'linkedin.com', 'pinterest.com', 'snapchat.com', 'discord.com', 'discord.gg',
-    'whatsapp.com', 'telegram.org', 't.me', 'signal.org',
-    'threads.net', 'mastodon.social', 'mastodon.online', 'bsky.app', 'bluesky', 'bereal.com',
-    'lemon8-app.com', 'clubhouse.com', 'nextdoor.com',
-    'flickr.com', 'imgur.com', 'giphy.com', '500px.com', 'deviantart.com',
-    'vk.com', 'weibo.com', 'weixin.qq.com', 'wechat.com', 'line.me', 'kakaotalk',
-    'behance.net', 'dribbble.com', 'goodreads.com', 'letterboxd.com', 'untappd.com', 'strava.com'
-  ];
-  if (socialMediaSites.some(s => d.includes(s))) return 'Social Media';
-  const videoSites = [
-    'youtube.com', 'youtu.be', 'vimeo.com', 'twitch.tv', 'dailymotion.com',
-    'netflix.com', 'hulu.com', 'disneyplus.com', 'hbomax.com', 'max.com', 'peacocktv.com',
-    'paramountplus.com', 'appletv.com', 'primevideo.com', 'crunchyroll.com', 'funimation.com',
-    'wistia.com', 'brightcove.com', 'vidyard.com', 'loom.com', 'streamable.com',
-    'rumble.com', 'bitchute.com', 'odysee.com', 'd.tube',
-    'ted.com', 'masterclass.com', 'skillshare.com', 'udemy.com', 'coursera.org', 'edx.org',
-    'khanacademy.org', 'lynda.com', 'pluralsight.com'
-  ];
-  if (videoSites.some(s => d.includes(s))) return 'Video';
-  const referenceSites = [
-    'wikipedia.org', 'wikimedia.org', 'wiktionary.org', 'wikihow.com', 'fandom.com',
-    'britannica.com', 'encyclopedia.com', 'scholarpedia.org', 'citizendium.org',
-    'merriam-webster.com', 'dictionary.com', 'thesaurus.com', 'oxforddictionaries.com',
-    'cambridge.org', 'collinsdictionary.com', 'wordreference.com', 'linguee.com',
-    'scholar.google.com', 'researchgate.net', 'academia.edu', 'jstor.org', 'pubmed.gov',
-    'ncbi.nlm.nih.gov', 'arxiv.org', 'ssrn.com', 'sciencedirect.com', 'springer.com',
-    'nature.com', 'science.org', 'ieee.org', 'acm.org', 'plos.org',
-    '.edu', 'instructables.com', 'howstuffworks.com', 'lifehacker.com', 'makeuseof.com',
-    'investopedia.com', 'healthline.com', 'webmd.com', 'mayoclinic.org', 'nih.gov'
-  ];
-  if (referenceSites.some(s => d.includes(s))) return 'Reference';
-  const majorNewsOutlets = [
-    'nytimes.com', 'wsj.com', 'washingtonpost.com', 'usatoday.com', 'latimes.com', 'chicagotribune.com',
-    'nypost.com', 'nydailynews.com', 'sfchronicle.com', 'bostonglobe.com', 'dallasnews.com',
-    'cnn.com', 'foxnews.com', 'msnbc.com', 'nbcnews.com', 'abcnews.go.com', 'cbsnews.com', 'pbs.org', 'npr.org',
-    'bbc.com', 'bbc.co.uk', 'theguardian.com', 'telegraph.co.uk', 'dailymail.co.uk', 'independent.co.uk',
-    'mirror.co.uk', 'thesun.co.uk', 'express.co.uk', 'metro.co.uk', 'standard.co.uk', 'sky.com',
-    'reuters.com', 'apnews.com', 'afp.com', 'aljazeera.com', 'dw.com', 'france24.com', 'rt.com',
-    'scmp.com', 'straitstimes.com', 'theaustralian.com.au', 'abc.net.au', 'cbc.ca', 'globalnews.ca',
-    'forbes.com', 'bloomberg.com', 'businessinsider.com', 'cnbc.com', 'marketwatch.com', 'ft.com',
-    'economist.com', 'fortune.com', 'inc.com', 'entrepreneur.com', 'fastcompany.com', 'qz.com',
-    'techcrunch.com', 'wired.com', 'theverge.com', 'engadget.com', 'arstechnica.com', 'mashable.com',
-    'gizmodo.com', 'cnet.com', 'zdnet.com', 'venturebeat.com', 'thenextweb.com', 'recode.net',
-    'techradar.com', 'tomshardware.com', 'anandtech.com', '9to5mac.com', '9to5google.com', 'macrumors.com',
-    'variety.com', 'hollywoodreporter.com', 'deadline.com', 'ew.com', 'people.com', 'tmz.com',
-    'rollingstone.com', 'billboard.com', 'pitchfork.com', 'ign.com', 'gamespot.com', 'kotaku.com', 'polygon.com',
-    'espn.com', 'sports.yahoo.com', 'bleacherreport.com', 'si.com', 'cbssports.com', 'theathletic.com',
-    'huffpost.com', 'buzzfeednews.com', 'vox.com', 'theatlantic.com', 'newyorker.com', 'slate.com',
-    'salon.com', 'thedailybeast.com', 'axios.com', 'politico.com', 'thehill.com', 'realclearpolitics.com'
-  ];
-  const newsPatterns = ['news', 'daily', 'times', 'post', 'herald', 'tribune', 'journal', 'gazette',
-    'observer', 'chronicle', 'examiner', 'inquirer', 'dispatch', 'sentinel', 'courier', 'press',
-    'register', 'record', 'reporter', 'bulletin', 'beacon', 'argus', 'banner', 'ledger', 'star',
-    'sun', 'mirror', 'express', 'mail', 'telegraph', 'monitor', 'insider', 'today'];
-  if (majorNewsOutlets.some(s => d.includes(s)) || newsPatterns.some(p => d.includes(p))) return 'News & Media';
-  const ecommerceSites = [
-    'amazon.com', 'amazon.co.uk', 'amazon.ca', 'amazon.de', 'ebay.com', 'ebay.co.uk',
-    'walmart.com', 'target.com', 'costco.com', 'samsclub.com', 'kohls.com', 'macys.com',
-    'nordstrom.com', 'jcpenney.com', 'homedepot.com', 'lowes.com', 'menards.com',
-    'bestbuy.com', 'newegg.com', 'bhphotovideo.com', 'adorama.com', 'microcenter.com',
-    'zappos.com', 'asos.com', 'zara.com', 'hm.com', 'uniqlo.com', 'gap.com', 'nike.com',
-    'adidas.com', 'footlocker.com', 'rei.com', 'patagonia.com', 'lululemon.com',
-    'etsy.com', 'wayfair.com', 'overstock.com', 'chewy.com', 'petco.com', 'petsmart.com',
-    'sephora.com', 'ulta.com', 'bathandbodyworks.com', 'williams-sonoma.com', 'crateandbarrel.com',
-    'alibaba.com', 'aliexpress.com', 'wish.com', 'shein.com', 'temu.com', 'rakuten.com',
-    'flipkart.com', 'jd.com', 'taobao.com', 'mercadolibre.com',
-    'shopify.com', 'bigcommerce.com', 'squarespace.com', 'wix.com', 'woocommerce.com',
-    'instacart.com', 'freshdirect.com', 'peapod.com', 'shipt.com', 'doordash.com', 'ubereats.com',
-    'shop', 'store', 'buy', 'market', 'outlet', 'deals'
-  ];
-  if (ecommerceSites.some(s => d.includes(s))) return 'E-commerce';
-  const reviewSites = [
-    'yelp.com', 'tripadvisor.com', 'trustpilot.com', 'sitejabber.com', 'bbb.org',
-    'consumerreports.org', 'consumersearch.com', 'which.co.uk',
-    'g2.com', 'capterra.com', 'softwareadvice.com', 'getapp.com', 'trustradius.com',
-    'gartner.com', 'forrester.com', 'pcmag.com',
-    'glassdoor.com', 'indeed.com', 'comparably.com', 'kununu.com',
-    'wirecutter.com', 'rtings.com', 'tomsguide.com', 'digitaltrends.com', 'reviewed.com',
-    'thespruce.com', 'foodnetwork.com', 'allrecipes.com', 'epicurious.com',
-    'booking.com', 'hotels.com', 'expedia.com', 'kayak.com', 'airbnb.com', 'vrbo.com',
-    'edmunds.com', 'kbb.com', 'caranddriver.com', 'motortrend.com', 'autotrader.com',
-    'zillow.com', 'realtor.com', 'redfin.com', 'trulia.com', 'apartments.com',
-    'reviews', 'review', 'rating', 'rated', 'compare', 'versus', 'vs'
-  ];
-  if (reviewSites.some(s => d.includes(s))) return 'Reviews';
-  const forumSites = [
-    'quora.com', 'answers.com', 'ask.com', 'answers.yahoo.com', 'chacha.com',
-    'stackoverflow.com', 'stackexchange.com', 'superuser.com', 'serverfault.com',
-    'askubuntu.com', 'mathoverflow.net', 'github.com', 'gitlab.com', 'bitbucket.org',
-    'reddit.com', 'digg.com', 'slashdot.org', 'hackernews.com', 'news.ycombinator.com',
-    'voat.co', 'hubpages.com', 'xda-developers.com', 'androidcentral.com',
-    'avsforum.com', 'head-fi.org', 'audiogon.com', 'dpreview.com', 'fredmiranda.com',
-    'flyertalk.com', 'fatwalletfinance.com', 'bogleheads.org', 'early-retirement.org',
-    'discourse', 'forum', 'forums', 'community', 'communities', 'discuss', 'discussion',
-    'board', 'boards', 'bbs', 'phpbb', 'vbulletin', 'xenforo', 'invision'
-  ];
-  if (forumSites.some(s => d.includes(s))) return 'Forums & Q&A';
-  const govSites = [
-    '.gov', '.gov.uk', '.gov.au', '.gov.ca', '.govt.nz', '.gob', '.gouv',
-    'usa.gov', 'whitehouse.gov', 'congress.gov', 'senate.gov', 'house.gov',
-    'supremecourt.gov', 'uscourts.gov', 'state.gov', 'treasury.gov', 'irs.gov',
-    'ssa.gov', 'medicare.gov', 'va.gov', 'hud.gov', 'usda.gov', 'epa.gov',
-    'fda.gov', 'cdc.gov', 'fbi.gov', 'cia.gov', 'nsa.gov', 'dhs.gov',
-    'un.org', 'who.int', 'worldbank.org', 'imf.org', 'wto.org', 'nato.int',
-    'europa.eu', 'ec.europa.eu', 'oecd.org', 'unicef.org', 'unesco.org',
-    '.org', 'redcross.org', 'salvationarmy.org', 'habitat.org', 'aclu.org',
-    'eff.org', 'fsf.org', 'creativecommons.org', 'mozilla.org', 'apache.org'
-  ];
-  if (govSites.some(s => d.includes(s))) return 'Government';
-  const blogSites = [
-    'medium.com', 'substack.com', 'blogger.com', 'blogspot.com', 'wordpress.com',
-    'wordpress.org', 'tumblr.com', 'ghost.io', 'ghost.org', 'svbtle.com',
-    'typepad.com', 'livejournal.com', 'wix.com', 'squarespace.com', 'weebly.com',
-    'buttondown.email', 'revue.co', 'mailchimp.com', 'convertkit.com', 'beehiiv.com',
-    'blog', 'blogs', 'personal', 'journal', 'diary', 'thoughts', 'musings',
-    'dev.to', 'hashnode.com', 'hashnode.dev', 'mirror.xyz'
-  ];
-  if (blogSites.some(s => d.includes(s))) return 'Blogs';
-  return 'Other';
-};
-
-const getCategoryIcon = (category: string, className: string = "w-3.5 h-3.5") => {
-  const color = CATEGORY_COLORS[category] || CATEGORY_COLORS['Other'];
-  const props = { className, style: { color } };
-  switch (category) {
-    case 'Social Media': return <AtSign {...props} />;
-    case 'Video': return <Film {...props} />;
-    case 'Reference': return <FileText {...props} />;
-    case 'News & Media': return <Rss {...props} />;
-    case 'E-commerce': return <Tag {...props} />;
-    case 'Reviews': return <Award {...props} />;
-    case 'Forums & Q&A': return <MessagesSquare {...props} />;
-    case 'Government': return <Building2 {...props} />;
-    case 'Blogs': return <Feather {...props} />;
-    case 'Travel': return <MapPin {...props} />;
-    case 'Finance': return <TrendingUp {...props} />;
-    default: return <Circle {...props} />;
-  }
-};
 
 const getDomain = (url: string): string => {
   try {
@@ -1681,7 +1508,7 @@ export default function CompetitiveTab({
                         <span>{isIssue ? 'Balanced' : 'Neutral'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
                         <span>{isIssue ? 'Mixed' : 'Conditional'}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -1775,7 +1602,7 @@ export default function CompetitiveTab({
                                 } else if (avgSentiment >= 2.5) {
                                   barColor = '#9ca3af';
                                 } else if (avgSentiment >= 1.5) {
-                                  barColor = '#fbbf24';
+                                  barColor = '#f59e0b';
                                 } else {
                                   barColor = '#ef4444';
                                 }

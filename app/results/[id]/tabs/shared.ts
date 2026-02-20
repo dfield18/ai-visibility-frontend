@@ -274,11 +274,29 @@ export const getSentimentDotColor = (sentiment: string | null): string => {
     case 'strong_endorsement': return '#047857';
     case 'positive_endorsement': return '#10b981';
     case 'neutral_mention': return '#9ca3af';
-    case 'conditional': return '#fbbf24';
+    case 'conditional': return '#f59e0b';
     case 'negative_comparison': return '#ef4444';
     case 'not_mentioned': return '#d1d5db';
     default: return '#9ca3af';
   }
+};
+
+/** Canonical sentiment colors for bar/area charts (same palette as dot colors). */
+export const SENTIMENT_COLORS = {
+  strong: '#047857',
+  positive: '#10b981',
+  neutral: '#9ca3af',
+  conditional: '#f59e0b',
+  negative: '#ef4444',
+} as const;
+
+/** Map a numeric sentiment score (0-5) to a canonical hex colour. */
+export const getSentimentScoreColor = (score: number): string => {
+  if (score >= 4.5) return SENTIMENT_COLORS.strong;
+  if (score >= 3.5) return SENTIMENT_COLORS.positive;
+  if (score >= 2.5) return SENTIMENT_COLORS.neutral;
+  if (score >= 1.5) return SENTIMENT_COLORS.conditional;
+  return SENTIMENT_COLORS.negative;
 };
 
 /**

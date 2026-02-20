@@ -1240,7 +1240,7 @@ export const OverviewTab = ({
               const segments = [
                 { label: 'Supportive', count: supportive, color: '#10b981' },
                 { label: 'Balanced', count: balanced, color: '#9ca3af' },
-                { label: 'Critical', count: critical, color: '#f87171' },
+                { label: 'Critical', count: critical, color: '#ef4444' },
               ].filter(s => s.count > 0);
               return (
                 <div key={provider} className="flex items-center gap-3">
@@ -1270,7 +1270,7 @@ export const OverviewTab = ({
           <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#10b981' }} /> Supportive</span>
             <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#9ca3af' }} /> Balanced</span>
-            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#f87171' }} /> Critical</span>
+            <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#ef4444' }} /> Critical</span>
           </div>
         </div>
       )}
@@ -1434,7 +1434,7 @@ export const OverviewTab = ({
             {([
               { key: 'Supportive', color: '#10b981', dotClass: 'bg-emerald-500' },
               { key: 'Balanced', color: '#9ca3af', dotClass: 'bg-gray-400' },
-              { key: 'Critical', color: '#f87171', dotClass: 'bg-red-400' },
+              { key: 'Critical', color: '#ef4444', dotClass: 'bg-red-400' },
             ] as const).map(({ key, color, dotClass }) => {
               const items = framingEvidenceGroups[key] || [];
               if (items.length === 0) return null;
@@ -1632,7 +1632,7 @@ export const OverviewTab = ({
                           <div className="w-16 h-2 rounded-full overflow-hidden flex bg-gray-100">
                             {pSplit.positive > 0 && <div className="h-full" style={{ width: `${pSplit.positive}%`, backgroundColor: '#10b981' }} />}
                             {pSplit.neutral > 0 && <div className="h-full" style={{ width: `${pSplit.neutral}%`, backgroundColor: '#d1d5db' }} />}
-                            {pSplit.negative > 0 && <div className="h-full" style={{ width: `${pSplit.negative}%`, backgroundColor: '#f87171' }} />}
+                            {pSplit.negative > 0 && <div className="h-full" style={{ width: `${pSplit.negative}%`, backgroundColor: '#ef4444' }} />}
                           </div>
                           <span className="text-xs font-medium text-red-400 w-8 text-left">{pSplit.negative}%</span>
                         </div>
@@ -1763,7 +1763,7 @@ export const OverviewTab = ({
                           <div className="w-16 h-2 rounded-full overflow-hidden flex bg-gray-100">
                             {sPct > 0 && <div className="h-full" style={{ width: `${sPct}%`, backgroundColor: '#10b981' }} />}
                             {(100 - sPct - cPct) > 0 && <div className="h-full" style={{ width: `${100 - sPct - cPct}%`, backgroundColor: '#d1d5db' }} />}
-                            {cPct > 0 && <div className="h-full" style={{ width: `${cPct}%`, backgroundColor: '#f87171' }} />}
+                            {cPct > 0 && <div className="h-full" style={{ width: `${cPct}%`, backgroundColor: '#ef4444' }} />}
                           </div>
                           <span className="text-xs font-medium text-red-400 w-8 text-left">{cPct.toFixed(0)}%</span>
                         </div>
@@ -2027,7 +2027,7 @@ export const OverviewTab = ({
                   { color: '#047857', label: 'Strong' },
                   { color: '#10b981', label: 'Positive' },
                   { color: '#9ca3af', label: 'Neutral' },
-                  { color: '#fbbf24', label: 'Conditional' },
+                  { color: '#f59e0b', label: 'Conditional' },
                   { color: '#ef4444', label: 'Negative' },
                 ].map(item => (
                   <div key={item.label} className="flex items-center gap-2">

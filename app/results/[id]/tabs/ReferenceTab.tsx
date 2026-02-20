@@ -273,7 +273,7 @@ export const ReferenceTab = ({
                     <span className="text-xs text-gray-500">Neutral</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
                     <span className="text-xs text-gray-500">Conditional</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -435,15 +435,15 @@ export const ReferenceTab = ({
                                 opacity = 0.8;
                                 break;
                               case 'neutral_mention':
-                                fillColor = '#6b7280'; // gray-500
+                                fillColor = '#9ca3af';
                                 opacity = 0.6;
                                 break;
                               case 'conditional':
-                                fillColor = '#fcd34d'; // amber-300
+                                fillColor = '#f59e0b';
                                 opacity = 1;
                                 break;
                               case 'negative_comparison':
-                                fillColor = '#f87171'; // red-400
+                                fillColor = '#ef4444';
                                 opacity = 0.8;
                                 break;
                               case 'not_mentioned':
@@ -514,7 +514,7 @@ export const ReferenceTab = ({
                     <span className="text-xs text-gray-500">Neutral</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#fbbf24' }} />
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
                     <span className="text-xs text-gray-500">Conditional</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -773,9 +773,9 @@ export const ReferenceTab = ({
                                     backgroundColor: showSentimentColors && dot.sentiment
                                       ? dot.sentiment === 'strong_endorsement' ? '#047857'
                                         : dot.sentiment === 'positive_endorsement' ? '#10b981'
-                                        : dot.sentiment === 'neutral_mention' ? '#6b7280'
-                                        : dot.sentiment === 'conditional' ? '#fcd34d'
-                                        : dot.sentiment === 'negative_comparison' ? '#f87171'
+                                        : dot.sentiment === 'neutral_mention' ? '#9ca3af'
+                                        : dot.sentiment === 'conditional' ? '#f59e0b'
+                                        : dot.sentiment === 'negative_comparison' ? '#ef4444'
                                         : '#d1d5db'
                                       : '#9ca3af',
                                     opacity: showSentimentColors && dot.sentiment

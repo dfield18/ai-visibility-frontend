@@ -782,8 +782,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   // Recommendation computations
   // =========================================================================
   const quickWins = useMemo(
-    () => computeQuickWins(runStatus, promptBreakdownStats, brandBreakdownStats, llmBreakdownStats, globallyFilteredResults, isPublicFigure),
-    [runStatus, promptBreakdownStats, brandBreakdownStats, llmBreakdownStats, globallyFilteredResults, isPublicFigure],
+    () => computeQuickWins(runStatus, promptBreakdownStats, brandBreakdownStats, llmBreakdownStats, globallyFilteredResults, isPublicFigure, isIssue),
+    [runStatus, promptBreakdownStats, brandBreakdownStats, llmBreakdownStats, globallyFilteredResults, isPublicFigure, isIssue],
   );
 
   const adOpportunities = useMemo(

@@ -28,6 +28,7 @@ export function computeQuickWins(
   llmBreakdownStats: Record<string, LlmBreakdownRow>,
   globallyFilteredResults: Result[],
   isPublicFigure: boolean,
+  isIssue: boolean = false,
 ): QuickWin[] {
   if (!runStatus) return [];
 
@@ -83,6 +84,8 @@ export function computeQuickWins(
       title: `Expand visibility for "${truncate(prompt.prompt, 45)}"`,
       description: isPublicFigure
         ? `This figure appears in ${brandVisibility.toFixed(0)}% of responses vs similar figures at ${competitorAvgVisibility.toFixed(0)}%`
+        : isIssue
+        ? `This issue appears in ${brandVisibility.toFixed(0)}% of responses vs related issues at ${competitorAvgVisibility.toFixed(0)}%`
         : `Your brand appears in ${brandVisibility.toFixed(0)}% of responses vs competitors at ${competitorAvgVisibility.toFixed(0)}%`,
       competitors: topCompetitors,
       score: quickWinScore,
@@ -141,6 +144,8 @@ export function computeQuickWins(
       title: `Improve visibility on ${getProviderLabel(provider)}`,
       description: isPublicFigure
         ? `This figure appears in ${brandProviderRate.toFixed(0)}% of responses vs similar figures at ${competitorProviderAvgRate.toFixed(0)}% across ${responseCount} answers`
+        : isIssue
+        ? `This issue appears in ${brandProviderRate.toFixed(0)}% of responses vs related issues at ${competitorProviderAvgRate.toFixed(0)}% across ${responseCount} answers`
         : `Your brand appears in ${brandProviderRate.toFixed(0)}% of responses vs competitors at ${competitorProviderAvgRate.toFixed(0)}% across ${responseCount} answers`,
       score: quickWinScore,
       metrics: {
@@ -204,6 +209,8 @@ export function computeQuickWins(
       title: `Target coverage from ${domain}`,
       description: isPublicFigure
         ? `This source frequently cites ${data.competitors.length} similar figures but has never mentioned this figure`
+        : isIssue
+        ? `This source frequently cites ${data.competitors.length} related issues but has never mentioned this issue`
         : `This source frequently cites ${data.competitors.length} competitors but has never mentioned your brand`,
       competitors: data.competitors.slice(0, 4),
       score: quickWinScore,

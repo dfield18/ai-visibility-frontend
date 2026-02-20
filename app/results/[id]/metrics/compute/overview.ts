@@ -431,9 +431,8 @@ export function computePromptBreakdownStats(
         const raw = r.brand_sentiment;
         if (!raw || raw === 'not_mentioned') {
           // Still collect related issues from unmentioned results
-          if (r.competitors_mentioned) {
-            for (const c of r.competitors_mentioned) issueRelated.add(c);
-          }
+          const rIssues = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+          for (const c of rIssues) issueRelated.add(c);
           continue;
         }
         const label = issueFramingMap[raw] || 'Balanced';
@@ -446,9 +445,8 @@ export function computePromptBreakdownStats(
         if (!issueProviderFramings[r.provider]) issueProviderFramings[r.provider] = {};
         issueProviderFramings[r.provider][label] = (issueProviderFramings[r.provider][label] || 0) + 1;
 
-        if (r.competitors_mentioned) {
-          for (const c of r.competitors_mentioned) issueRelated.add(c);
-        }
+        const rIssues2 = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+        for (const c of rIssues2) issueRelated.add(c);
       }
       // Find each provider's dominant framing
       for (const [prov, counts] of Object.entries(issueProviderFramings)) {
@@ -1092,10 +1090,9 @@ export function computeOverviewMetrics(
     const competitorMentionRates: number[] = [];
     const competitorCounts: Record<string, number> = {};
     for (const r of results) {
-      if (r.competitors_mentioned) {
-        for (const comp of r.competitors_mentioned) {
-          competitorCounts[comp] = (competitorCounts[comp] || 0) + 1;
-        }
+      const rBrands = r.all_brands_mentioned?.length ? r.all_brands_mentioned : r.competitors_mentioned || [];
+      for (const comp of rBrands) {
+        competitorCounts[comp] = (competitorCounts[comp] || 0) + 1;
       }
     }
     for (const count of Object.values(competitorCounts)) {

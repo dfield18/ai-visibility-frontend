@@ -106,12 +106,12 @@ export const SentimentTab = ({ visibleSections }: SentimentTabProps = {}) => {
     // Helper function to get sentiment bar color
     const getSentimentBarColor = (sentiment: string) => {
       switch (sentiment) {
-        case 'strong_endorsement': return '#047857'; // emerald-700
-        case 'positive_endorsement': return '#10b981'; // emerald-500
-        case 'neutral_mention': return '#3b82f6';
-        case 'conditional': return '#fde68a'; // amber-200 (very light)
+        case 'strong_endorsement': return '#047857';
+        case 'positive_endorsement': return '#10b981';
+        case 'neutral_mention': return '#9ca3af';
+        case 'conditional': return '#f59e0b';
         case 'negative_comparison': return '#ef4444';
-        case 'not_mentioned': return '#9ca3af';
+        case 'not_mentioned': return '#d1d5db';
         default: return '#9ca3af';
       }
     };

@@ -528,7 +528,7 @@ export default function ResultsPage() {
 
   // Fetch AI-generated brand characterization blurbs
   const brandBlurbsContext = runStatus
-    ? `${runStatus.search_type === 'category' ? 'category' : 'brand'} analysis for ${runStatus.brand}`
+    ? `${runStatus.search_type === 'category' ? 'category' : runStatus.search_type === 'issue' ? 'issue' : runStatus.search_type === 'public_figure' ? 'public figure' : 'brand'} analysis for ${runStatus.brand}`
     : '';
   const { data: brandBlurbsData } = useBrandBlurbs(
     brandNamesForHooks,
