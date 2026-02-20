@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -33,7 +33,6 @@ import {
   metricCardBackgrounds,
   PROVIDER_ORDER,
   POSITION_CATEGORIES,
-  getBrandRank,
   isCategoryName,
 } from './shared';
 import { stripDiacritics } from '../metrics/compute/normalization';
@@ -238,6 +237,41 @@ export const OverviewTab = ({
   const [expandedLLMCards, setExpandedLLMCards] = useState<Set<string>>(new Set());
   const [framingEvidenceExpanded, setFramingEvidenceExpanded] = useState<Set<string>>(new Set(['Supportive', 'Balanced']));
   const [framingEvidenceShowAll, setFramingEvidenceShowAll] = useState<Set<string>>(new Set());
+
+  // ---------------------------------------------------------------------------
+  // Pre-compute brand rank per result using full-text scan methodology.
+  // Matches computeLlmBreakdownStats and computeBrandBreakdownStats: builds a
+  // proper candidate list (includes searched brand, filters excluded brands)
+  // and ranks by earliest text position.
+  // ---------------------------------------------------------------------------
+  const allResultsRankMap = useMemo(() => {
+    const map = new Map<Result, number | null>();
+    if (!runStatus) return map;
+    const rankBrand = isCategory ? llmBreakdownBrands[0] : runStatus.brand;
+    if (!rankBrand) return map;
+    const rankBrandLower = stripDiacritics(rankBrand).toLowerCase();
+    const results = globallyFilteredResults.filter((r: Result) => !r.error);
+    for (const result of results) {
+      if (!result.response_text) { map.set(result, null); continue; }
+      const rBrands = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [])
+        .filter((b): b is string => typeof b === 'string')
+        .filter(b => isCategory ? !isCategoryName(b, runStatus.brand) && !excludedBrands.has(b) : !excludedBrands.has(b));
+      if (!isCategory && !excludedBrands.has(rankBrand) && !rBrands.some(b => b.toLowerCase() === rankBrandLower)) {
+        rBrands.push(rankBrand);
+      }
+      if (rBrands.length === 0) { map.set(result, null); continue; }
+      const fullText = stripDiacritics(result.response_text).toLowerCase();
+      const positions: { brand: string; pos: number }[] = [];
+      for (const b of rBrands) {
+        const pos = fullText.indexOf(stripDiacritics(b).toLowerCase());
+        if (pos >= 0) positions.push({ brand: b, pos });
+      }
+      positions.sort((a, b) => a.pos - b.pos);
+      const idx = positions.findIndex(p => p.brand.toLowerCase() === rankBrandLower);
+      map.set(result, idx >= 0 ? idx + 1 : null);
+    }
+    return map;
+  }, [runStatus, isCategory, llmBreakdownBrands, globallyFilteredResults, excludedBrands]);
 
   const FRAMING_MAP: Record<string, string> = {
     strong_endorsement: 'Supportive',
@@ -2212,10 +2246,8 @@ export const OverviewTab = ({
                       <p className="text-xs text-gray-500 mb-3">{providerResults.length} responses from {getProviderLabel(provider)}</p>
                       <div className="space-y-2">
                         {providerResults.map((result: Result) => {
-                          // Calculate position by scanning full response text
-                          const position = (!result.error && selectedBrand)
-                            ? getBrandRank(result, selectedBrand)
-                            : null;
+                          // Position from pre-computed full-text scan rank map
+                          const position = !result.error ? (allResultsRankMap.get(result) ?? null) : null;
                           const isMentioned = position !== null || (isCategory
                             ? (result.all_brands_mentioned?.length ? result.all_brands_mentioned.includes(selectedBrand || '') : result.competitors_mentioned?.includes(selectedBrand || ''))
                             : result.brand_mentioned);
@@ -2461,11 +2493,8 @@ export const OverviewTab = ({
             <table className="w-full table-fixed">
               <tbody>
               {sortedResults.map((result: Result, resultIdx: number) => {
-                // Calculate position from all_brands_mentioned array order
-                const rankBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
-                const position = (!result.error && rankBrand)
-                  ? getBrandRank(result, rankBrand)
-                  : null;
+                // Position from pre-computed full-text scan rank map
+                const position = !result.error ? (allResultsRankMap.get(result) ?? null) : null;
 
                 // Position badge styling
                 const getPositionBadge = () => {
@@ -2748,10 +2777,9 @@ export const OverviewTab = ({
                 ? ['Question', 'Model', 'Depth', 'Framing', 'Related Issues', 'Response']
                 : ['Question', 'Model', 'Rank', 'Mentioned', 'Sentiment', 'Competitors', 'Response'];
               const rows = sortedResults.map((result: Result) => {
-                // Calculate position from all_brands_mentioned array order
-                const csvRankBrand = isCategory ? llmBreakdownBrands[0] : runStatus?.brand;
-                const position: number | string = (!result.error && csvRankBrand)
-                  ? (getBrandRank(result, csvRankBrand) ?? '-')
+                // Position from pre-computed full-text scan rank map
+                const position: number | string = !result.error
+                  ? (allResultsRankMap.get(result) ?? '-')
                   : '-';
 
                 const sentimentLabel = result.brand_sentiment === 'strong_endorsement' ? 'Strong' :

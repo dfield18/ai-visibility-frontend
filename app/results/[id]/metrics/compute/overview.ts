@@ -195,6 +195,7 @@ export function computeLlmBreakdownStats(
   globallyFilteredResults: Result[],
   llmBreakdownBrandFilter: string,
   llmBreakdownBrands: string[],
+  excludedBrands: Set<string> = new Set(),
 ): Record<string, LlmBreakdownRow> {
   if (!runStatus) return {};
 
@@ -205,6 +206,34 @@ export function computeLlmBreakdownStats(
 
   const results = globallyFilteredResults.filter((r: Result) => !r.error);
   const isSearchedBrand = !isCategory && selectedBrand === runStatus.brand;
+  const selectedBrandLower = stripDiacritics(selectedBrand).toLowerCase();
+
+  // Pre-compute rank per result using the same full-text scan methodology as
+  // computeBrandBreakdownStats (competitive.ts) and computeOverviewMetrics.
+  // Builds a proper candidate list (includes searched brand, filters excluded
+  // brands) and ranks by earliest text position.
+  const rankPerResult = new Map<Result, number | null>();
+  for (const result of results) {
+    if (!result.response_text) { rankPerResult.set(result, null); continue; }
+    const rBrands = (result.all_brands_mentioned?.length ? result.all_brands_mentioned : result.competitors_mentioned || [])
+      .filter((b): b is string => typeof b === 'string')
+      .filter(b => isCategory ? !isCategoryName(b, runStatus.brand) && !excludedBrands.has(b) : !excludedBrands.has(b));
+    // For brand reports, include the searched brand in the candidate list
+    if (!isCategory && !excludedBrands.has(selectedBrand) && !rBrands.some(b => b.toLowerCase() === selectedBrandLower)) {
+      rBrands.push(selectedBrand);
+    }
+    if (rBrands.length === 0) { rankPerResult.set(result, null); continue; }
+    const fullText = stripDiacritics(result.response_text).toLowerCase();
+    // Find each candidate's earliest position in the text
+    const positions: { brand: string; pos: number }[] = [];
+    for (const b of rBrands) {
+      const pos = fullText.indexOf(stripDiacritics(b).toLowerCase());
+      if (pos >= 0) positions.push({ brand: b, pos });
+    }
+    positions.sort((a, b) => a.pos - b.pos);
+    const idx = positions.findIndex(p => p.brand.toLowerCase() === selectedBrandLower);
+    rankPerResult.set(result, idx >= 0 ? idx + 1 : null);
+  }
 
   const providerStats: Record<string, LlmBreakdownRow> = {};
 
@@ -232,8 +261,8 @@ export function computeLlmBreakdownStats(
     if (isMentioned) {
       providerStats[provider].mentioned += 1;
 
-      // Rank by position in all_brands_mentioned array (ordered by first appearance)
-      const rank = getBrandRank(result, selectedBrand);
+      // Rank from pre-computed full-text scan (matches All Results table methodology)
+      const rank = rankPerResult.get(result) ?? null;
       if (rank !== null) {
         providerStats[provider].ranks.push(rank);
         // Track best (lowest) position achieved

@@ -402,8 +402,8 @@ export function useResultsStore(params: UseResultsStoreParams) {
   );
 
   const llmBreakdownStats = useMemo(
-    () => computeLlmBreakdownStats(runStatus, globallyFilteredResults, llmBreakdownBrandFilter, llmBreakdownBrands),
-    [runStatus, globallyFilteredResults, llmBreakdownBrandFilter, llmBreakdownBrands],
+    () => computeLlmBreakdownStats(runStatus, globallyFilteredResults, llmBreakdownBrandFilter, llmBreakdownBrands, excludedBrands),
+    [runStatus, globallyFilteredResults, llmBreakdownBrandFilter, llmBreakdownBrands, excludedBrands],
   );
 
   const promptBreakdownStats = useMemo(
